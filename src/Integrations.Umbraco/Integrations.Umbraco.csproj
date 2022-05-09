@@ -1,10 +1,22 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<AssemblyName>Relewise.Integrations.Umbraco</AssemblyName>
 		<RootNamespace>Relewise.Integrations.Umbraco</RootNamespace>
+		<Title>Relewise integration for Umbraco</Title>
+		<Description>An extension for Umbraco CMS allowing easy content export to Relewise</Description>
+		<PackageIconUrl></PackageIconUrl>
+		<PackageTags>Relewise, Umbraco 9</PackageTags>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<License>http://opensource.org/licenses/MIT</License>
+		<PackageProjectUrl>https://github.com/Relewise/relewise-integrations-umbraco</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Relewise/relewise-integrations-umbraco</RepositoryUrl>
+		<PackageId>Relewise.Integrations.Umbraco</PackageId>
+		<PackageVersion>0.0.1-alpha</PackageVersion>
+		<Authors>Relewise</Authors>
+		<Company>Relewise</Company>
 	</PropertyGroup>
 
 	<ItemGroup>

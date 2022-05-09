@@ -8,19 +8,15 @@
 		<ItemGroup>
 			<RelewiseFiles Include="$(RelewiseDashboardFilesPath)" />
 		</ItemGroup>
-		<Message
-			Text="Copying Relewise files: $(RelewiseDashboardFilesPath) - #@(RelewiseFiles->Count()) files"
-			Importance="high" />
+		<Message Text="Copying Relewise files: $(RelewiseDashboardFilesPath) - #@(RelewiseFiles->Count()) files" Importance="high" />
 		<Copy SourceFiles="@(RelewiseFiles)"
 		      DestinationFiles="@(RelewiseFiles->'$(MSBuildProjectDirectory)\App_Plugins\Relewise.Dashboard\%(RecursiveDir)%(Filename)%(Extension)')"
 		      SkipUnchangedFiles="true" />
-
 	</Target>
 
 	<Target Name="ClearRelewiseAssets" BeforeTargets="Clean">
 		<ItemGroup>
-			<RelewiseDir
-				Include="$(MSBuildProjectDirectory)\App_Plugins\Relewise.Dashboard\" />
+			<RelewiseDir Include="$(MSBuildProjectDirectory)\App_Plugins\Relewise.Dashboard\" />
 		</ItemGroup>
 		<Message Text="Clear old Relewise data" Importance="high" />
 		<RemoveDir Directories="@(RelewiseDir)" />
