@@ -11,12 +11,9 @@ Run this command from the NuGet Package Manager Console to install the NuGet pac
 ### Using Relewise.Integrations.Umbraco
 
 Add Relewise to the UmbracoBuilder, and specify the ContentTypes, that you would like exported into Relewise for content search and recommendation.
-
+In this example, we are exporting all LandingPages and ContentPages to Relewise.
 ```csharp
 services.AddUmbraco(_env, _config)
-                .AddBackOffice()
-                .AddWebsite()
-                .AddComposers()
                 .AddRelewise(options => options.UseMapping(map => map.AutoMapping("LandingPage", "ContentPage")))
 ```
 
