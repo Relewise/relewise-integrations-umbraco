@@ -5,6 +5,6 @@ namespace Relewise.Integrations.Umbraco.Services;
 
 public interface IExportContentService
 {
-    Task Export(IContent[] contents);
+    Task Export(IContent[] contents, long? version = null);
     Task ExportAll();
 }

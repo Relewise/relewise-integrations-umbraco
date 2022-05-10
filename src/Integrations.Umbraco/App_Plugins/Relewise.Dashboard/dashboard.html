@@ -10,7 +10,7 @@
                 It's also possible to change the settings for Relewise directly here.
             </p>
             <div style="margin-bottom: 10px;">
-                <button class="btn btn-primary" ng-click="vm.exportContent()" ng-disabled="vm.buttonState === 'busy'">
+                <button class="btn btn-primary" ng-click="vm.exportContent()" ng-disabled="vm.exportLoading'">
                     Export all content to Relewise
                 </button>
             </div>
@@ -26,12 +26,12 @@
 
             <div class="configuration-dashboard-property">
                 <label for="dataset">Dataset Id</label><br />
-                <input type="text" id="dataset" class="input-field" ng-model="vm.configuration.datasetId" placeholder="Dataset Id" ng-disabled="vm.buttonState === 'busy'" readonly="readonly" />
+                <input type="text" id="dataset" class="input-field" ng-model="vm.configuration.datasetId" placeholder="Dataset Id" ng-disabled="vm.exportLoading" readonly="readonly" />
             </div>
 
             <div class="configuration-dashboard-property">
                 <label for="api-key">API key</label><br />
-                <input type="text" id="api-key" class="input-field" ng-model="vm.configuration.apiKey" placeholder="API Key" ng-disabled="vm.buttonState === 'busy'" readonly="readonly" />
+                <input type="text" id="api-key" class="input-field" ng-model="vm.configuration.apiKey" placeholder="API Key" ng-disabled="vm.buttonState" readonly="readonly" />
             </div>
 
             <!--<div>

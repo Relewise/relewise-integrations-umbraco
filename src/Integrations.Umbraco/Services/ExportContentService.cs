@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
@@ -31,7 +32,7 @@ public class ExportContentService : IExportContentService
         _contentService = contentService;
     }
 
-    public async Task Export(IContent[] contents)
+    public async Task Export(IContent[] contents, long? version = null)
     {
         if (contents.Length == 0)
             return;
@@ -40,13 +41,13 @@ public class ExportContentService : IExportContentService
 
         IPublishedContentCache contentCache = umbracoContextReference.UmbracoContext.Content;
 
-        long version = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        version ??= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         ContentUpdate[] contentUpdates = contents
-            .Select(x => _contentMapper.Map(contentCache.GetById(x.Id), version))
+            .Select(x => _contentMapper.Map(contentCache.GetById(x.Id), version.GetValueOrDefault()))
             .WhereNotNull()
             .ToArray()!;
-        await _tracker.TrackAsync(contentUpdates);
+        await _tracker.TrackAsync(contentUpdates, CancellationToken.None);
 
         await _tracker.TrackAsync(new ContentAdministrativeAction(
             Language.Undefined,
@@ -74,7 +75,7 @@ public class ExportContentService : IExportContentService
         {
             long version = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-            await Export(contents);
+            await Export(contents, version);
 
             await _tracker.TrackAsync(new ContentAdministrativeAction(
                 Language.Undefined,
