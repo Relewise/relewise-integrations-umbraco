@@ -8,6 +8,7 @@ public static class UmbracoApplicationBuilderContextExtensions
 {
     public static void TrackContentViews(this IUmbracoApplicationBuilderContext builder)
     {
+        // NOTE: NULL check
         builder.AppBuilder.UseMiddleware<RelewiseContentMiddleware>();
     }
 }

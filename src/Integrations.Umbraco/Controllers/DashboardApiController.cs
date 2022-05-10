@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Web.BackOffice.Filters;
@@ -25,9 +26,9 @@ public class DashboardApiController : UmbracoAuthorizedController
         return Ok(new { _configuration.ApiKey, _configuration.DatasetId });
     }
 
-    public async Task<IActionResult> ContentExport()
+    public async Task<IActionResult> ContentExport(CancellationToken token)
     {
-        await _exportContent.ExportAll();
+        await _exportContent.ExportAll(token);
 
         return Ok();
     }

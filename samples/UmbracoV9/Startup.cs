@@ -52,7 +52,9 @@ namespace UmbracoV9
                 .AddBackOffice()
                 .AddWebsite()
                 .AddComposers()
-                .AddRelewise(options => options.UseMapping(map => map.AutoMapping("LandingPage", "ContentPage")))
+                .AddRelewise(options => options
+                    .UseMapping(map => map
+                        .AutoMapping("LandingPage", "ContentPage")))
                 .Build();
 #pragma warning restore IDE0022 // Use expression body for methods
 

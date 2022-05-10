@@ -56,7 +56,7 @@ public class ExportContentService : IExportContentService
             ContentAdministrativeAction.UpdateKind.EnableInRecommendations));
     }
 
-    public async Task ExportAll()
+    public async Task ExportAll(CancellationToken token)
     {
         var allContent = new List<IContent>();
 
@@ -81,7 +81,8 @@ public class ExportContentService : IExportContentService
                 Language.Undefined,
                 Currency.Undefined,
                 new FilterCollection(new ContentDataFilter(Constants.VersionKey, new EqualsCondition(version, negated: true), filterOutIfKeyIsNotFound: false)),
-                ContentAdministrativeAction.UpdateKind.PermanentlyDelete));
+                ContentAdministrativeAction.UpdateKind.PermanentlyDelete), 
+                token);
         }
     }
 }

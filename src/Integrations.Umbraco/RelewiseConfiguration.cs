@@ -7,6 +7,8 @@ namespace Relewise.Integrations.Umbraco;
 
 public class RelewiseConfiguration
 {
+    // NOTE: Selvom vi kører med nullable, tænker jeg vi bør teste for null alligevel - eller fletter compileren dette ind?
+
     public RelewiseConfiguration(Guid datasetId, string apiKey, HashSet<string> trackableDocTypes)
     {
         DatasetId = datasetId;
@@ -14,6 +16,7 @@ public class RelewiseConfiguration
         TrackableDocTypes = trackableDocTypes;
     }
 
+    // NOTE: Disse to herunder erstattes vel af dét du laver på Relewise.Client.Extensions projektet?
     public Guid DatasetId { get; }
     public string ApiKey { get; }
 

@@ -23,6 +23,7 @@ internal class RelewiseContentMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         IUmbracoContextFactory umbracoContextFactory = context.RequestServices.GetRequiredService<IUmbracoContextFactory>();
+
         using (UmbracoContextReference umbracoContextReference = umbracoContextFactory.EnsureUmbracoContext())
         {
             IPublishedContent? content = umbracoContextReference.UmbracoContext?.PublishedRequest?.PublishedContent;
@@ -30,6 +31,10 @@ internal class RelewiseContentMiddleware
             if (IsNotInPreview(umbracoContextReference) && EnsureContentAndIsTrackable(content))
             {
                 ITracker tracker = context.RequestServices.GetRequiredService<ITracker>();
+
+                // NOTE: Her skal vi selvfølgelig have ét eller andet ind, som - uanset hvor vi er - kan vi tilgå en User
+                //  -> det kunne evt. være noget Middleware
+                //  -> men i hvert fald skal det være noget, som kan klistre instansen på HttpContext
 
                 await tracker.TrackAsync(new ContentView(User.Anonymous(), content?.Id.ToString()));
             }

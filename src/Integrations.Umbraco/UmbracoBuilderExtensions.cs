@@ -26,6 +26,8 @@ public static class UmbracoBuilderExtensions
 {
     public static IUmbracoBuilder AddRelewise(this IUmbracoBuilder builder, Action<RelewiseConfigurationBuilder> options)
     {
+        // NOTE: Null check
+
         IConfigurationSection relewiseSection = builder.Config.GetRequiredSection("Relewise");
 
         var datasetId = Guid.Parse(relewiseSection["DatasetId"]);
@@ -55,6 +57,8 @@ public static class UmbracoBuilderExtensions
         builder.Services.AddSingleton<IRelewisePropertyValueConverter, TagsPropertyValueConverter>();
         builder.Services.AddSingleton<IRelewisePropertyValueConverter, RichTextEditorPropertyValueConverter>();
         builder.Services.AddSingleton<IRelewisePropertyValueConverter, NestedContentPropertyValueConverter>();
+
+        // NOTE: Kunne evt. give mening at man via Builderen/options kan tilføje flere converters
 
         builder.Services.AddSingleton<ITracker>(new Tracker(relewiseConfiguration.DatasetId, relewiseConfiguration.ApiKey));
         builder.Services.AddSingleton<IRecommender>(new Recommender(relewiseConfiguration.DatasetId, relewiseConfiguration.ApiKey));
@@ -96,6 +100,8 @@ public class RelewiseConfigurationBuilder
 
     public RelewiseConfigurationBuilder UseMapping(Action<RelewiseMappingConfiguration> options)
     {
+        // NOTE: Null check
+
         options.Invoke(MappingConfiguration);
 
         return this;
@@ -108,6 +114,8 @@ public class RelewiseMappingConfiguration
 
     public RelewiseMappingConfiguration AutoMapping(params string[] docTypes)
     {
+        // NOTE: Null check - samt skip elementer som er null/empty
+
         AutoMappedDocTypes = docTypes.Distinct().ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         return this;
