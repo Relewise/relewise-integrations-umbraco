@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using System;
+using Microsoft.AspNetCore.Builder;
 using Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 
@@ -8,7 +9,8 @@ public static class UmbracoApplicationBuilderContextExtensions
 {
     public static void TrackContentViews(this IUmbracoApplicationBuilderContext builder)
     {
-        // NOTE: NULL check
+        if (builder == null) throw new ArgumentNullException(nameof(builder));
+
         builder.AppBuilder.UseMiddleware<RelewiseContentMiddleware>();
     }
 }

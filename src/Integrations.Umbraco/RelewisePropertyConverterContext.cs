@@ -8,7 +8,7 @@ public class RelewisePropertyConverterContext
 {
     private readonly Dictionary<string, DataValue> _dataKeys;
 
-    public RelewisePropertyConverterContext(IPublishedProperty property, string culture, Dictionary<string, DataValue> dataKeys)
+    internal RelewisePropertyConverterContext(IPublishedProperty property, string culture, Dictionary<string, DataValue> dataKeys)
     {
         // NOTE: Null-checks - og måske skal den tage imod et objekt, som wrapper disse properties
 

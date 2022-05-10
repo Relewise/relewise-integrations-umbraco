@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Relewise.Client;
 using Relewise.Integrations.Umbraco.Controllers;
 using Relewise.Integrations.Umbraco.Dashboards;
+using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Integrations.Umbraco.Services;
@@ -58,8 +59,6 @@ public static class UmbracoBuilderExtensions
         builder.Services.AddSingleton<IRelewisePropertyValueConverter, RichTextEditorPropertyValueConverter>();
         builder.Services.AddSingleton<IRelewisePropertyValueConverter, NestedContentPropertyValueConverter>();
 
-        // NOTE: Kunne evt. give mening at man via Builderen/options kan tilføje flere converters
-
         builder.Services.AddSingleton<ITracker>(new Tracker(relewiseConfiguration.DatasetId, relewiseConfiguration.ApiKey));
         builder.Services.AddSingleton<IRecommender>(new Recommender(relewiseConfiguration.DatasetId, relewiseConfiguration.ApiKey));
 
@@ -99,7 +98,7 @@ public class RelewiseConfigurationBuilder
 
     public RelewiseConfigurationBuilder UseMapping(Action<RelewiseMappingConfiguration> options)
     {
-        // NOTE: Null check
+        if (options == null) throw new ArgumentNullException(nameof(options));
 
         options.Invoke(MappingConfiguration);
 
@@ -113,9 +112,12 @@ public class RelewiseMappingConfiguration
 
     public RelewiseMappingConfiguration AutoMapping(params string[] docTypes)
     {
-        // NOTE: Null check - samt skip elementer som er null/empty
+        if (docTypes == null) throw new ArgumentNullException(nameof(docTypes));
 
-        AutoMappedDocTypes = docTypes.Distinct().ToHashSet(StringComparer.OrdinalIgnoreCase);
+        AutoMappedDocTypes = docTypes
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         return this;
     }
