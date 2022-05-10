@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
+using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
 using Language = Relewise.Client.DataTypes.Language;
 
 namespace Relewise.Integrations.Umbraco.Services;
@@ -46,8 +45,8 @@ public class ExportContentService : IExportContentService
         ContentUpdate[] contentUpdates = contents
             .Select(x => _contentMapper.Map(contentCache.GetById(x.Id), version.GetValueOrDefault()))
             .WhereNotNull()
-            .ToArray()!;
-        await _tracker.TrackAsync(contentUpdates, CancellationToken.None);
+            .ToArray();
+        await _tracker.TrackAsync(contentUpdates);
 
         await _tracker.TrackAsync(new ContentAdministrativeAction(
             Language.Undefined,

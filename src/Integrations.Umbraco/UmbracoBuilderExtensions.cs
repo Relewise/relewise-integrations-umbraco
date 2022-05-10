@@ -6,7 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Relewise.Client;
-using Relewise.Client.Search;
 using Relewise.Integrations.Umbraco.Controllers;
 using Relewise.Integrations.Umbraco.Dashboards;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
@@ -26,9 +25,10 @@ public static class UmbracoBuilderExtensions
 {
     public static IUmbracoBuilder AddRelewise(this IUmbracoBuilder builder, Action<RelewiseConfigurationBuilder> options)
     {
-        // NOTE: Null check
+        if (builder == null) throw new ArgumentNullException(nameof(builder));
+        if (options == null) throw new ArgumentNullException(nameof(options));
 
-        IConfigurationSection relewiseSection = builder.Config.GetRequiredSection("Relewise");
+        IConfigurationSection relewiseSection = builder.Config.GetSection("Relewise");
 
         var datasetId = Guid.Parse(relewiseSection["DatasetId"]);
         var apiKey = relewiseSection["ApiKey"];
@@ -62,7 +62,6 @@ public static class UmbracoBuilderExtensions
 
         builder.Services.AddSingleton<ITracker>(new Tracker(relewiseConfiguration.DatasetId, relewiseConfiguration.ApiKey));
         builder.Services.AddSingleton<IRecommender>(new Recommender(relewiseConfiguration.DatasetId, relewiseConfiguration.ApiKey));
-        builder.Services.AddSingleton<ISearcher>(new Searcher(relewiseConfiguration.DatasetId, relewiseConfiguration.ApiKey));
 
         builder.AddNotificationHandler<ContentPublishedNotification, RelewiseContentPublishedNotificationHandler>();
         builder.AddNotificationHandler<ContentUnpublishedNotification, RelewiseContentUnpublishedNotificationHandler>();
@@ -73,7 +72,7 @@ public static class UmbracoBuilderExtensions
 
         builder.Services.Configure<UmbracoPipelineOptions>(umbPipOptions =>
         {
-            umbPipOptions.AddFilter(new UmbracoPipelineFilter(nameof(DashboardApiController))
+            umbPipOptions.AddFilter(new UmbracoPipelineFilter(nameof(RelewiseDashboardApiController))
             {
                 Endpoints = app => app.UseEndpoints(endpoints =>
                 {
@@ -82,7 +81,7 @@ public static class UmbracoBuilderExtensions
                     string backOfficeArea = Constants.Web.Mvc.BackOfficePathSegment;
 
                     var rootSegment = $"{globalSettings.GetUmbracoMvcArea(hostingEnvironment)}/{backOfficeArea}";
-                    endpoints.MapUmbracoRoute<DashboardApiController>(
+                    endpoints.MapUmbracoRoute<RelewiseDashboardApiController>(
                         rootSegment: rootSegment,
                         areaName: "Relewise",
                         prefixPathSegment: "Relewise");
