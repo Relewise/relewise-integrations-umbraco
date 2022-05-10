@@ -7,7 +7,7 @@
 		<RootNamespace>Relewise.Integrations.Umbraco</RootNamespace>
 		<Title>Relewise integration for Umbraco</Title>
 		<Description>An extension for Umbraco CMS allowing easy content export to Relewise</Description>
-		<PackageIconUrl></PackageIconUrl>
+		<PackageIcon>logo.png</PackageIcon>
 		<PackageTags>Relewise, Umbraco 9</PackageTags>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<License>http://opensource.org/licenses/MIT</License>
@@ -42,5 +42,9 @@
 			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
 			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
 		</Content>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="logo.png" Pack="true" PackagePath=""/>
 	</ItemGroup>
 </Project>
