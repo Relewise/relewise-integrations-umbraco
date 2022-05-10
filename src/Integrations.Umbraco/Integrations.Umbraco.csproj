@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net5.0</TargetFramework>
 		<Nullable>enable</Nullable>
+		<LangVersion>10</LangVersion>
 		<AssemblyName>Relewise.Integrations.Umbraco</AssemblyName>
 		<RootNamespace>Relewise.Integrations.Umbraco</RootNamespace>
 		<Title>Relewise integration for Umbraco</Title>
@@ -20,10 +21,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Relewise.Client" Version="1.10.0" />
-		<PackageReference Include="Umbraco.Cms.Web.Website" version="9.0.1" />
-		<PackageReference Include="Umbraco.Cms.Web.BackOffice" version="9.0.1" />
-		<PackageReference Include="Umbraco.Cms.Web.Common" version="9.0.1" />
+		<PackageReference Include="Relewise.Client" Version="[1.9.4,2)" />
+		<PackageReference Include="Umbraco.Cms.Web.BackOffice" version="[9.0.0,10)" />
+		<PackageReference Include="Umbraco.Cms.Web.Common" version="[9.0.0,10)" />
 	</ItemGroup>
 
 	<ItemGroup>
