@@ -17,7 +17,7 @@ using Language = Relewise.Client.DataTypes.Language;
 
 namespace Relewise.Integrations.Umbraco.Services;
 
-public class ExportContentService : IExportContentService
+internal class ExportContentService : IExportContentService
 {
     private readonly IContentMapper _contentMapper;
     private readonly IUmbracoContextFactory _umbracoContextFactory;
@@ -32,28 +32,28 @@ public class ExportContentService : IExportContentService
         _contentService = contentService;
     }
 
-    public async Task Export(IContent[] contents, long? version = null)
+    public async Task Export(ExportContent exportContent, CancellationToken token)
     {
-        if (contents.Length == 0)
+        if (exportContent == null) throw new ArgumentNullException(nameof(exportContent));
+        if (exportContent.Contents.Length == 0)
             return;
 
         using UmbracoContextReference umbracoContextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
         IPublishedContentCache contentCache = umbracoContextReference.UmbracoContext.Content;
 
-        version ??= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        ContentUpdate[] contentUpdates = contents
-            .Select(x => _contentMapper.Map(contentCache.GetById(x.Id), version.GetValueOrDefault()))
+        ContentUpdate[] contentUpdates = exportContent.Contents
+            .Select(x => _contentMapper.Map(contentCache.GetById(x.Id), exportContent.Version))
             .WhereNotNull()
             .ToArray();
-        await _tracker.TrackAsync(contentUpdates);
+        await _tracker.TrackAsync(token, contentUpdates);
 
         await _tracker.TrackAsync(new ContentAdministrativeAction(
             Language.Undefined,
             Currency.Undefined,
             new FilterCollection(new ContentIdFilter(contentUpdates.Select(x => x.Content.Id))),
-            ContentAdministrativeAction.UpdateKind.EnableInRecommendations));
+            ContentAdministrativeAction.UpdateKind.EnableInRecommendations), token);
     }
 
     public async Task ExportAll(CancellationToken token)
@@ -75,7 +75,7 @@ public class ExportContentService : IExportContentService
         {
             long version = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-            await Export(contents, version);
+            await Export(new ExportContent(contents, version), token);
 
             await _tracker.TrackAsync(new ContentAdministrativeAction(
                 Language.Undefined,

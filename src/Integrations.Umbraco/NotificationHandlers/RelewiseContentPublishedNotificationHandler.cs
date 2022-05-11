@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Notifications;
@@ -16,6 +17,6 @@ internal class RelewiseContentPublishedNotificationHandler : INotificationHandle
 
     public void Handle(ContentPublishedNotification notification)
     {
-        _exportContentService.Export(notification.PublishedEntities.ToArray());
+        _exportContentService.Export(new ExportContent(notification.PublishedEntities.ToArray()), CancellationToken.None);
     }
 }

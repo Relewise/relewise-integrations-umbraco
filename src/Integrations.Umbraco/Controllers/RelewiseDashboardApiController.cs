@@ -11,7 +11,7 @@ namespace Relewise.Integrations.Umbraco.Controllers;
 [JsonCamelCaseFormatter]
 [PluginController("Relewise")]
 [Route("DashboardApi")]
-public class RelewiseDashboardApiController : UmbracoAuthorizedController
+internal class RelewiseDashboardApiController : UmbracoAuthorizedController
 {
     private readonly RelewiseConfiguration _configuration;
     private readonly IExportContentService _exportContent;

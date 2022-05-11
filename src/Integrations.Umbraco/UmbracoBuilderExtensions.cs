@@ -8,7 +8,6 @@ using Microsoft.Extensions.Options;
 using Relewise.Client;
 using Relewise.Integrations.Umbraco.Controllers;
 using Relewise.Integrations.Umbraco.Dashboards;
-using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Integrations.Umbraco.Services;
@@ -110,11 +109,11 @@ public class RelewiseMappingConfiguration
 {
     internal HashSet<string>? AutoMappedDocTypes { get; private set; }
 
-    public RelewiseMappingConfiguration AutoMapping(params string[] docTypes)
+    public RelewiseMappingConfiguration AutoMapping(params string[] contentTypeAliases)
     {
-        if (docTypes == null) throw new ArgumentNullException(nameof(docTypes));
+        if (contentTypeAliases == null) throw new ArgumentNullException(nameof(contentTypeAliases));
 
-        AutoMappedDocTypes = docTypes
+        AutoMappedDocTypes = contentTypeAliases
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
