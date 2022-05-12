@@ -31,11 +31,11 @@ internal class ExportContentService : IExportContentService
         _contentService = contentService;
     }
 
-    public async Task Export(ExportContent exportContent, CancellationToken token)
+    public async Task<ExportContentResult> Export(ExportContent exportContent, CancellationToken token)
     {
         if (exportContent == null) throw new ArgumentNullException(nameof(exportContent));
         if (exportContent.Contents.Length == 0)
-            return;
+            return new ExportContentResult();
 
         using UmbracoContextReference umbracoContextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
@@ -53,9 +53,11 @@ internal class ExportContentService : IExportContentService
             Currency.Undefined,
             new FilterCollection(new ContentIdFilter(contentUpdates.Select(x => x.Content.Id))),
             ContentAdministrativeAction.UpdateKind.EnableInRecommendations), token);
+
+        return new ExportContentResult();
     }
 
-    public async Task ExportAll(CancellationToken token)
+    public async Task<ExportAllContentResult> ExportAll(ExportAllContent exportAllContent, CancellationToken token)
     {
         var allContent = new List<IContent>();
 
@@ -83,5 +85,7 @@ internal class ExportContentService : IExportContentService
                 ContentAdministrativeAction.UpdateKind.PermanentlyDelete), 
                 token);
         }
+
+        return new ExportAllContentResult();
     }
 }

@@ -22,7 +22,7 @@ internal class RelewiseDashboardApiController : UmbracoAuthorizedController
 
     public async Task<IActionResult> ContentExport(CancellationToken token)
     {
-        await _exportContent.ExportAll(token);
+        await _exportContent.ExportAll(new ExportAllContent(), token);
 
         return Ok();
     }
