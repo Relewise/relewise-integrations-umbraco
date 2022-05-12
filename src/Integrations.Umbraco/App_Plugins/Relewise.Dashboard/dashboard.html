@@ -1,8 +1,5 @@
 ﻿<div ng-app id="relewiseDashboard" ng-controller="relewiseDashboardController as vm" class="relewise-dashboard">
-    <umb-box style="position: relative;">
-        <!--<div style="position: absolute; background-color: black; opacity: 0.1; top: 0; left: 0; right: 0; bottom: 0;" ng-if="vm.buttonState === 'busy'"></div>
-        <umb-load-indicator ng-if="vm.buttonState === 'busy'"></umb-load-indicator>-->
-
+    <umb-box>
         <umb-box-content>
             <h2>Relewise</h2>
             <p>
@@ -14,31 +11,8 @@
                     Export all content to Relewise
                 </button>
             </div>
-            <div style="color: red; font-weight: bold" ng-if="vm.errorMessage">{{vm.errorMessage}}</div>
-            <div style="color: green; font-weight: bold" ng-if="vm.success">{{vm.success}}</div>
-
-        </umb-box-content>
-    </umb-box>
-
-    <umb-box>
-        <umb-box-content>
-            <h4>Relewise Developer Settings</h4>
-
-            <div class="configuration-dashboard-property">
-                <label for="dataset">Dataset Id</label><br />
-                <input type="text" id="dataset" class="input-field" ng-model="vm.configuration.datasetId" placeholder="Dataset Id" ng-disabled="vm.exportLoading" readonly="readonly" />
-            </div>
-
-            <div class="configuration-dashboard-property">
-                <label for="api-key">API key</label><br />
-                <input type="text" id="api-key" class="input-field" ng-model="vm.configuration.apiKey" placeholder="API Key" ng-disabled="vm.buttonState" readonly="readonly" />
-            </div>
-
-            <!--<div>
-                <button class="btn btn-primary" ng-click="vm.exportContent()">
-                    Save?
-                </button>
-            </div>-->
+            <div class="export-error" ng-if="vm.errorMessage">{{vm.errorMessage}}</div>
+            <div class="export-success" ng-if="vm.success">{{vm.success}}</div>
 
         </umb-box-content>
     </umb-box>

@@ -1,3 +1,12 @@
 ﻿.configuration-dashboard-property input {
     width: 400px;
 }
+
+.export-success {
+    color: green;
+    font-weight: bold;
+}
+.export-error {
+    color: red;
+    font-weight: bold;
+}

@@ -7,7 +7,6 @@ using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
-using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PublishedCache;
@@ -42,10 +41,10 @@ internal class ExportContentService : IExportContentService
 
         IPublishedContentCache contentCache = umbracoContextReference.UmbracoContext.Content;
 
-
         ContentUpdate[] contentUpdates = exportContent.Contents
-            .Select(x => _contentMapper.Map(contentCache.GetById(x.Id), exportContent.Version))
-            .WhereNotNull()
+            .Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version)))
+            .Where(x => x.Successful)
+            .Select(x => x.ContentUpdate!)
             .ToArray();
         await _tracker.TrackAsync(token, contentUpdates);
 

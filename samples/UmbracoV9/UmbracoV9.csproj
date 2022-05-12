@@ -6,6 +6,7 @@
 
     <ItemGroup>
 	    <PackageReference Include="Relewise.Client" Version="1.10.0" />
+	    <PackageReference Include="Relewise.Client.Extensions" Version="0.0.1-alpha" />
 	    <PackageReference Include="Relewise.Integrations.Umbraco" Version="0.0.1-alpha" />
         <PackageReference Include="Umbraco.Cms" Version="9.4.3" />
     </ItemGroup>

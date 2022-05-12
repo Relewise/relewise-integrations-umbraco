@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Relewise.Client;
 using Relewise.Integrations.Umbraco.Controllers;
 using Relewise.Integrations.Umbraco.Dashboards;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
@@ -28,20 +26,12 @@ public static class UmbracoBuilderExtensions
         if (builder == null) throw new ArgumentNullException(nameof(builder));
         if (options == null) throw new ArgumentNullException(nameof(options));
 
-        IConfigurationSection relewiseSection = builder.Config.GetSection("Relewise");
-
-        var datasetId = Guid.Parse(relewiseSection["DatasetId"]);
-        var apiKey = relewiseSection["ApiKey"];
-
         var config = new RelewiseConfigurationBuilder();
         options.Invoke(config);
 
         builder.Services.AddSingleton(config.MappingConfiguration);
 
-        var relewiseConfiguration = new RelewiseConfiguration(
-            datasetId,
-            apiKey,
-            config.MappingConfiguration.AutoMappedDocTypes?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>());
+        var relewiseConfiguration = new RelewiseConfiguration(config.MappingConfiguration.AutoMappedDocTypes?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>());
         builder.Services.AddSingleton(relewiseConfiguration);
 
         builder.Services.AddSingleton<IContentMapper, RelewiseContentMapper>();
@@ -58,9 +48,6 @@ public static class UmbracoBuilderExtensions
         builder.Services.AddSingleton<IRelewisePropertyValueConverter, RichTextEditorPropertyValueConverter>();
         builder.Services.AddSingleton<IRelewisePropertyValueConverter, NestedContentPropertyValueConverter>();
 
-        builder.Services.AddSingleton<ITracker>(new Tracker(relewiseConfiguration.DatasetId, relewiseConfiguration.ApiKey));
-        builder.Services.AddSingleton<IRecommender>(new Recommender(relewiseConfiguration.DatasetId, relewiseConfiguration.ApiKey));
-
         builder.AddNotificationHandler<ContentPublishedNotification, RelewiseContentPublishedNotificationHandler>();
         builder.AddNotificationHandler<ContentUnpublishedNotification, RelewiseContentUnpublishedNotificationHandler>();
         builder.AddNotificationHandler<ContentDeletedNotification, RelewiseContentDeletedNotificationNotificationHandler>();
@@ -76,7 +63,7 @@ public static class UmbracoBuilderExtensions
                 {
                     GlobalSettings globalSettings = app.ApplicationServices.GetRequiredService<IOptions<GlobalSettings>>().Value;
                     IHostingEnvironment hostingEnvironment = app.ApplicationServices.GetRequiredService<IHostingEnvironment>();
-                    string backOfficeArea = Constants.Web.Mvc.BackOfficePathSegment;
+                    string backOfficeArea = global::Umbraco.Cms.Core.Constants.Web.Mvc.BackOfficePathSegment;
 
                     var rootSegment = $"{globalSettings.GetUmbracoMvcArea(hostingEnvironment)}/{backOfficeArea}";
                     endpoints.MapUmbracoRoute<RelewiseDashboardApiController>(

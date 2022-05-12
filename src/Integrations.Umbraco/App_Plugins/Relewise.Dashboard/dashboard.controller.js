@@ -16,11 +16,6 @@
     }
 
     function init() {
-        relewiseDashboardResources.getConfiguration().then(response => {
-            if (response.status === 200) {
-                vm.configuration = response.data;
-            }
-        });
     }
 
     init();

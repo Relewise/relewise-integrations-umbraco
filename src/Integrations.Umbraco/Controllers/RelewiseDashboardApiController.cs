@@ -13,18 +13,11 @@ namespace Relewise.Integrations.Umbraco.Controllers;
 [Route("DashboardApi")]
 internal class RelewiseDashboardApiController : UmbracoAuthorizedController
 {
-    private readonly RelewiseConfiguration _configuration;
     private readonly IExportContentService _exportContent;
 
-    public RelewiseDashboardApiController(RelewiseConfiguration configuration, IExportContentService exportContent)
+    public RelewiseDashboardApiController(IExportContentService exportContent)
     {
-        _configuration = configuration;
         _exportContent = exportContent;
-    }
-
-    public IActionResult GetConfiguration()
-    {
-        return Ok(new { _configuration.ApiKey, _configuration.DatasetId });
     }
 
     public async Task<IActionResult> ContentExport(CancellationToken token)

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Extensions;
@@ -47,6 +48,8 @@ namespace UmbracoV9
         /// </remarks>
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddRelewise(options => options.ReadFromConfiguration(_config));
+
 #pragma warning disable IDE0022 // Use expression body for methods
             services.AddUmbraco(_env, _config)
                 .AddBackOffice()
