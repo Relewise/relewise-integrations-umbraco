@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core;
@@ -45,6 +46,7 @@ internal class RelewiseContentMapper : IContentMapper
         mappedProperties.Add(Constants.VersionKey, content.Version);
         mappedProperties.Add("ContentTypeAlias", content.PublishedContent.ContentType.Alias);
         mappedProperties.Add("Url", content.PublishedContent.Url());
+        mappedProperties.Add("CreatedAt", new DateTimeOffset(content.PublishedContent.CreateDate).ToUnixTimeSeconds());
 
         var contentUpdate = new ContentUpdate(new Content(content.PublishedContent.Id.ToString())
         {

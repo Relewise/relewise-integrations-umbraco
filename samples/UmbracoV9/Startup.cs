@@ -1,9 +1,11 @@
 using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
 using Umbraco.Cms.Core.DependencyInjection;
@@ -48,6 +50,7 @@ namespace UmbracoV9
         /// </remarks>
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IRelewiseUserLocator, RelewiseUserLocator>();
             services.AddRelewise(options => options.ReadFromConfiguration(_config));
 
 #pragma warning disable IDE0022 // Use expression body for methods
@@ -60,7 +63,6 @@ namespace UmbracoV9
                         .AutoMapping("LandingPage", "ContentPage")))
                 .Build();
 #pragma warning restore IDE0022 // Use expression body for methods
-
         }
 
         /// <summary>
@@ -89,6 +91,14 @@ namespace UmbracoV9
                     u.UseBackOfficeEndpoints();
                     u.UseWebsiteEndpoints();
                 });
+        }
+    }
+
+    public class RelewiseUserLocator : IRelewiseUserLocator
+    {
+        public Task<User> GetUser()
+        {
+            return Task.FromResult(User.Anonymous());
         }
     }
 }

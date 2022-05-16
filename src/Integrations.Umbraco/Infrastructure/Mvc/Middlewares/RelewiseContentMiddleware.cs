@@ -13,11 +13,13 @@ internal class RelewiseContentMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly RelewiseConfiguration _configuration;
+    private readonly IRelewiseUserLocator _userLocator;
 
-    public RelewiseContentMiddleware(RequestDelegate next, RelewiseConfiguration configuration)
+    public RelewiseContentMiddleware(RequestDelegate next, RelewiseConfiguration configuration, IRelewiseUserLocator userLocator)
     {
         _next = next;
         _configuration = configuration;
+        _userLocator = userLocator;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -32,11 +34,8 @@ internal class RelewiseContentMiddleware
             {
                 ITracker tracker = context.RequestServices.GetRequiredService<ITracker>();
 
-                // NOTE: Her skal vi selvfølgelig have ét eller andet ind, som - uanset hvor vi er - kan vi tilgå en User
-                //  -> det kunne evt. være noget Middleware
-                //  -> men i hvert fald skal det være noget, som kan klistre instansen på HttpContext
-
-                await tracker.TrackAsync(new ContentView(User.Anonymous(), content?.Id.ToString()));
+                User user = await _userLocator.GetUser();
+                await tracker.TrackAsync(new ContentView(user, content?.Id.ToString()));
             }
         }
 
