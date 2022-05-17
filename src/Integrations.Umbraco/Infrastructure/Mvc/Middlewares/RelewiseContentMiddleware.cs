@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
@@ -35,7 +38,18 @@ internal class RelewiseContentMiddleware
                 ITracker tracker = context.RequestServices.GetRequiredService<ITracker>();
 
                 User user = await _userLocator.GetUser();
-                await tracker.TrackAsync(new ContentView(user, content?.Id.ToString()));
+                try
+                {
+                    await tracker.TrackAsync(new ContentView(user, content?.Id.ToString()));
+                }
+                catch (HttpRequestException e)
+                {
+                    if (e.StatusCode == HttpStatusCode.NotFound)
+                        throw new InvalidOperationException("Could not find dataset id in Relewise");
+
+                    throw;
+                }
+
             }
         }
 
