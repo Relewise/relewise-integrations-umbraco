@@ -45,7 +45,7 @@ internal class RelewiseContentMiddleware
                 catch (HttpRequestException e)
                 {
                     if (e.StatusCode == HttpStatusCode.NotFound)
-                        throw new InvalidOperationException("Could not find dataset id in Relewise");
+                        throw new InvalidOperationException($"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com", e);
 
                     throw;
                 }

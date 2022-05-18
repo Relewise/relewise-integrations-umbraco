@@ -61,12 +61,12 @@ internal class ExportContentService : IExportContentService
     {
         var allContent = new List<IContent>();
 
-        var rootContent = _contentService.GetRootContent().ToList();
+        List<IContent> rootContent = _contentService.GetRootContent().ToList();
         allContent.AddRange(rootContent);
 
-        foreach (var content in rootContent)
+        foreach (IContent content in rootContent)
         {
-            var descendants = _contentService.GetPagedDescendants(content.Id, 0, int.MaxValue, out _).ToList();
+            List<IContent> descendants = _contentService.GetPagedDescendants(content.Id, 0, int.MaxValue, out _).ToList();
             allContent.AddRange(descendants);
         }
 

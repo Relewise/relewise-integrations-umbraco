@@ -3,7 +3,6 @@
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
 		<Nullable>enable</Nullable>
-		<LangVersion>10</LangVersion>
 		<AssemblyName>Relewise.Integrations.Umbraco</AssemblyName>
 		<RootNamespace>Relewise.Integrations.Umbraco</RootNamespace>
 		<Title>Relewise integration for Umbraco</Title>
