@@ -49,7 +49,6 @@ internal class RelewiseContentMiddleware
 
                     throw;
                 }
-
             }
         }
 
