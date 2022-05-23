@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Relewise.Integrations.Umbraco.Services;
 
-internal interface IExportContentService
+public interface IExportContentService
 {
     Task<ExportContentResult> Export(ExportContent exportContent, CancellationToken token);
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core;
+using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
 
@@ -50,11 +51,31 @@ internal class RelewiseContentMapper : IContentMapper
 
         var contentUpdate = new ContentUpdate(new Content(content.PublishedContent.Id.ToString())
         {
-            DisplayName = new Multilingual(culturesToPublish.Select(x => new Multilingual.Value(x, content.PublishedContent.Name)).ToList()),
-            Data = mappedProperties
+            DisplayName = MapDisplayName(content.PublishedContent, culturesToPublish),
+            Data = mappedProperties,
+            CategoryPaths = GetCategoryPaths(content, culturesToPublish)
         });
 
         return new MapContentResult(contentUpdate);
+    }
+
+    private static List<CategoryPath>? GetCategoryPaths(MapContent content, List<string> culturesToPublish)
+    {
+        if (content.PublishedContent.Parent == null)
+            return null;
+
+        return new List<CategoryPath>
+        {
+            new(content.PublishedContent
+                .Breadcrumbs(andSelf: false)
+                .Select(x => new CategoryNameAndId(x.Id.ToString(), MapDisplayName(x, culturesToPublish)))
+                .ToArray())
+        };
+    }
+
+    private static Multilingual MapDisplayName(IPublishedContent content, List<string> culturesToPublish)
+    {
+        return new Multilingual(culturesToPublish.Select(x => new Multilingual.Value(x, content.Name)).ToList());
     }
 
     private static string GetDefaultCulture(UmbracoContextReference umbracoContextReference)

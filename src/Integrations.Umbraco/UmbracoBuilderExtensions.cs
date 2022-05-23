@@ -15,7 +15,6 @@ using Umbraco.Cms.Core.Hosting;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 using Umbraco.Extensions;
-using Constants = Umbraco.Cms.Core.Constants;
 
 namespace Relewise.Integrations.Umbraco;
 
@@ -47,6 +46,8 @@ public static class UmbracoBuilderExtensions
         builder.Services.AddSingleton<IRelewisePropertyValueConverter, TagsPropertyValueConverter>();
         builder.Services.AddSingleton<IRelewisePropertyValueConverter, RichTextEditorPropertyValueConverter>();
         builder.Services.AddSingleton<IRelewisePropertyValueConverter, NestedContentPropertyValueConverter>();
+        builder.Services.AddSingleton<IRelewisePropertyValueConverter, MediaPickerValueConverter>();
+        builder.Services.AddSingleton<IRelewisePropertyValueConverter, ImageCropperValueConverter>();
 
         builder.AddNotificationHandler<ContentPublishedNotification, RelewiseContentPublishedNotificationHandler>();
         builder.AddNotificationHandler<ContentUnpublishedNotification, RelewiseContentUnpublishedNotificationHandler>();
@@ -57,7 +58,7 @@ public static class UmbracoBuilderExtensions
 
         builder.Services.Configure<UmbracoPipelineOptions>(umbPipOptions =>
         {
-            umbPipOptions.AddFilter(new UmbracoPipelineFilter(nameof(RelewiseDashboardApiController))
+            umbPipOptions.AddFilter(new UmbracoPipelineFilter(nameof(DashboardApiController))
             {
                 Endpoints = app => app.UseEndpoints(endpoints =>
                 {
@@ -66,7 +67,7 @@ public static class UmbracoBuilderExtensions
                     string backOfficeArea = global::Umbraco.Cms.Core.Constants.Web.Mvc.BackOfficePathSegment;
 
                     var rootSegment = $"{globalSettings.GetUmbracoMvcArea(hostingEnvironment)}/{backOfficeArea}";
-                    endpoints.MapUmbracoRoute<RelewiseDashboardApiController>(
+                    endpoints.MapUmbracoRoute<DashboardApiController>(
                         rootSegment: rootSegment,
                         areaName: "Relewise",
                         prefixPathSegment: "Relewise");
@@ -75,36 +76,5 @@ public static class UmbracoBuilderExtensions
         });
 
         return builder;
-    }
-}
-
-public class RelewiseConfigurationBuilder
-{
-    internal RelewiseMappingConfiguration MappingConfiguration { get; } = new();
-
-    public RelewiseConfigurationBuilder UseMapping(Action<RelewiseMappingConfiguration> options)
-    {
-        if (options == null) throw new ArgumentNullException(nameof(options));
-
-        options.Invoke(MappingConfiguration);
-
-        return this;
-    }
-}
-
-public class RelewiseMappingConfiguration
-{
-    internal HashSet<string>? AutoMappedDocTypes { get; private set; }
-
-    public RelewiseMappingConfiguration AutoMapping(params string[] contentTypeAliases)
-    {
-        if (contentTypeAliases == null) throw new ArgumentNullException(nameof(contentTypeAliases));
-
-        AutoMappedDocTypes = contentTypeAliases
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        return this;
     }
 }

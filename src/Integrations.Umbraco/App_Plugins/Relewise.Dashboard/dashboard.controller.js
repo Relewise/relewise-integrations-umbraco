@@ -1,10 +1,10 @@
 ﻿function relewiseDashboardController(relewiseDashboardResources) {
     var vm = this;
     vm.exportLoading = false;
-    vm.errorMessage = "";
-    vm.success = "";
     vm.exportContent = function () {
         vm.exportLoading = true;
+        vm.errorMessage = "";
+        vm.success = "";
         relewiseDashboardResources.exportContent().then(() => {
             vm.exportLoading = false;
             vm.success = "Content was successfully exported to Relewise";

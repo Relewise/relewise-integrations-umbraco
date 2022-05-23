@@ -3,7 +3,7 @@ using Umbraco.Cms.Core.Models;
 
 namespace Relewise.Integrations.Umbraco.Services;
 
-internal class ExportContent
+public class ExportContent
 {
     private readonly long? _version;
 

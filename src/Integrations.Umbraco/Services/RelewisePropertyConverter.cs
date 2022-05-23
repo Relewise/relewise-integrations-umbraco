@@ -45,7 +45,14 @@ internal class RelewisePropertyConverter : IRelewisePropertyConverter
                 {
                     if (values.Count() > 1)
                     {
-                        dataKeys.Add(values.Key, new Multilingual(values.Select(x => new Multilingual.Value(x.Lang, x.Value)).ToArray()));
+                        if (values.First().Value.Type == DataValue.DataValueTypes.StringList)
+                        {
+                            dataKeys.Add(values.Key, new MultilingualCollection(values.Select(x => new MultilingualCollection.Value(x.Lang, x.Value)).ToArray()));
+                        }
+                        else
+                        {
+                            dataKeys.Add(values.Key, new Multilingual(values.Select(x => new Multilingual.Value(x.Lang, x.Value)).ToArray()));
+                        }
                     }
                     else
                     {
