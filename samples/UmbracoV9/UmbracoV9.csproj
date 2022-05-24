@@ -28,4 +28,10 @@
         <RazorCompileOnBuild>false</RazorCompileOnBuild>
         <RazorCompileOnPublish>false</RazorCompileOnPublish>
     </PropertyGroup>
+
+    <ItemGroup>
+	    <EmbeddedResource Include="Application\Infrastructure\Migrations\package.zip">
+		    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	    </EmbeddedResource>
+    </ItemGroup>
 </Project>
