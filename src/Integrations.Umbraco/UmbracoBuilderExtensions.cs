@@ -25,6 +25,8 @@ public static class UmbracoBuilderExtensions
         if (builder == null) throw new ArgumentNullException(nameof(builder));
         if (options == null) throw new ArgumentNullException(nameof(options));
 
+        // builder.Services.AddRelewise() => tilføj en named-client til tracker-integrationer (med high-timeout)
+
         var config = new RelewiseConfigurationBuilder();
         options.Invoke(config);
 

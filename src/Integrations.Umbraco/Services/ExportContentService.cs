@@ -23,7 +23,7 @@ internal class ExportContentService : IExportContentService
     private readonly ITracker _tracker;
     private readonly IContentService _contentService;
 
-    public ExportContentService(IContentMapper contentMapper, IUmbracoContextFactory umbracoContextFactory, ITracker tracker, IContentService contentService)
+    public ExportContentService(IContentMapper contentMapper, IUmbracoContextFactory umbracoContextFactory, IRelewiseClientFactory relewiseClientFactory, IContentService contentService)
     {
         _contentMapper = contentMapper;
         _umbracoContextFactory = umbracoContextFactory;
