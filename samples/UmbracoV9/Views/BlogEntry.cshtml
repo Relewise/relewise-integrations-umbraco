@@ -1,0 +1,10 @@
+﻿@using Umbraco.Cms.Web.Common.PublishedModels;
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
+@using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+
+<div class="container">
+    @await Html.PartialAsync("~/Views/Partials/Blocks/_Splash.cshtml", Model)
+    
+    @Html.Raw(@Model.Value("text"))
+
+</div>

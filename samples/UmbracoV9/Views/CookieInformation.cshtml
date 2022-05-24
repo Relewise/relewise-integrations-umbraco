@@ -1,0 +1,10 @@
+﻿@using Umbraco.Cms.Web.Common.PublishedModels;
+@using UmbracoV9.Application.Infrastructure.Extensions
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
+@using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+
+<div class="container">
+    <h1>@Model.GetTitle()</h1>
+
+    <div id="update-cookie-consent"></div>
+</div>

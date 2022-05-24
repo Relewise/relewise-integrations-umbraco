@@ -1,0 +1,27 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
+@using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+
+<div class="container">
+
+    @await Html.PartialAsync("~/Views/Partials/Blocks/_Splash.cshtml", Model)
+
+
+    <div class="row m-t-30">
+        @foreach (var block in (Model.Value<IEnumerable<IPublishedElement>>("blocks") ?? Array.Empty<IPublishedContent>()))
+        {
+            IPublishedContent blockSplashImage = block.Value<IPublishedContent>("splashImage");
+            <div class="col-4">
+                <h3 class="m-b-5">@(block.Value<string>("headline"))</h3>
+                
+                @if (blockSplashImage != null)
+                {
+                    <img src="@blockSplashImage.GetCropUrl()" style="max-width: 100%;" />
+                }
+                <p>@(block.Value<string>("text"))</p>
+                
+            </div>
+        }
+    </div>
+    
+    @Html.Raw(Model.Value<string>("content"))
+</div>

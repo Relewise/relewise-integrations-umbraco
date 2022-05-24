@@ -1,15 +1,17 @@
 using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Extensions;
+using UmbracoV9.Application;
+using UmbracoV9.Application.Api;
+using UmbracoV9.Application.Infrastructure.CookieConsent;
 
 namespace UmbracoV9
 {
@@ -50,6 +52,8 @@ namespace UmbracoV9
         /// </remarks>
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHttpContextAccessor();
+            services.AddSingleton<CookieConsent>();
             services.AddSingleton<IRelewiseUserLocator, RelewiseUserLocator>();
             services.AddRelewise(options => options.ReadFromConfiguration(_config));
 
@@ -60,7 +64,7 @@ namespace UmbracoV9
                 .AddComposers()
                 .AddRelewise(options => options
                     .UseMapping(map => map
-                        .AutoMapping("LandingPage", "ContentPage")))
+                        .AutoMapping("LandingPage", "ContentPage", "BlogEntry")))
                 .Build();
 #pragma warning restore IDE0022 // Use expression body for methods
         }
@@ -76,6 +80,11 @@ namespace UmbracoV9
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseRouting();
+            app.UseEndpoints(c => c
+                .MapContentRoutes()
+                .MapNewsletterRoutes());
 
             app.UseUmbraco()
                 .WithMiddleware(u =>
@@ -94,11 +103,5 @@ namespace UmbracoV9
         }
     }
 
-    public class RelewiseUserLocator : IRelewiseUserLocator
-    {
-        public Task<User> GetUser()
-        {
-            return Task.FromResult(User.Anonymous());
-        }
-    }
+
 }

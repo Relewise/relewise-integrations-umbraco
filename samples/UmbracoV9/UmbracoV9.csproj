@@ -1,12 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
+        <nullable>enable</nullable>
     </PropertyGroup>
 
     <ItemGroup>
 	    <PackageReference Include="Relewise.Client" Version="1.10.0" />
-	    <PackageReference Include="Relewise.Client.Extensions" Version="0.0.1-alpha" />
+	    <PackageReference Include="Relewise.Client.Extensions" Version="1.0.0" />
         <PackageReference Include="Umbraco.Cms" Version="9.4.3" />
     </ItemGroup>
 
