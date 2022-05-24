@@ -27,7 +27,7 @@ internal class ExportContentService : IExportContentService
     {
         _contentMapper = contentMapper;
         _umbracoContextFactory = umbracoContextFactory;
-        _tracker = tracker;
+        _tracker = tracker; // NOTE: Erstat ved at depende på IServicesProvider -> hvis vi ikke kan resolve, så gør intet
         _contentService = contentService;
     }
 

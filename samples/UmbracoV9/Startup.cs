@@ -52,10 +52,12 @@ namespace UmbracoV9
         /// </remarks>
         public void ConfigureServices(IServiceCollection services)
         {
+            // TODO: Add comment
+            services.AddRelewise(options => options.ReadFromConfiguration(_config));
+
             services.AddHttpContextAccessor();
             services.AddSingleton<CookieConsent>();
             services.AddSingleton<IRelewiseUserLocator, RelewiseUserLocator>();
-            services.AddRelewise(options => options.ReadFromConfiguration(_config));
 
 #pragma warning disable IDE0022 // Use expression body for methods
             services.AddUmbraco(_env, _config)
