@@ -7,15 +7,10 @@ namespace Relewise.Integrations.Umbraco;
 
 public class RelewiseConfiguration
 {
-    public RelewiseConfiguration(Guid datasetId, string apiKey, HashSet<string> trackableDocTypes)
+    public RelewiseConfiguration(HashSet<string> trackableDocTypes)
     {
-        DatasetId = datasetId;
-        ApiKey = apiKey;
-        TrackableDocTypes = trackableDocTypes;
+        TrackableDocTypes = trackableDocTypes ?? throw new ArgumentNullException(nameof(trackableDocTypes));
     }
-
-    public Guid DatasetId { get; }
-    public string ApiKey { get; }
 
     public HashSet<string> TrackableDocTypes { get; }
 

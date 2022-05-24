@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
@@ -13,16 +16,19 @@ internal class RelewiseContentMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly RelewiseConfiguration _configuration;
+    private readonly IRelewiseUserLocator _userLocator;
 
-    public RelewiseContentMiddleware(RequestDelegate next, RelewiseConfiguration configuration)
+    public RelewiseContentMiddleware(RequestDelegate next, RelewiseConfiguration configuration, IRelewiseUserLocator userLocator)
     {
         _next = next;
         _configuration = configuration;
+        _userLocator = userLocator;
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
         IUmbracoContextFactory umbracoContextFactory = context.RequestServices.GetRequiredService<IUmbracoContextFactory>();
+
         using (UmbracoContextReference umbracoContextReference = umbracoContextFactory.EnsureUmbracoContext())
         {
             IPublishedContent? content = umbracoContextReference.UmbracoContext?.PublishedRequest?.PublishedContent;
@@ -31,7 +37,18 @@ internal class RelewiseContentMiddleware
             {
                 ITracker tracker = context.RequestServices.GetRequiredService<ITracker>();
 
-                await tracker.TrackAsync(new ContentView(User.Anonymous(), content?.Id.ToString()));
+                User user = await _userLocator.GetUser();
+                try
+                {
+                    await tracker.TrackAsync(new ContentView(user, content?.Id.ToString()));
+                }
+                catch (HttpRequestException e)
+                {
+                    if (e.StatusCode == HttpStatusCode.NotFound)
+                        throw new InvalidOperationException($"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com", e);
+
+                    throw;
+                }
             }
         }
 

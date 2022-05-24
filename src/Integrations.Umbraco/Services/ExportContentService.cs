@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
-using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PublishedCache;
@@ -16,7 +16,7 @@ using Language = Relewise.Client.DataTypes.Language;
 
 namespace Relewise.Integrations.Umbraco.Services;
 
-public class ExportContentService : IExportContentService
+internal class ExportContentService : IExportContentService
 {
     private readonly IContentMapper _contentMapper;
     private readonly IUmbracoContextFactory _umbracoContextFactory;
@@ -31,40 +31,42 @@ public class ExportContentService : IExportContentService
         _contentService = contentService;
     }
 
-    public async Task Export(IContent[] contents, long? version = null)
+    public async Task<ExportContentResult> Export(ExportContent exportContent, CancellationToken token)
     {
-        if (contents.Length == 0)
-            return;
+        if (exportContent == null) throw new ArgumentNullException(nameof(exportContent));
+        if (exportContent.Contents.Length == 0)
+            return new ExportContentResult();
 
         using UmbracoContextReference umbracoContextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
         IPublishedContentCache contentCache = umbracoContextReference.UmbracoContext.Content;
 
-        version ??= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-
-        ContentUpdate[] contentUpdates = contents
-            .Select(x => _contentMapper.Map(contentCache.GetById(x.Id), version.GetValueOrDefault()))
-            .WhereNotNull()
+        ContentUpdate[] contentUpdates = exportContent.Contents
+            .Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version)))
+            .Where(x => x.Successful)
+            .Select(x => x.ContentUpdate!)
             .ToArray();
-        await _tracker.TrackAsync(contentUpdates);
+        await _tracker.TrackAsync(token, contentUpdates);
 
         await _tracker.TrackAsync(new ContentAdministrativeAction(
             Language.Undefined,
             Currency.Undefined,
             new FilterCollection(new ContentIdFilter(contentUpdates.Select(x => x.Content.Id))),
-            ContentAdministrativeAction.UpdateKind.EnableInRecommendations));
+            ContentAdministrativeAction.UpdateKind.EnableInRecommendations), token);
+
+        return new ExportContentResult();
     }
 
-    public async Task ExportAll()
+    public async Task<ExportAllContentResult> ExportAll(ExportAllContent exportAllContent, CancellationToken token)
     {
         var allContent = new List<IContent>();
 
-        var rootContent = _contentService.GetRootContent().ToList();
+        List<IContent> rootContent = _contentService.GetRootContent().ToList();
         allContent.AddRange(rootContent);
 
-        foreach (var content in rootContent)
+        foreach (IContent content in rootContent)
         {
-            var descendants = _contentService.GetPagedDescendants(content.Id, 0, int.MaxValue, out _).ToList();
+            List<IContent> descendants = _contentService.GetPagedDescendants(content.Id, 0, int.MaxValue, out _).ToList();
             allContent.AddRange(descendants);
         }
 
@@ -74,13 +76,16 @@ public class ExportContentService : IExportContentService
         {
             long version = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-            await Export(contents, version);
+            await Export(new ExportContent(contents, version), token);
 
             await _tracker.TrackAsync(new ContentAdministrativeAction(
                 Language.Undefined,
                 Currency.Undefined,
                 new FilterCollection(new ContentDataFilter(Constants.VersionKey, new EqualsCondition(version, negated: true), filterOutIfKeyIsNotFound: false)),
-                ContentAdministrativeAction.UpdateKind.PermanentlyDelete));
+                ContentAdministrativeAction.UpdateKind.PermanentlyDelete), 
+                token);
         }
+
+        return new ExportAllContentResult();
     }
 }

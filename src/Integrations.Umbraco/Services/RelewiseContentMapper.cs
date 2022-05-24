@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core;
@@ -21,46 +22,64 @@ internal class RelewiseContentMapper : IContentMapper
         _propertyConverter = propertyConverter;
     }
 
-    public ContentUpdate? Map(IPublishedContent content, long version)
+    public MapContentResult Map(MapContent content)
     {
         if (_mappingConfiguration.AutoMappedDocTypes == null)
-            return null;
+            return MapContentResult.Failed;
 
-        if (!_mappingConfiguration.AutoMappedDocTypes.Contains(content.ContentType.Alias))
-            return null;
+        if (!_mappingConfiguration.AutoMappedDocTypes.Contains(content.PublishedContent.ContentType.Alias))
+            return MapContentResult.Failed;
 
         using UmbracoContextReference umbracoContextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
         var culturesToPublish = new List<string>();
-        if (content.ContentType.VariesByCulture())
+        if (content.PublishedContent.ContentType.VariesByCulture())
         {
-            culturesToPublish = content.Cultures.Values.Select(x => x.Culture).ToList();
+            culturesToPublish = content.PublishedContent.Cultures.Values.Select(x => x.Culture).ToList();
         }
         else
         {
             culturesToPublish.Add(GetDefaultCulture(umbracoContextReference)); // when not varied by culture the culture info is ""
         }
 
-        var properties = content.Properties;
+        var properties = content.PublishedContent.Properties;
         Dictionary<string, DataValue> mappedProperties = _propertyConverter.Convert(properties, culturesToPublish.ToArray());
-        mappedProperties.Add(Constants.VersionKey, version);
-        mappedProperties.Add("ContentTypeAlias", content.ContentType.Alias);
-        mappedProperties.Add("Url", content.Url());
+        mappedProperties.Add(Constants.VersionKey, content.Version);
+        mappedProperties.Add("ContentTypeAlias", content.PublishedContent.ContentType.Alias);
+        mappedProperties.Add("Url", content.PublishedContent.Url());
+        mappedProperties.Add("CreatedAt", new DateTimeOffset(content.PublishedContent.CreateDate).ToUnixTimeSeconds());
 
-        return new ContentUpdate(new Content(content.Id.ToString())
+        var contentUpdate = new ContentUpdate(new Content(content.PublishedContent.Id.ToString())
         {
-            DisplayName = new Multilingual(culturesToPublish.Select(x => new Multilingual.Value(x, content.Name)).ToList()),
-            Data = mappedProperties
+            DisplayName = MapDisplayName(content.PublishedContent, culturesToPublish),
+            Data = mappedProperties,
+            CategoryPaths = GetCategoryPaths(content, culturesToPublish)
         });
+
+        return new MapContentResult(contentUpdate);
+    }
+
+    private static List<CategoryPath>? GetCategoryPaths(MapContent content, List<string> culturesToPublish)
+    {
+        if (content.PublishedContent.Parent == null)
+            return null;
+
+        return new List<CategoryPath>
+        {
+            new(content.PublishedContent
+                .Breadcrumbs(andSelf: false)
+                .Select(x => new CategoryNameAndId(x.Id.ToString(), MapDisplayName(x, culturesToPublish)))
+                .ToArray())
+        };
+    }
+
+    private static Multilingual MapDisplayName(IPublishedContent content, List<string> culturesToPublish)
+    {
+        return new Multilingual(culturesToPublish.Select(x => new Multilingual.Value(x, content.Name)).ToList());
     }
 
     private static string GetDefaultCulture(UmbracoContextReference umbracoContextReference)
     {
         return umbracoContextReference.UmbracoContext.Domains.DefaultCulture.ToLowerInvariant();
     }
-}
-
-public struct Constants
-{
-    internal static readonly string VersionKey = "Relewise_UmbracoVersionId";
 }

@@ -18,6 +18,7 @@ internal class RelewisePropertyConverter : IRelewisePropertyConverter
 
     public Dictionary<string, DataValue> Convert(IEnumerable<IPublishedProperty> properties, string[] cultures)
     {
+        if (properties == null) throw new ArgumentNullException(nameof(properties));
         if (cultures == null) throw new ArgumentNullException(nameof(cultures));
         if (cultures.Length == 0) throw new ArgumentException("Value cannot be an empty collection.", nameof(cultures));
 
@@ -44,18 +45,20 @@ internal class RelewisePropertyConverter : IRelewisePropertyConverter
                 {
                     if (values.Count() > 1)
                     {
-                        dataKeys.Add(values.Key, new Multilingual(values.Select(x => new Multilingual.Value(x.Lang, x.Value)).ToArray()));
+                        if (values.First().Value.Type == DataValue.DataValueTypes.StringList)
+                        {
+                            dataKeys.Add(values.Key, new MultilingualCollection(values.Select(x => new MultilingualCollection.Value(x.Lang, x.Value)).ToArray()));
+                        }
+                        else
+                        {
+                            dataKeys.Add(values.Key, new Multilingual(values.Select(x => new Multilingual.Value(x.Lang, x.Value)).ToArray()));
+                        }
                     }
                     else
                     {
                         dataKeys.Add(values.Key, values.First().Value);
                     }
                 }
-
-                //foreach ((string key, DataValue _) in localizedProperties.First().Value)
-                //{
-                //    dataKeys.Add(key, new Multilingual(localizedProperties.Select(x => new Multilingual.Value(x.Key, x.Value[key])).ToArray()));
-                //}
             }
             else
             {
