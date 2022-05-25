@@ -83,7 +83,7 @@ internal class ExportContentService : IExportContentService
             await Export(new ExportContent(contents, version), token);
 
 
-            ITracker tracker = _relewiseClientFactory.GetClient<ITracker>("__RelewiseUmbracoClient");
+            ITracker tracker = _relewiseClientFactory.GetClient<ITracker>(Constants.NamedClientName);
             await tracker.TrackAsync(new ContentAdministrativeAction(
                 Language.Undefined,
                 Currency.Undefined,

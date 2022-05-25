@@ -51,7 +51,7 @@ namespace Relewise.UmbracoV9
         /// </remarks>
         public void ConfigureServices(IServiceCollection services)
         {
-            // This setups the need configuration for you to be able to interaction with our API.
+            // This setups the needed configuration for you to be able to interact with our API.
             // You need to add you own dataset id and api-key in the appsettings before recommendations and search works
             services.AddRelewise(options => options.ReadFromConfiguration(_config));
 
