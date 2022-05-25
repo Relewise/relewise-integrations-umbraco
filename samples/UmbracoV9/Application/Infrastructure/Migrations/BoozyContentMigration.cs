@@ -1,6 +1,6 @@
 ﻿using Umbraco.Cms.Infrastructure.Packaging;
 
-namespace UmbracoV9.Application.Infrastructure.Migrations;
+namespace Relewise.UmbracoV9.Application.Infrastructure.Migrations;
 
 public class BoozyContentMigration : AutomaticPackageMigrationPlan
 {

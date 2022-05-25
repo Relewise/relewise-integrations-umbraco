@@ -2346,4 +2346,7 @@ input.num-product::-webkit-inner-spin-button {
     margin: 0; 
 }
 
+.relewise-error {
+    color: crimson;
+}
 

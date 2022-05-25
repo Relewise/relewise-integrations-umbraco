@@ -1,9 +1,9 @@
 using System.Threading.Tasks;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco;
-using UmbracoV9.Application.Infrastructure.CookieConsent;
+using Relewise.UmbracoV9.Application.Infrastructure.CookieConsent;
 
-namespace UmbracoV9.Application;
+namespace Relewise.UmbracoV9.Application;
 
 public class RelewiseUserLocator : IRelewiseUserLocator
 {

@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
+using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
 using Umbraco.Cms.Core;
@@ -20,14 +21,14 @@ internal class ExportContentService : IExportContentService
 {
     private readonly IContentMapper _contentMapper;
     private readonly IUmbracoContextFactory _umbracoContextFactory;
-    private readonly ITracker _tracker;
+    private readonly IRelewiseClientFactory _relewiseClientFactory;
     private readonly IContentService _contentService;
 
     public ExportContentService(IContentMapper contentMapper, IUmbracoContextFactory umbracoContextFactory, IRelewiseClientFactory relewiseClientFactory, IContentService contentService)
     {
         _contentMapper = contentMapper;
         _umbracoContextFactory = umbracoContextFactory;
-        _tracker = tracker; // NOTE: Erstat ved at depende på IServicesProvider -> hvis vi ikke kan resolve, så gør intet
+        _relewiseClientFactory = relewiseClientFactory;
         _contentService = contentService;
     }
 
@@ -41,14 +42,17 @@ internal class ExportContentService : IExportContentService
 
         IPublishedContentCache contentCache = umbracoContextReference.UmbracoContext.Content;
 
+        ITracker tracker = _relewiseClientFactory.GetClient<ITracker>(Constants.NamedClientName);
+
         ContentUpdate[] contentUpdates = exportContent.Contents
             .Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version)))
             .Where(x => x.Successful)
             .Select(x => x.ContentUpdate!)
             .ToArray();
-        await _tracker.TrackAsync(token, contentUpdates);
+        // ReSharper disable once CoVariantArrayConversion
+        await tracker.TrackAsync(token, contentUpdates);
 
-        await _tracker.TrackAsync(new ContentAdministrativeAction(
+        await tracker.TrackAsync(new ContentAdministrativeAction(
             Language.Undefined,
             Currency.Undefined,
             new FilterCollection(new ContentIdFilter(contentUpdates.Select(x => x.Content.Id))),
@@ -78,7 +82,9 @@ internal class ExportContentService : IExportContentService
 
             await Export(new ExportContent(contents, version), token);
 
-            await _tracker.TrackAsync(new ContentAdministrativeAction(
+
+            ITracker tracker = _relewiseClientFactory.GetClient<ITracker>("__RelewiseUmbracoClient");
+            await tracker.TrackAsync(new ContentAdministrativeAction(
                 Language.Undefined,
                 Currency.Undefined,
                 new FilterCollection(new ContentDataFilter(Constants.VersionKey, new EqualsCondition(version, negated: true), filterOutIfKeyIsNotFound: false)),

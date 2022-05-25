@@ -19,7 +19,7 @@ using Relewise.Client.Responses.Search;
 using Relewise.Client.Search;
 using Relewise.Integrations.Umbraco;
 
-namespace UmbracoV9.Application.Api;
+namespace Relewise.UmbracoV9.Application.Api;
 
 public static class ContentApi
 {

@@ -17,6 +17,13 @@
   You can always withdraw your consent by clicking on "Cookie Policy" in the Footer of our website.</p>
 
               <div class="form-group form-check">
+                <input class="form-check-input" type="checkbox" id="functionalCookies" checked="checked" disabled="disabled">
+                <label class="form-check-label" for="functionalCookies">
+                  Strictly necessary
+                </label>
+              </div>
+
+              <div class="form-group form-check">
                 <input class="form-check-input" type="checkbox" v-model="cookies.functional" id="functionalCookies">
                 <label class="form-check-label" for="functionalCookies">
                   Functionality
@@ -43,6 +50,7 @@
 
               <button @click="acceptAllCookies" class="flex-c-m size1 bg1 bo-rad-20 hov1 s-text1 trans-0-4">Accept All</button>
             </div>
+            <div v-if="showUpdateConsent && updatedConsent" class="success">Successfully updated your cookies consent</div>
           </div>
         </div>
       </div>
@@ -56,6 +64,7 @@ import cookieConsentService from '../services/cookie-consent.service'
 
 const hasClickedOnCookieBanner = ref(cookieConsentService.hasClickedOnCookieBanner)
 const cookies = ref(cookieConsentService.cookies)
+const updatedConsent = ref(false)
 const hasAcceptedAnyCookie = computed(() => cookies.value.functional || cookies.value.marketing || cookies.value.statistical)
 
 const props = defineProps({
@@ -66,16 +75,23 @@ const { showUpdateConsent } = toRefs(props)
 
 function acceptAllCookies () {
   cookieConsentService.acceptAllCookies()
+  showSuccessMessage()
 }
 function acceptCookies () {
   cookieConsentService.acceptCookies()
+  showSuccessMessage()
 }
 function rejectCookies () {
   cookieConsentService.rejectCookies()
+  showSuccessMessage()
+}
+
+function showSuccessMessage () {
+  updatedConsent.value = true
+  setTimeout(() => { updatedConsent.value = false }, 3000)
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .modal-backdrop {
   background-color: #000;
@@ -90,5 +106,9 @@ function rejectCookies () {
 }
 .form-check-input {
   left: 20px;
+}
+.success {
+  color: rgb(23, 94, 23);
+  text-align: center;
 }
 </style>

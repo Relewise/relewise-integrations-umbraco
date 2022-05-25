@@ -17,6 +17,12 @@ services.AddUmbraco(_env, _config)
                 .AddRelewise(options => options.UseMapping(map => map.AutoMapping("LandingPage", "ContentPage")))
 ```
 
+### Sample site - Get it up and running.
+
+- clone this repository
+- 
+
+
 ## Contributing
 
 Pull requests are always welcome.  

@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco.Controllers;
 using Relewise.Integrations.Umbraco.Dashboards;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
@@ -25,7 +26,10 @@ public static class UmbracoBuilderExtensions
         if (builder == null) throw new ArgumentNullException(nameof(builder));
         if (options == null) throw new ArgumentNullException(nameof(options));
 
-        // builder.Services.AddRelewise() => tilføj en named-client til tracker-integrationer (med high-timeout)
+        builder.Services.AddRelewise(x => x.Named.Add(Constants.NamedClientName, clientOptions =>
+        {
+            clientOptions.Tracker.Timeout = TimeSpan.FromMinutes(2);
+        }));
 
         var config = new RelewiseConfigurationBuilder();
         options.Invoke(config);

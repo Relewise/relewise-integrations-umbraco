@@ -25,6 +25,10 @@
       <div class="result fs-14">No results found</div>
     </template>
   </div>
+  <div v-if="hasError" class="results p-t-8 p-b-8 p-l-8 p-r-8 relewise-error">
+    <h4>Search API request failed</h4>
+    <p class="relewise-error">The search API request failed. This is likely due to a misconfiguration in the Relewise-appsettings section. Please verify that the dataset-id and API-key has been correctly configured</p>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -34,11 +38,13 @@ const term = ref('')
 const result: any|null = ref(null)
 const predictions: any|null = ref(null)
 const debouncer = createDebounce()
+const hasError = ref(false)
 
 function search () {
   fetch('/api/content/search?q=' + term.value)
     .then(response => response.json())
     .then(data => { result.value = data })
+    .catch(() => { hasError.value = true })
 
   fetch('/api/content/predict?q=' + term.value)
     .then(response => response.json())

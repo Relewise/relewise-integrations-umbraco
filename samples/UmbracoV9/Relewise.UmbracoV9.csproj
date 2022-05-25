@@ -3,6 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
         <nullable>enable</nullable>
+	    <WarningsAsErrors>Nullable</WarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>
@@ -35,8 +36,8 @@
 	    </EmbeddedResource>
     </ItemGroup>
 
-    <!--<ItemGroup>
-	    <Content Remove="umbraco\Data\**" />
-	    <Content Include="umbraco\Data\**" Watch="false" />
-    </ItemGroup>-->
+	<ItemGroup>
+		<Compile Include="umbraco\**" Watch="false" />
+		<Compile Remove="umbraco\**"/>
+	</ItemGroup>
 </Project>

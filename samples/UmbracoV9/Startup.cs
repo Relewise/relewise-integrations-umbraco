@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -7,13 +6,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
+using Relewise.UmbracoV9.Application;
+using Relewise.UmbracoV9.Application.Api;
+using Relewise.UmbracoV9.Application.Infrastructure.CookieConsent;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Extensions;
-using UmbracoV9.Application;
-using UmbracoV9.Application.Api;
-using UmbracoV9.Application.Infrastructure.CookieConsent;
 
-namespace UmbracoV9
+namespace Relewise.UmbracoV9
 {
     public class Startup
     {
@@ -35,7 +34,7 @@ namespace UmbracoV9
             var builder = new ConfigurationBuilder()
                 .SetBasePath(webHostEnvironment.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true)
+                .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
                 .AddJsonFile($"appsettings.{webHostEnvironment.EnvironmentName}.json", optional: true)
                 .AddEnvironmentVariables();
 
@@ -52,7 +51,8 @@ namespace UmbracoV9
         /// </remarks>
         public void ConfigureServices(IServiceCollection services)
         {
-            // TODO: Add comment
+            // This setups the need configuration for you to be able to interaction with our API.
+            // You need to add you own dataset id and api-key in the appsettings before recommendations and search works
             services.AddRelewise(options => options.ReadFromConfiguration(_config));
 
             services.AddHttpContextAccessor();

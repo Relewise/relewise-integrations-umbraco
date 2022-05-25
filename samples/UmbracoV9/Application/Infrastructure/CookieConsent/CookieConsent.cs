@@ -2,7 +2,7 @@ using System;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 
-namespace UmbracoV9.Application.Infrastructure.CookieConsent;
+namespace Relewise.UmbracoV9.Application.Infrastructure.CookieConsent;
 
 public class CookieConsent
 {
