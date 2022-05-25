@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions;
@@ -21,15 +22,15 @@ internal class ExportContentService : IExportContentService
 {
     private readonly IContentMapper _contentMapper;
     private readonly IUmbracoContextFactory _umbracoContextFactory;
-    private readonly IRelewiseClientFactory _relewiseClientFactory;
     private readonly IContentService _contentService;
+    private readonly IServiceProvider _provider;
 
-    public ExportContentService(IContentMapper contentMapper, IUmbracoContextFactory umbracoContextFactory, IRelewiseClientFactory relewiseClientFactory, IContentService contentService)
+    public ExportContentService(IContentMapper contentMapper, IUmbracoContextFactory umbracoContextFactory, IContentService contentService, IServiceProvider provider)
     {
         _contentMapper = contentMapper;
         _umbracoContextFactory = umbracoContextFactory;
-        _relewiseClientFactory = relewiseClientFactory;
         _contentService = contentService;
+        _provider = provider;
     }
 
     public async Task<ExportContentResult> Export(ExportContent exportContent, CancellationToken token)
@@ -42,7 +43,17 @@ internal class ExportContentService : IExportContentService
 
         IPublishedContentCache contentCache = umbracoContextReference.UmbracoContext.Content;
 
-        ITracker tracker = _relewiseClientFactory.GetClient<ITracker>(Constants.NamedClientName);
+        ITracker tracker;
+        try
+        {
+            var factory = _provider.GetRequiredService<IRelewiseClientFactory>();
+            tracker = factory.GetClient<ITracker>(Constants.NamedClientName);
+        }
+        catch
+        {
+            // tracker is not setup correctly so we just fail silently
+            return new ExportContentResult();
+        }
 
         ContentUpdate[] contentUpdates = exportContent.Contents
             .Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version)))
@@ -82,8 +93,9 @@ internal class ExportContentService : IExportContentService
 
             await Export(new ExportContent(contents, version), token);
 
+            var factory = _provider.GetRequiredService<IRelewiseClientFactory>();
+            var tracker = factory.GetClient<ITracker>(Constants.NamedClientName);
 
-            ITracker tracker = _relewiseClientFactory.GetClient<ITracker>(Constants.NamedClientName);
             await tracker.TrackAsync(new ContentAdministrativeAction(
                 Language.Undefined,
                 Currency.Undefined,
