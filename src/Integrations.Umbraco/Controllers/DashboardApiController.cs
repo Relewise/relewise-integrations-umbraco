@@ -34,8 +34,19 @@ public class DashboardApiController : UmbracoAuthorizedController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Configuration(CancellationToken token)
+    public IActionResult Configuration()
     {
-        return Ok();
+        IRelewiseClientFactory clientFactory = _provider.GetRequiredService<IRelewiseClientFactory>();
+        RelewiseClientOptions globalOptions = clientFactory.GetOptions<ITracker>();
+
+        return Ok(new
+        {
+            DatasetId = globalOptions.DatasetId,
+            Timeout = globalOptions.Timeout.TotalSeconds,
+            Named = new (string Name, Guid DatasetId, double TimeoutInSeconds)[]
+            {
+                new ("Integration", globalOptions.DatasetId, globalOptions.Timeout.TotalSeconds)
+            }
+        });
     }
 }

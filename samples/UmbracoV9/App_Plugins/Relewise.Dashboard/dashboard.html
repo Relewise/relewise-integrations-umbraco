@@ -4,20 +4,61 @@
             <h2>Relewise</h2>
             <p>
                 Welcome to the Relewise dashboard - Here you can perform export functions get all your content exported into Relewise.<br />
-                It's also possible to change the settings for Relewise directly here.
+                It's also possible to see the settings for Relewise directly here.
             </p>
             <div style="margin-bottom: 10px;">
                 <button class="btn btn-primary" ng-click="vm.exportContent()" ng-disabled="vm.exportLoading'">
-                    Export all content to Relewise
+                    Full content export
                 </button>
-
-                <a class="btn btn-secondary m-l-15" target="_blank" href="/umbraco/backoffice/Relewise/DashboardApi/ContentFeed">
-                    Debug - show exported data
-                </a>
             </div>
-            <div class="export-error" ng-if="vm.errorMessage">{{vm.errorMessage}}</div>
+            <div class="error" ng-if="vm.errorMessage">{{vm.errorMessage}}</div>
             <div class="export-success" ng-if="vm.success">{{vm.success}}</div>
 
+        </umb-box-content>
+    </umb-box>
+
+    <umb-box>
+        <umb-box-content>
+            <h3>Settings</h3>
+            
+            <p>
+                These are the settings registered with for Relewise
+            </p>
+            
+            <p class="error" ng-if="vm.configurationError">
+                No options has been configured. Please check your call to the 'services.AddRelewise(options => { /* options goes here */ })'-method.
+            </p>
+            <div ng-if="vm.configuration !== null">
+                <h4>Global</h4>
+                <p>
+                    DatasetId: <strong>{{vm.configuration.datasetId}}</strong> <br />
+                    Timeout: {{vm.configuration.timeout}} seconds
+                </p>
+                <div>
+                    <div class="mr-8">Tracker: <umb-badge color="success" size="xs"><i class="icon-check"></i></umb-badge></div>
+                    <div class="mr-8">Recommender: <umb-badge color="success" size="xs"><i class="icon-check"></i></umb-badge></div>
+                    <div>Searcher: <umb-badge color="success" size="xs"><i class="icon-check"></i></umb-badge></div>
+                </div>
+                <h4 style="margin-top: 40px;">Named clients</h4>
+                <h5>Browser tracker</h5>
+                <p>
+                    DatasetId: <strong>1108750C-E6EA-4C17-9B4C-F7E79BCBD4BB</strong>
+                </p>
+                <div>
+                    <div class="mr-8">Tracker: <umb-badge color="success" size="xs"><i class="icon-check"></i></umb-badge></div>
+                    <div class="mr-8">Recommender: <umb-badge color="success" size="xs"><i class="icon-check"></i></umb-badge></div>
+                    <div>Searcher: <umb-badge color="success" size="xs"><i class="icon-check"></i></umb-badge></div>
+                </div>
+                <h5>Integration</h5>
+                <p>
+                    DatasetId: <strong>1108750C-E6EA-4C17-9B4C-F7E79BCBD4BB</strong>
+                </p>
+                <div>
+                    <div class="mr-8">Tracker: <umb-badge color="success" size="xs"><i class="icon-check"></i></umb-badge></div>
+                    <div class="mr-8">Recommender: <umb-badge color="success" size="xs"><i class="icon-check"></i></umb-badge></div>
+                    <div>Searcher: <umb-badge color="success" size="xs"><i class="icon-check"></i></umb-badge></div>
+                </div>
+            </div>
         </umb-box-content>
     </umb-box>
 </div>

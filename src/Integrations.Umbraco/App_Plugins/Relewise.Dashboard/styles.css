@@ -6,7 +6,18 @@
     color: green;
     font-weight: bold;
 }
-.export-error {
+.error {
     color: red;
     font-weight: bold;
+}
+
+.mr-8 {
+    margin-right: 8px;
+}
+
+h5 {
+    font-size: 17px;
+    font-weight: 500;
+    margin-bottom: 0;
+    margin-top: 20px;
 }
