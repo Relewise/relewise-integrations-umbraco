@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using J2N.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
 using Relewise.Client.Extensions;
+using Relewise.Client.Search;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Web.BackOffice.Filters;
 using Umbraco.Cms.Web.Common.Attributes;
@@ -18,11 +21,13 @@ public class DashboardApiController : UmbracoAuthorizedController
 {
     private readonly IExportContentService _exportContent;
     private readonly IServiceProvider _provider;
+    private readonly RelewiseConfiguration _configuration;
 
-    public DashboardApiController(IExportContentService exportContent, IServiceProvider provider)
+    public DashboardApiController(IExportContentService exportContent, IServiceProvider provider, RelewiseConfiguration configuration)
     {
         _exportContent = exportContent;
         _provider = provider;
+        _configuration = configuration;
     }
 
     [HttpPost]
@@ -37,16 +42,62 @@ public class DashboardApiController : UmbracoAuthorizedController
     public IActionResult Configuration()
     {
         IRelewiseClientFactory clientFactory = _provider.GetRequiredService<IRelewiseClientFactory>();
-        RelewiseClientOptions globalOptions = clientFactory.GetOptions<ITracker>();
+
+        var named = new List<NamedOptionsViewObject>
+        {
+            new(
+                "Default", 
+                new ClientOptionsViewObject(clientFactory.GetOptions<ITracker>()),
+                new ClientOptionsViewObject(clientFactory.GetOptions<IRecommender>()),
+                new ClientOptionsViewObject(clientFactory.GetOptions<ISearcher>()))
+        };
+
+        foreach (string name in clientFactory.ClientNames.Where(x => !Constants.NamedClientName.Equals(x, StringComparison.OrdinalIgnoreCase)))
+        {
+            RelewiseClientOptions trackerOptions = clientFactory.GetOptions<ITracker>(name);
+            RelewiseClientOptions recommenderOptions = clientFactory.GetOptions<IRecommender>(name);
+            RelewiseClientOptions searcherOptions = clientFactory.GetOptions<ISearcher>(name);
+
+            named.Add(new NamedOptionsViewObject(
+                name,
+                new ClientOptionsViewObject(trackerOptions),
+                new ClientOptionsViewObject(recommenderOptions),
+                new ClientOptionsViewObject(searcherOptions)));
+        }
 
         return Ok(new
         {
-            DatasetId = globalOptions.DatasetId,
-            Timeout = globalOptions.Timeout.TotalSeconds,
-            Named = new (string Name, Guid DatasetId, double TimeoutInSeconds)[]
-            {
-                new ("Integration", globalOptions.DatasetId, globalOptions.Timeout.TotalSeconds)
-            }
+            Mapping = new { _configuration.TrackableDocTypes },
+            Named = named
         });
+    }
+
+    public class NamedOptionsViewObject
+    {
+        public NamedOptionsViewObject(string name, ClientOptionsViewObject tracker, ClientOptionsViewObject recommender, ClientOptionsViewObject searcher)
+        {
+            Name = name;
+            Tracker = tracker;
+            Recommender = recommender;
+            Searcher = searcher;
+        }
+
+        public string Name { get; }
+
+        public ClientOptionsViewObject Tracker { get; }
+        public ClientOptionsViewObject Recommender { get; }
+        public ClientOptionsViewObject Searcher { get; }
+    }
+
+    public class ClientOptionsViewObject
+    {
+        public ClientOptionsViewObject(RelewiseClientOptions options)
+        {
+            DatasetId = options.DatasetId;
+            Timeout = options.Timeout.TotalSeconds;
+        }
+
+        public Guid DatasetId { get; }
+        public double Timeout { get; }
     }
 }
