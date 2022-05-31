@@ -12,22 +12,21 @@ namespace Relewise.Integrations.Umbraco.Services;
 internal class RelewiseContentMapper : IContentMapper
 {
     private readonly IUmbracoContextFactory _umbracoContextFactory;
-    private readonly RelewiseMappingConfiguration _mappingConfiguration;
+    private readonly RelewiseUmbracoConfiguration _configuration;
     private readonly IRelewisePropertyConverter _propertyConverter;
+    private readonly IServiceProvider _provider;
 
-    public RelewiseContentMapper(RelewiseMappingConfiguration mappingConfiguration, IUmbracoContextFactory umbracoContextFactory, IRelewisePropertyConverter propertyConverter)
+    public RelewiseContentMapper(RelewiseUmbracoConfiguration configuration, IUmbracoContextFactory umbracoContextFactory, IRelewisePropertyConverter propertyConverter, IServiceProvider provider)
     {
-        _mappingConfiguration = mappingConfiguration;
+        _configuration = configuration;
         _umbracoContextFactory = umbracoContextFactory;
         _propertyConverter = propertyConverter;
+        _provider = provider;
     }
 
     public MapContentResult Map(MapContent content)
     {
-        if (_mappingConfiguration.AutoMappedDocTypes == null)
-            return MapContentResult.Failed;
-
-        if (!_mappingConfiguration.AutoMappedDocTypes.Contains(content.PublishedContent.ContentType.Alias))
+        if (!_configuration.CanMap(content.PublishedContent.ContentType.Alias))
             return MapContentResult.Failed;
 
         using UmbracoContextReference umbracoContextReference = _umbracoContextFactory.EnsureUmbracoContext();
@@ -42,21 +41,32 @@ internal class RelewiseContentMapper : IContentMapper
             culturesToPublish.Add(GetDefaultCulture(umbracoContextReference)); // when not varied by culture the culture info is ""
         }
 
-        var properties = content.PublishedContent.Properties;
-        Dictionary<string, DataValue> mappedProperties = _propertyConverter.Convert(properties, culturesToPublish.ToArray());
-        mappedProperties.Add(Constants.VersionKey, content.Version);
-        mappedProperties.Add("ContentTypeAlias", content.PublishedContent.ContentType.Alias);
-        mappedProperties.Add("Url", content.PublishedContent.Url());
-        mappedProperties.Add("CreatedAt", new DateTimeOffset(content.PublishedContent.CreateDate).ToUnixTimeSeconds());
-
         var contentUpdate = new ContentUpdate(new Content(content.PublishedContent.Id.ToString())
         {
             DisplayName = MapDisplayName(content.PublishedContent, culturesToPublish),
-            Data = mappedProperties,
             CategoryPaths = GetCategoryPaths(content, culturesToPublish)
         });
 
+        AutoMapOrUseMapper(content, culturesToPublish, contentUpdate);
+
         return new MapContentResult(contentUpdate);
+    }
+
+    private void AutoMapOrUseMapper(MapContent content, List<string> culturesToPublish, ContentUpdate contentUpdate)
+    {
+        if (_configuration.TryGetMapper(content.PublishedContent.ContentType.Alias, out IContentTypeMapping? mapping))
+        {
+            mapping!.Map(new ContentMappingContext(content.PublishedContent, contentUpdate, culturesToPublish, _provider));
+        }
+        else
+        {
+            contentUpdate.Content.Data = _propertyConverter.Convert(content.PublishedContent.Properties, culturesToPublish.ToArray());
+        }
+
+        contentUpdate.Content.Data.Add(Constants.VersionKey, content.Version);
+        contentUpdate.Content.Data.Add("ContentTypeAlias", content.PublishedContent.ContentType.Alias);
+        contentUpdate.Content.Data.Add("Url", content.PublishedContent.Url());
+        contentUpdate.Content.Data.Add("CreatedAt", new DateTimeOffset(content.PublishedContent.CreateDate).ToUnixTimeSeconds());
     }
 
     private static List<CategoryPath>? GetCategoryPaths(MapContent content, List<string> culturesToPublish)

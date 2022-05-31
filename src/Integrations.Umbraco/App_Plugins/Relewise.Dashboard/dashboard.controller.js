@@ -12,6 +12,7 @@
             vm.success = "Content was successfully exported to Relewise";
             vm.errorMessage = "";
         }, () => {
+            vm.exportLoading = false;
             vm.success = "";
             vm.errorMessage = "Unexpected error while exporting data happened";
         });

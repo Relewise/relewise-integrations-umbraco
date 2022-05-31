@@ -21,9 +21,9 @@ public class DashboardApiController : UmbracoAuthorizedController
 {
     private readonly IExportContentService _exportContent;
     private readonly IServiceProvider _provider;
-    private readonly RelewiseConfiguration _configuration;
+    private readonly RelewiseUmbracoConfiguration _configuration;
 
-    public DashboardApiController(IExportContentService exportContent, IServiceProvider provider, RelewiseConfiguration configuration)
+    public DashboardApiController(IExportContentService exportContent, IServiceProvider provider, RelewiseUmbracoConfiguration configuration)
     {
         _exportContent = exportContent;
         _provider = provider;
@@ -73,7 +73,8 @@ public class DashboardApiController : UmbracoAuthorizedController
 
         return Ok(new
         {
-            Mapping = new { _configuration.TrackableDocTypes },
+            //TrackedContentTypes = _configuration.TrackableContentTypes,
+            //MappedContentTypes = _configuration.MappableContentTypes,
             Named = named
         });
     }

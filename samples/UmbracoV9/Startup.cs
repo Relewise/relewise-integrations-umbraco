@@ -1,11 +1,15 @@
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
+using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 using Relewise.UmbracoV9.Application;
 using Relewise.UmbracoV9.Application.Api;
 using Relewise.UmbracoV9.Application.Infrastructure.CookieConsent;
@@ -65,8 +69,11 @@ namespace Relewise.UmbracoV9
                 .AddWebsite()
                 .AddComposers()
                 .AddRelewise(options => options
-                    .UseMapping(map => map
-                        .AutoMapping("LandingPage", "ContentPage", "BlogEntry")))
+                    .Add("LandingPage", typeX => typeX.AutoMap())
+                    .Add("Site")
+                    .Add("Blog", blog => blog.UseMapper(new BlogMapper()))
+                    .Add("ContentPage", typeZ => typeZ.AutoMap())
+                    .Add("BlogEntry", typeZ => typeZ.AutoMap()))
                 .Build();
 #pragma warning restore IDE0022 // Use expression body for methods
         }
@@ -93,7 +100,7 @@ namespace Relewise.UmbracoV9
                 {
                     u.UseBackOffice();
                     u.UseWebsite();
-                    // enables tracking of all pageviews to Relewise
+                    // Enables tracking of all pageviews to Relewise
                     u.TrackContentViews();
                 })
                 .WithEndpoints(u =>
@@ -105,5 +112,13 @@ namespace Relewise.UmbracoV9
         }
     }
 
+    public class BlogMapper : IContentTypeMapping
+    {
+        public Task<ContentUpdate> Map(ContentMappingContext context)
+        {
+            context.ContentUpdate.Content.Data["Title"] = context.PublishedContent.GetProperty("title").GetValue<string>(context.CulturesToPublish.First());
 
+            return Task.FromResult(context.ContentUpdate);
+        }
+    }
 }
