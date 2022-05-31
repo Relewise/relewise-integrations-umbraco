@@ -43,14 +43,20 @@ public class DashboardApiController : UmbracoAuthorizedController
     {
         IRelewiseClientFactory clientFactory = _provider.GetRequiredService<IRelewiseClientFactory>();
 
-        var named = new List<NamedOptionsViewObject>
+        var named = new List<NamedOptionsViewObject>();
+
+        try
         {
-            new(
-                "Default", 
+            named.Add(new NamedOptionsViewObject(
+                "Default",
                 new ClientOptionsViewObject(clientFactory.GetOptions<ITracker>()),
                 new ClientOptionsViewObject(clientFactory.GetOptions<IRecommender>()),
-                new ClientOptionsViewObject(clientFactory.GetOptions<ISearcher>()))
-        };
+                new ClientOptionsViewObject(clientFactory.GetOptions<ISearcher>())));
+        }
+        catch (ArgumentException)
+        {
+            // we just swallow the exception here as this just means that there is no default configured, which is okay
+        }
 
         foreach (string name in clientFactory.ClientNames.Where(x => !Constants.NamedClientName.Equals(x, StringComparison.OrdinalIgnoreCase)))
         {
