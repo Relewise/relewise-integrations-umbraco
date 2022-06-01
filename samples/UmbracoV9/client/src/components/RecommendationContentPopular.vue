@@ -40,7 +40,10 @@ function recommend () {
   hasError.value = false
   fetch('/api/content/recommend/popular')
     .then(response => response.json())
-    .then(data => { result.value = data })
+    .then(data => {
+      result.value = data
+      hasError.value = false
+    })
     .catch(() => { hasError.value = true })
 }
 

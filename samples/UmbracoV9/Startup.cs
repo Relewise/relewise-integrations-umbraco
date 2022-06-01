@@ -70,8 +70,8 @@ namespace Relewise.UmbracoV9
                 .AddComposers()
                 .AddRelewise(options => options
                     .Add("LandingPage", typeX => typeX.AutoMap())
-                    .Add("Site")
-                    .Add("Blog", blog => blog.UseMapper(new BlogMapper()))
+                    .Add("Site") // TODO does this make sense - it now starts tracking the page, but also creates a "blank" content in Relewise that can be returned in recommendations...
+                    .Add("BlogList", blog => blog.UseMapper(new BlogMapper()))
                     .Add("ContentPage", typeZ => typeZ.AutoMap())
                     .Add("BlogEntry", typeZ => typeZ.AutoMap()))
                 .Build();

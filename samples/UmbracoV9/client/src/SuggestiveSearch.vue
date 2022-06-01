@@ -34,16 +34,29 @@
 <script setup lang="ts">
 import { ref } from '@vue/runtime-dom'
 
+interface ContentResult {
+  displayName: string;
+  contentId: string;
+  data: {[key: string]: string};
+}
+
+interface PredictionResult {
+  term: string;
+}
+
 const term = ref('')
-const result: any|null = ref(null)
-const predictions: any|null = ref(null)
+const result: ContentResult[]|null = ref(null)
+const predictions: PredictionResult[]|null = ref(null)
 const debouncer = createDebounce()
 const hasError = ref(false)
 
 function search () {
   fetch('/api/content/search?q=' + term.value)
     .then(response => response.json())
-    .then(data => { result.value = data })
+    .then(data => {
+      result.value = data
+      hasError.value = false
+    })
     .catch(() => { hasError.value = true })
 
   fetch('/api/content/predict?q=' + term.value)

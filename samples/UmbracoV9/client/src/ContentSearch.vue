@@ -19,21 +19,26 @@
 <script setup lang="ts">
 import { Ref, ref } from '@vue/runtime-dom'
 
+interface ContentResult {
+  displayName: string;
+  contentId: string;
+  data: {[key: string]: string};
+}
+
 const term: Ref<string|null> = ref('')
-const result: any|null = ref(null)
+const result: ContentResult[]|null = ref(null)
 const hasError = ref(false)
 
 function search () {
   term.value = new URLSearchParams(window.location.search).get('q')
   fetch('/api/content/search?q=' + term.value)
     .then(response => response.json())
-    .then(data => { result.value = data })
+    .then(data => {
+      result.value = data
+      hasError.value = false
+    })
     .catch(() => { hasError.value = true })
 }
 
 search()
 </script>
-
-<style scoped>
-
-</style>
