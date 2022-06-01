@@ -34,6 +34,9 @@ public class RelewiseUmbracoConfiguration
             .ToDictionary(x => x.Key, x => x.Value?.Mapper, StringComparer.OrdinalIgnoreCase);
     }
 
+    public IReadOnlyCollection<string> TrackedContentTypes => _trackableDocTypes;
+    public IReadOnlyCollection<string> ExportedContentTypes => _autoMappedContentTypes.Concat(_customMappers.Keys).ToArray();
+
     public bool CanMap(string contentType)
     {
         return _autoMappedContentTypes.Contains(contentType) || _customMappers.ContainsKey(contentType);

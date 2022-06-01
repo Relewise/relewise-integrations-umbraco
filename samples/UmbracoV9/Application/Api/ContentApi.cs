@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
+using Relewise.Client.Requests.Conditions;
+using Relewise.Client.Requests.Filters;
 using Relewise.Client.Requests.Recommendations;
 using Relewise.Client.Requests.Search;
 using Relewise.Client.Requests.Search.Settings;
@@ -101,7 +103,8 @@ public static class ContentApi
                     DisplayName = true,
                     DataKeys = new []{"Url", "splashImage_Block" }
                 }
-            }
+            },
+            Filters = new FilterCollection(new ContentDataFilter("ContentTypeAlias", new ContainsCondition(new DataValue(new List<string> {"blogEntry", "contentPage"}))))
         }, context.RequestAborted);
 
         await context.Response.WriteAsJsonAsync(result.Recommendations.Take(6).Chunk(2), JsonSerializerOptions);

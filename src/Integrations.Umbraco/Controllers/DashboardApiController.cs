@@ -73,8 +73,8 @@ public class DashboardApiController : UmbracoAuthorizedController
 
         return Ok(new
         {
-            //TrackedContentTypes = _configuration.TrackableContentTypes,
-            //MappedContentTypes = _configuration.MappableContentTypes,
+            TrackedContentTypes = _configuration.TrackedContentTypes,
+            ExportedContentTypes = _configuration.ExportedContentTypes,
             Named = named
         });
     }

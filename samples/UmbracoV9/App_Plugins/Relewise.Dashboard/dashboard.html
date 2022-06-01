@@ -28,7 +28,8 @@
                 No options has been configured. Please check your call to the 'services.AddRelewise(options => { /* options goes here */ })'-method.
             </p>
             <div ng-if="vm.configuration !== null">
-                Automapped and tracked document types are: <strong>{{vm.configuration.mapping.trackableDocTypes.join(', ')}}</strong>
+                Tracked content types are: <strong>{{vm.configuration.trackedContentTypes.join(', ')}}</strong><br />
+                Exported content types are: <strong>{{vm.configuration.exportedContentTypes.join(', ')}}</strong><br />
             </div>
         </umb-box-content>
     </umb-box>
