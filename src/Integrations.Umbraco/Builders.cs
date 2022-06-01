@@ -7,7 +7,7 @@ public class RelewiseUmbracoOptionsBuilder
 {
     internal Dictionary<string, ContentTypeBuilder?> ContentBuilders { get; } = new();
 
-    public RelewiseUmbracoOptionsBuilder Add(string contentType, Action<ContentTypeBuilder>? options = null, bool throwIfExists = false)
+    public RelewiseUmbracoOptionsBuilder AddContentType(string contentType, Action<ContentTypeBuilder>? options = null, bool throwIfExists = false)
     {
         if (ContentBuilders.ContainsKey(contentType) && throwIfExists)
             throw new ArgumentException("A client with that name was already registered", nameof(contentType));

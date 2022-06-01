@@ -31,8 +31,10 @@ The sample site requires .NET 6 and NPM. The site has demo content, so that once
 3. Spinning up the site.
 
     1. Navigate to 'samples/UmbracoV9'.
-    2. In the appsettings, enter your Dataset Id and API-key for Relewise. There is a commented out section, where you can enter it (Remember to comment the section back in!)
-    3. Run `dotnet watch` via a command prompt.
+    2. In the appsettings, enter your Dataset Id and API-key for Relewise (you can find those at https://my.relewise.com under Settings -> Developer Settings). There is a commented out section, where you can enter it (Remember to comment the section back in!)
+    3. Run `dotnet run` via a command prompt.
+    4. Umbraco will throw some error in the console - just ignore those
+    5. `dotnet run` open a new browser tab, continue the setup in that new tab.
 
 4. Installing Umbraco - When visiting the site for the first time, you are asked to configure Umbraco. Just follow the instructions.
 5. Publish the content of the site. The site comes with content already created. You just need to login and publish the content

@@ -63,19 +63,17 @@ namespace Relewise.UmbracoV9
             services.AddSingleton<CookieConsent>();
             services.AddSingleton<IRelewiseUserLocator, RelewiseUserLocator>();
 
-#pragma warning disable IDE0022 // Use expression body for methods
             services.AddUmbraco(_env, _config)
                 .AddBackOffice()
                 .AddWebsite()
                 .AddComposers()
                 .AddRelewise(options => options
-                    .Add("LandingPage", typeX => typeX.AutoMap())
-                    .Add("Site") // TODO does this make sense - it now starts tracking the page, but also creates a "blank" content in Relewise that can be returned in recommendations...
-                    .Add("BlogList", blog => blog.UseMapper(new BlogMapper()))
-                    .Add("ContentPage", typeZ => typeZ.AutoMap())
-                    .Add("BlogEntry", typeZ => typeZ.AutoMap()))
+                    .AddContentType("LandingPage", contentType => contentType.AutoMap())
+                    .AddContentType("Site")
+                    .AddContentType("BlogList", contentType => contentType.UseMapper(new BlogMapper()))
+                    .AddContentType("ContentPage", contentType => contentType.AutoMap())
+                    .AddContentType("BlogEntry", contentType => contentType.AutoMap()))
                 .Build();
-#pragma warning restore IDE0022 // Use expression body for methods
         }
 
         /// <summary>
