@@ -17,7 +17,6 @@ class CookieConsentService {
           this.state.data = parsedCookie
         }
       }
-      console.log(this.state.hasClickedOnCookieBanner)
     }
 
     get hasClickedOnCookieBanner () {

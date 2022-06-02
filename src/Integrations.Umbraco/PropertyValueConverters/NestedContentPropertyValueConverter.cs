@@ -9,7 +9,7 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-public class NestedContentPropertyValueConverter : IRelewisePropertyValueConverter
+internal class NestedContentPropertyValueConverter : IRelewisePropertyValueConverter
 {
     private readonly IServiceProvider _serviceProvider;
 

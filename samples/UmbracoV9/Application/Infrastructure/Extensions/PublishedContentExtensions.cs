@@ -1,7 +1,7 @@
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Extensions;
 
-namespace UmbracoV9.Application.Infrastructure.Extensions;
+namespace Relewise.UmbracoV9.Application.Infrastructure.Extensions;
 
 public static class PublishedContentExtensions
 {

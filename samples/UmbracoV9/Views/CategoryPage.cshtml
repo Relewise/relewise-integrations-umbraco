@@ -1,10 +1,10 @@
 ﻿@using Umbraco.Cms.Web.Common.PublishedModels;
-@using UmbracoV9.Application.Infrastructure.Extensions
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
 @using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+@using Relewise.UmbracoV9.Application.Infrastructure.Extensions
 
 
-	<section class="bg-title-page p-t-50 p-b-40 flex-col-c-m" style="background-image: url(/images/heading-pages-02.jpg);">
+<section class="bg-title-page p-t-50 p-b-40 flex-col-c-m" style="background-image: url(/images/heading-pages-02.jpg);">
 		<h2 class="l-text2 t-center">
 			@Model.GetTitle()
 		</h2>

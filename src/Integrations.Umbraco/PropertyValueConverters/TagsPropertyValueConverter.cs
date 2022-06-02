@@ -4,7 +4,7 @@ using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-public class TagsPropertyValueConverter : IRelewisePropertyValueConverter
+internal class TagsPropertyValueConverter : IRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
     {

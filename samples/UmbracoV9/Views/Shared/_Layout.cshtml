@@ -1,5 +1,5 @@
 ﻿@using Umbraco.Cms.Core.Models
-@using UmbracoV9.Application.Infrastructure.Extensions
+@using Relewise.UmbracoV9.Application.Infrastructure.Extensions
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 
 @{
@@ -34,7 +34,6 @@
     <!--=========================================/======================================================-->
     <link rel="stylesheet" type="text/css" href="/vendor/slick/slick.css">
     <!--=========================================/======================================================-->
-    <link rel="stylesheet" type="text/css" href="/vendor/lightbox2/css/lightbox.min.css">
     <link rel="stylesheet" type="text/css" href="/css/main.css">
     <!--=========================================/======================================================-->
     <link rel="stylesheet" type="text/css" href="/css/util.css">
@@ -56,7 +55,7 @@
                 <div class="wrap_menu">
                     <nav class="menu">
                         <ul class="main_menu">
-                            @foreach (Link child in @headerLinks)
+                            @foreach (Link child in headerLinks)
                             {
                                 IPublishedContent content = Umbraco.Content(child.Udi);
                                 <li><a href="@child.Url">@content.GetTitle()</a></li>
@@ -382,15 +381,16 @@
     </div>
 
     <!-- Container Selection1 -->
-<div id="dropDownSelect1"></div>
+    <div id="dropDownSelect1"></div>
 
-<div id="cookie-consent"></div>
+    <div id="cookie-consent"></div>
 
-<!--===============================================================================================-->
+    <!--===============================================================================================-->
     <script type="text/javascript" src="/vendor/jquery/jquery-3.2.1.min.js"></script>
     <!--================================/===============================================================-->
     <script type="text/javascript" src="/vendor/animsition/js/animsition.min.js"></script>
-    <!--================================/===============================================================-->
+    <!--================================/===============================================================--> 
+    <script type="text/javascript" src="vendor/bootstrap/js/popper.js"></script>
     <script type="text/javascript" src="/vendor/bootstrap/js/bootstrap.min.js"></script>
     <!--================================/===============================================================-->
     <script type="text/javascript" src="/vendor/select2/select2.min.js"></script>
@@ -422,8 +422,8 @@
 
     <!--===============================================================================================-->
     <script src="/js/main.js"></script>
-	<script type="module" src="http://localhost:8081/js/chunk-vendors.js"></script>
-    <script type="module" src="http://localhost:8081/js/app.js"></script>
+	<script type="module" src="http://localhost:9292/js/chunk-vendors.js"></script>
+    <script type="module" src="http://localhost:9292/js/app.js"></script>
 
 </body>
 </html>

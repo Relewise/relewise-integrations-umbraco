@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco.Controllers;
 using Relewise.Integrations.Umbraco.Dashboards;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
@@ -20,34 +20,42 @@ namespace Relewise.Integrations.Umbraco;
 
 public static class UmbracoBuilderExtensions
 {
-    public static IUmbracoBuilder AddRelewise(this IUmbracoBuilder builder, Action<RelewiseConfigurationBuilder> options)
+    public static IUmbracoBuilder AddRelewise(this IUmbracoBuilder builder, Action<RelewiseUmbracoOptionsBuilder> configure)
     {
-        if (builder == null) throw new ArgumentNullException(nameof(builder));
-        if (options == null) throw new ArgumentNullException(nameof(options));
+        ArgumentNullException.ThrowIfNull(configure, nameof(configure));
 
-        var config = new RelewiseConfigurationBuilder();
-        options.Invoke(config);
+        return builder.AddRelewise((optionsBuilder, _) => configure(optionsBuilder));
+    }
 
-        builder.Services.AddSingleton(config.MappingConfiguration);
+    public static IUmbracoBuilder AddRelewise(this IUmbracoBuilder builder, Action<RelewiseUmbracoOptionsBuilder, IServiceProvider> configure)
+    {
+        ArgumentNullException.ThrowIfNull(builder, nameof(builder));
+        ArgumentNullException.ThrowIfNull(configure, nameof(configure));
 
-        var relewiseConfiguration = new RelewiseConfiguration(config.MappingConfiguration.AutoMappedDocTypes?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>());
-        builder.Services.AddSingleton(relewiseConfiguration);
+        builder.Services.AddRelewise(x => x.Named.Add(Constants.NamedClientName, clientOptions =>
+        {
+            clientOptions.Tracker.Timeout = TimeSpan.FromMinutes(2);
+        }));
 
-        builder.Services.AddSingleton<IContentMapper, RelewiseContentMapper>();
-        builder.Services.AddSingleton<IExportContentService, ExportContentService>();
-        builder.Services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
+        builder.Services.AddSingleton(new RelewiseUmbracoConfiguration.Configure(configure));
 
-        builder.Services.AddSingleton<IRelewisePropertyValueConverter, TextAreaPropertyValueConverter>();
-        builder.Services.AddSingleton<IRelewisePropertyValueConverter, TextFieldPropertyValueConverter>();
-        builder.Services.AddSingleton<IRelewisePropertyValueConverter, CheckboxPropertyValueConverter>();
-        builder.Services.AddSingleton<IRelewisePropertyValueConverter, IntegerPropertyValueConverter>();
-        builder.Services.AddSingleton<IRelewisePropertyValueConverter, DecimalPropertyValueConverter>();
-        builder.Services.AddSingleton<IRelewisePropertyValueConverter, DateTimePropertyValueConverter>();
-        builder.Services.AddSingleton<IRelewisePropertyValueConverter, TagsPropertyValueConverter>();
-        builder.Services.AddSingleton<IRelewisePropertyValueConverter, RichTextEditorPropertyValueConverter>();
-        builder.Services.AddSingleton<IRelewisePropertyValueConverter, NestedContentPropertyValueConverter>();
-        builder.Services.AddSingleton<IRelewisePropertyValueConverter, MediaPickerValueConverter>();
-        builder.Services.AddSingleton<IRelewisePropertyValueConverter, ImageCropperValueConverter>();
+        builder.Services.TryAddSingleton(s => new RelewiseUmbracoConfiguration(s));
+
+        builder.Services.TryAddSingleton<IContentMapper, RelewiseContentMapper>();
+        builder.Services.TryAddSingleton<IExportContentService, ExportContentService>();
+        builder.Services.TryAddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
+
+        builder.Services.AddValueConverter<TextAreaPropertyValueConverter>()
+            .AddValueConverter<TextFieldPropertyValueConverter>()
+            .AddValueConverter<CheckboxPropertyValueConverter>()
+            .AddValueConverter<IntegerPropertyValueConverter>()
+            .AddValueConverter<DecimalPropertyValueConverter>()
+            .AddValueConverter<DateTimePropertyValueConverter>()
+            .AddValueConverter<TagsPropertyValueConverter>()
+            .AddValueConverter<RichTextEditorPropertyValueConverter>()
+            .AddValueConverter<NestedContentPropertyValueConverter>()
+            .AddValueConverter<MediaPickerValueConverter>()
+            .AddValueConverter<ImageCropperValueConverter>();
 
         builder.AddNotificationHandler<ContentPublishedNotification, RelewiseContentPublishedNotificationHandler>();
         builder.AddNotificationHandler<ContentUnpublishedNotification, RelewiseContentUnpublishedNotificationHandler>();

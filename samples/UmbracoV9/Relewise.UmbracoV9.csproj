@@ -2,12 +2,15 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <nullable>enable</nullable>
+		<LangVersion>latest</LangVersion>
+	    <Nullable>enable</Nullable>
+	    <WarningsAsErrors>true</WarningsAsErrors>
+	    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>
 	    <PackageReference Include="Relewise.Client" Version="1.10.0" />
-	    <PackageReference Include="Relewise.Client.Extensions" Version="1.0.0" />
+	    <PackageReference Include="Relewise.Client.Extensions" Version="1.1.0" />
         <PackageReference Include="Umbraco.Cms" Version="9.4.3" />
     </ItemGroup>
 
@@ -34,4 +37,9 @@
 		    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	    </EmbeddedResource>
     </ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="umbraco\**" Watch="false" />
+		<Compile Remove="umbraco\**" />
+	</ItemGroup>
 </Project>

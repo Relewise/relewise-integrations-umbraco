@@ -1,4 +1,4 @@
-namespace UmbracoV9.Application.Infrastructure.CookieConsent;
+namespace Relewise.UmbracoV9.Application.Infrastructure.CookieConsent;
 
 public enum CookieType
 {

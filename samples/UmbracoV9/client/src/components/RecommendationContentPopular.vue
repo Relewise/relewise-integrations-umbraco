@@ -16,21 +16,35 @@
       </div>
     </template>
   </div>
+  <div v-if="hasError" class="relewise-error">
+    <h2>Recommendation API request failed</h2>
+    <p class="relewise-error">The recommendation API request failed. This is likely due to a misconfiguration in the Relewise-appsettings section. Please verify that the dataset-id and API-key has been correctly configured</p>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from '@vue/runtime-dom'
 
-const result: any|null = ref(null)
+interface RecommendationResult {
+  displayName: string;
+}
+
+const result: RecommendationResult[][]|null = ref(null)
+const hasError = ref(false)
 
 function showLarge (index: number, contentIndex: number) {
   return (contentIndex === 0 && index !== 1) || (contentIndex === 1 && index === 1)
 }
 
 function recommend () {
+  hasError.value = false
   fetch('/api/content/recommend/popular')
     .then(response => response.json())
-    .then(data => { result.value = data })
+    .then(data => {
+      result.value = data
+      hasError.value = false
+    })
+    .catch(() => { hasError.value = true })
 }
 
 recommend()

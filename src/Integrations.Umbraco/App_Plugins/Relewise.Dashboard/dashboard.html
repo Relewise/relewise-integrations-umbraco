@@ -1,19 +1,82 @@
 ﻿<div ng-app id="relewiseDashboard" ng-controller="relewiseDashboardController as vm" class="relewise-dashboard">
+    <h2>Relewise</h2>
     <umb-box>
         <umb-box-content>
-            <h2>Relewise</h2>
+
             <p>
                 Welcome to the Relewise dashboard - Here you can perform export functions get all your content exported into Relewise.<br />
-                It's also possible to change the settings for Relewise directly here.
+                It's also possible to see the settings for Relewise directly here.
             </p>
-            <div style="margin-bottom: 10px;">
-                <button class="btn btn-primary" ng-click="vm.exportContent()" ng-disabled="vm.exportLoading'">
-                    Export all content to Relewise
+            <div>
+                <button class="btn btn-primary" ng-click="vm.exportContent()" ng-disabled="vm.exportLoading">
+                    Full content export
                 </button>
             </div>
-            <div class="export-error" ng-if="vm.errorMessage">{{vm.errorMessage}}</div>
-            <div class="export-success" ng-if="vm.success">{{vm.success}}</div>
-
+            <div class="error mt-10" ng-if="vm.errorMessage">{{vm.errorMessage}}</div>
+            <div class="export-success mt-10" ng-if="vm.success">{{vm.success}}</div>
         </umb-box-content>
+    </umb-box>
+
+    <h3>Settings</h3>
+    <umb-box>
+        <umb-box-content>
+            <p>
+                These are the settings registered with for Relewise.
+            </p>
+
+            <p class="error" ng-if="vm.configurationError">
+                No options has been configured. Please check your call to the 'services.AddRelewise(options => { /* options goes here */ })'-method.
+            </p>
+            <div ng-if="vm.configuration !== null">
+                Tracked content types are: <strong>{{vm.configuration.trackedContentTypes.join(', ')}}</strong><br />
+                Exported content types are: <strong>{{vm.configuration.exportedContentTypes.join(', ')}}</strong><br />
+            </div>
+        </umb-box-content>
+    </umb-box>
+
+    <h3 ng-if="vm.configuration !== null">Clients</h3>
+    <umb-box ng-if="vm.configuration !== null">
+        <div class="umb-table">
+            <div class="umb-table-head">
+                <div class="umb-table-row">
+                    <div class="umb-table-cell not-fixed umb-table__name">Name</div>
+                    <div class="umb-table-cell not-fixed">DatasetId</div>
+                    <div class="umb-table-cell not-fixed">Timeout</div>
+
+                </div>
+            </div>
+            <div class="umb-table-body">
+                <div ng-repeat="named in vm.configuration.named">
+                    <div class="umb-table-row">
+                        <div class="umb-table-cell not-fixed umb-table__name">
+                            {{named.name}}
+                        </div>
+                        <div class="umb-table-cell not-fixed"></div>
+                        <div class="umb-table-cell not-fixed"></div>
+                    </div>
+                    <div class="umb-table-row">
+                        <div class="umb-table-cell not-fixed umb-table__name">
+                            <span class="pl-20">Tracker</span>
+                        </div>
+                        <div class="umb-table-cell not-fixed">{{ named.tracker.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.tracker.timeout }}</div>
+                    </div>
+                    <div class="umb-table-row">
+                        <div class="umb-table-cell not-fixed umb-table__name">
+                            <span class="pl-20">Recommender</span>
+                        </div>
+                        <div class="umb-table-cell not-fixed">{{ named.recommender.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.recommender.timeout }}</div>
+                    </div>
+                    <div class="umb-table-row">
+                        <div class="umb-table-cell not-fixed umb-table__name">
+                            <span class="pl-20">Searcher</span>
+                        </div>
+                        <div class="umb-table-cell not-fixed">{{ named.searcher.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.searcher.timeout }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </umb-box>
 </div>

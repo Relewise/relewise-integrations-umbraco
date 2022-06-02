@@ -8,7 +8,7 @@ using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco;
 
-namespace UmbracoV9.Application.Api;
+namespace Relewise.UmbracoV9.Application.Api;
 
 public static class NewsletterApi
 {

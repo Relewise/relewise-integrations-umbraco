@@ -1,19 +1,22 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
+using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
+using Relewise.UmbracoV9.Application;
+using Relewise.UmbracoV9.Application.Api;
+using Relewise.UmbracoV9.Application.Infrastructure.CookieConsent;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Extensions;
-using UmbracoV9.Application;
-using UmbracoV9.Application.Api;
-using UmbracoV9.Application.Infrastructure.CookieConsent;
 
-namespace UmbracoV9
+namespace Relewise.UmbracoV9
 {
     public class Startup
     {
@@ -35,7 +38,7 @@ namespace UmbracoV9
             var builder = new ConfigurationBuilder()
                 .SetBasePath(webHostEnvironment.ContentRootPath)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true)
+                .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
                 .AddJsonFile($"appsettings.{webHostEnvironment.EnvironmentName}.json", optional: true)
                 .AddEnvironmentVariables();
 
@@ -52,21 +55,24 @@ namespace UmbracoV9
         /// </remarks>
         public void ConfigureServices(IServiceCollection services)
         {
+            // This setups the needed configuration for you to be able to interact with our API.
+            // You need to add you own dataset id and api-key in the appsettings before recommendations and search works
+            services.AddRelewise(options => options.ReadFromConfiguration(_config));
+
             services.AddHttpContextAccessor();
             services.AddSingleton<CookieConsent>();
             services.AddSingleton<IRelewiseUserLocator, RelewiseUserLocator>();
-            services.AddRelewise(options => options.ReadFromConfiguration(_config));
 
-#pragma warning disable IDE0022 // Use expression body for methods
             services.AddUmbraco(_env, _config)
                 .AddBackOffice()
                 .AddWebsite()
                 .AddComposers()
                 .AddRelewise(options => options
-                    .UseMapping(map => map
-                        .AutoMapping("LandingPage", "ContentPage", "BlogEntry")))
+                    .AddContentType("landingPage", contentType => contentType.AutoMap())
+                    .AddContentType("blogList", contentType => contentType.UseMapper(new BlogMapper()))
+                    .AddContentType("contentPage", contentType => contentType.AutoMap())
+                    .AddContentType("blogEntry", contentType => contentType.AutoMap()))
                 .Build();
-#pragma warning restore IDE0022 // Use expression body for methods
         }
 
         /// <summary>
@@ -91,7 +97,7 @@ namespace UmbracoV9
                 {
                     u.UseBackOffice();
                     u.UseWebsite();
-                    // enables tracking of all pageviews to Relewise
+                    // Enables tracking of all pageviews to Relewise
                     u.TrackContentViews();
                 })
                 .WithEndpoints(u =>
@@ -103,5 +109,13 @@ namespace UmbracoV9
         }
     }
 
+    public class BlogMapper : IContentTypeMapping
+    {
+        public Task<ContentUpdate> Map(ContentMappingContext context)
+        {
+            context.ContentUpdate.Content.Data["Title"] = context.PublishedContent.GetProperty("title").GetValue<string>(context.CulturesToPublish.First());
 
+            return Task.FromResult(context.ContentUpdate);
+        }
+    }
 }
