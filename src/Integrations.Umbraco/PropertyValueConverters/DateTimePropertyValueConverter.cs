@@ -5,7 +5,7 @@ using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-public class DateTimePropertyValueConverter : IRelewisePropertyValueConverter
+internal class DateTimePropertyValueConverter : IRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
     {

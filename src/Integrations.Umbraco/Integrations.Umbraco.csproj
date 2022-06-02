@@ -4,22 +4,22 @@
 		<TargetFramework>net6.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
-		<WarningsAsErrors>true</WarningsAsErrors>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<WarningsAsErrors>Nullable</WarningsAsErrors>
 		<AssemblyName>Relewise.Integrations.Umbraco</AssemblyName>
 		<RootNamespace>Relewise.Integrations.Umbraco</RootNamespace>
 		<Title>Relewise integration for Umbraco</Title>
 		<Description>An extension for Umbraco CMS allowing easy content export to Relewise</Description>
 		<PackageIcon>logo.png</PackageIcon>
-		<PackageTags>Relewise, Umbraco 9</PackageTags>
+		<PackageTags>Relewise;Umbraco 9;Recommendations;Search;SearchEngine;Personalization;Recommender</PackageTags>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<License>http://opensource.org/licenses/MIT</License>
 		<PackageProjectUrl>https://github.com/Relewise/relewise-integrations-umbraco</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Relewise/relewise-integrations-umbraco</RepositoryUrl>
 		<PackageId>Relewise.Integrations.Umbraco</PackageId>
-		<PackageVersion>0.0.8-alpha</PackageVersion>
+		<PackageVersion>1.0.0</PackageVersion>
 		<Authors>Relewise</Authors>
 		<Company>Relewise</Company>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<ItemGroup>

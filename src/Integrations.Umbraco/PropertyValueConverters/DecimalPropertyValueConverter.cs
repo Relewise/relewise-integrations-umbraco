@@ -4,7 +4,7 @@ using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-public class DecimalPropertyValueConverter : IRelewisePropertyValueConverter
+internal class DecimalPropertyValueConverter : IRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
     {

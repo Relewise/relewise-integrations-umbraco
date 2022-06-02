@@ -32,6 +32,9 @@ public class ContentMappingContext : IServiceProvider
     /// </summary>
     public ContentUpdate ContentUpdate { get; }
 
+    /// <summary>
+    /// These are the languages that content was published in.
+    /// </summary>
     public List<string> CulturesToPublish { get; }
 
     public object? GetService(Type serviceType)
