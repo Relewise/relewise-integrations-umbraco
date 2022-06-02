@@ -2,8 +2,10 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
-        <nullable>enable</nullable>
-	    <WarningsAsErrors>Nullable</WarningsAsErrors>
+		<LangVersion>latest</LangVersion>
+	    <Nullable>enable</Nullable>
+	    <WarningsAsErrors>true</WarningsAsErrors>
+	    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <ItemGroup>

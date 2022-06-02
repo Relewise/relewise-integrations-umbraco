@@ -68,11 +68,10 @@ namespace Relewise.UmbracoV9
                 .AddWebsite()
                 .AddComposers()
                 .AddRelewise(options => options
-                    .AddContentType("LandingPage", contentType => contentType.AutoMap())
-                    .AddContentType("Site")
-                    .AddContentType("BlogList", contentType => contentType.UseMapper(new BlogMapper()))
-                    .AddContentType("ContentPage", contentType => contentType.AutoMap())
-                    .AddContentType("BlogEntry", contentType => contentType.AutoMap()))
+                    .AddContentType("landingPage", contentType => contentType.AutoMap())
+                    .AddContentType("blogList", contentType => contentType.UseMapper(new BlogMapper()))
+                    .AddContentType("contentPage", contentType => contentType.AutoMap())
+                    .AddContentType("blogEntry", contentType => contentType.AutoMap()))
                 .Build();
         }
 

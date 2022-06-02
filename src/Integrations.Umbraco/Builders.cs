@@ -9,13 +9,15 @@ public class RelewiseUmbracoOptionsBuilder
 
     public RelewiseUmbracoOptionsBuilder AddContentType(string contentType, Action<ContentTypeBuilder>? options = null, bool throwIfExists = false)
     {
+        if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentException("Value cannot be null or whitespace", nameof(contentType));
+
         if (ContentBuilders.ContainsKey(contentType) && throwIfExists)
-            throw new ArgumentException("A client with that name was already registered", nameof(contentType));
+            throw new ArgumentException("A contentType with that name was already registered", nameof(contentType));
 
         if (ContentBuilders.TryGetValue(contentType, out ContentTypeBuilder? builder))
         {
             if (throwIfExists)
-                throw new ArgumentException("A client with that name was already registered", nameof(contentType));
+                throw new ArgumentException("A contentType with that name was already registered", nameof(contentType));
         }
         else
         {
@@ -42,6 +44,6 @@ public class ContentTypeBuilder
 
     public void UseMapper(IContentTypeMapping contentTypeMapping)
     {
-        Mapper = contentTypeMapping;
+        Mapper = contentTypeMapping ?? throw new ArgumentNullException(nameof(contentTypeMapping));
     }
 }

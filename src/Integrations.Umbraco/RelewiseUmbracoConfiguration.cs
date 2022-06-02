@@ -39,16 +39,22 @@ public class RelewiseUmbracoConfiguration
 
     public bool CanMap(string contentType)
     {
+        if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentException("Value cannot be null or whitespace", nameof(contentType));
+        
         return _autoMappedContentTypes.Contains(contentType) || _customMappers.ContainsKey(contentType);
     }
 
     public bool IsTrackable(IPublishedElement content)
     {
+        if (content == null) throw new ArgumentNullException(nameof(content));
+
         return IsTrackable(content.ContentType.Alias);
     }
 
     public bool IsTrackable(IContent content)
     {
+        if (content == null) throw new ArgumentNullException(nameof(content));
+
         return IsTrackable(content.ContentType.Alias);
     }
 
@@ -59,6 +65,8 @@ public class RelewiseUmbracoConfiguration
 
     public bool TryGetMapper(string contentType, out IContentTypeMapping? mapping)
     {
+        if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentException("Value cannot be null or whitespace", nameof(contentType));
+        
         return _customMappers.TryGetValue(contentType, out mapping) && mapping != null;
     }
 

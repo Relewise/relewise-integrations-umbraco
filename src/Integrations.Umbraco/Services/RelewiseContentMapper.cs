@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core;
@@ -54,9 +55,9 @@ internal class RelewiseContentMapper : IContentMapper
 
     private void AutoMapOrUseMapper(MapContent content, List<string> culturesToPublish, ContentUpdate contentUpdate)
     {
-        if (_configuration.TryGetMapper(content.PublishedContent.ContentType.Alias, out IContentTypeMapping? mapping))
+        if (TryGetMapper(content, out IContentTypeMapping? mapping))
         {
-            mapping!.Map(new ContentMappingContext(content.PublishedContent, contentUpdate, culturesToPublish, _provider));
+            mapping.Map(new ContentMappingContext(content.PublishedContent, contentUpdate, culturesToPublish, _provider));
         }
         else
         {
@@ -67,6 +68,11 @@ internal class RelewiseContentMapper : IContentMapper
         contentUpdate.Content.Data.Add("ContentTypeAlias", content.PublishedContent.ContentType.Alias);
         contentUpdate.Content.Data.Add("Url", content.PublishedContent.Url());
         contentUpdate.Content.Data.Add("CreatedAt", new DateTimeOffset(content.PublishedContent.CreateDate).ToUnixTimeSeconds());
+
+        bool TryGetMapper(MapContent mapContent, [NotNullWhen(true) ]out IContentTypeMapping? contentTypeMapping)
+        {
+            return _configuration.TryGetMapper(mapContent.PublishedContent.ContentType.Alias, out contentTypeMapping);
+        }
     }
 
     private static List<CategoryPath>? GetCategoryPaths(MapContent content, List<string> culturesToPublish)
