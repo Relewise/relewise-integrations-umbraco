@@ -9,10 +9,10 @@ namespace Relewise.Integrations.Umbraco.NotificationHandlers;
 
 internal class RelewiseContentDeletedNotificationNotificationHandler : INotificationHandler<ContentDeletedNotification>
 {
-    private readonly RelewiseConfiguration _configuration;
+    private readonly RelewiseUmbracoConfiguration _configuration;
     private readonly ITracker _tracker;
 
-    public RelewiseContentDeletedNotificationNotificationHandler(RelewiseConfiguration configuration, ITracker tracker)
+    public RelewiseContentDeletedNotificationNotificationHandler(RelewiseUmbracoConfiguration configuration, ITracker tracker)
     {
         _configuration = configuration;
         _tracker = tracker;

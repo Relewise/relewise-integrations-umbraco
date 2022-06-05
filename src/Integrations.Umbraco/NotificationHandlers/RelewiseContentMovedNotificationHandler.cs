@@ -11,10 +11,10 @@ internal class RelewiseContentMovedNotificationHandler : INotificationHandler<Co
 {
     private const int TrashCanId = -1;
 
-    private readonly RelewiseConfiguration _configuration;
+    private readonly RelewiseUmbracoConfiguration _configuration;
     private readonly ITracker _tracker;
 
-    public RelewiseContentMovedNotificationHandler(RelewiseConfiguration configuration, ITracker tracker)
+    public RelewiseContentMovedNotificationHandler(RelewiseUmbracoConfiguration configuration, ITracker tracker)
     {
         _configuration = configuration;
         _tracker = tracker;

@@ -1,0 +1,23 @@
+﻿@using Umbraco.Cms.Web.Common.PublishedModels;
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
+@using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+
+<div class="container">
+    <h1 class="m-b-30">Showing results for <strong>@Context.Request.Query["q"]</strong></h1>
+
+    <div id="content-search">
+    </div>
+</div>
+@*<div class="row">
+    <div class="col-4">
+    <a href="@Model.Url()" style="display: block;">
+    <img src="@splashImage.GetCropUrl(400,250)" style="max-width: 100%;" />
+
+    <h4 class="m-t-5">@(Model.Value<string>("headline"))</h4>
+
+    <div class="m-t-5">
+    @Html.Raw(Model.Value<string>("splashText"))
+    </div>
+    </a>
+    </div>
+    </div>*@

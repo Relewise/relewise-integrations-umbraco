@@ -15,10 +15,10 @@ namespace Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
 internal class RelewiseContentMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly RelewiseConfiguration _configuration;
+    private readonly RelewiseUmbracoConfiguration _configuration;
     private readonly IRelewiseUserLocator _userLocator;
 
-    public RelewiseContentMiddleware(RequestDelegate next, RelewiseConfiguration configuration, IRelewiseUserLocator userLocator)
+    public RelewiseContentMiddleware(RequestDelegate next, RelewiseUmbracoConfiguration configuration, IRelewiseUserLocator userLocator)
     {
         _next = next;
         _configuration = configuration;

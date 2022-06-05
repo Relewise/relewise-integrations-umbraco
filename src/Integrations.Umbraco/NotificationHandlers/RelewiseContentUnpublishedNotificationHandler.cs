@@ -10,10 +10,10 @@ namespace Relewise.Integrations.Umbraco.NotificationHandlers;
 
 internal class RelewiseContentUnpublishedNotificationHandler : INotificationHandler<ContentUnpublishedNotification>
 {
-    private readonly RelewiseConfiguration _configuration;
+    private readonly RelewiseUmbracoConfiguration _configuration;
     private readonly ITracker _tracker;
 
-    public RelewiseContentUnpublishedNotificationHandler(RelewiseConfiguration configuration, ITracker tracker)
+    public RelewiseContentUnpublishedNotificationHandler(RelewiseUmbracoConfiguration configuration, ITracker tracker)
     {
         _configuration = configuration;
         _tracker = tracker;

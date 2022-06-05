@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace UmbracoV9
+namespace Relewise.UmbracoV9
 {
     public class Program
     {

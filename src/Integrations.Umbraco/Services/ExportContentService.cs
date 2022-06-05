@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
+using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
 using Umbraco.Cms.Core;
@@ -20,15 +22,15 @@ internal class ExportContentService : IExportContentService
 {
     private readonly IContentMapper _contentMapper;
     private readonly IUmbracoContextFactory _umbracoContextFactory;
-    private readonly ITracker _tracker;
     private readonly IContentService _contentService;
+    private readonly IServiceProvider _provider;
 
-    public ExportContentService(IContentMapper contentMapper, IUmbracoContextFactory umbracoContextFactory, ITracker tracker, IContentService contentService)
+    public ExportContentService(IContentMapper contentMapper, IUmbracoContextFactory umbracoContextFactory, IContentService contentService, IServiceProvider provider)
     {
         _contentMapper = contentMapper;
         _umbracoContextFactory = umbracoContextFactory;
-        _tracker = tracker;
         _contentService = contentService;
+        _provider = provider;
     }
 
     public async Task<ExportContentResult> Export(ExportContent exportContent, CancellationToken token)
@@ -41,14 +43,27 @@ internal class ExportContentService : IExportContentService
 
         IPublishedContentCache contentCache = umbracoContextReference.UmbracoContext.Content;
 
+        ITracker tracker;
+        try
+        {
+            var factory = _provider.GetRequiredService<IRelewiseClientFactory>();
+            tracker = factory.GetClient<ITracker>(Constants.NamedClientName);
+        }
+        catch
+        {
+            // tracker is not setup correctly so we just fail silently
+            return new ExportContentResult();
+        }
+
         ContentUpdate[] contentUpdates = exportContent.Contents
             .Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version)))
             .Where(x => x.Successful)
             .Select(x => x.ContentUpdate!)
             .ToArray();
-        await _tracker.TrackAsync(token, contentUpdates);
+        // ReSharper disable once CoVariantArrayConversion
+        await tracker.TrackAsync(token, contentUpdates);
 
-        await _tracker.TrackAsync(new ContentAdministrativeAction(
+        await tracker.TrackAsync(new ContentAdministrativeAction(
             Language.Undefined,
             Currency.Undefined,
             new FilterCollection(new ContentIdFilter(contentUpdates.Select(x => x.Content.Id))),
@@ -78,7 +93,10 @@ internal class ExportContentService : IExportContentService
 
             await Export(new ExportContent(contents, version), token);
 
-            await _tracker.TrackAsync(new ContentAdministrativeAction(
+            var factory = _provider.GetRequiredService<IRelewiseClientFactory>();
+            var tracker = factory.GetClient<ITracker>(Constants.NamedClientName);
+
+            await tracker.TrackAsync(new ContentAdministrativeAction(
                 Language.Undefined,
                 Currency.Undefined,
                 new FilterCollection(new ContentDataFilter(Constants.VersionKey, new EqualsCondition(version, negated: true), filterOutIfKeyIsNotFound: false)),

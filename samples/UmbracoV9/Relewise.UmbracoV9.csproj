@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+	    <Nullable>enable</Nullable>
+	    <WarningsAsErrors>true</WarningsAsErrors>
+	    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <ItemGroup>
+	    <PackageReference Include="Relewise.Client" Version="1.10.0" />
+	    <PackageReference Include="Relewise.Client.Extensions" Version="1.1.0" />
+        <PackageReference Include="Umbraco.Cms" Version="9.4.3" />
+    </ItemGroup>
+
+    <!-- Force windows to use ICU. Otherwise Windows 10 2019H1+ will do it, but older windows 10 and most if not all winodws servers will run NLS -->
+    <ItemGroup>
+      <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="68.2.0.9" />
+      <ProjectReference Include="..\..\src\Integrations.Umbraco\Integrations.Umbraco.csproj" />
+
+      <RuntimeHostConfigurationOption Condition="$(RuntimeIdentifier.StartsWith('linux')) Or $(RuntimeIdentifier.StartsWith('win')) Or ('$(RuntimeIdentifier)' == '' And !$([MSBuild]::IsOSPlatform('osx')))" Include="System.Globalization.AppLocalIcu" Value="68.2.0.9" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <CopyRazorGenerateFilesToPublishDirectory>true</CopyRazorGenerateFilesToPublishDirectory>
+    </PropertyGroup>
+
+    <!-- Set this to true if ModelsBuilder mode is not InMemoryAuto-->
+    <PropertyGroup>
+        <RazorCompileOnBuild>false</RazorCompileOnBuild>
+        <RazorCompileOnPublish>false</RazorCompileOnPublish>
+    </PropertyGroup>
+
+    <ItemGroup>
+	    <EmbeddedResource Include="Application\Infrastructure\Migrations\package.zip">
+		    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	    </EmbeddedResource>
+    </ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="umbraco\**" Watch="false" />
+		<Compile Remove="umbraco\**" />
+	</ItemGroup>
+</Project>

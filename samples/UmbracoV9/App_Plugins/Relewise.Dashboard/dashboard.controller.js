@@ -1,21 +1,33 @@
 ﻿function relewiseDashboardController(relewiseDashboardResources) {
     var vm = this;
-    vm.buttonState = false;
-    vm.errorMessage = "";
-    vm.success = "";
+    vm.exportLoading = false;
+    vm.configurationError = false;
+    vm.configuration = null;
     vm.exportContent = function () {
-        vm.buttonState = true;
+        vm.exportLoading = true;
+        vm.errorMessage = "";
+        vm.success = "";
         relewiseDashboardResources.exportContent().then(() => {
-            vm.buttonState = false;
+            vm.exportLoading = false;
             vm.success = "Content was successfully exported to Relewise";
-        }, () => vm.errorMessage = "Unexpected error while exporting data happend");
+            vm.errorMessage = "";
+        }, () => {
+            vm.exportLoading = false;
+            vm.success = "";
+            vm.errorMessage = "Unexpected error while exporting data happened";
+        });
     }
 
     function init() {
-        relewiseDashboardResources.getConfiguration().then(response => {
+        relewiseDashboardResources.getConfiguration().then((response) => {
             if (response.status === 200) {
+                vm.configurationError = false;
                 vm.configuration = response.data;
+            } else {
+                vm.configurationError = true;
             }
+        }, () => {
+            vm.configurationError = true;
         });
     }
 
