@@ -21,7 +21,7 @@ internal class RelewiseContentDeletedNotificationNotificationHandler : INotifica
     public void Handle(ContentDeletedNotification notification)
     {
         string[] ids = notification.DeletedEntities
-            .Where(x => _configuration.IsTrackable(x))
+            .Where(x => _configuration.CanMap(x))
             .Select(x => x.Id.ToString())
             .ToArray();
 

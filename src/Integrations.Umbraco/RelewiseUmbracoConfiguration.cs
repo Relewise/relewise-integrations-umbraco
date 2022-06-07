@@ -8,7 +8,7 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 namespace Relewise.Integrations.Umbraco;
 
 /// <summary>
-/// Defines the the Relewise Umbraco Integration configuration
+/// Defines the Relewise Umbraco Integration configuration
 /// </summary>
 public class RelewiseUmbracoConfiguration
 {
@@ -48,6 +48,19 @@ public class RelewiseUmbracoConfiguration
     public IReadOnlyCollection<string> ExportedContentTypes => _autoMappedContentTypes.Concat(_customMappers.Keys).ToArray();
 
     /// <summary>
+    /// If the contents type is registered, this will tell that it can be mapped by the automapping or by a mapper
+    /// </summary>
+    /// <param name="content"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public bool CanMap(IContent content)
+    {
+        if (content == null) throw new ArgumentNullException(nameof(content));
+
+        return CanMap(content.ContentType.Alias);
+    }
+
+    /// <summary>
     /// If contentType is registered, this will tell that it can be mapped by the automapping or by a mapper
     /// </summary>
     /// <param name="contentType"></param>
@@ -60,14 +73,13 @@ public class RelewiseUmbracoConfiguration
         return _autoMappedContentTypes.Contains(contentType) || _customMappers.ContainsKey(contentType);
     }
 
+    /// <summary>
+    /// Check if the content is registered to be tracked
+    /// </summary>
+    /// <param name="content"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
     public bool IsTrackable(IPublishedElement content)
-    {
-        if (content == null) throw new ArgumentNullException(nameof(content));
-
-        return IsTrackable(content.ContentType.Alias);
-    }
-
-    public bool IsTrackable(IContent content)
     {
         if (content == null) throw new ArgumentNullException(nameof(content));
 
@@ -79,6 +91,13 @@ public class RelewiseUmbracoConfiguration
         return _trackableDocTypes.Contains(docAlias);
     }
 
+    /// <summary>
+    /// Find a mapper for a ContentType Alias, if one exists
+    /// </summary>
+    /// <param name="contentType"></param>
+    /// <param name="mapping"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
     public bool TryGetMapper(string contentType, out IContentTypeMapping? mapping)
     {
         if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentException("Value cannot be null or whitespace", nameof(contentType));
