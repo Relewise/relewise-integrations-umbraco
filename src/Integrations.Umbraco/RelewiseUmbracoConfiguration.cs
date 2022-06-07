@@ -7,6 +7,9 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco;
 
+/// <summary>
+/// Defines the the Relewise Umbraco Integration configuration
+/// </summary>
 public class RelewiseUmbracoConfiguration
 {
     private readonly HashSet<string> _trackableDocTypes;
@@ -34,9 +37,22 @@ public class RelewiseUmbracoConfiguration
             .ToDictionary(x => x.Key, x => x.Value?.Mapper, StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Contains all contentType aliases that are being tracked
+    /// </summary>
     public IReadOnlyCollection<string> TrackedContentTypes => _trackableDocTypes;
+
+    /// <summary>
+    /// Contains all contentType aliases that are being exported
+    /// </summary>
     public IReadOnlyCollection<string> ExportedContentTypes => _autoMappedContentTypes.Concat(_customMappers.Keys).ToArray();
 
+    /// <summary>
+    /// If contentType is registered, this will tell that it can be mapped by the automapping or by a mapper
+    /// </summary>
+    /// <param name="contentType"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
     public bool CanMap(string contentType)
     {
         if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentException("Value cannot be null or whitespace", nameof(contentType));
@@ -70,5 +86,5 @@ public class RelewiseUmbracoConfiguration
         return _customMappers.TryGetValue(contentType, out mapping) && mapping != null;
     }
 
-    public delegate void Configure(RelewiseUmbracoOptionsBuilder builder, IServiceProvider services);
+    internal delegate void Configure(RelewiseUmbracoOptionsBuilder builder, IServiceProvider services);
 }

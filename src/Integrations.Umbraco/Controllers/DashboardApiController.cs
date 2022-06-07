@@ -15,6 +15,9 @@ using Umbraco.Cms.Web.Common.Controllers;
 
 namespace Relewise.Integrations.Umbraco.Controllers;
 
+/// <summary>
+/// Defines endpoints for the Dashboard
+/// </summary>
 [JsonCamelCaseFormatter]
 [PluginController("Relewise")]
 public class DashboardApiController : UmbracoAuthorizedController
@@ -23,6 +26,12 @@ public class DashboardApiController : UmbracoAuthorizedController
     private readonly IServiceProvider _provider;
     private readonly RelewiseUmbracoConfiguration _configuration;
 
+    /// <summary>
+    /// Constructor for API controller
+    /// </summary>
+    /// <param name="exportContent"></param>
+    /// <param name="provider"></param>
+    /// <param name="configuration"></param>
     public DashboardApiController(IExportContentService exportContent, IServiceProvider provider, RelewiseUmbracoConfiguration configuration)
     {
         _exportContent = exportContent;
@@ -30,6 +39,11 @@ public class DashboardApiController : UmbracoAuthorizedController
         _configuration = configuration;
     }
 
+    /// <summary>
+    /// Performs a full content export
+    /// </summary>
+    /// <param name="token"></param>
+    /// <returns></returns>
     [HttpPost]
     public async Task<IActionResult> ContentExport(CancellationToken token)
     {
@@ -38,6 +52,10 @@ public class DashboardApiController : UmbracoAuthorizedController
         return Ok();
     }
 
+    /// <summary>
+    /// Returns the current Relewise configuration
+    /// </summary>
+    /// <returns></returns>
     [HttpGet]
     public IActionResult Configuration()
     {
@@ -79,7 +97,7 @@ public class DashboardApiController : UmbracoAuthorizedController
         });
     }
 
-    public class NamedOptionsViewObject
+    private class NamedOptionsViewObject
     {
         public NamedOptionsViewObject(string name, ClientOptionsViewObject tracker, ClientOptionsViewObject recommender, ClientOptionsViewObject searcher)
         {
@@ -96,7 +114,7 @@ public class DashboardApiController : UmbracoAuthorizedController
         public ClientOptionsViewObject Searcher { get; }
     }
 
-    public class ClientOptionsViewObject
+    private class ClientOptionsViewObject
     {
         public ClientOptionsViewObject(RelewiseClientOptions options)
         {

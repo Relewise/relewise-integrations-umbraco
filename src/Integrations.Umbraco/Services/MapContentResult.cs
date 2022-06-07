@@ -2,7 +2,7 @@
 
 namespace Relewise.Integrations.Umbraco.Services;
 
-public class MapContentResult
+internal class MapContentResult
 {
     private MapContentResult() {}
 

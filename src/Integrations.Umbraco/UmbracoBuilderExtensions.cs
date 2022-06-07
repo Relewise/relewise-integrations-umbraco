@@ -18,8 +18,17 @@ using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco;
 
+/// <summary>
+/// Extensions methods for setting up Relewise in an <see cref="IServiceCollection"/>.
+/// </summary>
 public static class UmbracoBuilderExtensions
 {
+    /// <summary>
+    /// Registers services and configures <see cref="RelewiseUmbracoOptionsBuilder"/>.
+    /// </summary>
+    /// <param name="builder">The <see cref="IUmbracoBuilder"/></param>
+    /// <param name="configure">A delegate to configure <see cref="RelewiseUmbracoOptionsBuilder"/></param>
+    /// <returns>The <see cref="IUmbracoBuilder"/></returns>
     public static IUmbracoBuilder AddRelewise(this IUmbracoBuilder builder, Action<RelewiseUmbracoOptionsBuilder> configure)
     {
         ArgumentNullException.ThrowIfNull(configure, nameof(configure));
@@ -27,6 +36,12 @@ public static class UmbracoBuilderExtensions
         return builder.AddRelewise((optionsBuilder, _) => configure(optionsBuilder));
     }
 
+    /// <summary>
+    /// Registers services and configures <see cref="RelewiseUmbracoOptionsBuilder"/>.
+    /// </summary>
+    /// <param name="builder">The <see cref="IUmbracoBuilder"/></param>
+    /// <param name="configure">A delegate to configure <see cref="RelewiseUmbracoOptionsBuilder"/> which also includes the <see cref="IServiceProvider"/> if you need to do service lookups part of this configuration.</param>
+    /// <returns>The <see cref="IUmbracoBuilder"/></returns>
     public static IUmbracoBuilder AddRelewise(this IUmbracoBuilder builder, Action<RelewiseUmbracoOptionsBuilder, IServiceProvider> configure)
     {
         ArgumentNullException.ThrowIfNull(builder, nameof(builder));
@@ -41,7 +56,7 @@ public static class UmbracoBuilderExtensions
 
         builder.Services.TryAddSingleton(s => new RelewiseUmbracoConfiguration(s));
 
-        builder.Services.TryAddSingleton<IContentMapper, RelewiseContentMapper>();
+        builder.Services.TryAddSingleton<IContentMapper, ContentMapper>();
         builder.Services.TryAddSingleton<IExportContentService, ExportContentService>();
         builder.Services.TryAddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
 

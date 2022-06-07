@@ -2,7 +2,7 @@
 
 namespace Relewise.Integrations.Umbraco.Services;
 
-public class MapContent
+internal class MapContent
 {
     public MapContent(IPublishedContent publishedContent, long version)
     {
