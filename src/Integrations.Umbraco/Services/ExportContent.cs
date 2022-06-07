@@ -10,7 +10,9 @@ public class ExportContent
 {
     private readonly long? _version;
 
+#pragma warning disable 1591
     public ExportContent(IContent[] contents, long? version = null)
+#pragma warning restore 1591
     {
         Contents = contents;
         _version = version;

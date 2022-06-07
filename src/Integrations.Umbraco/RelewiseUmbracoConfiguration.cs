@@ -16,7 +16,9 @@ public class RelewiseUmbracoConfiguration
     private readonly HashSet<string> _autoMappedContentTypes;
     private readonly Dictionary<string, IContentTypeMapping?> _customMappers;
 
+#pragma warning disable 1591
     public RelewiseUmbracoConfiguration(IServiceProvider provider)
+#pragma warning restore 1591
     {
         var options = new RelewiseUmbracoOptionsBuilder();
 
