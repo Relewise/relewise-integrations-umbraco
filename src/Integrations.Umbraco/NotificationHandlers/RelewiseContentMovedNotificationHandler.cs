@@ -23,7 +23,7 @@ internal class RelewiseContentMovedNotificationHandler : INotificationHandler<Co
     public void Handle(ContentMovedNotification notification)
     {
         string[] ids = notification.MoveInfoCollection
-            .Where(x => _configuration.IsTrackable(x.Entity) && x.NewParentId == TrashCanId)
+            .Where(x => _configuration.CanMap(x.Entity) && x.NewParentId == TrashCanId)
             .Select(x => x.Entity.Id.ToString())
             .ToArray();
 

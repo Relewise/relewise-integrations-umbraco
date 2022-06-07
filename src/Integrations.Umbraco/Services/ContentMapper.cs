@@ -10,14 +10,14 @@ using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco.Services;
 
-internal class RelewiseContentMapper : IContentMapper
+internal class ContentMapper : IContentMapper
 {
     private readonly IUmbracoContextFactory _umbracoContextFactory;
     private readonly RelewiseUmbracoConfiguration _configuration;
     private readonly IRelewisePropertyConverter _propertyConverter;
     private readonly IServiceProvider _provider;
 
-    public RelewiseContentMapper(RelewiseUmbracoConfiguration configuration, IUmbracoContextFactory umbracoContextFactory, IRelewisePropertyConverter propertyConverter, IServiceProvider provider)
+    public ContentMapper(RelewiseUmbracoConfiguration configuration, IUmbracoContextFactory umbracoContextFactory, IRelewisePropertyConverter propertyConverter, IServiceProvider provider)
     {
         _configuration = configuration;
         _umbracoContextFactory = umbracoContextFactory;

@@ -22,7 +22,7 @@ internal class RelewiseContentUnpublishedNotificationHandler : INotificationHand
     public void Handle(ContentUnpublishedNotification notification)
     {
         string[] ids = notification.UnpublishedEntities
-            .Where(x => _configuration.IsTrackable(x))
+            .Where(x => _configuration.CanMap(x))
             .Select(x => x.Id.ToString())
             .ToArray();
 

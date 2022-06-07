@@ -5,6 +5,9 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco;
 
+/// <summary>
+/// Defines the context of a PublishedContent that is to be mapped
+/// </summary>
 public class ContentMappingContext : IServiceProvider
 {
     private readonly IServiceProvider _serviceProvider;
@@ -37,6 +40,9 @@ public class ContentMappingContext : IServiceProvider
     /// </summary>
     public List<string> CulturesToPublish { get; }
 
+    /// <summary>
+    /// Gets the service object of the specified type.
+    /// </summary>
     public object? GetService(Type serviceType)
     {
         return _serviceProvider.GetService(serviceType);

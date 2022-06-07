@@ -6,6 +6,9 @@ using Umbraco.Cms.Web.Common.ApplicationBuilder;
 
 namespace Relewise.Integrations.Umbraco;
 
+/// <summary>
+///  Extensions methods for setting up the Relewise Integration
+/// </summary>
 public static class UmbracoApplicationBuilderContextExtensions
 {
     /// <summary>
