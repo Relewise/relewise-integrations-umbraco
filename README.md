@@ -14,11 +14,11 @@ Add Relewise to the UmbracoBuilder, and specify the ContentTypes, that you would
 In this example, we are exporting all LandingPages and ContentPages to Relewise.
 ```csharp
 services.AddUmbraco(_env, _config)
-                .AddRelewise(options => options
-                    .AddContentType("landingPage", contentType => contentType.AutoMap())
-                    .AddContentType("blogList", contentType => contentType.UseMapper(new BlogMapper()))
-                    .AddContentType("contentPage", contentType => contentType.AutoMap())
-                    .AddContentType("blogEntry", contentType => contentType.AutoMap()))
+    .AddRelewise(options => options
+        .AddContentType("landingPage", contentType => contentType.AutoMap())
+        .AddContentType("blogList", contentType => contentType.UseMapper(new BlogMapper()))
+        .AddContentType("contentPage", contentType => contentType.AutoMap())
+        .AddContentType("blogEntry", contentType => contentType.AutoMap()))
 ```
 
 ### Sample site - Get it up and running.
