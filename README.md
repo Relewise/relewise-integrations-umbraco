@@ -1,6 +1,6 @@
 # Relewise.Integrations.Umbraco
 
-### Installing Relewise.Integrations.Umbraco
+### Installing Relewise.Integrations.Umbraco [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![NuGet version](https://img.shields.io/nuget/v/Relewise.Integrations.Umbraco)](https://www.nuget.org/packages/Relewise.Integrations.Umbraco) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://https://github.com/Relewise/relewise-sdk-csharp-extensions/pulls)
 
 You should install Relewise.Integrations.Umbraco using NuGet:
 
