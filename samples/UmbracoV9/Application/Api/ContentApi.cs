@@ -101,7 +101,7 @@ public static class ContentApi
                 SelectedContentProperties = new SelectedContentPropertiesSettings
                 {
                     DisplayName = true,
-                    DataKeys = new []{"Url", "splashImage_Block" }
+                    DataKeys = new []{"url", "splashImage_Block" }
                 }
             },
             Filters = new FilterCollection(new ContentDataFilter("ContentTypeAlias", new ContainsCondition(new DataValue(new List<string> {"blogEntry", "contentPage"}))))
