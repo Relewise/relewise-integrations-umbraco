@@ -65,9 +65,9 @@ internal class ContentMapper : IContentMapper
         }
 
         contentUpdate.Content.Data.Add(Constants.VersionKey, content.Version);
-        contentUpdate.Content.Data.Add("ContentTypeAlias", content.PublishedContent.ContentType.Alias);
-        contentUpdate.Content.Data.Add("Url", content.PublishedContent.Url());
-        contentUpdate.Content.Data.Add("CreatedAt", new DateTimeOffset(content.PublishedContent.CreateDate).ToUnixTimeSeconds());
+        contentUpdate.Content.Data.Add("contentTypeAlias", content.PublishedContent.ContentType.Alias);
+        contentUpdate.Content.Data.Add("url", content.PublishedContent.Url(null, UrlMode.Absolute));
+        contentUpdate.Content.Data.Add("createdAt", new DateTimeOffset(content.PublishedContent.CreateDate).ToUnixTimeSeconds());
 
         bool TryGetMapper(MapContent mapContent, [NotNullWhen(true) ]out IContentTypeMapping? contentTypeMapping)
         {

@@ -1,7 +1,7 @@
 <template>
   <div v-if="result" class="row">
    <template v-if="result && result.length > 0">
-    <a class="col-4" v-for="content in result" :key="content.contentId" :href="content.data.Url.value">
+    <a class="col-4" v-for="content in result" :key="content.contentId" :href="content.data.url.value">
       <h4>{{ content.displayName }}</h4>
       <span v-html="content.data.splashText.value"></span>
     </a>

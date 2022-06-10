@@ -16,7 +16,7 @@
 
    <template v-if="result && result.length > 0">
    <strong class="result m-t-10 fs-12">Pages</strong>
-    <a class="result fs-14" v-for="content in result" :key="content.contentId" :href="content.data.Url.value">
+    <a class="result fs-14" v-for="content in result" :key="content.contentId" :href="content.data.url.value">
       {{ content.displayName }}
     </a>
     <a href="#" class="result fs-14" @click="goToSearch(term)">See all...</a>

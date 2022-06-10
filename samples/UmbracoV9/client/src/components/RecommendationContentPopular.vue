@@ -8,7 +8,7 @@
 
               <div class="block1-wrapbtn w-size2">
                   <!-- Button -->
-                  <a :href="content.data?.Url?.value" class="content-button flex-c-m size2 m-text2 bg3 hov1 trans-0-4" :title="content.displayName">
+                  <a :href="content.data?.url?.value" class="content-button flex-c-m size2 m-text2 bg3 hov1 trans-0-4" :title="content.displayName">
                       <span class="text-truncate">{{ content.displayName }}</span>
                   </a>
               </div>
