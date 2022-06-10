@@ -56,7 +56,7 @@ internal class ExportContentService : IExportContentService
         }
 
         ContentUpdate[] contentUpdates = exportContent.Contents
-            .Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version)))
+            .Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version, token)))
             .Where(x => x.Successful)
             .Select(x => x.ContentUpdate!)
             .ToArray();

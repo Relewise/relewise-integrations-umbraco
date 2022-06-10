@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -111,7 +112,7 @@ namespace Relewise.UmbracoV9
 
     public class BlogMapper : IContentTypeMapping
     {
-        public Task<ContentUpdate> Map(ContentMappingContext context)
+        public Task<ContentUpdate> Map(ContentMappingContext context, CancellationToken token)
         {
             context.ContentUpdate.Content.Data["Title"] = context.PublishedContent.GetProperty("title").GetValue<string>(context.CulturesToPublish.First());
 
