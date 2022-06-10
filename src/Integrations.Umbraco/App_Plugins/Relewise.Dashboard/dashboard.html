@@ -9,8 +9,15 @@
             </p>
             <div>
                 <button class="btn btn-primary" ng-click="vm.exportContent()" ng-disabled="vm.exportLoading">
-                    Full content export
+                    Export content
                 </button>
+
+                <span class="pl-20">
+                    <button class="btn btn-danger" ng-click="vm.exportContentPermanentlyDelete()" ng-disabled="vm.exportLoading">
+                        Export content and remove old data
+                    </button>
+                </span>
+
             </div>
             <div class="error mt-10" ng-if="vm.errorMessage">{{vm.errorMessage}}</div>
             <div class="export-success mt-10" ng-if="vm.success">{{vm.success}}</div>

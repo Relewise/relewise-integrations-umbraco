@@ -1,6 +1,8 @@
-﻿namespace Relewise.Integrations.Umbraco.Services;
+﻿using System.Threading.Tasks;
+
+namespace Relewise.Integrations.Umbraco.Services;
 
 internal interface IContentMapper
 {
-    MapContentResult Map(MapContent content);
+    Task<MapContentResult> Map(MapContent content);
 }
