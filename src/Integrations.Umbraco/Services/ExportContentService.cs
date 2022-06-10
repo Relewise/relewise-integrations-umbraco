@@ -56,7 +56,7 @@ internal class ExportContentService : IExportContentService
         }
 
         List<ContentUpdate> contentUpdates = new List<ContentUpdate>();
-        foreach (var map in exportContent.Contents.Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version, token))))
+        foreach (Task<MapContentResult> map in exportContent.Contents.Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version, token))))
         {
             MapContentResult result = await map;
             if (result.Successful)
