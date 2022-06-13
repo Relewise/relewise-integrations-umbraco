@@ -2,22 +2,18 @@
     <h2>Relewise</h2>
     <umb-box>
         <umb-box-content>
-
             <p>
                 Welcome to the Relewise dashboard - Here you can perform export functions get all your content exported into Relewise.<br />
                 It's also possible to see the settings for Relewise directly here.
             </p>
-            <div>
+            <div class="button-box">
                 <button class="btn btn-primary" ng-click="vm.exportContent()" ng-disabled="vm.exportLoading">
                     Export content
                 </button>
 
-                <span class="pl-20">
-                    <button class="btn btn-danger" ng-click="vm.exportContentPermanentlyDelete()" ng-disabled="vm.exportLoading">
-                        Export content and remove old data
-                    </button>
-                </span>
-
+                <button class="btn btn-danger" ng-click="vm.exportContentPermanentlyDelete()" ng-disabled="vm.exportLoading">
+                    Export content and remove old data
+                </button>
             </div>
             <div class="error mt-10" ng-if="vm.errorMessage">{{vm.errorMessage}}</div>
             <div class="export-success mt-10" ng-if="vm.success">{{vm.success}}</div>

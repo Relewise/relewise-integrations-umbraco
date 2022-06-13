@@ -19,6 +19,11 @@
     }
 
     vm.exportContentPermanentlyDelete = function () {
+        const confirmed = confirm("Are you sure, you want to perform an full export and remove deleted content items?");
+        if (!confirmed) {
+            return;
+        }
+
         vm.exportLoading = true;
         vm.errorMessage = "";
         vm.success = "";

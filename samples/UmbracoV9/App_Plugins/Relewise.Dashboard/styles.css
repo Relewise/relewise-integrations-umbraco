@@ -29,3 +29,8 @@ h5 {
 .pl-20 {
     padding-left: 20px;
 }
+
+.button-box {
+    display: flex;
+    justify-content: space-between;
+}
