@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -92,12 +93,14 @@ public class DashboardApiController : UmbracoAuthorizedController
 
         return Ok(new
         {
-            TrackedContentTypes = _configuration.TrackedContentTypes,
-            ExportedContentTypes = _configuration.ExportedContentTypes,
+            _configuration.TrackedContentTypes,
+            _configuration.ExportedContentTypes,
             Named = named
         });
     }
 
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Local")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
     private class NamedOptionsViewObject
     {
         public NamedOptionsViewObject(string name, ClientOptionsViewObject tracker, ClientOptionsViewObject recommender, ClientOptionsViewObject searcher)
@@ -115,6 +118,8 @@ public class DashboardApiController : UmbracoAuthorizedController
         public ClientOptionsViewObject Searcher { get; }
     }
 
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Local")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
     private class ClientOptionsViewObject
     {
         public ClientOptionsViewObject(RelewiseClientOptions options)

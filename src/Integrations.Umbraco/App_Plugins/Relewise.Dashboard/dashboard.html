@@ -3,7 +3,7 @@
     <umb-box>
         <umb-box-content>
             <p>
-                Welcome to the Relewise dashboard - Here you can perform export functions get all your content exported into Relewise.<br />
+                Welcome to the Relewise dashboard - here you can perform export functions to get all your content exported into Relewise.<br />
                 It's also possible to see the settings for Relewise directly here.
             </p>
             <div class="button-box">
@@ -24,11 +24,11 @@
     <umb-box>
         <umb-box-content>
             <p>
-                These are the settings registered with for Relewise.
+                These are the settings registered with Relewise.
             </p>
 
             <p class="error" ng-if="vm.configurationError">
-                No options has been configured. Please check your call to the 'services.AddRelewise(options => { /* options goes here */ })'-method.
+                No options have been configured. Please check your call to the 'services.AddRelewise(options => { /* options goes here */ })'-method in 'Startup.cs'.
             </p>
             <div ng-if="vm.configuration !== null">
                 Tracked content types are: <strong>{{vm.configuration.trackedContentTypes.join(', ')}}</strong><br />

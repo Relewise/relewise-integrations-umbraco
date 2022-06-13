@@ -36,6 +36,7 @@ internal class ExportContentService : IExportContentService
     public async Task<ExportContentResult> Export(ExportContent exportContent, CancellationToken token)
     {
         if (exportContent == null) throw new ArgumentNullException(nameof(exportContent));
+
         if (exportContent.Contents.Length == 0)
             return new ExportContentResult();
 
@@ -43,22 +44,20 @@ internal class ExportContentService : IExportContentService
 
         IPublishedContentCache contentCache = umbracoContextReference.UmbracoContext.Content;
 
-        ITracker tracker;
-        try
-        {
-            var factory = _provider.GetRequiredService<IRelewiseClientFactory>();
-            tracker = factory.GetClient<ITracker>(Constants.NamedClientName);
-        }
-        catch
-        {
-            // tracker is not setup correctly so we just fail silently
+        ITracker? tracker = GetTrackerOrNull();
+
+        if (tracker == null)
             return new ExportContentResult();
-        }
 
         List<ContentUpdate> contentUpdates = new List<ContentUpdate>();
-        foreach (Task<MapContentResult> map in exportContent.Contents.Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version, token))))
+
+        IEnumerable<Task<MapContentResult>> contentMapping = exportContent.Contents
+            .Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version), token));
+
+        foreach (Task<MapContentResult> map in contentMapping)
         {
             MapContentResult result = await map;
+
             if (result.Successful)
                 contentUpdates.Add(result.ContentUpdate!);
         }
@@ -107,5 +106,20 @@ internal class ExportContentService : IExportContentService
         }
 
         return new ExportAllContentResult();
+    }
+
+    public ITracker? GetTrackerOrNull()
+    {
+        try
+        {
+            var factory = _provider.GetRequiredService<IRelewiseClientFactory>();
+
+            return factory.GetClient<ITracker>(Constants.NamedClientName);
+        }
+        catch
+        {
+            // tracker is not setup correctly so we just fail silently
+            return null;
+        }
     }
 }

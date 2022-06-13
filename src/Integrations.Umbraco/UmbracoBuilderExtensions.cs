@@ -72,10 +72,10 @@ public static class UmbracoBuilderExtensions
             .AddValueConverter<MediaPickerValueConverter>()
             .AddValueConverter<ImageCropperValueConverter>();
 
-        builder.AddNotificationHandler<ContentPublishedNotification, RelewiseContentPublishedNotificationHandler>();
-        builder.AddNotificationHandler<ContentUnpublishedNotification, RelewiseContentUnpublishedNotificationHandler>();
-        builder.AddNotificationHandler<ContentDeletedNotification, RelewiseContentDeletedNotificationNotificationHandler>();
-        builder.AddNotificationHandler<ContentMovedNotification, RelewiseContentMovedNotificationHandler>();
+        builder.AddNotificationAsyncHandler<ContentPublishedNotification, RelewiseContentPublishedNotificationHandler>();
+        builder.AddNotificationAsyncHandler<ContentUnpublishedNotification, RelewiseContentUnpublishedNotificationHandler>();
+        builder.AddNotificationAsyncHandler<ContentDeletedNotification, RelewiseContentDeletedNotificationNotificationHandler>();
+        builder.AddNotificationAsyncHandler<ContentMovedNotification, RelewiseContentMovedNotificationHandler>();
 
         builder.Dashboards().Add<RelewiseDashboard>();
 
