@@ -55,13 +55,15 @@ internal class ExportContentService : IExportContentService
             return new ExportContentResult();
         }
 
-        ContentUpdate[] contentUpdates = exportContent.Contents
-            .Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version)))
-            .Where(x => x.Successful)
-            .Select(x => x.ContentUpdate!)
-            .ToArray();
-        // ReSharper disable once CoVariantArrayConversion
-        await tracker.TrackAsync(token, contentUpdates);
+        List<ContentUpdate> contentUpdates = new List<ContentUpdate>();
+        foreach (Task<MapContentResult> map in exportContent.Contents.Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version, token))))
+        {
+            MapContentResult result = await map;
+            if (result.Successful)
+                contentUpdates.Add(result.ContentUpdate!);
+        }
+
+        await tracker.TrackAsync(contentUpdates, token);
 
         await tracker.TrackAsync(new ContentAdministrativeAction(
             Language.Undefined,
@@ -100,7 +102,7 @@ internal class ExportContentService : IExportContentService
                 Language.Undefined,
                 Currency.Undefined,
                 new FilterCollection(new ContentDataFilter(Constants.VersionKey, new EqualsCondition(version, negated: true), filterOutIfKeyIsNotFound: false)),
-                ContentAdministrativeAction.UpdateKind.PermanentlyDelete), 
+                exportAllContent.PermanentlyDelete ? ContentAdministrativeAction.UpdateKind.PermanentlyDelete : ContentAdministrativeAction.UpdateKind.DisableInRecommendations), 
                 token);
         }
 

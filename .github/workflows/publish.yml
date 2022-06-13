@@ -25,4 +25,4 @@ jobs:
     - name: Push
       run: dotnet nuget push Relewise.Integrations.Umbraco.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_TOKEN}
       env:
-        NUGET_TOKEN: ${{ secrets.NUGET_RELEWISE_UMBRACO_TOKEN }}
+        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}

@@ -42,12 +42,13 @@ public class DashboardApiController : UmbracoAuthorizedController
     /// <summary>
     /// Performs a full content export
     /// </summary>
+    /// <param name="permanentlyDelete"></param>
     /// <param name="token"></param>
     /// <returns></returns>
     [HttpPost]
-    public async Task<IActionResult> ContentExport(CancellationToken token)
+    public async Task<IActionResult> ContentExport([FromQuery] bool permanentlyDelete, CancellationToken token)
     {
-        await _exportContent.ExportAll(new ExportAllContent(), token);
+        await _exportContent.ExportAll(new ExportAllContent(permanentlyDelete), token);
 
         return Ok();
     }

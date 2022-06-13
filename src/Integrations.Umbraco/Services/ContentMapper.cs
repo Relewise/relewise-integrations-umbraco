@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -25,7 +27,7 @@ internal class ContentMapper : IContentMapper
         _provider = provider;
     }
 
-    public MapContentResult Map(MapContent content)
+    public async Task<MapContentResult> Map(MapContent content)
     {
         if (!_configuration.CanMap(content.PublishedContent.ContentType.Alias))
             return MapContentResult.Failed;
@@ -48,16 +50,18 @@ internal class ContentMapper : IContentMapper
             CategoryPaths = GetCategoryPaths(content, culturesToPublish)
         });
 
-        AutoMapOrUseMapper(content, culturesToPublish, contentUpdate);
+        await AutoMapOrUseMapper(content, culturesToPublish, contentUpdate, content.Token);
 
         return new MapContentResult(contentUpdate);
     }
 
-    private void AutoMapOrUseMapper(MapContent content, List<string> culturesToPublish, ContentUpdate contentUpdate)
+    private async Task AutoMapOrUseMapper(MapContent content, List<string> culturesToPublish, ContentUpdate contentUpdate, CancellationToken token)
     {
         if (TryGetMapper(content, out IContentTypeMapping? mapping))
         {
-            mapping.Map(new ContentMappingContext(content.PublishedContent, contentUpdate, culturesToPublish, _provider));
+            contentUpdate = await mapping.Map(new ContentMappingContext(content.PublishedContent, contentUpdate, culturesToPublish, _provider), token);
+            if (contentUpdate == null)
+                throw new InvalidOperationException("Content update can not be null when returned from a ContentTypeMapping");
         }
         else
         {
