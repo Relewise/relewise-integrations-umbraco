@@ -1,26 +1,34 @@
 ﻿using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Requests.Filters;
+using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Notifications;
 using Language = Relewise.Client.DataTypes.Language;
 
 namespace Relewise.Integrations.Umbraco.NotificationHandlers;
 
-internal class RelewiseContentUnpublishedNotificationHandler : INotificationHandler<ContentUnpublishedNotification>
+internal class RelewiseContentUnpublishedNotificationHandler : INotificationAsyncHandler<ContentUnpublishedNotification>
 {
+    private readonly IExportContentService _exportContentService;
     private readonly RelewiseUmbracoConfiguration _configuration;
-    private readonly ITracker _tracker;
 
-    public RelewiseContentUnpublishedNotificationHandler(RelewiseUmbracoConfiguration configuration, ITracker tracker)
+    public RelewiseContentUnpublishedNotificationHandler(IExportContentService exportContentService, RelewiseUmbracoConfiguration configuration)
     {
+        _exportContentService = exportContentService;
         _configuration = configuration;
-        _tracker = tracker;
     }
 
-    public void Handle(ContentUnpublishedNotification notification)
+    public async Task HandleAsync(ContentUnpublishedNotification notification, CancellationToken cancellationToken)
     {
+        ITracker? tracker = _exportContentService.GetTrackerOrNull();
+
+        if (tracker == null)
+            return;
+
         string[] ids = notification.UnpublishedEntities
             .Where(x => _configuration.CanMap(x))
             .Select(x => x.Id.ToString())
@@ -29,10 +37,12 @@ internal class RelewiseContentUnpublishedNotificationHandler : INotificationHand
         if (ids.Length == 0)
             return;
 
-        _tracker.Track(new ContentAdministrativeAction(
+        var action = new ContentAdministrativeAction(
             Language.Undefined,
             Currency.Undefined,
             new FilterCollection(new ContentIdFilter(ids)),
-            ContentAdministrativeAction.UpdateKind.DisableInRecommendations));
+            ContentAdministrativeAction.UpdateKind.DisableInRecommendations);
+
+        await tracker.TrackAsync(action, cancellationToken);
     }
 }

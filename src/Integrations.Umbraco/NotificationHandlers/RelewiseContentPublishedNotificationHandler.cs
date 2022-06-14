@@ -1,12 +1,13 @@
 ﻿using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Notifications;
 
 namespace Relewise.Integrations.Umbraco.NotificationHandlers;
 
-internal class RelewiseContentPublishedNotificationHandler : INotificationHandler<ContentPublishedNotification>
+internal class RelewiseContentPublishedNotificationHandler : INotificationAsyncHandler<ContentPublishedNotification>
 {
     private readonly IExportContentService _exportContentService;
 
@@ -15,8 +16,8 @@ internal class RelewiseContentPublishedNotificationHandler : INotificationHandle
         _exportContentService = exportContentService;
     }
 
-    public void Handle(ContentPublishedNotification notification)
+    public async Task HandleAsync(ContentPublishedNotification notification, CancellationToken cancellationToken)
     {
-        _exportContentService.Export(new ExportContent(notification.PublishedEntities.ToArray()), CancellationToken.None);
+        await _exportContentService.Export(new ExportContent(notification.PublishedEntities.ToArray()), cancellationToken);
     }
 }

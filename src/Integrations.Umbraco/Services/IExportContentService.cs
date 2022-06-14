@@ -1,5 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
+using Relewise.Client;
 
 namespace Relewise.Integrations.Umbraco.Services;
 
@@ -23,4 +24,10 @@ public interface IExportContentService
     /// <param name="token"></param>
     /// <returns></returns>
     Task<ExportAllContentResult> ExportAll(ExportAllContent exportAllContent, CancellationToken token);
+
+    /// <summary>
+    /// Returns the <see cref="ITracker"/> instance to be used for all integration scenarios.
+    /// If instance returned is null, then Relewise has not been configured yet.
+    /// </summary>
+    ITracker? GetTrackerOrNull();
 }

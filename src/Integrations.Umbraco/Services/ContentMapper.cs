@@ -27,7 +27,7 @@ internal class ContentMapper : IContentMapper
         _provider = provider;
     }
 
-    public async Task<MapContentResult> Map(MapContent content)
+    public async Task<MapContentResult> Map(MapContent content, CancellationToken token)
     {
         if (!_configuration.CanMap(content.PublishedContent.ContentType.Alias))
             return MapContentResult.Failed;
@@ -50,7 +50,7 @@ internal class ContentMapper : IContentMapper
             CategoryPaths = GetCategoryPaths(content, culturesToPublish)
         });
 
-        await AutoMapOrUseMapper(content, culturesToPublish, contentUpdate, content.Token);
+        await AutoMapOrUseMapper(content, culturesToPublish, contentUpdate, token);
 
         return new MapContentResult(contentUpdate);
     }
