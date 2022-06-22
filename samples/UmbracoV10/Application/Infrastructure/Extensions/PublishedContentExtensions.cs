@@ -1,4 +1,3 @@
-using System;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.UmbracoV10.Application.Infrastructure.Extensions;
