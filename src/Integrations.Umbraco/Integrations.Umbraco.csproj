@@ -25,8 +25,8 @@
 	<ItemGroup>
 		<PackageReference Include="Relewise.Client" Version="1.10.0" />
 		<PackageReference Include="Relewise.Client.Extensions" Version="1.1.0" />
-		<PackageReference Include="Umbraco.Cms.Web.BackOffice" version="[9.0.0,10)" />
-		<PackageReference Include="Umbraco.Cms.Web.Common" version="[9.0.0,10)" />
+		<PackageReference Include="Umbraco.Cms.Web.BackOffice" version="[9.0.0,11)" />
+		<PackageReference Include="Umbraco.Cms.Web.Common" version="[9.0.0,11)" />
 	</ItemGroup>
 
 	<ItemGroup>

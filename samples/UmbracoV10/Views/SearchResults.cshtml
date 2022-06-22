@@ -1,0 +1,10 @@
+﻿@using Umbraco.Cms.Web.Common.PublishedModels;
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
+@using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
+
+<div class="container">
+    <h1 class="m-b-30">Showing results for <strong>@Context.Request.Query["q"]</strong></h1>
+
+    <div id="content-search">
+    </div>
+</div>

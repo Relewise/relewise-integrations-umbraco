@@ -1,0 +1,108 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+	    <Nullable>enable</Nullable>
+	    <WarningsAsErrors>true</WarningsAsErrors>
+	    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <ItemGroup>
+	    <PackageReference Include="Relewise.Client" Version="1.10.0" />
+	    <PackageReference Include="Relewise.Client.Extensions" Version="1.1.0" />
+        <PackageReference Include="Umbraco.Cms" Version="10.0.0" />
+        <PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="10.0.0" />
+    </ItemGroup>
+
+    <!-- Force windows to use ICU. Otherwise Windows 10 2019H1+ will do it, but older windows 10 and most if not all winodws servers will run NLS -->
+    <ItemGroup>
+      <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="68.2.0.9" />
+      <ProjectReference Include="..\..\src\Integrations.Umbraco\Integrations.Umbraco.csproj" />
+      <RuntimeHostConfigurationOption Condition="$(RuntimeIdentifier.StartsWith('linux')) Or $(RuntimeIdentifier.StartsWith('win')) Or ('$(RuntimeIdentifier)' == '' And !$([MSBuild]::IsOSPlatform('osx')))" Include="System.Globalization.AppLocalIcu" Value="68.2.0.9" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <CopyRazorGenerateFilesToPublishDirectory>true</CopyRazorGenerateFilesToPublishDirectory>
+    </PropertyGroup>
+
+    <!-- Set this to true if ModelsBuilder mode is not InMemoryAuto-->
+    <PropertyGroup>
+        <RazorCompileOnBuild>false</RazorCompileOnBuild>
+        <RazorCompileOnPublish>false</RazorCompileOnPublish>
+    </PropertyGroup>
+
+    <ItemGroup>
+	    <EmbeddedResource Include="Application\Infrastructure\Migrations\package.zip">
+		    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	    </EmbeddedResource>
+
+	    <Content Include="..\UmbracoV9\client\**\*">
+		    <Link>client\%(RecursiveDir)%(Filename)%(Extension)</Link>
+	    </Content>
+    </ItemGroup>
+
+	<ItemGroup>
+		<!-- Adds the files as links in the Solution Explorer.
+       When you double-click, it opens the original file. -->
+		<Content Include="..\UmbracoV9\wwwroot\css\**\*">
+			<Link>wwwroot\css\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+		<Content Include="..\UmbracoV9\wwwroot\js\**\*">
+			<Link>wwwroot\js\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+		<Content Include="..\UmbracoV9\wwwroot\fonts\**\*">
+			<Link>wwwroot\fonts\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+		<Content Include="..\UmbracoV9\wwwroot\vendor\**\*">
+			<Link>wwwroot\vendor\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+		<Content Include="..\UmbracoV9\wwwroot\images\**\*">
+			<Link>wwwroot\images\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+
+		<!-- Picked up by the Copy below.  Using "Content"
+        with "Link" adds external files as links.  But a custom
+        name is needed for use with Copy. -->
+		<CommonCss Include="..\UmbracoV9\wwwroot\css\**\*" />
+		<CommonJs Include="..\UmbracoV9\wwwroot\js\**\*" />
+		<CommonFonts Include="..\UmbracoV9\wwwroot\fonts\**\*" />
+		<CommonVendor Include="..\UmbracoV9\wwwroot\vendor\**\*" />
+		<CommonImages Include="..\UmbracoV9\wwwroot\images\**\*" />
+
+		<!-- Tells Visual Studio to ignore any actual files at this location.
+       I found that if I didn't do this, Visual Studio sees the copied
+       file instead of the linked file.  This tells Visual Studio to
+       ignore the copied file so that when I double-click it in
+       Solution Explorer, it opens the original copy. -->
+		<Content Remove="wwwroot\css\**" />
+		<Content Remove="wwwroot\js\**" />
+		<Content Remove="wwwroot\fonts\**" />
+		<Content Remove="wwwroot\vendor\**" />
+		<Content Remove="wwwroot\images\**" />
+	</ItemGroup>
+
+    <Target Name="CopyCommonContent" BeforeTargets="Build">
+	    <Message Text="Copying content files from V9 into V10" Importance="high" />
+	    <Copy SourceFiles="@(CommonCss)"
+	          DestinationFiles="wwwroot\css\%(RecursiveDir)%(Filename)%(Extension)"
+	          SkipUnchangedFiles="true"
+	          OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonJs)"
+	          DestinationFiles="wwwroot\js\%(RecursiveDir)%(Filename)%(Extension)"
+	          SkipUnchangedFiles="true"
+	          OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonFonts)"
+	          DestinationFiles="wwwroot\fonts\%(RecursiveDir)%(Filename)%(Extension)"
+	          SkipUnchangedFiles="true"
+	          OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonVendor)"
+	          DestinationFiles="wwwroot\vendor\%(RecursiveDir)%(Filename)%(Extension)"
+	          SkipUnchangedFiles="true"
+	          OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonImages)"
+	          DestinationFiles="wwwroot\images\%(RecursiveDir)%(Filename)%(Extension)"
+	          SkipUnchangedFiles="true"
+	          OverwriteReadOnlyFiles="true" />
+    </Target>
+</Project>

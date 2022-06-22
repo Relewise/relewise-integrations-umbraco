@@ -1,0 +1,429 @@
+﻿@using Umbraco.Cms.Core.Models
+@using Relewise.UmbracoV10.Application.Infrastructure.Extensions
+@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+
+@{
+    var breadcrumb = Model.Breadcrumbs(andSelf: true).ToArray();
+    var homePage = breadcrumb.First();
+    IEnumerable<IPublishedElement> footer = homePage.Value<IEnumerable<IPublishedElement>>("footerLinks");
+    IEnumerable<Link> headerLinks = homePage.Value<IEnumerable<Link>>("headerLinks");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>@Model.GetTitle() &middot; Boozy</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!--===============================================================================================-->
+    <link rel="icon" type="image/png" href="/images/icons/favicon.ico" />
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="/vendor/bootstrap/css/bootstrap.min.css">
+    <!--=========================================/======================================================-->
+    <link rel="stylesheet" type="text/css" href="/fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <!--=========================================/======================================================-->
+    <link rel="stylesheet" type="text/css" href="/vendor/animate/animate.css">
+    <!--=========================================/======================================================-->
+    <link rel="stylesheet" type="text/css" href="/vendor/css-hamburgers/hamburgers.min.css">
+    <!--=========================================/======================================================-->
+    <link rel="stylesheet" type="text/css" href="/vendor/animsition/css/animsition.min.css">
+    <!--=========================================/======================================================-->
+    <link rel="stylesheet" type="text/css" href="/vendor/select2/select2.min.css">
+    <!--=========================================/======================================================-->
+    <link rel="stylesheet" type="text/css" href="/vendor/daterangepicker/daterangepicker.css">
+    <!--=========================================/======================================================-->
+    <link rel="stylesheet" type="text/css" href="/vendor/slick/slick.css">
+    <!--=========================================/======================================================-->
+    <link rel="stylesheet" type="text/css" href="/css/main.css">
+    <!--=========================================/======================================================-->
+    <link rel="stylesheet" type="text/css" href="/css/util.css">
+    <!--===============================================================================================-->
+</head>
+<body class="animsition">
+
+    <!-- Header -->
+    <header class="header1">
+        <!-- Header desktop -->
+        <div class="container-menu-header">
+            <div class="wrap_header">
+                <!-- Logo -->
+                <a href="/" class="logo">
+                    <img src="/images/icons/logo.svg" alt="Boozy" style="height: 70px; max-height: 70px;">
+                </a>
+
+                <!-- Menu -->
+                <div class="wrap_menu">
+                    <nav class="menu">
+                        <ul class="main_menu">
+                            @foreach (Link child in headerLinks)
+                            {
+                                IPublishedContent content = Umbraco.Content(child.Udi);
+                                <li><a href="@child.Url">@content.GetTitle()</a></li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- Header Icon -->
+                <div class="header-icons">
+
+                    <div id="suggestive-search"></div>
+
+                    <span class="linedivide1"></span>
+
+                    <div class="header-wrapicon2">
+                        <img src="/images/icons/icon-header-02.png" class="header-icon1 js-show-header-dropdown" alt="ICON">
+                        <span class="header-icons-noti">0</span>
+
+                        <!-- Header cart noti -->
+                        <div class="header-cart header-dropdown">
+                            <ul class="header-cart-wrapitem">
+                                <li class="header-cart-item">
+                                    <div class="header-cart-item-img">
+                                        <img src="/images/item-cart-01.jpg" alt="IMG">
+                                    </div>
+
+                                    <div class="header-cart-item-txt">
+                                        <a href="#" class="header-cart-item-name">
+                                            White Shirt With Pleat Detail Back
+                                        </a>
+
+                                        <span class="header-cart-item-info">
+                                            1 x $19.00
+                                        </span>
+                                    </div>
+                                </li>
+
+                                <li class="header-cart-item">
+                                    <div class="header-cart-item-img">
+                                        <img src="/images/item-cart-02.jpg" alt="IMG">
+                                    </div>
+
+                                    <div class="header-cart-item-txt">
+                                        <a href="#" class="header-cart-item-name">
+                                            Converse All Star Hi Black Canvas
+                                        </a>
+
+                                        <span class="header-cart-item-info">
+                                            1 x $39.00
+                                        </span>
+                                    </div>
+                                </li>
+
+                                <li class="header-cart-item">
+                                    <div class="header-cart-item-img">
+                                        <img src="/images/item-cart-03.jpg" alt="IMG">
+                                    </div>
+
+                                    <div class="header-cart-item-txt">
+                                        <a href="#" class="header-cart-item-name">
+                                            Nixon Porter Leather Watch In Tan
+                                        </a>
+
+                                        <span class="header-cart-item-info">
+                                            1 x $17.00
+                                        </span>
+                                    </div>
+                                </li>
+                            </ul>
+
+                            <div class="header-cart-total">
+                                Total: $75.00
+                            </div>
+
+                            <div class="header-cart-buttons">
+                                <div class="header-cart-wrapbtn">
+                                    <!-- Button -->
+                                    <a href="cart.html" class="flex-c-m size1 bg1 bo-rad-20 hov1 s-text1 trans-0-4">
+                                        View Cart
+                                    </a>
+                                </div>
+
+                                <div class="header-cart-wrapbtn">
+                                    <!-- Button -->
+                                    <a href="#" class="flex-c-m size1 bg1 bo-rad-20 hov1 s-text1 trans-0-4">
+                                        Check Out
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header Mobile -->
+        <div class="wrap_header_mobile">
+            <!-- Logo moblie -->
+            <a href="/" class="logo-mobile">
+                <img src="/images/icons/logo.svg" alt="Boozy" style="height: 70px; max-height: 70px;">
+            </a>
+
+            <!-- Button show menu -->
+            <div class="btn-show-menu">
+                <!-- Header Icon mobile -->
+                <div class="header-icons-mobile">
+ 
+                    <span class="linedivide2"></span>
+
+                    <div class="header-wrapicon2">
+                        <img src="/images/icons/icon-header-02.png" class="header-icon1 js-show-header-dropdown" alt="ICON">
+                        <span class="header-icons-noti">0</span>
+
+                        <!-- Header cart noti -->
+                        <div class="header-cart header-dropdown">
+                            <ul class="header-cart-wrapitem">
+                                <li class="header-cart-item">
+                                    <div class="header-cart-item-img">
+                                        <img src="/images/item-cart-01.jpg" alt="IMG">
+                                    </div>
+
+                                    <div class="header-cart-item-txt">
+                                        <a href="#" class="header-cart-item-name">
+                                            White Shirt With Pleat Detail Back
+                                        </a>
+
+                                        <span class="header-cart-item-info">
+                                            1 x $19.00
+                                        </span>
+                                    </div>
+                                </li>
+
+                                <li class="header-cart-item">
+                                    <div class="header-cart-item-img">
+                                        <img src="/images/item-cart-02.jpg" alt="IMG">
+                                    </div>
+
+                                    <div class="header-cart-item-txt">
+                                        <a href="#" class="header-cart-item-name">
+                                            Converse All Star Hi Black Canvas
+                                        </a>
+
+                                        <span class="header-cart-item-info">
+                                            1 x $39.00
+                                        </span>
+                                    </div>
+                                </li>
+
+                                <li class="header-cart-item">
+                                    <div class="header-cart-item-img">
+                                        <img src="/images/item-cart-03.jpg" alt="IMG">
+                                    </div>
+
+                                    <div class="header-cart-item-txt">
+                                        <a href="#" class="header-cart-item-name">
+                                            Nixon Porter Leather Watch In Tan
+                                        </a>
+
+                                        <span class="header-cart-item-info">
+                                            1 x $17.00
+                                        </span>
+                                    </div>
+                                </li>
+                            </ul>
+
+                            <div class="header-cart-total">
+                                Total: $75.00
+                            </div>
+
+                            <div class="header-cart-buttons">
+                                <div class="header-cart-wrapbtn">
+                                    <!-- Button -->
+                                    <a href="cart.html" class="flex-c-m size1 bg1 bo-rad-20 hov1 s-text1 trans-0-4">
+                                        View Cart
+                                    </a>
+                                </div>
+
+                                <div class="header-cart-wrapbtn">
+                                    <!-- Button -->
+                                    <a href="#" class="flex-c-m size1 bg1 bo-rad-20 hov1 s-text1 trans-0-4">
+                                        Check Out
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-show-menu-mobile hamburger hamburger--squeeze">
+                    <span class="hamburger-box">
+                        <span class="hamburger-inner"></span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Mobile -->
+        <div class="wrap-side-menu">
+            <nav class="side-menu">
+                <ul class="main-menu">
+                    @foreach (Link child in headerLinks)
+                    {
+                        IPublishedContent content = Umbraco.Content(child.Udi);
+                        <li class="item-menu-mobile"><a href="@child.Url">@content.GetTitle()</a></li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    @if (breadcrumb.Length > 1)
+    {
+        IPublishedContent last = breadcrumb.Last();
+        <div class="container bread-crumb bgwhite flex-w p-r-15 p-t-10 p-b-15 p-l-15-sm">
+            
+            @foreach (var content in breadcrumb)
+            {
+                <a href="@content.Url()" class="s-text16">
+                    @content.GetTitle()
+                </a>
+
+                if (!last.Equals(content))
+                {<span class="s-text16"><i class=" fa fa-angle-right m-l-8 m-r-9" aria-hidden="true"></i></span>
+                    
+                }
+            }
+
+        </div>
+    }
+
+    @RenderBody()
+
+    <!-- Footer -->
+    <footer class="bg6 p-t-45 p-b-43 p-l-45 p-r-45 m-t-30">
+        <div class="flex-w p-b-90">
+            <div class="w-size6 p-t-30 p-l-15 p-r-15 respon3">
+                <h4 class="s-text12 p-b-30">
+                    GET IN TOUCH
+                </h4>
+
+                <div>
+                    <p class="s-text7 w-size27">
+                        Any questions? Let us know in store at 8th floor, 379 Hudson St, New York, NY 10018 or call us on (+1) 96 716 6879
+                    </p>
+
+                    <div class="flex-m p-t-30">
+                        <a href="#" class="fs-18 color1 p-r-20 fa fa-facebook"></a>
+                        <a href="#" class="fs-18 color1 p-r-20 fa fa-instagram"></a>
+                        <a href="#" class="fs-18 color1 p-r-20 fa fa-pinterest-p"></a>
+                        <a href="#" class="fs-18 color1 p-r-20 fa fa-snapchat-ghost"></a>
+                        <a href="#" class="fs-18 color1 p-r-20 fa fa-youtube-play"></a>
+                    </div>
+                </div>
+            </div>
+
+            @foreach (IPublishedElement block in footer)
+            {
+                var links = block.Value<IEnumerable<Link>>("urls");
+
+                <div class="w-size7 p-t-30 p-l-15 p-r-15 respon4">
+                    <h4 class="s-text12 p-b-30">
+                        @(block.Value<string>("title"))
+                    </h4>
+
+                    @if (links != null && links.Any())
+                    {
+                        <ul>
+                            @foreach (var link in links)
+                            {
+                                <li class="p-b-9">
+                                    <a href="@link.Url" target="@link.Target" class="s-text7">@link.Name</a>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            }
+
+            <div class="w-size8 p-t-30 p-l-15 p-r-15 respon3">
+                <h4 class="s-text12 p-b-30">
+                    Newsletter
+                </h4>
+
+                <div id="newsletter-subscribe"></div>
+            </div>
+        </div>
+
+        <div class="t-center p-l-15 p-r-15">
+            <a href="#">
+                <img class="h-size2" src="/images/icons/paypal.png" alt="IMG-PAYPAL">
+            </a>
+
+            <a href="#">
+                <img class="h-size2" src="/images/icons/visa.png" alt="IMG-VISA">
+            </a>
+
+            <a href="#">
+                <img class="h-size2" src="/images/icons/mastercard.png" alt="IMG-MASTERCARD">
+            </a>
+
+            <a href="#">
+                <img class="h-size2" src="/images/icons/express.png" alt="IMG-EXPRESS">
+            </a>
+
+            <a href="#">
+                <img class="h-size2" src="/images/icons/discover.png" alt="IMG-DISCOVER">
+            </a>
+
+            <div class="t-center s-text8 p-t-20">
+                Copyright © 20222 All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+
+
+    <!-- Back to top -->
+    <div class="btn-back-to-top bg0-hov" id="myBtn">
+        <span class="symbol-btn-back-to-top">
+            <i class="fa fa-angle-double-up" aria-hidden="true"></i>
+        </span>
+    </div>
+
+    <!-- Container Selection1 -->
+    <div id="dropDownSelect1"></div>
+
+    <div id="cookie-consent"></div>
+
+    <!--===============================================================================================-->
+    <script type="text/javascript" src="/vendor/jquery/jquery-3.2.1.min.js"></script>
+    <!--================================/===============================================================-->
+    <script type="text/javascript" src="/vendor/animsition/js/animsition.min.js"></script>
+    <!--================================/===============================================================--> 
+    <script type="text/javascript" src="vendor/bootstrap/js/popper.js"></script>
+    <script type="text/javascript" src="/vendor/bootstrap/js/bootstrap.min.js"></script>
+    <!--================================/===============================================================-->
+    <script type="text/javascript" src="/vendor/select2/select2.min.js"></script>
+    <script type="text/javascript">
+        $(".selection-1").select2({
+            minimumResultsForSearch: 20,
+            dropdownParent: $('#dropDownSelect1')
+        });
+    </script>
+    <!--===============================================================================================-->
+    <script type="text/javascript" src="/vendor/slick/slick.min.js"></script>
+    <script type="text/javascript" src="/js/slick-custom.js"></script>
+    <script type="text/javascript" src="/vendor/sweetalert/sweetalert.min.js"></script>
+    <script type="text/javascript">
+        $('.block2-btn-addcart').each(function(){
+            var nameProduct = $(this).parent().parent().parent().find('.block2-name').html();
+            $(this).on('click', function(){
+                swal(nameProduct, "is added to cart !", "success");
+            });
+        });
+
+        $('.block2-btn-addwishlist').each(function(){
+            var nameProduct = $(this).parent().parent().parent().find('.block2-name').html();
+            $(this).on('click', function(){
+                swal(nameProduct, "is added to wishlist !", "success");
+            });
+        });
+    </script>
+
+    <!--===============================================================================================-->
+    <script src="/js/main.js"></script>
+	<script type="module" src="http://localhost:9292/js/chunk-vendors.js"></script>
+    <script type="module" src="http://localhost:9292/js/app.js"></script>
+
+</body>
+</html>

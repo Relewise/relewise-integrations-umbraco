@@ -9,6 +9,7 @@ using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
+using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PublishedCache;
@@ -52,7 +53,9 @@ internal class ExportContentService : IExportContentService
         List<ContentUpdate> contentUpdates = new List<ContentUpdate>();
 
         IEnumerable<Task<MapContentResult>> contentMapping = exportContent.Contents
-            .Select(x => _contentMapper.Map(new MapContent(contentCache.GetById(x.Id), exportContent.Version), token));
+            .Select(x => contentCache.GetById(x.Id))
+            .WhereNotNull()
+            .Select(x => _contentMapper.Map(new MapContent(x, exportContent.Version), token));
 
         foreach (Task<MapContentResult> map in contentMapping)
         {
