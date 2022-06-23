@@ -58,7 +58,7 @@
                         <ul class="main_menu">
                             @foreach (Link child in headerLinks)
                             {
-                                IPublishedContent? content = Umbraco.Content(child.Udi!);
+                                IPublishedContent content = Umbraco.Content(child.Udi);
                                 if (content != null)
                                 {
                                     <li><a href="@child.Url">@content.GetTitle()</a></li>
@@ -263,7 +263,7 @@
                 <ul class="main-menu">
                     @foreach (Link child in headerLinks)
                     {
-                        IPublishedContent? content = Umbraco.Content(child.Udi!);
+                        IPublishedContent content = Umbraco.Content(child.Udi);
                         if (content != null)
                         {
                             <li class="item-menu-mobile"><a href="@child.Url">@content.GetTitle()</a></li>

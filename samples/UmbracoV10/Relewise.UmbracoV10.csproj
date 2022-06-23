@@ -59,6 +59,10 @@
 			<Link>wwwroot\images\%(RecursiveDir)%(FileName)%(Extension)</Link>
 		</Content>
 
+		<Content Include="..\UmbracoV9\Views\**\*">
+			<Link>Views\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+
 		<!-- Picked up by the Copy below.  Using "Content"
         with "Link" adds external files as links.  But a custom
         name is needed for use with Copy. -->
@@ -67,6 +71,7 @@
 		<CommonFonts Include="..\UmbracoV9\wwwroot\fonts\**\*" />
 		<CommonVendor Include="..\UmbracoV9\wwwroot\vendor\**\*" />
 		<CommonImages Include="..\UmbracoV9\wwwroot\images\**\*" />
+		<CommonViews Include="..\UmbracoV9\Views\**\*" />
 
 		<!-- Tells Visual Studio to ignore any actual files at this location.
        I found that if I didn't do this, Visual Studio sees the copied
@@ -78,6 +83,7 @@
 		<Content Remove="wwwroot\fonts\**" />
 		<Content Remove="wwwroot\vendor\**" />
 		<Content Remove="wwwroot\images\**" />
+		<Content Remove="Views\**" />
 	</ItemGroup>
 
     <Target Name="CopyCommonContent" BeforeTargets="Build">
@@ -87,5 +93,6 @@
 	    <Copy SourceFiles="@(CommonFonts)" DestinationFiles="wwwroot\fonts\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
 	    <Copy SourceFiles="@(CommonVendor)" DestinationFiles="wwwroot\vendor\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
 	    <Copy SourceFiles="@(CommonImages)" DestinationFiles="wwwroot\images\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonViews)" DestinationFiles="Views\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
     </Target>
 </Project>
