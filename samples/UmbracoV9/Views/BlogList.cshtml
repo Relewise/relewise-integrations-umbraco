@@ -1,13 +1,12 @@
-﻿@using Umbraco.Cms.Web.Common.PublishedModels;
-@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage<IPublishedContent>
 @using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
-@using Relewise.UmbracoV9.Application.Infrastructure.Extensions
+@using Relewise.Umbraco.Application.Infrastructure.Extensions
 
 <div class="container">
     <h1>@Model.GetTitle()</h1>
 
     <div class="row m-t-15">
-        @foreach (IPublishedContent child in Model.Children)
+        @foreach (IPublishedContent child in Model.Children.EmptyIfNull())
         {
             @await Html.PartialAsync("~/Views/Partials/Blocks/_SplashBlock.cshtml", child)  
         }

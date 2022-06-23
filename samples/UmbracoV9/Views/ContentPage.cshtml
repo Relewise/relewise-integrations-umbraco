@@ -9,7 +9,7 @@
     <div class="row m-t-30">
         @foreach (var block in (Model.Value<IEnumerable<IPublishedElement>>("blocks") ?? Array.Empty<IPublishedContent>()))
         {
-            IPublishedContent blockSplashImage = block.Value<IPublishedContent>("splashImage");
+            IPublishedContent? blockSplashImage = block.Value<IPublishedContent>("splashImage");
             <div class="col-4">
                 <h3 class="m-b-5">@(block.Value<string>("headline"))</h3>
                 

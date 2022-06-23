@@ -1,12 +1,13 @@
 ﻿@using Umbraco.Cms.Core.Models
-@using Relewise.UmbracoV9.Application.Infrastructure.Extensions
+@using Relewise.Umbraco.Application.Infrastructure.Extensions
+@using Smidge.TagHelpers
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
 
 @{
     var breadcrumb = Model.Breadcrumbs(andSelf: true).ToArray();
     var homePage = breadcrumb.First();
-    IEnumerable<IPublishedElement> footer = homePage.Value<IEnumerable<IPublishedElement>>("footerLinks");
-    IEnumerable<Link> headerLinks = homePage.Value<IEnumerable<Link>>("headerLinks");
+    IEnumerable<IPublishedElement> footer = homePage.Value<IEnumerable<IPublishedElement>>("footerLinks").EmptyIfNull();
+    IEnumerable<Link> headerLinks = homePage.Value<IEnumerable<Link>>("headerLinks").EmptyIfNull();
 }
 
 <!DOCTYPE html>
@@ -57,8 +58,11 @@
                         <ul class="main_menu">
                             @foreach (Link child in headerLinks)
                             {
-                                IPublishedContent content = Umbraco.Content(child.Udi);
-                                <li><a href="@child.Url">@content.GetTitle()</a></li>
+                                IPublishedContent? content = Umbraco.Content(child.Udi!);
+                                if (content != null)
+                                {
+                                    <li><a href="@child.Url">@content.GetTitle()</a></li>
+                                }
                             }
                         </ul>
                     </nav>
@@ -259,8 +263,11 @@
                 <ul class="main-menu">
                     @foreach (Link child in headerLinks)
                     {
-                        IPublishedContent content = Umbraco.Content(child.Udi);
-                        <li class="item-menu-mobile"><a href="@child.Url">@content.GetTitle()</a></li>
+                        IPublishedContent? content = Umbraco.Content(child.Udi!);
+                        if (content != null)
+                        {
+                            <li class="item-menu-mobile"><a href="@child.Url">@content.GetTitle()</a></li>
+                        }
                     }
                 </ul>
             </nav>
