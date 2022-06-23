@@ -18,6 +18,7 @@
     <!-- Force windows to use ICU. Otherwise Windows 10 2019H1+ will do it, but older windows 10 and most if not all winodws servers will run NLS -->
     <ItemGroup>
       <PackageReference Include="Microsoft.ICU.ICU4C.Runtime" Version="68.2.0.9" />
+      <ProjectReference Include="..\..\Relewise.Umbraco.Application\Relewise.Umbraco.Application.csproj" />
       <ProjectReference Include="..\..\src\Integrations.Umbraco\Integrations.Umbraco.csproj" />
       <RuntimeHostConfigurationOption Condition="$(RuntimeIdentifier.StartsWith('linux')) Or $(RuntimeIdentifier.StartsWith('win')) Or ('$(RuntimeIdentifier)' == '' And !$([MSBuild]::IsOSPlatform('osx')))" Include="System.Globalization.AppLocalIcu" Value="68.2.0.9" />
     </ItemGroup>
@@ -33,9 +34,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-	    <EmbeddedResource Include="Application\Infrastructure\Migrations\package.zip">
-		    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	    </EmbeddedResource>
 
 	    <Content Include="..\UmbracoV9\client\**\*">
 		    <Link>client\%(RecursiveDir)%(Filename)%(Extension)</Link>
@@ -84,25 +82,10 @@
 
     <Target Name="CopyCommonContent" BeforeTargets="Build">
 	    <Message Text="Copying content files from V9 into V10" Importance="high" />
-	    <Copy SourceFiles="@(CommonCss)"
-	          DestinationFiles="wwwroot\css\%(RecursiveDir)%(Filename)%(Extension)"
-	          SkipUnchangedFiles="true"
-	          OverwriteReadOnlyFiles="true" />
-	    <Copy SourceFiles="@(CommonJs)"
-	          DestinationFiles="wwwroot\js\%(RecursiveDir)%(Filename)%(Extension)"
-	          SkipUnchangedFiles="true"
-	          OverwriteReadOnlyFiles="true" />
-	    <Copy SourceFiles="@(CommonFonts)"
-	          DestinationFiles="wwwroot\fonts\%(RecursiveDir)%(Filename)%(Extension)"
-	          SkipUnchangedFiles="true"
-	          OverwriteReadOnlyFiles="true" />
-	    <Copy SourceFiles="@(CommonVendor)"
-	          DestinationFiles="wwwroot\vendor\%(RecursiveDir)%(Filename)%(Extension)"
-	          SkipUnchangedFiles="true"
-	          OverwriteReadOnlyFiles="true" />
-	    <Copy SourceFiles="@(CommonImages)"
-	          DestinationFiles="wwwroot\images\%(RecursiveDir)%(Filename)%(Extension)"
-	          SkipUnchangedFiles="true"
-	          OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonCss)" DestinationFiles="wwwroot\css\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonJs)" DestinationFiles="wwwroot\js\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonFonts)" DestinationFiles="wwwroot\fonts\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonVendor)" DestinationFiles="wwwroot\vendor\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonImages)" DestinationFiles="wwwroot\images\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
     </Target>
 </Project>

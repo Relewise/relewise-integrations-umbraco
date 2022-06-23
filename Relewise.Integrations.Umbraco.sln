@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Git", "Git", "{828EE997-758
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Relewise.UmbracoV10", "samples\UmbracoV10\Relewise.UmbracoV10.csproj", "{3CEA229E-6690-4248-B6B0-1C3054D142FD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Relewise.Umbraco.Application", "Relewise.Umbraco.Application\Relewise.Umbraco.Application.csproj", "{B9B5F0C9-3E2A-44BF-895F-0CC9963B8839}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{3CEA229E-6690-4248-B6B0-1C3054D142FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3CEA229E-6690-4248-B6B0-1C3054D142FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3CEA229E-6690-4248-B6B0-1C3054D142FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9B5F0C9-3E2A-44BF-895F-0CC9963B8839}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9B5F0C9-3E2A-44BF-895F-0CC9963B8839}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9B5F0C9-3E2A-44BF-895F-0CC9963B8839}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9B5F0C9-3E2A-44BF-895F-0CC9963B8839}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -42,6 +48,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{53D4C642-13D2-4F61-A941-2CA19526315A} = {41BF626B-F972-4C22-93B6-44AA3F463D7D}
 		{3CEA229E-6690-4248-B6B0-1C3054D142FD} = {41BF626B-F972-4C22-93B6-44AA3F463D7D}
+		{B9B5F0C9-3E2A-44BF-895F-0CC9963B8839} = {41BF626B-F972-4C22-93B6-44AA3F463D7D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2F867AD8-FFBD-46E8-A4F6-6F7367A71DD5}

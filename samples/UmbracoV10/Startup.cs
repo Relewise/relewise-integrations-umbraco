@@ -11,9 +11,9 @@ using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
 using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
-using Relewise.UmbracoV10.Application;
-using Relewise.UmbracoV10.Application.Api;
-using Relewise.UmbracoV10.Application.Infrastructure.CookieConsent;
+using Relewise.Umbraco.Application;
+using Relewise.Umbraco.Application.Api;
+using Relewise.Umbraco.Application.Infrastructure.CookieConsent;
 
 namespace Relewise.UmbracoV10
 {
@@ -105,16 +105,6 @@ namespace Relewise.UmbracoV10
                     u.UseBackOfficeEndpoints();
                     u.UseWebsiteEndpoints();
                 });
-        }
-    }
-
-    public class BlogMapper : IContentTypeMapping
-    {
-        public Task<ContentUpdate> Map(ContentMappingContext context, CancellationToken token)
-        {
-            context.ContentUpdate.Content.Data["Title"] = context.PublishedContent.GetProperty("title")?.GetValue<string>(context.CulturesToPublish.First());
-
-            return Task.FromResult(context.ContentUpdate);
         }
     }
 }
