@@ -15,13 +15,13 @@ public static class PropertyExtensions
     /// <param name="property"></param>
     /// <param name="culture"></param>
     /// <returns></returns>
-    public static T GetValue<T>(this IPublishedProperty property, string culture)
+    public static T? GetValue<T>(this IPublishedProperty property, string culture)
     {
         if (!property.PropertyType.VariesByCulture())
         {
             culture = null!;
         }
 
-        return (T)property.GetValue(culture);
+        return (T?)property.GetValue(culture);
     }
 }

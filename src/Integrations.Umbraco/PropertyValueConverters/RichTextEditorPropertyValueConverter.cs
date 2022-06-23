@@ -13,7 +13,7 @@ internal class RichTextEditorPropertyValueConverter : IRelewisePropertyValueConv
 
     public void Convert(RelewisePropertyConverterContext context)
     {
-        var value = context.Property.GetValue<HtmlEncodedString>(context.Culture);
-        context.Add(context.Property.Alias, new DataValue(value.ToString()));
+        HtmlEncodedString? value = context.Property.GetValue<HtmlEncodedString>(context.Culture);
+        context.Add(context.Property.Alias, new DataValue(value?.ToString()));
     }
 }

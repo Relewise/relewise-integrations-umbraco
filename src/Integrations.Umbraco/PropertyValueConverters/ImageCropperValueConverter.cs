@@ -20,7 +20,7 @@ internal class ImageCropperValueConverter : IRelewisePropertyValueConverter
 
     public void Convert(RelewisePropertyConverterContext context)
     {
-        ImageCropperValue value = context.Property.GetValue<ImageCropperValue>(context.Culture);
+        ImageCropperValue? value = context.Property.GetValue<ImageCropperValue>(context.Culture);
 
         if (value == null)
             return;

@@ -43,7 +43,10 @@ internal class ExportContentService : IExportContentService
 
         using UmbracoContextReference umbracoContextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
-        IPublishedContentCache contentCache = umbracoContextReference.UmbracoContext.Content;
+        IPublishedContentCache? contentCache = umbracoContextReference.UmbracoContext.Content;
+        
+        if (contentCache == null)
+            throw new ArgumentNullException(nameof(contentCache), "Content cache was null but is required for exporting");
 
         ITracker? tracker = GetTrackerOrNull();
 

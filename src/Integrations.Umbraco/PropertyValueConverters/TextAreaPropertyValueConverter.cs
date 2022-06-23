@@ -12,7 +12,7 @@ internal class TextAreaPropertyValueConverter : IRelewisePropertyValueConverter
 
     public void Convert(RelewisePropertyConverterContext context)
     {
-        string value = context.Property.GetValue<string>(context.Culture);
+        string? value = context.Property.GetValue<string>(context.Culture);
         context.Add(context.Property.Alias, new DataValue(value));
     }
 }

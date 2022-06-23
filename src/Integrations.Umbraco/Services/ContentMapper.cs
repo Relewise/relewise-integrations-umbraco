@@ -41,7 +41,7 @@ internal class ContentMapper : IContentMapper
         }
         else
         {
-            culturesToPublish.Add(GetDefaultCulture(umbracoContextReference)); // when not varied by culture the culture info is ""
+            culturesToPublish.Add(GetDefaultCulture(umbracoContextReference));
         }
 
         var contentUpdate = new ContentUpdate(new Content(content.PublishedContent.Id.ToString())
@@ -100,6 +100,7 @@ internal class ContentMapper : IContentMapper
 
     private static string GetDefaultCulture(UmbracoContextReference umbracoContextReference)
     {
-        return umbracoContextReference.UmbracoContext.Domains.DefaultCulture.ToLowerInvariant();
+        // when not varied by culture the culture info is ""
+        return umbracoContextReference.UmbracoContext.Domains?.DefaultCulture.ToLowerInvariant() ?? string.Empty;
     }
 }

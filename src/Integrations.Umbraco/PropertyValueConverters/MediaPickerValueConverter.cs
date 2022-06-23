@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -16,15 +17,15 @@ internal class MediaPickerValueConverter : IRelewisePropertyValueConverter
 
     public void Convert(RelewisePropertyConverterContext context)
     {
-        var isMultiple = context.Property.PropertyType.DataType.ConfigurationAs<MediaPicker3Configuration>().Multiple;
+        bool isMultiple = context.Property.PropertyType.DataType.ConfigurationAs<MediaPicker3Configuration>()?.Multiple ?? false;
 
         if (isMultiple)
         {
             var value = new List<string>();
-            var items = context.Property.GetValue<IEnumerable<IPublishedContent>>(context.Culture);
+            IEnumerable<IPublishedContent> items = context.Property.GetValue<IEnumerable<IPublishedContent>>(context.Culture) ?? Array.Empty<IPublishedContent>();
             foreach (var item in items)
             {
-                string? mediaObject = item?.Url();
+                string? mediaObject = item.Url();
                 if (mediaObject != null)
                 {
                     value.Add(mediaObject);
@@ -34,7 +35,7 @@ internal class MediaPickerValueConverter : IRelewisePropertyValueConverter
         }
         else
         {
-            IPublishedContent item = context.Property.GetValue<IPublishedContent>(context.Culture);
+            IPublishedContent? item = context.Property.GetValue<IPublishedContent>(context.Culture);
             string? mediaObject = item?.Url();
             if (mediaObject != null)
             {
