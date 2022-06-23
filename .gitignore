@@ -359,3 +359,4 @@ local.settings.json
 **samples/UmbracoV10/wwwroot/fonts/**
 **samples/UmbracoV10/wwwroot/images/**
 **samples/UmbracoV10/Views/**
+**samples/UmbracoV10/App_Plugins/**

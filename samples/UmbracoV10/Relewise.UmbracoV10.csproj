@@ -58,7 +58,6 @@
 		<Content Include="..\UmbracoV9\wwwroot\images\**\*">
 			<Link>wwwroot\images\%(RecursiveDir)%(FileName)%(Extension)</Link>
 		</Content>
-
 		<Content Include="..\UmbracoV9\Views\**\*">
 			<Link>Views\%(RecursiveDir)%(FileName)%(Extension)</Link>
 		</Content>
@@ -72,6 +71,7 @@
 		<CommonVendor Include="..\UmbracoV9\wwwroot\vendor\**\*" />
 		<CommonImages Include="..\UmbracoV9\wwwroot\images\**\*" />
 		<CommonViews Include="..\UmbracoV9\Views\**\*" />
+		<CommonAppPlugins Include="..\UmbracoV9\App_Plugins\**\*" />
 
 		<!-- Tells Visual Studio to ignore any actual files at this location.
        I found that if I didn't do this, Visual Studio sees the copied
@@ -94,5 +94,6 @@
 	    <Copy SourceFiles="@(CommonVendor)" DestinationFiles="wwwroot\vendor\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
 	    <Copy SourceFiles="@(CommonImages)" DestinationFiles="wwwroot\images\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
 	    <Copy SourceFiles="@(CommonViews)" DestinationFiles="Views\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonAppPlugins)" DestinationFiles="App_Plugins\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
     </Target>
 </Project>
