@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -21,7 +16,7 @@ using Relewise.Client.Responses.Search;
 using Relewise.Client.Search;
 using Relewise.Integrations.Umbraco;
 
-namespace Relewise.UmbracoV9.Application.Api;
+namespace Relewise.Umbraco.Application.Api;
 
 public static class ContentApi
 {
@@ -47,7 +42,7 @@ public static class ContentApi
             Currency.Undefined,
             user,
             "Search Overlay",
-            context.Request.Query["q"].First(),
+            Enumerable.First<string>(context.Request.Query["q"]),
             skip: 0,
             take: 10)
         {
@@ -71,7 +66,7 @@ public static class ContentApi
             Currency.Undefined,
             user,
             "Search Overlay",
-            context.Request.Query["q"].First(),
+            Enumerable.First<string>(context.Request.Query["q"]),
             take: 10)
         {
             Settings = new SearchTermPredictionSettings

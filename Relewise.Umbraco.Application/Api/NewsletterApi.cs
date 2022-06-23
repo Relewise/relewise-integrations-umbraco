@@ -1,6 +1,4 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +6,7 @@ using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco;
 
-namespace Relewise.UmbracoV9.Application.Api;
+namespace Relewise.Umbraco.Application.Api;
 
 public static class NewsletterApi
 {
@@ -25,7 +23,7 @@ public static class NewsletterApi
         IRelewiseUserLocator userLocator = context.RequestServices.GetRequiredService<IRelewiseUserLocator>();
         User user = await userLocator.GetUser();
 
-        user.Email = context.Request.Query["emailAddress"].First();
+        user.Email = Enumerable.First<string>(context.Request.Query["emailAddress"]);
 
         await tracker.TrackAsync(new UserUpdate(user), context.RequestAborted);
     }

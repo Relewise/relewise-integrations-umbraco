@@ -13,7 +13,7 @@ internal class TagsPropertyValueConverter : IRelewisePropertyValueConverter
 
     public void Convert(RelewisePropertyConverterContext context)
     {
-        IEnumerable<string> value = context.Property.GetValue<IEnumerable<string>>(context.Culture);
+        IEnumerable<string>? value = context.Property.GetValue<IEnumerable<string>>(context.Culture);
         context.Add(context.Property.Alias, new DataValue(value));
     }
 }
