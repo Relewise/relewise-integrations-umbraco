@@ -8,7 +8,7 @@ using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-internal class MediaPickerValueConverter : IRelewisePropertyValueConverter
+public class MediaPickerValueConverter : IRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
     {

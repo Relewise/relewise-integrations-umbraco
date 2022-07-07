@@ -4,7 +4,7 @@ using Umbraco.Cms.Core.Strings;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-internal class RichTextEditorPropertyValueConverter : IRelewisePropertyValueConverter
+public class RichTextEditorPropertyValueConverter : IRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
     {

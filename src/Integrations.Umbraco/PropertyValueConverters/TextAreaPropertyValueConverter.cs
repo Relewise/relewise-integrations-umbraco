@@ -3,7 +3,7 @@ using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-internal class TextAreaPropertyValueConverter : IRelewisePropertyValueConverter
+public class TextAreaPropertyValueConverter : IRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
     {

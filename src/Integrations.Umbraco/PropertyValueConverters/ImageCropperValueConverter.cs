@@ -4,7 +4,7 @@ using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-internal class ImageCropperValueConverter : IRelewisePropertyValueConverter
+public class ImageCropperValueConverter : IRelewisePropertyValueConverter
 {
     private readonly IImageUrlGenerator _imageUrlGenerator;
 
