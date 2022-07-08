@@ -60,12 +60,6 @@ public static class UmbracoBuilderExtensions
         builder.Services.TryAddSingleton<IExportContentService, ExportContentService>();
         builder.Services.TryAddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
 
-        //.AddValueConverter<MediaPickerValueConverter>()
-        //.AddValueConverter<ImageCropperValueConverter>();
-        //.AddValueConverter<TextAreaPropertyValueConverter>()
-        //.AddValueConverter<RichTextEditorPropertyValueConverter>()
-        //.AddValueConverter<DateTimePropertyValueConverter>()
-
         builder.Services
             .AddValueConverter<TextFieldPropertyValueConverter>()
             .AddValueConverter<CheckboxPropertyValueConverter>()
