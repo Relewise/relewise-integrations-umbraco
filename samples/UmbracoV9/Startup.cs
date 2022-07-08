@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
+using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Umbraco.Application;
 using Relewise.Umbraco.Application.Api;
 using Relewise.Umbraco.Application.Infrastructure.CookieConsent;
@@ -58,6 +59,11 @@ public class Startup
         services.AddHttpContextAccessor();
         services.AddSingleton<CookieConsent>();
         services.AddSingleton<IRelewiseUserLocator, RelewiseUserLocator>();
+
+        services.AddValueConverter<RichTextEditorPropertyValueConverter>();
+        services.AddValueConverter<ImageCropperValueConverter>();
+        services.AddValueConverter<MediaPickerValueConverter>();
+        services.AddValueConverter<TextAreaPropertyValueConverter>();
 
         services.AddUmbraco(_env, _config)
             .AddBackOffice()
