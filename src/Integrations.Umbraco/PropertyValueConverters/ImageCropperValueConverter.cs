@@ -4,20 +4,26 @@ using Umbraco.Cms.Core.PropertyEditors.ValueConverters;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
+/// <summary>
+/// Handles extracting property values for 'Umbraco.ImageCropper'
+/// </summary>
 public class ImageCropperValueConverter : IRelewisePropertyValueConverter
 {
     private readonly IImageUrlGenerator _imageUrlGenerator;
 
+    /// <inheritdoc cref="ImageCropperValueConverter" />
     public ImageCropperValueConverter(IImageUrlGenerator imageUrlGenerator)
     {
         _imageUrlGenerator = imageUrlGenerator;
     }
 
+    /// <inheritdoc />
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
         return context.Property.PropertyType.EditorAlias.Equals("Umbraco.ImageCropper");
     }
 
+    /// <inheritdoc />
     public void Convert(RelewisePropertyConverterContext context)
     {
         ImageCropperValue? value = context.Property.GetValue<ImageCropperValue>(context.Culture);

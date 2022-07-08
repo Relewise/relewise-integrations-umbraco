@@ -61,6 +61,7 @@ namespace Relewise.UmbracoV10
             services.AddValueConverter<RichTextEditorPropertyValueConverter>();
             services.AddValueConverter<ImageCropperValueConverter>();
             services.AddValueConverter<MediaPickerValueConverter>();
+            services.AddValueConverter<TextAreaPropertyValueConverter>();
 
             services.AddUmbraco(_env, _config)
                 .AddBackOffice()
