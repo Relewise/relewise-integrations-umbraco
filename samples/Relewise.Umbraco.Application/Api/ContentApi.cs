@@ -93,15 +93,25 @@ public static class ContentApi
         {
             Settings = new ContentRecommendationRequestSettings
             {
+                NumberOfRecommendations = 6,
                 SelectedContentProperties = new SelectedContentPropertiesSettings
                 {
                     DisplayName = true,
-                    DataKeys = new []{"url", "splashImage_Block" }
+                    DataKeys = new []
+                    {
+                        "url", 
+                        "splashImage_Block"
+                    }
                 }
             },
-            Filters = new FilterCollection(new ContentDataFilter("ContentTypeAlias", new ContainsCondition(new DataValue(new List<string> {"blogEntry", "contentPage"}))))
+            Filters = new FilterCollection(new ContentDataFilter(
+                "contentTypeAlias", new ContainsCondition(new DataValue(new List<string>
+                {
+                    "blogEntry", 
+                    "contentPage"
+                }), ContainsCondition.CollectionArgumentEvaluationMode.Any)))
         }, context.RequestAborted);
 
-        await context.Response.WriteAsJsonAsync(result.Recommendations.Take(6).Chunk(2), JsonSerializerOptions);
+        await context.Response.WriteAsJsonAsync(result.Recommendations.Chunk(2), JsonSerializerOptions);
     }
 }
