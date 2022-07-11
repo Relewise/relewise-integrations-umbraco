@@ -9,6 +9,6 @@ internal class RelewiseDashboard : IDashboard
 {
     public string Alias => "relewiseDashboard";
     public string View => "/App_Plugins/Relewise.Dashboard/dashboard.html";
-    public string[] Sections => new[] { "Content" };
+    public string[] Sections => new[] { "Settings" };
     public IAccessRule[] AccessRules => Array.Empty<IAccessRule>();
 }

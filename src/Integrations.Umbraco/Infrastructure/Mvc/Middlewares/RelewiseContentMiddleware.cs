@@ -38,6 +38,7 @@ internal class RelewiseContentMiddleware
                 ITracker tracker = context.RequestServices.GetRequiredService<ITracker>();
 
                 User user = await _userLocator.GetUser();
+
                 try
                 {
                     await tracker.TrackAsync(new ContentView(user, content?.Id.ToString()));
