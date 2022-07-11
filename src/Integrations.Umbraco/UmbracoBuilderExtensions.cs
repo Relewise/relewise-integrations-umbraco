@@ -60,17 +60,13 @@ public static class UmbracoBuilderExtensions
         builder.Services.TryAddSingleton<IExportContentService, ExportContentService>();
         builder.Services.TryAddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
 
-        builder.Services.AddValueConverter<TextAreaPropertyValueConverter>()
+        builder.Services
             .AddValueConverter<TextFieldPropertyValueConverter>()
             .AddValueConverter<CheckboxPropertyValueConverter>()
             .AddValueConverter<IntegerPropertyValueConverter>()
             .AddValueConverter<DecimalPropertyValueConverter>()
-            .AddValueConverter<DateTimePropertyValueConverter>()
             .AddValueConverter<TagsPropertyValueConverter>()
-            .AddValueConverter<RichTextEditorPropertyValueConverter>()
-            .AddValueConverter<NestedContentPropertyValueConverter>()
-            .AddValueConverter<MediaPickerValueConverter>()
-            .AddValueConverter<ImageCropperValueConverter>();
+            .AddValueConverter<NestedContentPropertyValueConverter>();
 
         builder.AddNotificationAsyncHandler<ContentPublishedNotification, RelewiseContentPublishedNotificationHandler>();
         builder.AddNotificationAsyncHandler<ContentUnpublishedNotification, RelewiseContentUnpublishedNotificationHandler>();

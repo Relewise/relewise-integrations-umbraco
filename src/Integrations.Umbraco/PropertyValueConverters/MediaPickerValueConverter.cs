@@ -8,13 +8,18 @@ using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-internal class MediaPickerValueConverter : IRelewisePropertyValueConverter
+/// <summary>
+/// Handles extracting property values for 'Umbraco.MediaPicker3'
+/// </summary>
+public class MediaPickerValueConverter : IRelewisePropertyValueConverter
 {
+    /// <inheritdoc />
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
         return context.Property.PropertyType.EditorAlias.Equals("Umbraco.MediaPicker3");
     }
 
+    /// <inheritdoc />
     public void Convert(RelewisePropertyConverterContext context)
     {
         bool isMultiple = context.Property.PropertyType.DataType.ConfigurationAs<MediaPicker3Configuration>()?.Multiple ?? false;
