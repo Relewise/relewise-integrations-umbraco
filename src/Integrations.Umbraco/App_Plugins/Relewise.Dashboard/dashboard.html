@@ -6,7 +6,7 @@
                 Welcome to the Relewise dashboard - here you can perform export functions to get all your content exported into Relewise.<br />
                 It's also possible to see the settings for Relewise directly here.
             </p>
-            <div class="button-box">
+            <div class="button-box" ng-if="!vm.configurationError">
                 <button class="btn btn-primary" ng-click="vm.exportContent()" ng-disabled="vm.exportLoading">
                     Export content
                 </button>
@@ -31,8 +31,11 @@
                 No options have been configured. Please check your call to the 'services.AddRelewise(options => { /* options goes here */ })'-method in 'Startup.cs'.
             </p>
             <div ng-if="vm.configuration !== null">
-                Tracked content types are: <strong>{{vm.configuration.trackedContentTypes.join(', ')}}</strong><br />
-                Exported content types are: <strong>{{vm.configuration.exportedContentTypes.join(', ')}}</strong><br />
+                Tracked content types are: <strong>{{vm.configuration.trackedContentTypes.join(', ')}}</strong>
+                <div style="font-style: italic; color: #666;">(Page views for these content types are being tracked to Relewise, if the automatic page view tracking has been enabled)</div>
+                <br />
+                Exported content types are: <strong>{{vm.configuration.exportedContentTypes.join(', ')}}</strong>
+                <div style="font-style: italic; color: #666;">(These are configured for being exported to Relewise on publish or when the export is triggered manually)</div>
             </div>
         </umb-box-content>
     </umb-box>

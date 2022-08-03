@@ -23,7 +23,8 @@ services.AddUmbraco(_env, _config)
 
 ### Sample site - Get it up and running.
 
-The sample site requires .NET 6 and NPM. The site has demo content, so that once it's up and running, you can have a look around. 
+The sample sites requires .NET 6 and NPM. The site has demo content, so that once it's up and running, you can have a look around. 
+There is a sample site for both Umbraco 9 and Umbraco 10. The demo sites uses the same frontend client, which is located in the Umbraco 9 sample site folder. If you wish to run the v10 sample site, then just follow the steps below for the client.
 
 1. Start by cloning the repository.
 2. Setting up our frontend.
@@ -34,7 +35,7 @@ The sample site requires .NET 6 and NPM. The site has demo content, so that once
 
 3. Spinning up the site.
 
-    1. Navigate to 'samples/UmbracoV9'.
+    1. Navigate to 'samples/UmbracoV9' or 'samples/UmbracoV10', depending on whether you want to sample v9 or v10.
     2. In the appsettings, enter your Dataset Id and API-key for Relewise (you can find those at https://my.relewise.com under Settings -> Developer Settings). There is a commented out section, where you can enter it (Remember to comment the section back in!)
     3. Run `dotnet run` via a command prompt.
     4. Umbraco will throw some error in the console - just ignore those
