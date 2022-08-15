@@ -4,7 +4,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import CookieConsent from './components/CookieConsent.vue'
+import CookieConsent from './CookieConsent.vue'
 
 export default defineComponent({
   name: 'UpdateConsent',

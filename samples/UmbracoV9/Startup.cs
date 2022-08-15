@@ -92,6 +92,7 @@ public class Startup
         app.UseRouting();
         app.UseEndpoints(c => c
             .MapContentRoutes()
+            .MapCatalogRoutes()
             .MapNewsletterRoutes());
 
         app.UseUmbraco()
