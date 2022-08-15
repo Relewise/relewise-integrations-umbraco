@@ -23,7 +23,7 @@ public static class NewsletterApi
         IRelewiseUserLocator userLocator = context.RequestServices.GetRequiredService<IRelewiseUserLocator>();
         User user = await userLocator.GetUser();
 
-        user.Email = Enumerable.First<string>(context.Request.Query["emailAddress"]);
+        user.Email = context.Request.Query["emailAddress"].First();
 
         await tracker.TrackAsync(new UserUpdate(user), context.RequestAborted);
     }

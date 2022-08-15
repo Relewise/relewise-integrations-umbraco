@@ -1,6 +1,7 @@
 using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -90,7 +91,14 @@ namespace Relewise.UmbracoV10
             app.UseRouting();
             app.UseEndpoints(c => c
                 .MapContentRoutes()
+                .MapCatalogRoutes()
+                .MapSearchRoutes()
                 .MapNewsletterRoutes());
+
+            app.UseRewriter(new RewriteOptions().AddRewrite(
+                "product/(\\d*)$", 
+                "product?productId=$1", 
+                skipRemainingRules: true));
 
             app.UseUmbraco()
                 .WithMiddleware(u =>

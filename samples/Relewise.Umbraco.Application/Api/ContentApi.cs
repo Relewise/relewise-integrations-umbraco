@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
@@ -31,7 +32,7 @@ public static class ContentApi
         return builder;
     }
 
-    private static async Task Search(HttpContext context)
+    private static async Task Search(HttpContext context, [FromQuery] string q)
     {
         ISearcher searcher = context.RequestServices.GetRequiredService<ISearcher>();
         IRelewiseUserLocator userLocator = context.RequestServices.GetRequiredService<IRelewiseUserLocator>();
@@ -42,7 +43,7 @@ public static class ContentApi
             Currency.Undefined,
             user,
             "Search Overlay",
-            Enumerable.First<string>(context.Request.Query["q"]),
+            q,
             skip: 0,
             take: 10)
         {
@@ -55,7 +56,7 @@ public static class ContentApi
         await context.Response.WriteAsJsonAsync(result.Results, JsonSerializerOptions);
     }
 
-    private static async Task Predict(HttpContext context)
+    private static async Task Predict(HttpContext context, [FromQuery] string q)
     {
         ISearcher searcher = context.RequestServices.GetRequiredService<ISearcher>();
         IRelewiseUserLocator userLocator = context.RequestServices.GetRequiredService<IRelewiseUserLocator>();
@@ -66,7 +67,7 @@ public static class ContentApi
             Currency.Undefined,
             user,
             "Search Overlay",
-            Enumerable.First<string>(context.Request.Query["q"]),
+            q,
             take: 10)
         {
             Settings = new SearchTermPredictionSettings

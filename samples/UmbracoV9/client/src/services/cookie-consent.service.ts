@@ -1,5 +1,10 @@
 import { computed, reactive } from '@vue/runtime-dom'
 
+interface ICookieConsentState {
+  hasClickedOnCookieBanner: boolean;
+  data: UserCookies;
+}
+
 class CookieConsentService {
     private static readonly CookieVersion: string = '1';
 
@@ -25,6 +30,12 @@ class CookieConsentService {
 
     get cookies () {
       return computed(() => this.state.data.cookies)
+    }
+
+    get userIdIfHasConsent () {
+      return this.state.data.cookies.marketing
+        ? this.state.data.userId
+        : null
     }
 
     acceptAllCookies () {
