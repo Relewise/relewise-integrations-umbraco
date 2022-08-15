@@ -70,14 +70,10 @@ public static class CatalogApi
         request.Facets.AddCategory(CategorySelectionStrategy.ImmediateParent, category2Id != null ? new[] { category2Id } : null);
 
         if (categoryId != null)
-        {
             request.Filters.Add(new ProductCategoryIdFilter(categoryId, CategoryScope.Ancestor));
-        }
 
         if (productId != null)
-        {
             request.Filters.Add(new ProductIdFilter(productId));
-        }
 
         if (sortBy != null)
         {
