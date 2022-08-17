@@ -29,14 +29,14 @@ There is a sample site for both Umbraco 9 and Umbraco 10. The demo sites uses th
 1. Start by cloning the repository.
 2. Setting up our frontend.
     
-    1. Navigate to 'samples/UmbracoV9/client'
+    1. Navigate to `samples/UmbracoV9/client` (also if intend to run the v10 sample - see above)
     2. Run `npm install` via a command prompt
     3. Run `npm run serve` via a command prompt
 
 3. Spinning up the site.
 
-    1. Navigate to 'samples/UmbracoV9' or 'samples/UmbracoV10', depending on whether you want to sample v9 or v10.
-    2. In the appsettings, enter your Dataset Id and API-key for Relewise (you can find those at https://my.relewise.com under Settings -> Developer Settings). There is a commented out section, where you can enter it (Remember to comment the section back in!)
+    1. Navigate to `samples/UmbracoV9` or `samples/UmbracoV10`, depending on whether you want to sample v9 or v10.
+    2. In the appsettings, enter your `DatasetId` and `ApiKey` for Relewise (you can find those at https://my.relewise.com under `Settings -> Developer Settings`). There is a commented out section, where you can enter it (Remember to comment the section back in!). Alternatively you can  create a `local.settings.json` file and add the section in there.
     3. Run `dotnet run` via a command prompt.
     4. Umbraco will throw some error in the console - just ignore those
     5. `dotnet run` open a new browser tab, continue the setup in that new tab.
