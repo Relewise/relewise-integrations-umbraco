@@ -7,12 +7,21 @@
 @inject IRelewiseClientFactory RelewiseClientFactory;
 
 @{
-    var breadcrumb = Model.Breadcrumbs(andSelf: true).ToArray();
-    var homePage = breadcrumb.First();
+    IPublishedContent[] breadcrumb = Model.Breadcrumbs(andSelf: true).ToArray();
+    IPublishedContent homePage = breadcrumb.First();
     IEnumerable<IPublishedElement> footer = homePage.Value<IEnumerable<IPublishedElement>>("footerLinks").EmptyIfNull();
     IEnumerable<Link> headerLinks = homePage.Value<IEnumerable<Link>>("headerLinks").EmptyIfNull();
 
-    RelewiseClientOptions tracker = RelewiseClientFactory.GetOptions<ITracker>("Browser");
+    RelewiseClientOptions tracker = null;
+    try
+    {
+        tracker = RelewiseClientFactory.GetOptions<ITracker>("Browser");
+    }
+    catch (ArgumentException)
+    {
+        // Client not found - ignore error
+        // Note: this will be replaced by a call to a future Contains()-method on the client factory.
+    }
 }
 
 <!DOCTYPE html>
@@ -45,9 +54,12 @@
     <link rel="stylesheet" type="text/css" href="/css/util.css">
     <!--===============================================================================================-->
     
-    <script language="javascript">
-        window.__tracker = { "datasetId": "@tracker.DatasetId", "apiKey": "@tracker.ApiKey" }
-    </script>
+    @if (tracker != null)
+    {
+        <script language="javascript">
+            window.__tracker = { "datasetId": "@tracker.DatasetId", "apiKey": "@tracker.ApiKey" }
+        </script>
+    }
 </head>
 <body class="animsition">
 
