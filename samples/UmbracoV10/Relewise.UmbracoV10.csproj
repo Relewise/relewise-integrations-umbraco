@@ -10,7 +10,7 @@
 
     <ItemGroup>
 	    <PackageReference Include="Relewise.Client" Version="1.10.0" />
-	    <PackageReference Include="Relewise.Client.Extensions" Version="1.1.0" />
+	    <PackageReference Include="Relewise.Client.Extensions" Version="1.2.0" />
         <PackageReference Include="Umbraco.Cms" Version="10.0.0" />
         <PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="10.0.0" />
     </ItemGroup>
