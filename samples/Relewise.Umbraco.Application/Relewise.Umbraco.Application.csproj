@@ -19,10 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Relewise.Client.Extensions" Version="1.2.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\src\Integrations.Umbraco\Integrations.Umbraco.csproj" />
   </ItemGroup>
 
