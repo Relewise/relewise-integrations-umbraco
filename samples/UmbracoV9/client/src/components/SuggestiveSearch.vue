@@ -106,12 +106,12 @@ function createDebounce () {
 }
 
 function leaveSearch () {
-//   setTimeout(() => {
-//     term.value = ''
-//     result.value = null
-//     predictions.value = null
-//     document.getElementById('search-input')?.classList.toggle('active')
-//   }, 200)
+  setTimeout(() => {
+    term.value = ''
+    result.value = null
+    predictions.value = null
+    document.getElementById('search-input')?.classList.toggle('active')
+  }, 200)
 }
 
 function enterSearch () {
