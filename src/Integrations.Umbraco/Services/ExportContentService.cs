@@ -100,7 +100,7 @@ internal class ExportContentService : IExportContentService
 
             await Export(new ExportContent(
                     contents,
-                    exportAllContent.PermanentlyDelete ? ContentUpdate.UpdateKind.ClearAndReplace : ContentUpdate.UpdateKind.UpdateAndAppend,
+                    exportAllContent.PermanentlyDelete ? ContentUpdate.UpdateKind.ClearAndReplace : ContentUpdate.UpdateKind.ReplaceProvidedProperties,
                     version), 
                 token);
 
