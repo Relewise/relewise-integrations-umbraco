@@ -9,34 +9,41 @@
     <div v-if="result || predictions" class="results fs-14">
         <div class="dis-flex w-100">
             <div class="w-25 dis-flex flex-col">
-                <template v-if="predictions">
-                    <strong class="result fs-12">Terms</strong>
-                    <a href="#" class="result fs-14" v-for="prediction in predictions" :key="prediction.term" @click="goToSearch(prediction.term)">
+                <template v-if="predictions && predictions.length > 0">
+                    <div class="result__element"><strong>Suggestions</strong></div>
+
+                    <a href="#" class="result__element" style="height: 40px;" v-for="prediction in predictions" :key="prediction.term" @click="goToSearch(prediction.term)">
                         {{ prediction.term }}
-                    </a>
-                </template>
-                <strong class="result m-t-10 fs-12">Pages</strong>
-                <template v-if="result && result.length > 0">
-                    <a class="result fs-14" v-for="content in result" :key="content.contentId" :href="content.data.url.value">
-                        {{ content.displayName }}
-                    </a>
-                    <a href="#" class="result fs-14" @click="goToSearch(term)">See all...</a>
-                </template>
-                <template v-else-if="result && result.length === 0">
-                    <div class="result fs-14">No results found</div>
+                        </a>
                 </template>
             </div>
-            <div class="products">
-                <template v-for="product in products?.results" :key="product.productId">
-                    <div class="product__element">
-                        <div class="dis-flex flex-m">
-                            <img width="40" height="40" :src="product.data.ImageUrl?.value ?? '/images/item-02.jpg'" :alt="product.displayName" class="m-r-8" />
-                            <a :href="`/product/${product.productId}`">{{product.displayName}}</a>
-                        </div>
-                    </div>
-                </template>
+            <div class="result__list">
+                <template v-if="products && products.hits > 0">
+                    <div class="result__element"><strong>Products</strong></div>
 
-                <a class="product__element" v-if="products?.hits > 0" href="#" @click.prevent="goToSearch(term)">See all {{products?.hits}} results</a>
+                    <template v-for="product in products?.results" :key="product.productId">
+                        <div class="result__element">
+                            <div class="dis-flex flex-m">
+                                <img width="40" height="40" :src="product.data.ImageUrl?.value ?? '/images/item-02.jpg'" :alt="product.displayName" class="m-r-8" />
+                                <a :href="`/product/${product.productId}`">{{product.displayName}}</a>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+                <template v-if="result && result.length > 0">
+                    <div class="result__element"><strong>Contents</strong></div>
+                    <template v-for="content in result" :key="content.contentId">
+                        <div class="result__element">
+                            <div class="dis-flex flex-m">
+                                <img width="40" height="40" :src="content.data.splashImage_Block?.value ?? '/images/item-02.jpg'" :alt="content.displayName" class="m-r-8" />
+                                <a :href="content.data.url.value">{{content.displayName}}</a>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+                <template v-else-if="result && result.length === 0 && products && products.hits === 0">
+                    <div class="result__element">No results found</div>
+                </template>
             </div>
         </div>
     </div>
@@ -125,12 +132,6 @@ function enterSearch () {
         border-bottom-right-radius: 6px;
     }
 
-    .result {
-        width: 100%;
-        line-height: 1.5;
-        padding: 5px;
-    }
-
     #search-input {
         -webkit-transition: all .5s;
         -moz-transition: all .5s;
@@ -139,10 +140,10 @@ function enterSearch () {
         max-width: inherit;
     }
 
-        #search-input.active {
-            width: 600px;
-            max-width: inherit;
-        }
+    #search-input.active {
+        width: 600px;
+        max-width: inherit;
+    }
 
     .flex {
         display: flex;
@@ -156,20 +157,19 @@ function enterSearch () {
         width: 100%;
     }
 
-    .products {
+    .result__list {
         width: 75%;
         display: flex;
         flex-direction: column;
         border-left: 1px solid #e6e6e6;
     }
 
-    .product__element {
+    .result__element {
         padding: 8px;
         border-bottom: 1px solid #e6e6e6;
-        &:last-to-type
 
-    {
-        border-bottom: 0;
-    }
+        &:last-to-type  {
+            border-bottom: 0;
+        }
     }
 </style>

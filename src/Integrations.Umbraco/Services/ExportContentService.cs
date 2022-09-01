@@ -58,7 +58,7 @@ internal class ExportContentService : IExportContentService
         IEnumerable<Task<MapContentResult>> contentMapping = exportContent.Contents
             .Select(x => contentCache.GetById(x.Id))
             .WhereNotNull()
-            .Select(x => _contentMapper.Map(new MapContent(x, exportContent.Version), token));
+            .Select(x => _contentMapper.Map(new MapContent(x, exportContent.Version, exportContent.UpdateKind), token));
 
         foreach (Task<MapContentResult> map in contentMapping)
         {
@@ -98,7 +98,11 @@ internal class ExportContentService : IExportContentService
         {
             long version = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-            await Export(new ExportContent(contents, version), token);
+            await Export(new ExportContent(
+                    contents,
+                    exportAllContent.PermanentlyDelete ? ContentUpdate.UpdateKind.ClearAndReplace : ContentUpdate.UpdateKind.ReplaceProvidedProperties,
+                    version), 
+                token);
 
             var factory = _provider.GetRequiredService<IRelewiseClientFactory>();
             var tracker = factory.GetClient<ITracker>(Constants.NamedClientName);

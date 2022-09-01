@@ -48,7 +48,7 @@ internal class ContentMapper : IContentMapper
         {
             DisplayName = MapDisplayName(content.PublishedContent, culturesToPublish),
             CategoryPaths = GetCategoryPaths(content, culturesToPublish)
-        });
+        }, content.UpdateKind);
 
         await AutoMapOrUseMapper(content, culturesToPublish, contentUpdate, token);
 

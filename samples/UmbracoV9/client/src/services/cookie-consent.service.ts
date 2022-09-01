@@ -56,6 +56,7 @@ class CookieConsentService {
       this.state.data.cookies.functional = false
       this.state.data.cookies.marketing = false
       this.state.data.cookies.statistical = false
+      this.setCookie('_cookieconsent', JSON.stringify(this.state.data), 365)
     }
 
     private setCookie (name: string, value: string, days: number) {
