@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from '@vue/runtime-dom'
+import { ref } from 'vue'
 
 const emailAddress = ref('')
 const subscribed = ref(false)

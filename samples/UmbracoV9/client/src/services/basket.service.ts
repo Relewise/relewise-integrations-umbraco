@@ -1,5 +1,5 @@
 import { ProductResult } from '@relewise/client'
-import { computed, reactive } from '@vue/runtime-dom'
+import { computed, reactive } from 'vue'
 import trackingService from './tracking.service'
 
 export interface ILineItem {

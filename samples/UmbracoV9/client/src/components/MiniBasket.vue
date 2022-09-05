@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 import basketService from '@/services/basket.service'
-import { computed, ComputedRef } from '@vue/reactivity'
+import { computed, ComputedRef } from 'vue'
 
 const result: ComputedRef<number> = computed(() => basketService.model.value.lineItems.length)
 

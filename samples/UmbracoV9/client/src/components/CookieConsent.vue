@@ -59,7 +59,7 @@
 
 <script setup lang="ts">
 import { ref, toRefs, defineProps } from 'vue'
-import { computed } from '@vue/runtime-dom'
+import { computed } from 'vue'
 import cookieConsentService from '../services/cookie-consent.service'
 
 const hasClickedOnCookieBanner = ref(cookieConsentService.hasClickedOnCookieBanner)

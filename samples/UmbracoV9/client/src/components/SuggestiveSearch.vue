@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import { ProductSearchResponse } from '@relewise/client'
-import { ref, Ref } from '@vue/runtime-dom'
+import { ref, Ref } from 'vue'
 
 interface ContentResult {
   displayName: string;

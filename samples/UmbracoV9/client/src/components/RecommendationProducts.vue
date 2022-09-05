@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, Ref, defineProps, toRefs } from '@vue/runtime-dom'
+import { nextTick, ref, Ref, defineProps, toRefs } from 'vue'
 import ProductBlock from './ProductBlock.vue'
 
 interface RecommendationResult {

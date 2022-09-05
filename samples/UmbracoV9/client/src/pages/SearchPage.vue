@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import { ProductResult } from '@relewise/client'
-import { Ref, ref } from '@vue/runtime-dom'
+import { Ref, ref } from 'vue'
 
 import ProductBlock from '../components/ProductBlock.vue'
 

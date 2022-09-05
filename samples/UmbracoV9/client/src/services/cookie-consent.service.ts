@@ -1,4 +1,4 @@
-import { computed, reactive } from '@vue/runtime-dom'
+import { computed, reactive } from 'vue'
 
 interface ICookieConsentState {
   hasClickedOnCookieBanner: boolean;
