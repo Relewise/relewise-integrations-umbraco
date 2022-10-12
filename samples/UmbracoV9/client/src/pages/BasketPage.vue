@@ -38,7 +38,8 @@
         </table>
     </div>
 </div>
-<div class="bo9 w-size18 p-l-40 p-r-40 p-t-30 p-b-38 m-t-30 m-r-0 m-l-auto p-lr-15-sm">
+
+<div class="bo9 w-size18 p-l-40 p-r-40 p-t-30 p-b-38 m-t-30 m-b-30 m-r-0 m-l-auto p-lr-15-sm">
     <h5 class="m-text20 p-b-24">
         Cart Totals
     </h5>
@@ -61,23 +62,49 @@
         </button>
     </div>
 </div>
+
+<RecommendationProducts v-if="!recommendationsLoading" :recommendations="recommendations" type="purchasedwith" title="Others are also looking at" />
+
 </template>
 
 <script setup lang="ts">
+import RecommendationProducts from '../components/RecommendationProducts.vue'
 import basketService, { ILineItem } from '@/services/basket.service'
-import { computed, ComputedRef } from 'vue'
+import { computed, ComputedRef, ref, Ref } from 'vue'
+import { ProductRecommendationResponse } from '@relewise/client';
 
+const recommendations: Ref<ProductRecommendationResponse|null> = ref(null);
+
+const recommendationsLoading = ref(true)
 const lineItems: ComputedRef<ILineItem[]> = computed(() => basketService.model.value.lineItems)
 
 async function updateProduct (item: ILineItem, quantity: number) {
   await basketService.addProduct({ product: item.product, quantityDelta: quantity })
+  loadRecommendations();
 }
 async function removeLineItem (item: ILineItem) {
   await basketService.remove(item)
+  loadRecommendations();
 }
 
 async function completePurchase () {
   await basketService.clear()
   window.location.href = '/basket/confirmation'
 }
+//{method: 'POST',headers: {
+    // 'Content-Type': 'application/json'
+    // }, body: JSON.stringify(basketService.model.value.lineItems.map(l => l.product.productId!)) }
+async function loadRecommendations() {
+    recommendationsLoading.value = true;
+    const params = new URLSearchParams(basketService.model.value.lineItems.map(l => ['ProductIds', l.product.productId!]))
+    fetch(`/api/catalog/recommend/basket?` + params.toString())
+      .then(response => response.json())
+      .then(data => {
+        console.log(data)
+        recommendations.value = data
+        recommendationsLoading.value = false;
+      })
+}
+
+loadRecommendations();
 </script>

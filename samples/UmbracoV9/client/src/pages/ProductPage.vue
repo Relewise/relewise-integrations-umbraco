@@ -59,13 +59,13 @@
     </div>
 </div>
 
-<RecommendationProducts :product-id="product?.productId ?? ''" type="viewedafter" title="Others are also looking at" />
-<RecommendationProducts :product-id="product?.productId ?? ''" type="purchasedwith" title="People also bought" />
+<RecommendationProducts v-if="recommendationsLoaded" :recommendations="recommendations['viewedAfter']" type="viewedafter" title="Others are also looking at" />
+<RecommendationProducts v-if="recommendationsLoaded" :recommendations="recommendations['purchasedWith']" type="purchasedwith" title="People also bought" />
 </template>
 
 <script setup lang="ts">
 import RecommendationProducts from '../components/RecommendationProducts.vue'
-import { ProductResult } from '@relewise/client'
+import { ProductRecommendationResponse, ProductResult } from '@relewise/client'
 import { Ref, ref } from 'vue'
 import trackingService from '@/services/tracking.service'
 import basketService from '@/services/basket.service'
@@ -73,8 +73,10 @@ import basketService from '@/services/basket.service'
 const productId = document.getElementById('product-page')?.attributes.getNamedItem('product-id')?.value
 const product: Ref<ProductResult|null> = ref(null)
 const quantity: Ref<number> = ref(1)
+const recommendations: Ref<Record<string, ProductRecommendationResponse>> = ref({});
 
 const hasError = ref(false)
+const recommendationsLoaded = ref(false)
 
 function getProduct () {
   const urlParams = new URLSearchParams()
@@ -90,6 +92,13 @@ function getProduct () {
       hasError.value = false
     })
     .catch(() => { hasError.value = true })
+
+    fetch(`/api/catalog/recommend/products?productId=` + productId)
+      .then(response => response.json())
+      .then(data => {
+        recommendations.value = data
+        recommendationsLoaded.value = true;
+      })
 }
 
 async function addToCart () {
