@@ -40,7 +40,7 @@ internal class RelewiseContentDeletedNotificationNotificationHandler : INotifica
             Language.Undefined,
             Currency.Undefined,
             new FilterCollection(new ContentIdFilter(ids)),
-            ContentAdministrativeAction.UpdateKind.PermanentlyDelete);
+            ContentAdministrativeAction.UpdateKind.Delete);
 
         await tracker.TrackAsync(action, cancellationToken);
     }

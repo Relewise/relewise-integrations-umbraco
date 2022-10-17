@@ -74,7 +74,7 @@ internal class ExportContentService : IExportContentService
             Language.Undefined,
             Currency.Undefined,
             new FilterCollection(new ContentIdFilter(contentUpdates.Select(x => x.Content.Id))),
-            ContentAdministrativeAction.UpdateKind.EnableInRecommendations), token);
+            ContentAdministrativeAction.UpdateKind.Enable), token);
 
         return new ExportContentResult();
     }
@@ -111,7 +111,7 @@ internal class ExportContentService : IExportContentService
                 Language.Undefined,
                 Currency.Undefined,
                 new FilterCollection(new ContentDataFilter(Constants.VersionKey, new EqualsCondition(version, negated: true), filterOutIfKeyIsNotFound: false)),
-                exportAllContent.PermanentlyDelete ? ContentAdministrativeAction.UpdateKind.PermanentlyDelete : ContentAdministrativeAction.UpdateKind.DisableInRecommendations), 
+                exportAllContent.PermanentlyDelete ? ContentAdministrativeAction.UpdateKind.Delete : ContentAdministrativeAction.UpdateKind.Disable), 
                 token);
         }
 

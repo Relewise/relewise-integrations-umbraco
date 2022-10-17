@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.DataTypes.Search.Facets.Enums;
+using Relewise.Client.DataTypes.Search.Facets.Queries;
 using Relewise.Client.DataTypes.Search.Facets.Result;
 using Relewise.Client.DataTypes.Search.Sorting.Enums;
 using Relewise.Client.DataTypes.Search.Sorting.Product;
@@ -66,6 +67,10 @@ public static class CatalogApi
                 SelectedProductProperties = new SelectedProductPropertiesSettings().SetAllTo(true)
             }
         };
+
+        request.Facets ??= new ProductFacetQuery();
+        request.Filters ??= new FilterCollection();
+        request.Sorting ??= new ProductSortBySpecification();
 
         request.Facets.AddCategory(CategorySelectionStrategy.ImmediateParent, category2Id != null ? new[] { category2Id } : null);
 

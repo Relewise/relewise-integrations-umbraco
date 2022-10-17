@@ -60,6 +60,7 @@ internal class ContentMapper : IContentMapper
         if (TryGetMapper(content, out IContentTypeMapping? mapping))
         {
             contentUpdate = await mapping.Map(new ContentMappingContext(content.PublishedContent, contentUpdate, culturesToPublish, _provider), token);
+
             if (contentUpdate == null)
                 throw new InvalidOperationException("Content update can not be null when returned from a ContentTypeMapping");
         }
@@ -68,6 +69,7 @@ internal class ContentMapper : IContentMapper
             contentUpdate.Content.Data = _propertyConverter.Convert(content.PublishedContent.Properties, culturesToPublish.ToArray());
         }
 
+        contentUpdate.Content.Data ??= new Dictionary<string, DataValue?>();
         contentUpdate.Content.Data.Add(Constants.VersionKey, content.Version);
         contentUpdate.Content.Data.Add("contentTypeAlias", content.PublishedContent.ContentType.Alias);
         contentUpdate.Content.Data.Add("url", content.PublishedContent.Url(null, UrlMode.Absolute));

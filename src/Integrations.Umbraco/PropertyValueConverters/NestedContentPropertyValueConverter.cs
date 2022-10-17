@@ -32,11 +32,11 @@ internal class NestedContentPropertyValueConverter : IRelewisePropertyValueConve
             // NOTE: This needs to be resolved manually, since it would cause a circular dependency if injected through constructor
             var propertyConverter = _serviceProvider.GetRequiredService<IRelewisePropertyConverter>();
 
-            List<DataValue> properties = new List<DataValue>();
+            var properties = new List<DataValue?>();
 
             foreach (IPublishedElement prop in elementItems)
             {
-                Dictionary<string, DataValue> converted = propertyConverter.Convert(prop.Properties, context.Culture);
+                Dictionary<string, DataValue?> converted = propertyConverter.Convert(prop.Properties, context.Culture);
 
                 properties.AddRange(converted.Values);
             }
@@ -44,7 +44,13 @@ internal class NestedContentPropertyValueConverter : IRelewisePropertyValueConve
             if (properties.Count == 0)
                 return;
 
-            context.Add(context.Property.Alias, new DataValue(properties.Select(x => x.Value.ToString()).Where(x => !string.IsNullOrWhiteSpace(x))));
+            string[] stringCollection = properties
+                .Select(x => x?.Value?.ToString())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .ToArray();
+
+            context.Add(context.Property.Alias, new DataValue(stringCollection));
         }
     }
 }
