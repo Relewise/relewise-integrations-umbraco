@@ -43,10 +43,10 @@ internal class RelewiseContentMiddleware
                 {
                     await tracker.TrackAsync(new ContentView(user, content?.Id.ToString()));
                 }
-                catch (HttpRequestException e)
+                catch (HttpRequestException ex)
                 {
-                    if (e.StatusCode == HttpStatusCode.NotFound)
-                        throw new InvalidOperationException($"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com", e);
+                    if (ex.StatusCode == HttpStatusCode.NotFound)
+                        throw new InvalidOperationException($"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com", ex);
 
                     throw;
                 }
