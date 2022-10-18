@@ -10,13 +10,12 @@
         @foreach (var block in (Model.Value<IEnumerable<IPublishedElement>>("blocks") ?? Array.Empty<IPublishedContent>()))
         {
             IPublishedContent? blockSplashImage = block.Value<IPublishedContent>("splashImage");
-
             <div class="col-4">
                 <h3 class="m-b-5">@(block.Value<string>("headline"))</h3>
                 
                 @if (blockSplashImage != null)
                 {
-                    <img src="@blockSplashImage.GetCropUrl("splashImage", "Block")" style="max-width: 100%;" />
+                    <img src="@blockSplashImage.GetCropUrl()" style="max-width: 100%;" />
                 }
                 <p>@(block.Value<string>("text"))</p>
                 

@@ -67,6 +67,9 @@ public class DashboardApiController : UmbracoAuthorizedController
         try
         {
             clientFactory = _provider.GetRequiredService<IRelewiseClientFactory>();
+
+            if (!clientFactory.Contains<ITracker>(Constants.NamedClientName))
+                throw new InvalidOperationException("No clients registered.");
         }
         catch (Exception ex)
         {
