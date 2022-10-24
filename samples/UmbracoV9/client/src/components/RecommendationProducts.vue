@@ -25,36 +25,27 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, Ref, defineProps, toRefs } from 'vue'
+import { ProductRecommendationResponse, ProductResult } from '@relewise/client';
+import { nextTick, ref, Ref, defineProps, toRefs, PropType } from 'vue'
 import ProductBlock from './ProductBlock.vue'
 
-interface RecommendationResult {
-  displayName: string;
-}
-
 const props = defineProps({
-  productId: String,
   title: String,
-  type: String
+  type: String,
+  recommendations: { type: Object as PropType<ProductRecommendationResponse> }
 })
 
-const { productId, title, type } = toRefs(props)
+const { title, type, recommendations } = toRefs(props)
 
-const result: Ref<RecommendationResult[]|null> = ref(null)
+const result: Ref<ProductResult[]|null> = ref(null)
 const hasError = ref(false)
 
 function recommend () {
   hasError.value = false
 
-  if (productId?.value) {
-    fetch(`/api/catalog/recommend/${type?.value}?productId=` + productId.value)
-      .then(response => response.json())
-      .then(data => {
-        result.value = data
-        hasError.value = false
-        nextTick(() => slider())
-      })
-      .catch(() => { hasError.value = true })
+  if (recommendations && recommendations.value !== undefined) {
+    result.value = recommendations.value.recommendations;
+    nextTick(() => slider())
   } else {
     fetch('/api/catalog/recommend/popular')
       .then(response => response.json())

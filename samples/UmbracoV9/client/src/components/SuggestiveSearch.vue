@@ -31,7 +31,7 @@
                     </template>
                 </template>
                 <template v-if="result && result.length > 0">
-                    <div class="result__element"><strong>Contents</strong></div>
+                    <div class="result__element"><strong>Content</strong></div>
                     <template v-for="content in result" :key="content.contentId">
                         <div class="result__element">
                             <div class="dis-flex flex-m">

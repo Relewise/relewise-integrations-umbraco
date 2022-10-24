@@ -2,7 +2,7 @@
 @using ContentModels = Umbraco.Cms.Web.Common.PublishedModels;
 
 @{
-    var splashImage = Model.GetCropUrl("splashImage", "On Page");
+    string splashImage = Model.GetCropUrl("splashImage", "On Page");
     
     bool hasSplashImage = splashImage != null;
 }

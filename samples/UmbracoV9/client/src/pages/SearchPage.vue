@@ -11,9 +11,9 @@
   </div>
   <div v-if="contents" class="row p-t-50">
    <template v-if="contents && contents.length > 0">
-    <a class="col-4" v-for="content in contents" :key="content.contentId" :href="content.data.url.value">
+    <a class="col-4" v-for="content in contents" :key="content.contentId" :href="content.data.url?.value ?? ''">
       <h4>{{ content.displayName }}</h4>
-      <span v-html="content.data.splashText.value"></span>
+      <span v-html="content.data.splashText?.value ?? ''"></span>
     </a>
     </template>
     <template v-else-if="contents && contents.length === 0">
