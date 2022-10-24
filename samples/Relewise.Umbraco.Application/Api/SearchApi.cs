@@ -54,7 +54,7 @@ public static class SearchApi
             Currency.Undefined,
             user,
             DisplayedAtLocation,
-            q,
+            q ?? string.Empty,
             take: 5)
         {
             Settings = new SearchTermPredictionSettings
@@ -68,7 +68,7 @@ public static class SearchApi
             Currency.Undefined,
             user,
             DisplayedAtLocation,
-            q,
+            q ?? string.Empty,
             skip: 0,
             take: 5)
         {

@@ -50,7 +50,7 @@ public class ContentTypeBuilder
     internal IContentTypeMapping? Mapper { get; private set; }
 
     /// <summary>
-    /// Set the contentType to use the builtin automapping of properties
+    /// Set the contentType to use the builtin auto-mapping of properties
     /// </summary>
     public void AutoMap()
     {

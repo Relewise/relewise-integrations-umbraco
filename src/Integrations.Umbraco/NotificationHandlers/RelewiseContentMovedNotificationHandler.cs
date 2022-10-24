@@ -42,7 +42,7 @@ internal class RelewiseContentMovedNotificationHandler : INotificationAsyncHandl
             Language.Undefined,
             Currency.Undefined,
             new FilterCollection(new ContentIdFilter(ids)),
-            ContentAdministrativeAction.UpdateKind.DisableInRecommendations);
+            ContentAdministrativeAction.UpdateKind.Disable);
 
         await tracker.TrackAsync(action, cancellationToken);
     }

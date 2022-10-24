@@ -15,8 +15,10 @@ public class RelewiseUserLocator : IRelewiseUserLocator
 
     public Task<User> GetUser()
     {
-        return Task.FromResult(!_cookieConsent.HasGivenConsentFor(CookieType.Marketing)
-            ? User.Anonymous()
-            : User.ByTemporaryId(_cookieConsent.UserId()));
+        bool consentGiven = _cookieConsent.HasGivenConsentFor(CookieType.Marketing);
+
+        return Task.FromResult(consentGiven
+            ? User.ByTemporaryId(_cookieConsent.UserId())
+            : User.Anonymous());
     }
 }

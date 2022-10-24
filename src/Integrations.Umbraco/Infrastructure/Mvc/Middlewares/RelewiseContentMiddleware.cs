@@ -23,7 +23,11 @@ internal class RelewiseContentMiddleware
         _next = next;
         _configuration = configuration;
         _userLocator = userLocator;
+
+        IsEnabled = true;
     }
+
+    internal static bool IsEnabled { get; private set; }
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -31,24 +35,27 @@ internal class RelewiseContentMiddleware
 
         using (UmbracoContextReference umbracoContextReference = umbracoContextFactory.EnsureUmbracoContext())
         {
-            IPublishedContent? content = umbracoContextReference.UmbracoContext?.PublishedRequest?.PublishedContent;
-
-            if (IsNotInPreview(umbracoContextReference) && EnsureContentAndIsTrackable(content))
+            if (IsNotInPreview(umbracoContextReference))
             {
-                ITracker tracker = context.RequestServices.GetRequiredService<ITracker>();
+                IPublishedContent? content = umbracoContextReference.UmbracoContext?.PublishedRequest?.PublishedContent;
 
-                User user = await _userLocator.GetUser();
-
-                try
+                if (content != null && EnsureContentAndIsTrackable(content))
                 {
-                    await tracker.TrackAsync(new ContentView(user, content?.Id.ToString()));
-                }
-                catch (HttpRequestException ex)
-                {
-                    if (ex.StatusCode == HttpStatusCode.NotFound)
-                        throw new InvalidOperationException($"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com", ex);
+                    ITracker tracker = context.RequestServices.GetRequiredService<ITracker>();
 
-                    throw;
+                    User user = await _userLocator.GetUser();
+
+                    try
+                    {
+                        await tracker.TrackAsync(new ContentView(user, content.Id.ToString()));
+                    }
+                    catch (HttpRequestException ex)
+                    {
+                        if (ex.StatusCode == HttpStatusCode.NotFound)
+                            throw new InvalidOperationException($"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com", ex);
+
+                        throw;
+                    }
                 }
             }
         }
@@ -61,8 +68,8 @@ internal class RelewiseContentMiddleware
         return umbracoContextReference.UmbracoContext?.InPreviewMode == false;
     }
 
-    private bool EnsureContentAndIsTrackable(IPublishedContent? content)
+    private bool EnsureContentAndIsTrackable(IPublishedContent content)
     {
-        return content != null && _configuration.IsTrackable(content);
+        return _configuration.IsTrackable(content);
     }
 }

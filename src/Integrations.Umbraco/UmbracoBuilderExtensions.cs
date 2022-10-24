@@ -29,9 +29,9 @@ public static class UmbracoBuilderExtensions
     /// <param name="builder">The <see cref="IUmbracoBuilder"/></param>
     /// <param name="configure">A delegate to configure <see cref="RelewiseUmbracoOptionsBuilder"/></param>
     /// <returns>The <see cref="IUmbracoBuilder"/></returns>
-    public static IUmbracoBuilder AddRelewise(this IUmbracoBuilder builder, Action<RelewiseUmbracoOptionsBuilder> configure)
+    public static IUmbracoBuilder AddRelewise(this IUmbracoBuilder builder, Action<RelewiseUmbracoOptionsBuilder>? configure = null)
     {
-        ArgumentNullException.ThrowIfNull(configure, nameof(configure));
+        configure ??= _ => { };
 
         return builder.AddRelewise((optionsBuilder, _) => configure(optionsBuilder));
     }
@@ -59,6 +59,7 @@ public static class UmbracoBuilderExtensions
         builder.Services.TryAddSingleton<IContentMapper, ContentMapper>();
         builder.Services.TryAddSingleton<IExportContentService, ExportContentService>();
         builder.Services.TryAddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
+        builder.Services.TryAddSingleton<IRelewiseUserLocator, DefaultAnonymousUserLocator>();
 
         builder.Services
             .AddValueConverter<TextFieldPropertyValueConverter>()

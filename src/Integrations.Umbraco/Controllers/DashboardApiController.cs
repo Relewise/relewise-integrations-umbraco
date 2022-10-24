@@ -1,14 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using J2N.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
 using Relewise.Client.Extensions;
 using Relewise.Client.Search;
+using Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Web.BackOffice.Filters;
 using Umbraco.Cms.Web.Common.Attributes;
@@ -61,41 +62,68 @@ public class DashboardApiController : UmbracoAuthorizedController
     [HttpGet]
     public IActionResult Configuration()
     {
-        IRelewiseClientFactory clientFactory = _provider.GetRequiredService<IRelewiseClientFactory>();
-
-        var named = new List<NamedOptionsViewObject>();
+        IRelewiseClientFactory clientFactory;
 
         try
         {
-            named.Add(new NamedOptionsViewObject(
+            clientFactory = _provider.GetRequiredService<IRelewiseClientFactory>();
+
+            if (!clientFactory.Contains<ITracker>(Constants.NamedClientName))
+                throw new InvalidOperationException("No clients registered.");
+        }
+        catch (Exception ex)
+        {
+            return Ok(new
+            {
+                FactoryFailed = true,
+                ErrorMessage = ex.Message
+            });
+        }
+
+        List<NamedOptionsViewObject> clients = clientFactory.ClientNames
+            .Where(x => !Constants.NamedClientName.Equals(x, StringComparison.OrdinalIgnoreCase))
+            .Select(name =>
+            {
+                RelewiseClientOptions trackerOptions = clientFactory.GetOptions<ITracker>(name);
+                RelewiseClientOptions recommenderOptions = clientFactory.GetOptions<IRecommender>(name);
+                RelewiseClientOptions searcherOptions = clientFactory.GetOptions<ISearcher>(name);
+                RelewiseClientOptions searchAdministratorOptions = clientFactory.GetOptions<ISearchAdministrator>(name);
+                RelewiseClientOptions analyzerOptions = clientFactory.GetOptions<IAnalyzer>(name);
+                RelewiseClientOptions dataAccessorOptions = clientFactory.GetOptions<IDataAccessor>(name);
+
+                return new NamedOptionsViewObject(
+                    name,
+                    new ClientOptionsViewObject(trackerOptions),
+                    new ClientOptionsViewObject(recommenderOptions),
+                    new ClientOptionsViewObject(searcherOptions),
+                    new ClientOptionsViewObject(searchAdministratorOptions),
+                    new ClientOptionsViewObject(analyzerOptions),
+                    new ClientOptionsViewObject(dataAccessorOptions));
+            })
+            .ToList();
+
+        try
+        {
+            clients.Insert(0, new NamedOptionsViewObject(
                 "Default",
                 new ClientOptionsViewObject(clientFactory.GetOptions<ITracker>()),
                 new ClientOptionsViewObject(clientFactory.GetOptions<IRecommender>()),
-                new ClientOptionsViewObject(clientFactory.GetOptions<ISearcher>())));
+                new ClientOptionsViewObject(clientFactory.GetOptions<ISearcher>()),
+                new ClientOptionsViewObject(clientFactory.GetOptions<ISearchAdministrator>()),
+                new ClientOptionsViewObject(clientFactory.GetOptions<IAnalyzer>()),
+                new ClientOptionsViewObject(clientFactory.GetOptions<IDataAccessor>())));
         }
         catch (ArgumentException)
         {
-            // we just swallow the exception here as this just means that there is no default configured, which is okay
-        }
-
-        foreach (string name in clientFactory.ClientNames.Where(x => !Constants.NamedClientName.Equals(x, StringComparison.OrdinalIgnoreCase)))
-        {
-            RelewiseClientOptions trackerOptions = clientFactory.GetOptions<ITracker>(name);
-            RelewiseClientOptions recommenderOptions = clientFactory.GetOptions<IRecommender>(name);
-            RelewiseClientOptions searcherOptions = clientFactory.GetOptions<ISearcher>(name);
-
-            named.Add(new NamedOptionsViewObject(
-                name,
-                new ClientOptionsViewObject(trackerOptions),
-                new ClientOptionsViewObject(recommenderOptions),
-                new ClientOptionsViewObject(searcherOptions)));
+            // we'll just ignore this exception as it just means that there no default client has been configured, which is okay
         }
 
         return Ok(new
         {
             _configuration.TrackedContentTypes,
             _configuration.ExportedContentTypes,
-            Named = named
+            Named = clients,
+            ContentMiddlewareEnabled = RelewiseContentMiddleware.IsEnabled
         });
     }
 
@@ -103,12 +131,22 @@ public class DashboardApiController : UmbracoAuthorizedController
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
     private class NamedOptionsViewObject
     {
-        public NamedOptionsViewObject(string name, ClientOptionsViewObject tracker, ClientOptionsViewObject recommender, ClientOptionsViewObject searcher)
+        public NamedOptionsViewObject(string name, 
+            ClientOptionsViewObject tracker, 
+            ClientOptionsViewObject recommender, 
+            ClientOptionsViewObject searcher,
+            ClientOptionsViewObject searchAdministrator,
+            ClientOptionsViewObject analyzer,
+            ClientOptionsViewObject dataAccessor)
         {
             Name = name;
+
             Tracker = tracker;
             Recommender = recommender;
             Searcher = searcher;
+            SearchAdministrator = searchAdministrator;
+            Analyzer = analyzer;
+            DataAccessor = dataAccessor;
         }
 
         public string Name { get; }
@@ -116,6 +154,9 @@ public class DashboardApiController : UmbracoAuthorizedController
         public ClientOptionsViewObject Tracker { get; }
         public ClientOptionsViewObject Recommender { get; }
         public ClientOptionsViewObject Searcher { get; }
+        public ClientOptionsViewObject SearchAdministrator { get; }
+        public ClientOptionsViewObject Analyzer { get; }
+        public ClientOptionsViewObject DataAccessor { get; }
     }
 
     [SuppressMessage("ReSharper", "MemberCanBePrivate.Local")]

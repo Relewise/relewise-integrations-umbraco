@@ -16,36 +16,38 @@ internal class RelewisePropertyConverter : IRelewisePropertyConverter
         _converters = converters;
     }
 
-    public Dictionary<string, DataValue> Convert(IEnumerable<IPublishedProperty> properties, string[] cultures)
+    public Dictionary<string, DataValue?> Convert(IEnumerable<IPublishedProperty> properties, string[] cultures)
     {
         if (properties == null) throw new ArgumentNullException(nameof(properties));
         if (cultures == null) throw new ArgumentNullException(nameof(cultures));
         if (cultures.Length == 0) throw new ArgumentException("Value cannot be an empty collection.", nameof(cultures));
 
-        var dataKeys = new Dictionary<string, DataValue>();
+        var dataKeys = new Dictionary<string, DataValue?>();
 
         foreach (IPublishedProperty property in properties)
         {
             if (property.PropertyType.VariesByCulture())
             {
-                var localizedProperties = new Dictionary<string, Dictionary<string, DataValue>>();
+                var localizedProperties = new Dictionary<string, Dictionary<string, DataValue?>>();
 
                 foreach (string culture in cultures)
                 {
-                    var localizedDataKeys = new Dictionary<string, DataValue>();
+                    var localizedDataKeys = new Dictionary<string, DataValue?>();
                     Convert(property, culture, localizedDataKeys);
                     localizedProperties.Add(culture, localizedDataKeys);
                 }
 
-                IEnumerable<(string Lang, string Key, DataValue Value)> valueTuples = localizedProperties.SelectMany(x => x.Value.Select(y => (Lang: x.Key, Key: y.Key, Value: y.Value)));
+                IEnumerable<(string Lang, string Key, DataValue? Value)> valueTuples = localizedProperties
+                    .SelectMany(x => x.Value.Select(y => (Lang: x.Key, Key: y.Key, y.Value)));
 
-                IEnumerable<IGrouping<string, (string Lang, string Key, DataValue Value)>> groupBy = valueTuples.GroupBy(x => x.Key);
+                IEnumerable<IGrouping<string, (string Lang, string Key, DataValue? Value)>> groupBy = valueTuples
+                    .GroupBy(x => x.Key);
 
                 foreach (var values in groupBy)
                 {
                     if (values.Count() > 1)
                     {
-                        if (values.First().Value.Type == DataValue.DataValueTypes.StringList)
+                        if (values.First().Value?.Type == DataValue.DataValueTypes.StringList)
                         {
                             dataKeys.Add(values.Key, new MultilingualCollection(values.Select(x => new MultilingualCollection.Value(x.Lang, x.Value)).ToArray()));
                         }
@@ -69,7 +71,7 @@ internal class RelewisePropertyConverter : IRelewisePropertyConverter
         return dataKeys;
     }
 
-    private void Convert(IPublishedProperty property, string culture, Dictionary<string, DataValue> dataKeys)
+    private void Convert(IPublishedProperty property, string culture, Dictionary<string, DataValue?> dataKeys)
     {
         var context = new RelewisePropertyConverterContext(property, culture, dataKeys);
 

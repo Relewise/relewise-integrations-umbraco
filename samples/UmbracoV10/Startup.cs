@@ -52,8 +52,8 @@ namespace Relewise.UmbracoV10
         public void ConfigureServices(IServiceCollection services)
         {
             // This setups the needed configuration for you to be able to interact with our API.
-            // You need to add you own dataset id and api-key in the appsettings before recommendations and search works
-            services.AddRelewise(options => options.ReadFromConfiguration(_config));
+            // You need to add you own dataset id and api-key in the appsettings.json before recommendations and search works
+            //services.AddRelewise(options => options.ReadFromConfiguration(_config));
 
             services.AddHttpContextAccessor();
             services.AddSingleton<CookieConsent>();
@@ -105,7 +105,7 @@ namespace Relewise.UmbracoV10
                 {
                     u.UseBackOffice();
                     u.UseWebsite();
-                    // Enables tracking of all pageviews to Relewise
+                    // Enables tracking of all page-views to Relewise
                     u.TrackContentViews();
                 })
                 .WithEndpoints(u =>

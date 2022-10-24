@@ -8,6 +8,7 @@ public class BlogMapper : IContentTypeMapping
 {
     public Task<ContentUpdate> Map(ContentMappingContext context, CancellationToken token)
     {
+        context.ContentUpdate.Content.Data ??= new Dictionary<string, DataValue?>();
         context.ContentUpdate.Content.Data["Title"] = context.PublishedContent.GetProperty("title")?.GetValue<string>(context.CulturesToPublish.First());
 
         return Task.FromResult(context.ContentUpdate);

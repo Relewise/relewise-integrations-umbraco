@@ -6,7 +6,7 @@ namespace Relewise.Integrations.Umbraco.Services;
 
 internal interface IRelewisePropertyConverter
 {
-    Dictionary<string, DataValue> Convert(IEnumerable<IPublishedProperty> properties, string[] cultures);
+    Dictionary<string, DataValue?> Convert(IEnumerable<IPublishedProperty> properties, string[] cultures);
 
-    public Dictionary<string, DataValue> Convert(IEnumerable<IPublishedProperty> properties, string culture) => Convert(properties, new[] { culture });
+    public Dictionary<string, DataValue?> Convert(IEnumerable<IPublishedProperty> properties, string culture) => Convert(properties, new[] { culture });
 }

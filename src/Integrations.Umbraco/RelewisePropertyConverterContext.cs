@@ -9,9 +9,9 @@ namespace Relewise.Integrations.Umbraco;
 /// </summary>
 public class RelewisePropertyConverterContext
 {
-    private readonly Dictionary<string, DataValue> _dataKeys;
+    private readonly Dictionary<string, DataValue?> _dataKeys;
 
-    internal RelewisePropertyConverterContext(IPublishedProperty property, string culture, Dictionary<string, DataValue> dataKeys)
+    internal RelewisePropertyConverterContext(IPublishedProperty property, string culture, Dictionary<string, DataValue?> dataKeys)
     {
         _dataKeys = dataKeys;
         Property = property;
@@ -33,5 +33,5 @@ public class RelewisePropertyConverterContext
     /// </summary>
     /// <param name="key"></param>
     /// <param name="value"></param>
-    public void Add(string key, DataValue value) => _dataKeys.Add(key, value);
+    public void Add(string key, DataValue? value) => _dataKeys.Add(key, value);
 }

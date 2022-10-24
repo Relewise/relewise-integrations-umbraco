@@ -23,25 +23,72 @@
     <h3>Settings</h3>
     <umb-box>
         <umb-box-content>
-            <p>
-                These are the settings registered with Relewise.
-            </p>
+            <div ng-if="vm.configurationError">
+                <span class="error">Unexpected error occured. Please check the response on the XHR request or check logs.</span><br />
+            </div>
 
-            <p class="error" ng-if="vm.configurationError">
-                No options have been configured. Please check your call to the 'services.AddRelewise(options => { /* options goes here */ })'-method in 'Startup.cs'.
-            </p>
             <div ng-if="vm.configuration !== null">
-                Tracked content types are: <strong>{{vm.configuration.trackedContentTypes.join(', ')}}</strong>
-                <div style="font-style: italic; color: #666;">(Page views for these content types are being tracked to Relewise, if the automatic page view tracking has been enabled)</div>
-                <br />
-                Exported content types are: <strong>{{vm.configuration.exportedContentTypes.join(', ')}}</strong>
-                <div style="font-style: italic; color: #666;">(These are configured for being exported to Relewise on publish or when the export is triggered manually)</div>
+
+                <div ng-if="vm.configuration.factoryFailed">
+                    <span class="error">No settings have been configured. Please check your call to the 'services.AddRelewise(options => { /* options goes here */ })'-method in 'Startup.cs':</span><br />
+                    <pre>
+public void ConfigureServices(IServiceCollection services)
+{
+	services.AddRelewise(options => options.ReadFromConfiguration(_config));
+...			
+}</pre>
+                    <span>Which then reads from the following configuration in appsettings.json:</span>
+                    <pre>
+"Relewise": {
+   "DatasetId": "00000000-0000-0000-0000-000000000000",
+   "ApiKey": "ApiKey",
+   "Timeout": "00:00:03"
+}
+</pre>
+                    <span>Error message from server:</span>
+                    <pre>{{vm.configuration.errorMessage}}</pre>
+                    <span>You can read more about configuring Relewise here: <a href="https://github.com/Relewise/relewise-sdk-csharp-extensions" target="_blank">https://github.com/Relewise/relewise-sdk-csharp-extensions</a></span>
+                </div>
+
+                <div ng-if="vm.configuration.trackedContentTypes">
+                    Tracked content types are:
+                    <strong ng-if="vm.configuration.trackedContentTypes.length > 0">{{vm.configuration.trackedContentTypes.join(', ')}}</strong>
+                    <span ng-if="vm.configuration.trackedContentTypes.length === 0" style="font-style: italic;">No tracked content type have been configured</span>
+                    <div style="font-style: italic; color: #666;">(Page views on these content types are automatically being tracked to Relewise by the RelewiseContentMiddleware)</div>
+                    <div ng-if="vm.configuration.trackedContentTypes.length > 0 && !vm.configuration.contentMiddlewareEnabled" style="font-style: italic; color: red;">To have Page views being tracked automatically to Relewise, please ensure a call to the 'TrackContentViews()'-method in 'Startup.cs':</div>
+                    <pre ng-if="vm.configuration.trackedContentTypes.length > 0 && !vm.configuration.contentMiddlewareEnabled">
+app.UseUmbraco()
+	.WithMiddleware(u =>
+	{
+		u.UseBackOffice();
+		u.UseWebsite();
+		u.TrackContentViews();
+	})
+	.WithEndpoints(u =>
+	{
+		u.UseInstallerEndpoints();
+		u.UseBackOfficeEndpoints();
+		u.UseWebsiteEndpoints();
+	});</pre>
+                </div>
+
+                <div ng-if="vm.configuration.exportedContentTypes" style="margin-top: 20px;">
+                    Exported content types are:
+                    <strong ng-if="vm.configuration.exportedContentTypes.length > 0">{{vm.configuration.exportedContentTypes.join(', ')}}</strong>
+                    <span ng-if="vm.configuration.exportedContentTypes.length === 0" style="font-style: italic;">No exported content type have been configured</span>
+                    <div style="font-style: italic; color: #666;">(Any publish on these content types will automatically export the data to Relewise)</div>
+                </div>
+
+            </div>
+            <div>
+                <hr />
+                <span>Find more information about the Umbraco integration here: <a href="https://github.com/Relewise/relewise-integrations-umbraco" target="_blank">https://github.com/Relewise/relewise-integrations-umbraco</a></span>
             </div>
         </umb-box-content>
     </umb-box>
 
-    <h3 ng-if="vm.configuration !== null">Clients</h3>
-    <umb-box ng-if="vm.configuration !== null">
+    <h3 ng-if="vm.configuration !== null && vm.configuration.named">Clients</h3>
+    <umb-box ng-if="vm.configuration !== null && vm.configuration.named">
         <div class="umb-table">
             <div class="umb-table-head">
                 <div class="umb-table-row">
@@ -80,6 +127,27 @@
                         </div>
                         <div class="umb-table-cell not-fixed">{{ named.searcher.datasetId }}</div>
                         <div class="umb-table-cell not-fixed">{{ named.searcher.timeout }}</div>
+                    </div>
+                    <div class="umb-table-row">
+                        <div class="umb-table-cell not-fixed umb-table__name">
+                            <span class="pl-20">Search Administrator</span>
+                        </div>
+                        <div class="umb-table-cell not-fixed">{{ named.searchAdministrator.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.searchAdministrator.timeout }}</div>
+                    </div>
+                    <div class="umb-table-row">
+                        <div class="umb-table-cell not-fixed umb-table__name">
+                            <span class="pl-20">Analyzer</span>
+                        </div>
+                        <div class="umb-table-cell not-fixed">{{ named.analyzer.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.analyzer.timeout }}</div>
+                    </div>
+                    <div class="umb-table-row">
+                        <div class="umb-table-cell not-fixed umb-table__name">
+                            <span class="pl-20">DataAccessor</span>
+                        </div>
+                        <div class="umb-table-cell not-fixed">{{ named.dataAccessor.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.dataAccessor.timeout }}</div>
                     </div>
                 </div>
             </div>
