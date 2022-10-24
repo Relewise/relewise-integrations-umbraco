@@ -34,6 +34,8 @@ public static class CatalogApi
         builder.MapGet("api/catalog/recommend/popular", RecommendPopular);
         builder.MapGet("api/catalog/recommend/viewedafter", RecommendViewedAfter);
         builder.MapGet("api/catalog/recommend/purchasedwith", RecommendPurchasedWith);
+        builder.MapGet("api/catalog/recommend/products", RecommendProducts);
+        builder.MapGet("api/catalog/recommend/basket", RecommendBasket);
 
         return builder;
     }
@@ -47,7 +49,8 @@ public static class CatalogApi
         [FromQuery] string? categoryId,
         [FromQuery] string? category2Id,
         [FromQuery] string? sortBy,
-        [FromQuery] string? productId)
+        [FromQuery] string? productId,
+        [FromQuery] string? country)
     {
         ISearcher searcher = context.RequestServices.GetRequiredService<ISearcher>();
         IRelewiseUserLocator userLocator = context.RequestServices.GetRequiredService<IRelewiseUserLocator>();
@@ -73,6 +76,7 @@ public static class CatalogApi
         request.Sorting ??= new ProductSortBySpecification();
 
         request.Facets.AddCategory(CategorySelectionStrategy.ImmediateParent, category2Id != null ? new[] { category2Id } : null);
+        request.Facets.AddDataString(DataSelectionStrategy.Product, "Country", country != null ? new[] { country } : null);
 
         if (categoryId != null)
             request.Filters.Add(new ProductCategoryIdFilter(categoryId, CategoryScope.Ancestor));
@@ -91,14 +95,11 @@ public static class CatalogApi
 
         await context.Response.WriteAsJsonAsync(new
         {
-            Facets = result.Facets?.Items?.ToDictionary(x => x.Field.ToString(), facetResult =>
+            Facets = new
             {
-                return facetResult switch
-                {
-                    CategoryFacetResult categoryFacetResult => categoryFacetResult.Available.Select(x => new FacetValue(x.Value.Id, x.Value.DisplayName, x.Hits, x.Selected)),
-                    _ => null
-                };
-            }),
+                Category = result.Facets.Category(CategorySelectionStrategy.ImmediateParent).Available.Select(x => new FacetValue(x.Value.Id, x.Value.DisplayName, x.Hits, x.Selected)),
+                Country = result.Facets.DataString(DataSelectionStrategy.Product, "Country").Available.Select(x => new FacetValue(x.Value, x.Value, x.Hits, x.Selected))
+            },
             result.Results,
             result.Hits
         }, JsonSerializerOptions, context.RequestAborted);
@@ -185,5 +186,106 @@ public static class CatalogApi
         ProductRecommendationResponse result = await recommender.RecommendAsync(request, context.RequestAborted);
 
         await context.Response.WriteAsJsonAsync(result.Recommendations, JsonSerializerOptions, context.RequestAborted);
+    }
+
+    private static async Task RecommendProducts(
+        HttpContext context,
+        [FromQuery] string productId)
+    {
+        IRecommender recommender = context.RequestServices.GetRequiredService<IRecommender>();
+        IRelewiseUserLocator userLocator = context.RequestServices.GetRequiredService<IRelewiseUserLocator>();
+        User user = await userLocator.GetUser();
+
+        Language language = new(Thread.CurrentThread.CurrentUICulture.Name);
+        Currency currency = new(Thread.CurrentThread.CurrentUICulture);
+        var displayedAt = "Product Page";
+        ProductAndVariantId product = new(productId);
+        ProductRecommendationRequestSettings settings = new()
+        {
+            NumberOfRecommendations = 12,
+            PrioritizeDiversityBetweenRequests = true,
+            SelectedProductProperties = new SelectedProductPropertiesSettings().SetAllTo(true)
+        };
+
+        PurchasedWithProductRequest purchasedWith = new PurchasedWithProductRequest(language, currency, displayedAt, user, product)
+        {
+            Settings = settings
+        };
+
+        ProductsViewedAfterViewingProductRequest viewedAfter = new ProductsViewedAfterViewingProductRequest(language, currency, displayedAt, user, product)
+        {
+            Settings = settings
+        };
+
+        ProductRecommendationResponseCollection? result = await recommender.RecommendAsync(new ProductRecommendationRequestCollection(true, viewedAfter, purchasedWith), context.RequestAborted);
+
+        await context.Response.WriteAsJsonAsync(new
+            {
+                ViewedAfter = result.Responses[0],
+                PurchasedWith = result.Responses[1]
+            },
+            JsonSerializerOptions,
+            context.RequestAborted);
+    }
+
+    private static async Task RecommendBasket(
+        HttpContext context,
+        BasketRecommendation? request)
+    {
+        IRecommender recommender = context.RequestServices.GetRequiredService<IRecommender>();
+        IRelewiseUserLocator userLocator = context.RequestServices.GetRequiredService<IRelewiseUserLocator>();
+        User user = await userLocator.GetUser();
+
+        Language language = new(Thread.CurrentThread.CurrentUICulture.Name);
+        Currency currency = new(Thread.CurrentThread.CurrentUICulture);
+        var displayedAt = "Basket Page";
+        ProductRecommendationRequestSettings settings = new()
+        {
+            NumberOfRecommendations = 12,
+            PrioritizeDiversityBetweenRequests = true,
+            SelectedProductProperties = new SelectedProductPropertiesSettings().SetAllTo(true)
+        };
+
+        ProductRecommendationResponse result;
+        if (request is {ProductIds: { }} && request.ProductIds.Any())
+        {
+            var relewiseRequest = new PurchasedWithMultipleProductsRequest(language, currency, displayedAt, user, request.ProductIds.Select(x => new ProductAndVariantId(x)).ToArray())
+            {
+                Settings = settings
+            };
+
+            result = await recommender.RecommendAsync(relewiseRequest, context.RequestAborted);
+        }
+        else
+        {
+            var relewiseRequest = new PurchasedWithCurrentCartRequest(language, currency, displayedAt, user)
+            {
+                Settings = settings
+            };
+
+            result = await recommender.RecommendAsync(relewiseRequest, context.RequestAborted);
+        }
+
+        await context.Response.WriteAsJsonAsync(result, JsonSerializerOptions, context.RequestAborted);
+    }
+
+    public class BasketRecommendation
+    {
+        public string[]? ProductIds { get; set; }
+
+        public static ValueTask<BasketRecommendation?> BindAsync(HttpContext context)
+        {
+            const string productIds = "productIds";
+
+            if(context.Request.Query.Count == 0)
+                return ValueTask.FromResult<BasketRecommendation?>(null);
+
+            var result = new BasketRecommendation
+            {
+                ProductIds = context.Request.Query[productIds],
+            };
+
+            return ValueTask.FromResult<BasketRecommendation?>(result);
+        }
     }
 }

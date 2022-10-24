@@ -1,0 +1,1 @@
+wt -d "samples\UmbracoV9\client" powershell npm run serve; move-focus left; split-pane -d "samples\UmbracoV10" powershell dotnet watch run; move-focus right; split-pane -d "src\.."
