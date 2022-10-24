@@ -352,7 +352,7 @@ MigrationBackup/
 appsettings.local.json
 local.settings.json
 
-
+**samples/UmbracoV9/wwwroot/media/**
 **samples/UmbracoV10/wwwroot/css/**
 **samples/UmbracoV10/wwwroot/js/**
 **samples/UmbracoV10/wwwroot/vendor/**
