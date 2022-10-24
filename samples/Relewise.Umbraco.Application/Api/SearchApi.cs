@@ -11,6 +11,7 @@ using Relewise.Client.Requests.Shared;
 using Relewise.Client.Responses.Search;
 using Relewise.Client.Search;
 using Relewise.Integrations.Umbraco;
+using Relewise.Umbraco.Application.Infrastructure;
 
 namespace Relewise.Umbraco.Application.Api;
 
@@ -35,8 +36,8 @@ public static class SearchApi
         User user = await userLocator.GetUser();
 
         ProductSearchRequest productSearchRequest = new ProductSearchRequest(
-            new Language(Thread.CurrentThread.CurrentUICulture.Name),
-            new Currency(Thread.CurrentThread.CurrentUICulture),
+            Taxonomy.Language,
+            Taxonomy.Currency,
             user,
             DisplayedAtLocation,
             q,
@@ -50,8 +51,8 @@ public static class SearchApi
         };
 
         SearchTermPredictionRequest predictionRequest = new SearchTermPredictionRequest(
-            new Language(Thread.CurrentThread.CurrentUICulture.Name),
-            Currency.Undefined,
+            Taxonomy.Language,
+            Taxonomy.Currency,
             user,
             DisplayedAtLocation,
             q ?? string.Empty,
@@ -64,8 +65,8 @@ public static class SearchApi
         };
 
         ContentSearchRequest contentSearchRequest = new ContentSearchRequest(
-            new Language(Thread.CurrentThread.CurrentUICulture.Name),
-            Currency.Undefined,
+            Taxonomy.Language,
+            Taxonomy.Currency,
             user,
             DisplayedAtLocation,
             q ?? string.Empty,

@@ -20,6 +20,7 @@ using Relewise.Client.Responses;
 using Relewise.Client.Responses.Search;
 using Relewise.Client.Search;
 using Relewise.Integrations.Umbraco;
+using Relewise.Umbraco.Application.Infrastructure;
 using Relewise.Umbraco.Application.Models;
 
 namespace Relewise.Umbraco.Application.Api;
@@ -57,8 +58,8 @@ public static class CatalogApi
         User user = await userLocator.GetUser();
 
         ProductSearchRequest request = new ProductSearchRequest(
-            new Language(Thread.CurrentThread.CurrentUICulture.Name),
-            new Currency(Thread.CurrentThread.CurrentUICulture),
+            Taxonomy.Language,
+            Taxonomy.Currency,
             user,
             displayedAt,
             q,
@@ -113,8 +114,8 @@ public static class CatalogApi
         User user = await userLocator.GetUser();
 
         PopularProductsRequest request = new PopularProductsRequest(
-            new Language(Thread.CurrentThread.CurrentUICulture.Name),
-            new Currency(Thread.CurrentThread.CurrentUICulture),
+            Taxonomy.Language,
+            Taxonomy.Currency,
             "HomePage",
             user,
             PopularityTypes.MostViewed,
@@ -141,8 +142,8 @@ public static class CatalogApi
         User user = await userLocator.GetUser();
 
         PurchasedWithProductRequest request = new PurchasedWithProductRequest(
-            new Language(Thread.CurrentThread.CurrentUICulture.Name),
-            new Currency(Thread.CurrentThread.CurrentUICulture),
+            Taxonomy.Language,
+            Taxonomy.Currency,
             "Product Page",
             user,
             new ProductAndVariantId(productId))
@@ -169,8 +170,8 @@ public static class CatalogApi
         User user = await userLocator.GetUser();
 
         ProductsViewedAfterViewingProductRequest request = new ProductsViewedAfterViewingProductRequest(
-            new Language(Thread.CurrentThread.CurrentUICulture.Name),
-            new Currency(Thread.CurrentThread.CurrentUICulture),
+            Taxonomy.Language,
+            Taxonomy.Currency,
             "Product Page",
             user,
             new ProductAndVariantId(productId))

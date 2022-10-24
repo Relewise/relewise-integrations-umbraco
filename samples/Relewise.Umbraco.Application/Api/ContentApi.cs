@@ -16,6 +16,7 @@ using Relewise.Client.Responses;
 using Relewise.Client.Responses.Search;
 using Relewise.Client.Search;
 using Relewise.Integrations.Umbraco;
+using Relewise.Umbraco.Application.Infrastructure;
 
 namespace Relewise.Umbraco.Application.Api;
 
@@ -39,8 +40,8 @@ public static class ContentApi
         User user = await userLocator.GetUser();
 
         ContentSearchResponse result = await searcher.SearchAsync(new ContentSearchRequest(
-            new Language(Thread.CurrentThread.CurrentUICulture.Name),
-            Currency.Undefined,
+            Taxonomy.Language,
+            Taxonomy.Currency,
             user,
             "Search Overlay",
             q,
@@ -63,8 +64,8 @@ public static class ContentApi
         User user = await userLocator.GetUser();
 
         SearchTermPredictionResponse result = await searcher.PredictAsync(new SearchTermPredictionRequest(
-            new Language(Thread.CurrentThread.CurrentUICulture.Name),
-            Currency.Undefined,
+            Taxonomy.Language,
+            Taxonomy.Currency,
             user,
             "Search Overlay",
             q,
@@ -86,8 +87,8 @@ public static class ContentApi
         User user = await userLocator.GetUser();
 
         ContentRecommendationResponse result = await recommender.RecommendAsync(new PopularContentsRequest(
-            new Language(Thread.CurrentThread.CurrentUICulture.Name),
-            Currency.Undefined,
+            Taxonomy.Language,
+            Taxonomy.Currency,
             "Frontend page",
             user,
             since: TimeSpan.FromDays(365))
