@@ -96,7 +96,7 @@ async function completePurchase () {
     // }, body: JSON.stringify(basketService.model.value.lineItems.map(l => l.product.productId!)) }
 async function loadRecommendations() {
     recommendationsLoading.value = true;
-    const params = new URLSearchParams(basketService.model.value.lineItems.map(l => ['ProductIds', l.product.productId!]))
+    const params = new URLSearchParams(basketService.model.value.lineItems.map(l => ['ProductIds', l.product.productId]))
     fetch(`/api/catalog/recommend/basket?` + params.toString())
       .then(response => response.json())
       .then(data => {
