@@ -1,0 +1,10 @@
+﻿{
+	"javascript": [
+		// Controllers
+		"~/App_Plugins/Relewise.Dashboard/relewise.resources.js",
+		"~/App_Plugins/Relewise.Dashboard/dashboard.controller.js"
+	],
+	"css": [
+		"~/App_Plugins/Relewise.Dashboard/styles.css"
+	]
+}

@@ -352,11 +352,10 @@ MigrationBackup/
 appsettings.local.json
 local.settings.json
 
-**samples/UmbracoV9/wwwroot/media/**
-**samples/UmbracoV10/wwwroot/css/**
-**samples/UmbracoV10/wwwroot/js/**
-**samples/UmbracoV10/wwwroot/vendor/**
-**samples/UmbracoV10/wwwroot/fonts/**
-**samples/UmbracoV10/wwwroot/images/**
-**samples/UmbracoV10/Views/**
-**samples/UmbracoV10/App_Plugins/**
+**samples/UmbracoV9/wwwroot/css/**
+**samples/UmbracoV9/wwwroot/js/**
+**samples/UmbracoV9/wwwroot/vendor/**
+**samples/UmbracoV9/wwwroot/fonts/**
+**samples/UmbracoV9/wwwroot/images/**
+**samples/UmbracoV9/Views/**
+**samples/UmbracoV9/App_Plugins/**

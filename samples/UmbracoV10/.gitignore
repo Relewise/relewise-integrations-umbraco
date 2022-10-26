@@ -467,7 +467,7 @@ $RECYCLE.BIN/
 
 # Dont commit files that are generated and cached from the default ImageSharp location
 **/umbraco/mediacache/
-**/wwwroot/media/
+#**/wwwroot/media/
 
 # Umbraco backoffice language files
 # Nuget package Umbraco.Cms.StaticAssets will copy them in during dotnet build
