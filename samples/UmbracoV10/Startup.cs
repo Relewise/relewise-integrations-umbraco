@@ -53,7 +53,7 @@ namespace Relewise.UmbracoV10
         {
             // This setups the needed configuration for you to be able to interact with our API.
             // You need to add you own dataset id and api-key in the appsettings.json before recommendations and search works
-            //services.AddRelewise(options => options.ReadFromConfiguration(_config));
+            services.AddRelewise(options => options.ReadFromConfiguration(_config));
 
             services.AddHttpContextAccessor();
             services.AddSingleton<CookieConsent>();

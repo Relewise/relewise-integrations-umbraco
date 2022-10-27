@@ -41,5 +41,64 @@
 	<ItemGroup>
 		<Compile Include="umbraco\**" Watch="false" />
 		<Compile Remove="umbraco\**" />
+
+		<Content Include="..\UmbracoV10\client\**\*">
+			<Link>client\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</Content>
+
+		<!-- Adds the files as links in the Solution Explorer.
+       When you double-click, it opens the original file. -->
+		<Content Include="..\UmbracoV10\wwwroot\css\**\*">
+			<Link>wwwroot\css\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+		<Content Include="..\UmbracoV10\wwwroot\js\**\*">
+			<Link>wwwroot\js\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+		<Content Include="..\UmbracoV10\wwwroot\fonts\**\*">
+			<Link>wwwroot\fonts\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+		<Content Include="..\UmbracoV10\wwwroot\vendor\**\*">
+			<Link>wwwroot\vendor\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+		<Content Include="..\UmbracoV10\wwwroot\images\**\*">
+			<Link>wwwroot\images\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+		<Content Include="..\UmbracoV10\Views\**\*">
+			<Link>Views\%(RecursiveDir)%(FileName)%(Extension)</Link>
+		</Content>
+
+		<!-- Picked up by the Copy below.  Using "Content"
+        with "Link" adds external files as links.  But a custom
+        name is needed for use with Copy. -->
+		<CommonCss Include="..\UmbracoV10\wwwroot\css\**\*" />
+		<CommonJs Include="..\UmbracoV10\wwwroot\js\**\*" />
+		<CommonFonts Include="..\UmbracoV10\wwwroot\fonts\**\*" />
+		<CommonVendor Include="..\UmbracoV10\wwwroot\vendor\**\*" />
+		<CommonImages Include="..\UmbracoV10\wwwroot\images\**\*" />
+		<CommonViews Include="..\UmbracoV10\Views\**\*" />
+		<CommonAppPlugins Include="..\UmbracoV10\App_Plugins\**\*" />
+
+		<!-- Tells Visual Studio to ignore any actual files at this location.
+       I found that if I didn't do this, Visual Studio sees the copied
+       file instead of the linked file.  This tells Visual Studio to
+       ignore the copied file so that when I double-click it in
+       Solution Explorer, it opens the original copy. -->
+		<Content Remove="wwwroot\css\**" />
+		<Content Remove="wwwroot\js\**" />
+		<Content Remove="wwwroot\fonts\**" />
+		<Content Remove="wwwroot\vendor\**" />
+		<Content Remove="wwwroot\images\**" />
+		<Content Remove="Views\**" />
 	</ItemGroup>
+	
+    <Target Name="CopyCommonContent" BeforeTargets="Build">
+	    <Message Text="Copying content files from V10 into V9" Importance="high" />
+	    <Copy SourceFiles="@(CommonCss)" DestinationFiles="wwwroot\css\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonJs)" DestinationFiles="wwwroot\js\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonFonts)" DestinationFiles="wwwroot\fonts\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonVendor)" DestinationFiles="wwwroot\vendor\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonImages)" DestinationFiles="wwwroot\images\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonViews)" DestinationFiles="Views\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	    <Copy SourceFiles="@(CommonAppPlugins)" DestinationFiles="App_Plugins\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+    </Target>
 </Project>
