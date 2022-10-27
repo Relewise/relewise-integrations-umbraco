@@ -9,7 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{41BF
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Relewise.UmbracoV9", "samples\UmbracoV9\Relewise.UmbracoV9.csproj", "{53D4C642-13D2-4F61-A941-2CA19526315A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Git", "Git", "{828EE997-7585-459E-9D6E-626A3A83A3A1}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".git", ".git", "{828EE997-7585-459E-9D6E-626A3A83A3A1}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		README.md = README.md

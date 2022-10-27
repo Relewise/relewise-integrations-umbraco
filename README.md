@@ -23,26 +23,31 @@ services.AddUmbraco(_env, _config)
 
 ### Sample site - Get it up and running.
 
-The sample sites requires .NET 6 and NPM. The site has demo content, so that once it's up and running, you can have a look around. 
-There is a sample site for both Umbraco 9 and Umbraco 10. The demo sites uses the same frontend client, which is located in the Umbraco 9 sample site folder. If you wish to run the v10 sample site, then just follow the steps below for the client.
+The sample site requires .NET 6 and NPM. There is a sample site for both Umbraco v9 and Umbraco v10. 
+The sample site share the same frontend client, which is located in the Umbraco v10 sample site folder.
+The sample site has demo content, so once it's up and running, you can have a look around. 
+
+ If you wish to setup and run, then just follow the steps below:
 
 1. Start by cloning the repository.
-2. Setting up our frontend.
+2. Setting up the frontend.
     
-    1. Navigate to `samples/UmbracoV9/client` (also if intend to run the v10 sample - see above)
+    1. Navigate to `samples/UmbracoV10/client` (also if intend to run the v9 sample - see above)
     2. Run `npm install` via a command prompt
     3. Run `npm run serve` via a command prompt
 
 3. Spinning up the site.
 
     1. Navigate to `samples/UmbracoV9` or `samples/UmbracoV10`, depending on whether you want to sample v9 or v10.
-    2. In the appsettings, enter your `DatasetId` and `ApiKey` for Relewise (you can find those at https://my.relewise.com under `Settings -> Developer Settings`). There is a commented out section, where you can enter it (Remember to comment the section back in!). Alternatively you can  create a `local.settings.json` file and add the section in there.
-    3. Run `dotnet run` via a command prompt.
-    4. Umbraco will throw some error in the console - just ignore those
-    5. `dotnet run` open a new browser tab, continue the setup in that new tab.
+    2. Run `dotnet run` via a command prompt.
+    3. Access the website from your browser
 
 4. Installing Umbraco - When visiting the site for the first time, you are asked to configure Umbraco. Just follow the instructions.
 5. Publish the content of the site. The site comes with content already created. You just need to login and publish the content
+
+## Resources
+
+Find more information on the Umbraco Marketplace: https://umbraco.com/marketplace/relewise/
 
 ## Contributing
 
