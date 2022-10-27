@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core;
@@ -41,26 +42,45 @@ internal class RelewiseContentMiddleware
 
                 if (content != null && EnsureContentAndIsTrackable(content))
                 {
-                    ITracker tracker = context.RequestServices.GetRequiredService<ITracker>();
+                    ITracker? tracker = SafeGetTracker(context);
 
-                    User user = await _userLocator.GetUser();
-
-                    try
+                    if (tracker != null)
                     {
-                        await tracker.TrackAsync(new ContentView(user, content.Id.ToString()));
-                    }
-                    catch (HttpRequestException ex)
-                    {
-                        if (ex.StatusCode == HttpStatusCode.NotFound)
-                            throw new InvalidOperationException($"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com", ex);
+                        User user = await _userLocator.GetUser();
 
-                        throw;
+                        try
+                        {
+                            await tracker.TrackAsync(new ContentView(user, content.Id.ToString()));
+                        }
+                        catch (HttpRequestException ex)
+                        {
+                            if (ex.StatusCode == HttpStatusCode.NotFound)
+                                throw new InvalidOperationException($"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com", ex);
+
+                            throw;
+                        }
                     }
                 }
             }
         }
 
         await _next.Invoke(context);
+    }
+
+    private static ITracker? SafeGetTracker(HttpContext context)
+    {
+        try
+        {
+            return context.RequestServices.GetRequiredService<ITracker>();
+        }
+        catch (Exception ex)
+        {
+            ILogger<RelewiseContentMiddleware>? logger = context.RequestServices.GetService<ILogger<RelewiseContentMiddleware>>();
+
+            logger?.LogError(ex, $"Unable to resolve {nameof(ITracker)}-instance. {{Message}}", ex.Message);
+
+            return null;
+        }
     }
 
     private static bool IsNotInPreview(UmbracoContextReference umbracoContextReference)

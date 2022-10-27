@@ -1,17 +1,18 @@
 ﻿<div ng-app id="relewiseDashboard" ng-controller="relewiseDashboardController as vm" class="relewise-dashboard">
-    <h2>Relewise</h2>
     <umb-box>
         <umb-box-content>
+            <h3 class="bold">Welcome to the Relewise dashboard!</h3>
             <p>
-                Welcome to the Relewise dashboard - here you can perform export functions to get all your content exported into Relewise.<br />
-                It's also possible to see the settings for Relewise directly here.
+                You can perform various operations, e.g. Export all your content to Relewise.<br />
+                It's also possible to see the settings configured for Relewise directly here.
             </p>
-            <div class="button-box" ng-if="!vm.configurationError">
-                <button class="btn btn-primary" ng-click="vm.exportContent()" ng-disabled="vm.exportLoading">
+            <hr />
+            <div class="button-box">
+                <button class="btn btn-primary" ng-click="vm.exportContent()" ng-disabled="vm.configuration === null || vm.configuration.factoryFailed || vm.exportLoading">
                     Export content
                 </button>
 
-                <button class="btn btn-danger" ng-click="vm.exportContentPermanentlyDelete()" ng-disabled="vm.exportLoading">
+                <button class="btn btn-danger" ng-click="vm.exportContentPermanentlyDelete()" ng-disabled="vm.configuration === null || vm.configuration.factoryFailed || vm.exportLoading">
                     Export content and remove old data
                 </button>
             </div>
@@ -20,11 +21,11 @@
         </umb-box-content>
     </umb-box>
 
-    <h3>Settings</h3>
     <umb-box>
         <umb-box-content>
+            <h3>Settings</h3>
             <div ng-if="vm.configurationError">
-                <span class="error">Unexpected error occured. Please check the response on the XHR request or check logs.</span><br />
+                <span class="error">Unexpected error occurred. Please check the response on the XHR request or check logs.</span><br />
             </div>
 
             <div ng-if="vm.configuration !== null">
@@ -144,7 +145,7 @@ app.UseUmbraco()
                     </div>
                     <div class="umb-table-row">
                         <div class="umb-table-cell not-fixed umb-table__name">
-                            <span class="pl-20">DataAccessor</span>
+                            <span class="pl-20">Data Accessor</span>
                         </div>
                         <div class="umb-table-cell not-fixed">{{ named.dataAccessor.datasetId }}</div>
                         <div class="umb-table-cell not-fixed">{{ named.dataAccessor.timeout }}</div>
