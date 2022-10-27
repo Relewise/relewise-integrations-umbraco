@@ -89,6 +89,7 @@ namespace Relewise.UmbracoV10
             }
 
             app.UseRouting();
+
             app.UseEndpoints(c => c
                 .MapContentRoutes()
                 .MapCatalogRoutes()
