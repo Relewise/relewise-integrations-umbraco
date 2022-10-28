@@ -1,7 +1,8 @@
 ﻿function relewiseDashboardController(relewiseDashboardResources) {
     var vm = this;
     vm.exportLoading = false;
-    vm.configurationError = false;
+    vm.relewiseNotAddedToUmbracoBuilder = false;
+    vm.unhandledError = false;
     vm.configuration = null;
     vm.exportContent = function () {
         vm.exportLoading = true;
@@ -41,13 +42,19 @@
     function init() {
         relewiseDashboardResources.getConfiguration().then((response) => {
             if (response.status === 200) {
-                vm.configurationError = false;
+                vm.unhandledError = false;
                 vm.configuration = response.data;
+            } else if (response.status === 403) {
+                vm.relewiseNotAddedToUmbracoBuilder = true;
             } else {
-                vm.configurationError = true;
+                vm.unhandledError = true;
             }
-        }, () => {
-            vm.configurationError = true;
+        }, (response) => {
+            if (response && response.status === 403) {
+                vm.relewiseNotAddedToUmbracoBuilder = true;
+            } else {
+                vm.unhandledError = true;
+            }
         });
     }
 
