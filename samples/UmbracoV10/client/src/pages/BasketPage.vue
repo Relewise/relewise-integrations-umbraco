@@ -63,7 +63,7 @@
     </div>
 </div>
 
-<RecommendationProducts v-if="!recommendationsLoading" :recommendations="recommendations" type="purchasedwith" title="Others are also looking at" />
+<RecommendationProducts v-if="!recommendationsLoading" :recommendations="recommendations" type="purchasedwith" title="Others have also purchased" />
 
 </template>
 

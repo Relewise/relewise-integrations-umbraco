@@ -24,7 +24,21 @@
     <umb-box>
         <umb-box-content>
             <h3>Settings</h3>
-            <div ng-if="vm.configurationError">
+            <div ng-if="vm.relewiseNotAddedToUmbracoBuilder">
+                <span class="error">Relewise has not been added to the Umbraco builder. In 'Startup.cs' locate the 'services.AddUmbraco(...)'-method:</span><br />
+                <pre>
+services.AddUmbraco(_env, _config)
+	.AddBackOffice()
+	.AddWebsite()
+	.AddComposers()
+	.AddRelewise()
+	.Build();
+...
+</pre>
+                Note the '.AddRelewise()' method-call above - insert that and re-run the site.
+            </div>
+
+            <div ng-if="vm.unhandledError">
                 <span class="error">Unexpected error occurred. Please check the response on the XHR request or check logs.</span><br />
             </div>
 

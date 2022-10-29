@@ -49,7 +49,7 @@
     </div>
     <div v-if="hasError" class="results p-t-8 p-b-8 p-l-8 p-r-8 relewise-error">
         <h4>Search API request failed</h4>
-        <p class="relewise-error">The search API request failed. This is likely due to a misconfiguration in the Relewise-appsettings section. Please verify that the dataset-id and API-key has been correctly configured</p>
+        <p class="relewise-error">The search API request failed. This is likely due to missing configuration of Relewise. Go to Umbraco backoffice > Settings > Relewise for more details.</p>
     </div>
 </template>
 

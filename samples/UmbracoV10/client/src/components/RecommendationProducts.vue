@@ -20,7 +20,7 @@
 
   <div v-if="hasError" class="relewise-error">
     <h2>Recommendation API request failed</h2>
-    <p class="relewise-error">The recommendation API request failed. This is likely due to a misconfiguration in the Relewise-appsettings section. Please verify that the dataset-id and API-key has been correctly configured</p>
+    <p class="relewise-error">The recommendation API request failed. This is likely due to missing configuration of Relewise. Go to Umbraco backoffice > Settings > Relewise for more details.</p>
   </div>
 </template>
 
