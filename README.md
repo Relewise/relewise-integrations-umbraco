@@ -10,8 +10,26 @@ Run this command from the NuGet Package Manager Console to install the NuGet pac
 
 ### Using Relewise.Integrations.Umbraco
 
-Add Relewise to the UmbracoBuilder, and specify the ContentTypes, that you would like exported into Relewise for content search and recommendation.
-In this example, we are exporting all LandingPages and ContentPages to Relewise.
+Open `Startup.cs` and add Relewise to the `IServiceCollection`-instance: 
+
+```csharp
+services.AddRelewise(options => options.ReadFromConfiguration(_config));
+```
+
+... where the above configuration, requires Relewise configuration in `appsettings.json`:
+
+```json
+"Relewise": {
+  "DatasetId": "insert-dataset-id-here",
+  "ApiKey": "insert-api-key-here"
+}
+```
+
+Find more details about this here: https://github.com/Relewise/relewise-sdk-csharp-extensions
+
+To integrate with Umbraco, you need to add Relewise to the UmbracoBuilder (`.AddUmbraco(...)`), and optionally specify which ContentTypes, that you would like exported into Relewise for content search and recommendations. 
+
+In the example below we are exporting four content types into Relewise:
 ```csharp
 services.AddUmbraco(_env, _config)
     .AddRelewise(options => options
@@ -19,6 +37,15 @@ services.AddUmbraco(_env, _config)
         .AddContentType("blogList", contentType => contentType.UseMapper(new BlogMapper()))
         .AddContentType("contentPage", contentType => contentType.AutoMap())
         .AddContentType("blogEntry", contentType => contentType.AutoMap()))
+```
+
+If you'd also like these content types to be automatically tracked, you can add our middleware to the UmbracoBuilder (`.UseUmbraco(...)`):
+```csharp
+app.UseUmbraco()
+    .WithMiddleware(u =>
+    {
+        u.TrackContentViews();
+    });
 ```
 
 ### Sample site - Get it up and running.
@@ -48,6 +75,10 @@ The sample site has demo content, so once it's up and running, you can have a lo
 ## Resources
 
 Find more information on the Umbraco Marketplace: https://umbraco.com/marketplace/relewise/
+
+Documentation can be found at https://docs.relewise.com.
+
+**Please don't hesitate to reach out to us - www.relewise.com - if you'd like to know more, including how to gain access to our API.**
 
 ## Contributing
 
