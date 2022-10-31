@@ -61,7 +61,7 @@
                     </div>
 
                     <span class="s-text8 p-t-5 p-b-5">
-                        Showing {{ page * pageSize - 11 }}-{{ page * pageSize }} of {{ result?.hits }} results
+                        Showing {{ page * pageSize - 11 }}-{{ showingMax }} of {{ result?.hits }} results
                     </span>
                 </div>
 
@@ -88,7 +88,7 @@
 <script setup lang="ts">
 import trackingService from '@/services/tracking.service'
 import { ProductResult } from '@relewise/client'
-import { Ref, ref } from 'vue'
+import { Ref, ref , computed } from 'vue'
 import ProductBlock from '../components/ProductBlock.vue'
 
 interface FacetValue {
@@ -112,6 +112,7 @@ const pages: Ref<number> = ref(0)
 const category2Id: Ref<string|null> = ref(null)
 const country: Ref<string|null> = ref(null)
 const sorting: Ref<string|null> = ref(null)
+const showingMax = computed(() => Math.min(page.value * pageSize, result.value?.hits ?? 0))
 
 const hasError = ref(false)
 
