@@ -72,7 +72,7 @@ internal class ContentMapper : IContentMapper
         contentUpdate.Content.Data ??= new Dictionary<string, DataValue?>();
         contentUpdate.Content.Data.Add(Constants.VersionKey, content.Version);
         contentUpdate.Content.Data.Add("contentTypeAlias", content.PublishedContent.ContentType.Alias);
-        contentUpdate.Content.Data.Add("url", content.PublishedContent.Url(null, UrlMode.Absolute));
+        contentUpdate.Content.Data.Add("url", new Multilingual(culturesToPublish.Select(x => new Multilingual.Value(x, content.PublishedContent.Url(x, UrlMode.Absolute))).ToList()));
         contentUpdate.Content.Data.Add("createdAt", new DateTimeOffset(content.PublishedContent.CreateDate).ToUnixTimeSeconds());
 
         bool TryGetMapper(MapContent mapContent, [NotNullWhen(true) ]out IContentTypeMapping? contentTypeMapping)
@@ -97,7 +97,7 @@ internal class ContentMapper : IContentMapper
 
     private static Multilingual MapDisplayName(IPublishedContent content, List<string> culturesToPublish)
     {
-        return new Multilingual(culturesToPublish.Select(x => new Multilingual.Value(x, content.Name)).ToList());
+        return new Multilingual(culturesToPublish.Select(x => new Multilingual.Value(x, content.Name(x))).ToList());
     }
 
     private static string GetDefaultCulture(UmbracoContextReference umbracoContextReference)
