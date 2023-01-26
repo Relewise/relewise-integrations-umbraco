@@ -10,27 +10,27 @@ using Umbraco.Cms.Core.Notifications;
 
 namespace Relewise.Integrations.Umbraco.NotificationHandlers;
 
-internal class RelewiseContentUnpublishedNotificationHandler : INotificationAsyncHandler<ContentUnpublishedNotification>
+internal class RelewiseContentMovedToRecycleBinNotificationHandler : INotificationAsyncHandler<ContentMovedToRecycleBinNotification>
 {
     private readonly IExportContentService _exportContentService;
     private readonly RelewiseUmbracoConfiguration _configuration;
 
-    public RelewiseContentUnpublishedNotificationHandler(IExportContentService exportContentService, RelewiseUmbracoConfiguration configuration)
+    public RelewiseContentMovedToRecycleBinNotificationHandler(IExportContentService exportContentService, RelewiseUmbracoConfiguration configuration)
     {
         _exportContentService = exportContentService;
         _configuration = configuration;
     }
 
-    public async Task HandleAsync(ContentUnpublishedNotification notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(ContentMovedToRecycleBinNotification notification, CancellationToken cancellationToken)
     {
         ITracker? tracker = _exportContentService.GetTrackerOrNull();
 
         if (tracker == null)
             return;
 
-        string[] ids = notification.UnpublishedEntities
-            .Where(x => _configuration.CanMap(x))
-            .Select(x => x.Id.ToString())
+        string[] ids = notification.MoveInfoCollection
+            .Where(x => _configuration.CanMap(x.Entity))
+            .Select(x => x.Entity.Id.ToString())
             .ToArray();
 
         if (ids.Length == 0)
