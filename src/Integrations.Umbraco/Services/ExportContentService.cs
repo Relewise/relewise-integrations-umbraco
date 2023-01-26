@@ -68,13 +68,16 @@ internal class ExportContentService : IExportContentService
                 contentUpdates.Add(result.ContentUpdate!);
         }
 
-        await tracker.TrackAsync(contentUpdates, token);
+        if (contentUpdates.Any())
+        {
+            await tracker.TrackAsync(contentUpdates, token);
 
-        await tracker.TrackAsync(new ContentAdministrativeAction(
-            Language.Undefined,
-            Currency.Undefined,
-            new FilterCollection(new ContentIdFilter(contentUpdates.Select(x => x.Content.Id))),
-            ContentAdministrativeAction.UpdateKind.Enable), token);
+            await tracker.TrackAsync(new ContentAdministrativeAction(
+                Language.Undefined,
+                Currency.Undefined,
+                new FilterCollection(new ContentIdFilter(contentUpdates.Select(x => x.Content.Id))),
+                ContentAdministrativeAction.UpdateKind.Enable), token);
+        }
 
         return new ExportContentResult();
     }

@@ -73,6 +73,7 @@ public static class UmbracoBuilderExtensions
         builder.AddNotificationAsyncHandler<ContentUnpublishedNotification, RelewiseContentUnpublishedNotificationHandler>();
         builder.AddNotificationAsyncHandler<ContentDeletedNotification, RelewiseContentDeletedNotificationNotificationHandler>();
         builder.AddNotificationAsyncHandler<ContentMovedNotification, RelewiseContentMovedNotificationHandler>();
+        builder.AddNotificationAsyncHandler<ContentMovedToRecycleBinNotification, RelewiseContentMovedToRecycleBinNotificationHandler>();
 
         builder.Dashboards().Add<RelewiseDashboard>();
 
