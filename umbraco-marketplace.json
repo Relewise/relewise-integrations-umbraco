@@ -1,7 +1,7 @@
 {
   "Title": "Relewise integration for Umbraco",
   "Category": "Search",
-  "Tags": ["Relewise", "Recommendations", "Search", "recommendation-engine", "search-engine", "up-sell-prediction", "personalization", "cross-sell-prediction"]
+  "Tags": ["Relewise", "Recommendations", "Search", "recommendation-engine", "search-engine", "up-sell-prediction", "personalization", "cross-sell-prediction"],
   "LicenseTypes": [ "Free" ],
   "PackageType": "Package",
   "Description": "The extension that has been developed to facilitate a seamless and hassle-free exporting of content to Relewise, which enables users to effectively manage their content export in a more efficient and streamlined manner."
