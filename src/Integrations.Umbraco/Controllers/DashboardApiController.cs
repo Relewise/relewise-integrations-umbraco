@@ -166,10 +166,12 @@ public class DashboardApiController : UmbracoAuthorizedController
         public ClientOptionsViewObject(RelewiseClientOptions options)
         {
             DatasetId = options.DatasetId;
+            ServerUrl = options.ServerUrl?.ToString();
             Timeout = options.Timeout.TotalSeconds;
         }
 
         public Guid DatasetId { get; }
+        public string? ServerUrl { get; }
         public double Timeout { get; }
     }
 }

@@ -57,6 +57,7 @@ public void ConfigureServices(IServiceCollection services)
 "Relewise": {
    "DatasetId": "00000000-0000-0000-0000-000000000000",
    "ApiKey": "ApiKey",
+   "ServerUrl": "https://api.relewise.com",    
    "Timeout": "00:00:03"
 }
 </pre>
@@ -108,8 +109,9 @@ app.UseUmbraco()
             <div class="umb-table-head">
                 <div class="umb-table-row">
                     <div class="umb-table-cell not-fixed umb-table__name">Name</div>
-                    <div class="umb-table-cell not-fixed">DatasetId</div>
-                    <div class="umb-table-cell not-fixed">Timeout</div>
+                    <div class="umb-table-cell not-fixed">Dataset Id</div>
+                    <div class="umb-table-cell not-fixed">Server Url</div>
+                    <div class="umb-table-cell not-fixed">Timeout (seconds)</div>
 
                 </div>
             </div>
@@ -127,6 +129,7 @@ app.UseUmbraco()
                             <span class="pl-20">Tracker</span>
                         </div>
                         <div class="umb-table-cell not-fixed">{{ named.tracker.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.tracker.serverUrl ? named.tracker.serverUrl : "(default)" }}</div>
                         <div class="umb-table-cell not-fixed">{{ named.tracker.timeout }}</div>
                     </div>
                     <div class="umb-table-row">
@@ -134,6 +137,7 @@ app.UseUmbraco()
                             <span class="pl-20">Recommender</span>
                         </div>
                         <div class="umb-table-cell not-fixed">{{ named.recommender.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.recommender.serverUrl ? named.recommender.serverUrl : "(default)" }}</div>
                         <div class="umb-table-cell not-fixed">{{ named.recommender.timeout }}</div>
                     </div>
                     <div class="umb-table-row">
@@ -141,6 +145,7 @@ app.UseUmbraco()
                             <span class="pl-20">Searcher</span>
                         </div>
                         <div class="umb-table-cell not-fixed">{{ named.searcher.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.searcher.serverUrl ? named.searcher.serverUrl : "(default)" }}</div>
                         <div class="umb-table-cell not-fixed">{{ named.searcher.timeout }}</div>
                     </div>
                     <div class="umb-table-row">
@@ -148,6 +153,7 @@ app.UseUmbraco()
                             <span class="pl-20">Search Administrator</span>
                         </div>
                         <div class="umb-table-cell not-fixed">{{ named.searchAdministrator.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.searchAdministrator.serverUrl ? named.searchAdministrator.serverUrl : "(default)" }}</div>
                         <div class="umb-table-cell not-fixed">{{ named.searchAdministrator.timeout }}</div>
                     </div>
                     <div class="umb-table-row">
@@ -155,6 +161,7 @@ app.UseUmbraco()
                             <span class="pl-20">Analyzer</span>
                         </div>
                         <div class="umb-table-cell not-fixed">{{ named.analyzer.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.analyzer.serverUrl ? named.analyzer.serverUrl : "(default)" }}</div>
                         <div class="umb-table-cell not-fixed">{{ named.analyzer.timeout }}</div>
                     </div>
                     <div class="umb-table-row">
@@ -162,6 +169,7 @@ app.UseUmbraco()
                             <span class="pl-20">Data Accessor</span>
                         </div>
                         <div class="umb-table-cell not-fixed">{{ named.dataAccessor.datasetId }}</div>
+                        <div class="umb-table-cell not-fixed">{{ named.dataAccessor.serverUrl ? named.dataAccessor.serverUrl : "(default)" }}</div>
                         <div class="umb-table-cell not-fixed">{{ named.dataAccessor.timeout }}</div>
                     </div>
                 </div>
