@@ -24,7 +24,8 @@ services.AddRelewise(options => options.ReadFromConfiguration(_config));
 ```json
 "Relewise": {
   "DatasetId": "insert-dataset-id-here",
-  "ApiKey": "insert-api-key-here"
+  "ApiKey": "insert-api-key-here",
+  "ServerUrl": "insert-server-url-here"
 }
 ```
 
