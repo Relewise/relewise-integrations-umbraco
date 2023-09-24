@@ -2,11 +2,14 @@
 
 ### Installing Relewise.Integrations.Umbraco 
 
-You should install Relewise.Integrations.Umbraco using NuGet:
+First make sure to have [Umbraco installed](https://docs.umbraco.com/umbraco-cms/fundamentals/setup/install/install-umbraco-with-templates#install-the-template):
+> dotnet new umbraco
 
+Then you can install the `Relewise.Integrations.Umbraco` Package through the .NET CLI by running this command:
+> dotnet add package Relewise.Integrations.Umbraco
+
+... or from the NuGet Package Manager Console by running this command:
 > Install-Package Relewise.Integrations.Umbraco
-
-Run this command from the NuGet Package Manager Console to install the NuGet package.
 
 ### Using Relewise.Integrations.Umbraco
 
