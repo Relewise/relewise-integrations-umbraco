@@ -72,6 +72,10 @@ The sample site has demo content, so once it's up and running, you can have a lo
 4. Installing Umbraco - When visiting the site for the first time, you are asked to configure Umbraco. Just follow the instructions.
 5. Publish the content of the site. The site comes with content already created. You just need to login and publish the content
 
+## 14-day Free Trial
+
+You can get access to a [14-day free trial of Relewise](https://www.relewise.com/free-trial) to get you started with Relewise.
+
 ## Resources
 
 Find more information on the Umbraco Marketplace: https://umbraco.com/marketplace/relewise/
@@ -89,4 +93,4 @@ Otherwise you are welcome to open an Issue in our [issue tracker](https://github
 
 ## License
 
-Relewise.Integrations.Umbraco is under the [MIT licensed](./LICENSE)
+Relewise.Integrations.Umbraco is [MIT licensed](./LICENSE).
