@@ -2,11 +2,14 @@
 
 ### Installing Relewise.Integrations.Umbraco 
 
-You should install Relewise.Integrations.Umbraco using NuGet:
+First make sure to have [Umbraco installed](https://docs.umbraco.com/umbraco-cms/fundamentals/setup/install/install-umbraco-with-templates#install-the-template):
+> dotnet new umbraco
 
+Then you can install the `Relewise.Integrations.Umbraco` Package through the .NET CLI by running this command:
+> dotnet add package Relewise.Integrations.Umbraco
+
+... or from the NuGet Package Manager Console by running this command:
 > Install-Package Relewise.Integrations.Umbraco
-
-Run this command from the NuGet Package Manager Console to install the NuGet package.
 
 ### Using Relewise.Integrations.Umbraco
 
@@ -21,7 +24,8 @@ services.AddRelewise(options => options.ReadFromConfiguration(_config));
 ```json
 "Relewise": {
   "DatasetId": "insert-dataset-id-here",
-  "ApiKey": "insert-api-key-here"
+  "ApiKey": "insert-api-key-here",
+  "ServerUrl": "insert-server-url-here"
 }
 ```
 
@@ -72,6 +76,10 @@ The sample site has demo content, so once it's up and running, you can have a lo
 4. Installing Umbraco - When visiting the site for the first time, you are asked to configure Umbraco. Just follow the instructions.
 5. Publish the content of the site. The site comes with content already created. You just need to login and publish the content
 
+## 14-day Free Trial
+
+You can get access to a [14-day free trial of Relewise](https://www.relewise.com/free-trial) to get you started with Relewise.
+
 ## Resources
 
 Find more information on the Umbraco Marketplace: https://umbraco.com/marketplace/relewise/
@@ -89,4 +97,4 @@ Otherwise you are welcome to open an Issue in our [issue tracker](https://github
 
 ## License
 
-Relewise.Integrations.Umbraco is under the [MIT licensed](./LICENSE)
+Relewise.Integrations.Umbraco is [MIT licensed](./LICENSE).
