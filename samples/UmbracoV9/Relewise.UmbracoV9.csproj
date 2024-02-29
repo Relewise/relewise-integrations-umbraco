@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-	    <PackageReference Include="Relewise.Client" Version="1.96.0" />
+	    <PackageReference Include="Relewise.Client" Version="1.132.0" />
 	    <PackageReference Include="Relewise.Client.Extensions" Version="1.4.1" />
         <PackageReference Include="Umbraco.Cms" Version="9.5.4" />
     </ItemGroup>
