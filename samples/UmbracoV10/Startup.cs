@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Rewrite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Umbraco.Application;

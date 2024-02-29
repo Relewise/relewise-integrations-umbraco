@@ -8,7 +8,6 @@ using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.DataTypes.Search.Facets.Enums;
 using Relewise.Client.DataTypes.Search.Facets.Queries;
-using Relewise.Client.DataTypes.Search.Facets.Result;
 using Relewise.Client.DataTypes.Search.Sorting.Enums;
 using Relewise.Client.DataTypes.Search.Sorting.Product;
 using Relewise.Client.Requests.Filters;

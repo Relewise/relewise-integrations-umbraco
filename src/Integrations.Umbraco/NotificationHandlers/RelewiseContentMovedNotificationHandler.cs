@@ -1,9 +1,7 @@
 ﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Relewise.Client;
 using Relewise.Client.DataTypes;
-using Relewise.Client.Requests.Filters;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Notifications;
