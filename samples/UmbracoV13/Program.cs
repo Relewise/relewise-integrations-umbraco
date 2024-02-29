@@ -25,6 +25,7 @@ app.UseUmbraco()
     {
         u.UseBackOffice();
         u.UseWebsite();
+        u.TrackContentViews();
     })
     .WithEndpoints(u =>
     {
