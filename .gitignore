@@ -365,17 +365,3 @@ local.settings.json
 
 **samples/UmbracoV13/Views/**
 **samples/UmbracoV13/App_Plugins/**
-/samples/UmbracoV13/Views/_ViewImports.cshtml
-/samples/UmbracoV13/Views/Partials/blockgrid/area.cshtml
-/samples/UmbracoV13/Views/Partials/blockgrid/areas.cshtml
-/samples/UmbracoV13/Views/Partials/blockgrid/default.cshtml
-/samples/UmbracoV13/Views/Partials/blockgrid/items.cshtml
-/samples/UmbracoV13/Views/Partials/blocklist/default.cshtml
-/samples/UmbracoV13/Views/Partials/grid/bootstrap3-fluid.cshtml
-/samples/UmbracoV13/Views/Partials/grid/bootstrap3.cshtml
-/samples/UmbracoV13/Views/Partials/grid/editors/base.cshtml
-/samples/UmbracoV13/Views/Partials/grid/editors/embed.cshtml
-/samples/UmbracoV13/Views/Partials/grid/editors/macro.cshtml
-/samples/UmbracoV13/Views/Partials/grid/editors/media.cshtml
-/samples/UmbracoV13/Views/Partials/grid/editors/rte.cshtml
-/samples/UmbracoV13/Views/Partials/grid/editors/textstring.cshtml
