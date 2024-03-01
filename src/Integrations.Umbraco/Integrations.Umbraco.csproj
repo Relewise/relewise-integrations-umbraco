@@ -4,7 +4,8 @@
 		<TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
-		<WarningsAsErrors>Nullable</WarningsAsErrors>
+		<WarningsAsErrors>true</WarningsAsErrors>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<AssemblyName>Relewise.Integrations.Umbraco</AssemblyName>
 		<RootNamespace>Relewise.Integrations.Umbraco</RootNamespace>
 		<Title>Relewise integration for Umbraco</Title>
@@ -23,7 +24,8 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<NoWarn>NU1608;NU1903</NoWarn>
+		<!-- NU1903: To ignore the warning of 'known high severity vulnerability' from 'Umbraco.Cms.Web.BackOffice' package -->
+		<NoWarn>NU1903</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
