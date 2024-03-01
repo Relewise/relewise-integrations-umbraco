@@ -1,32 +1,54 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
-		<WarningsAsErrors>Nullable</WarningsAsErrors>
+		<WarningsAsErrors>true</WarningsAsErrors>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<AssemblyName>Relewise.Integrations.Umbraco</AssemblyName>
 		<RootNamespace>Relewise.Integrations.Umbraco</RootNamespace>
 		<Title>Relewise integration for Umbraco</Title>
 		<Description>An extension for Umbraco CMS allowing easy content export to Relewise</Description>
 		<PackageIcon>logo.png</PackageIcon>
-		<PackageTags>Relewise;Umbraco;Umbraco-v9;Umbraco-v10;Umbraco-v11;Umbraco-v12;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace</PackageTags>
+		<PackageTags>Relewise;Umbraco;Umbraco-v9;Umbraco-v10;Umbraco-v11;Umbraco-v12;Umbraco-v13;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace</PackageTags>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<License>http://opensource.org/licenses/MIT</License>
 		<PackageProjectUrl>https://github.com/Relewise/relewise-integrations-umbraco</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Relewise/relewise-integrations-umbraco</RepositoryUrl>
 		<PackageId>Relewise.Integrations.Umbraco</PackageId>
-		<PackageVersion>1.6.1</PackageVersion>
+		<PackageVersion>1.7.0</PackageVersion>
 		<Authors>Relewise</Authors>
 		<Company>Relewise</Company>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<!-- NU1903: To ignore the warning of 'known high severity vulnerability' from 'Umbraco.Cms.Web.BackOffice' package -->
+		<NoWarn>NU1903</NoWarn>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<PackageReference Include="Relewise.Client" Version="[1.96.0, 2)" />
 		<PackageReference Include="Relewise.Client.Extensions" Version="[1.4.1, 2)" />
-		<PackageReference Include="Umbraco.Cms.Web.BackOffice" version="[9.0.0,13)" />
-		<PackageReference Include="Umbraco.Cms.Web.Common" version="[9.0.0,13)" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+		<!-- Version 10-13 -->
+		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="[10.0.0,14)" />
+		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[10.0.0,14)" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
+		<!-- Version 10-12 -->
+		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="[10.0.0,13)" />
+		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[10.0.0,13)" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+		<!-- Version 9-10 -->
+		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="[9.0.0,11)" />
+		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[9.0.0,11)" />
 	</ItemGroup>
 
 	<ItemGroup>

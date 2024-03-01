@@ -1,17 +1,6 @@
-using System;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Rewrite;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Relewise.Integrations.Umbraco;
-using Relewise.Integrations.Umbraco.PropertyValueConverters;
-using Relewise.Umbraco.Application;
-using Relewise.Umbraco.Application.Api;
-using Relewise.Umbraco.Application.Infrastructure.CookieConsent;
 
-namespace Relewise.UmbracoV10
+namespace Relewise.UmbracoV12
 {
     public class Startup
     {
@@ -54,22 +43,12 @@ namespace Relewise.UmbracoV10
             // You need to add you own dataset id and api-key in the appsettings.json before recommendations and search works
             //services.AddRelewise(options => options.ReadFromConfiguration(_config));
 
-            services.AddHttpContextAccessor();
-            services.AddSingleton<CookieConsent>();
-            services.AddSingleton<IRelewiseUserLocator, RelewiseUserLocator>();
-
-            services.AddValueConverter<RichTextEditorPropertyValueConverter>();
-            services.AddValueConverter<ImageCropperValueConverter>();
-            services.AddValueConverter<MediaPickerValueConverter>();
-            services.AddValueConverter<TextAreaPropertyValueConverter>();
-
             services.AddUmbraco(_env, _config)
                 .AddBackOffice()
                 .AddWebsite()
                 .AddComposers()
                 .AddRelewise(options => options
                     .AddContentType("landingPage", contentType => contentType.AutoMap())
-                    .AddContentType("blogList", contentType => contentType.UseMapper(new BlogMapper()))
                     .AddContentType("contentPage", contentType => contentType.AutoMap())
                     .AddContentType("blogEntry", contentType => contentType.AutoMap()))
                 .Build();
@@ -88,17 +67,6 @@ namespace Relewise.UmbracoV10
             }
 
             app.UseRouting();
-
-            app.UseEndpoints(c => c
-                .MapContentRoutes()
-                .MapCatalogRoutes()
-                .MapSearchRoutes()
-                .MapNewsletterRoutes());
-
-            app.UseRewriter(new RewriteOptions().AddRewrite(
-                "product/(\\d*)$", 
-                "product?productId=$1", 
-                skipRemainingRules: true));
 
             app.UseUmbraco()
                 .WithMiddleware(u =>

@@ -13,10 +13,10 @@ Then you can install the `Relewise.Integrations.Umbraco` Package through the .NE
 
 ### Using Relewise.Integrations.Umbraco
 
-Open `Startup.cs` and add Relewise to the `IServiceCollection`-instance: 
+Open `Program.cs` and add Relewise to the `IServiceCollection`-instance: 
 
 ```csharp
-services.AddRelewise(options => options.ReadFromConfiguration(_config));
+builder.Services.AddRelewise(options => options.ReadFromConfiguration(builder.Configuration));
 ```
 
 ... where the above configuration, requires Relewise configuration in `appsettings.json`:
@@ -35,12 +35,17 @@ To integrate with Umbraco, you need to add Relewise to the UmbracoBuilder (`.Add
 
 In the example below we are exporting four content types into Relewise:
 ```csharp
-services.AddUmbraco(_env, _config)
+builder.CreateUmbracoBuilder()
+    .AddBackOffice()
+    .AddWebsite()
+    .AddDeliveryApi()
+    .AddComposers()
     .AddRelewise(options => options
         .AddContentType("landingPage", contentType => contentType.AutoMap())
         .AddContentType("blogList", contentType => contentType.UseMapper(new BlogMapper()))
         .AddContentType("contentPage", contentType => contentType.AutoMap())
         .AddContentType("blogEntry", contentType => contentType.AutoMap()))
+    .Build();
 ```
 
 If you'd also like these content types to be automatically tracked, you can add our middleware to the UmbracoBuilder (`.UseUmbraco(...)`):
@@ -48,11 +53,19 @@ If you'd also like these content types to be automatically tracked, you can add 
 app.UseUmbraco()
     .WithMiddleware(u =>
     {
+        u.UseBackOffice();
+        u.UseWebsite();
         u.TrackContentViews();
+    })
+    .WithEndpoints(u =>
+    {
+        u.UseInstallerEndpoints();
+        u.UseBackOfficeEndpoints();
+        u.UseWebsiteEndpoints();
     });
 ```
 
-### Sample site - Get it up and running.
+### Sample site for v9 and v10 - Get it up and running.
 
 The sample site requires .NET 6 and NPM. There is a sample site for both Umbraco v9 and Umbraco v10. 
 The sample site share the same frontend client, which is located in the Umbraco v10 sample site folder.
