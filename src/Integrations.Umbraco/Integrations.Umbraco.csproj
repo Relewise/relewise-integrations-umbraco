@@ -13,11 +13,12 @@
 		<PackageIcon>logo.png</PackageIcon>
 		<PackageTags>Relewise;Umbraco;Umbraco-v9;Umbraco-v10;Umbraco-v11;Umbraco-v12;Umbraco-v13;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace</PackageTags>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
-		<License>http://opensource.org/licenses/MIT</License>
+		<LicenseUrl>http://opensource.org/licenses/MIT</LicenseUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageProjectUrl>https://github.com/Relewise/relewise-integrations-umbraco</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Relewise/relewise-integrations-umbraco</RepositoryUrl>
 		<PackageId>Relewise.Integrations.Umbraco</PackageId>
-		<PackageVersion>1.7.0</PackageVersion>
+		<PackageVersion>1.7.1</PackageVersion>
 		<Authors>Relewise</Authors>
 		<Company>Relewise</Company>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -71,5 +72,7 @@
 
 	<ItemGroup>
 		<None Include="logo.png" Pack="true" PackagePath="" />
+		<None Include="..\..\README.md" Pack="true" PackagePath="\" />
+		<None Include="..\..\License" Pack="true" PackagePath="\" />
 	</ItemGroup>
 </Project>
