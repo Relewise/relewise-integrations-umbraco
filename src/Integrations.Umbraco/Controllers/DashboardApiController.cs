@@ -4,6 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
@@ -11,19 +13,27 @@ using Relewise.Client.Extensions;
 using Relewise.Client.Search;
 using Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
 using Relewise.Integrations.Umbraco.Services;
-using Umbraco.Cms.Web.BackOffice.Filters;
+using Umbraco.Cms.Api.Common.Attributes;
 using Umbraco.Cms.Web.Common.Attributes;
-using Umbraco.Cms.Web.Common.Controllers;
+using Umbraco.Cms.Web.Common.Authorization;
+using Umbraco.Cms.Web.Common.Routing;
 
 namespace Relewise.Integrations.Umbraco.Controllers;
 
 /// <summary>
 /// Defines endpoints for the Dashboard
 /// </summary>
-[JsonCamelCaseFormatter]
 [PluginController("Relewise")]
-public class DashboardApiController : UmbracoAuthorizedController
+[ApiController]
+[BackOfficeRoute("relewise/api/v{version:apiVersion}/relewise")]
+[Authorize(Policy = "New" + AuthorizationPolicies.BackOfficeAccess)]
+[MapToApi("relewise")]
+[ApiVersion("1.0")]
+[ApiExplorerSettings(GroupName = "relewise")]
+public class DashboardApiController : ControllerBase
 {
+    // https://dev.to/kevinjump/early-adopters-guide-to-umbraco-v14-packages-communicating-with-the-server-part-1-38lb
+
     private readonly IExportContentService _exportContent;
     private readonly IServiceProvider _provider;
     private readonly RelewiseUmbracoConfiguration _configuration;
@@ -44,10 +54,8 @@ public class DashboardApiController : UmbracoAuthorizedController
     /// <summary>
     /// Performs a full content export
     /// </summary>
-    /// <param name="permanentlyDelete"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
     [HttpPost]
+    [ProducesResponseType(200)]
     public async Task<IActionResult> ContentExport([FromQuery] bool permanentlyDelete, CancellationToken token)
     {
         await _exportContent.ExportAll(new ExportAllContent(permanentlyDelete), token);
@@ -58,7 +66,6 @@ public class DashboardApiController : UmbracoAuthorizedController
     /// <summary>
     /// Returns the current Relewise configuration
     /// </summary>
-    /// <returns></returns>
     [HttpGet]
     public IActionResult Configuration()
     {
@@ -73,7 +80,7 @@ public class DashboardApiController : UmbracoAuthorizedController
         }
         catch (Exception ex)
         {
-            return Ok(new
+            return Ok(new // TODO: Add a specific Response (so we can use it in the Produces...-attribute
             {
                 FactoryFailed = true,
                 ErrorMessage = ex.Message
@@ -118,7 +125,7 @@ public class DashboardApiController : UmbracoAuthorizedController
             // we'll just ignore this exception as it just means that there no default client has been configured, which is okay
         }
 
-        return Ok(new
+        return Ok(new // TODO: Add a specific Response (so we can use it in the Produces...-attribute
         {
             _configuration.TrackedContentTypes,
             _configuration.ExportedContentTypes,
