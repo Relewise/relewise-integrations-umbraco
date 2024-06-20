@@ -7,16 +7,10 @@ using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco.Services;
 
-internal class RelewisePropertyConverter : IRelewisePropertyConverter
+internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConverter> converters)
+    : IRelewisePropertyConverter
 {
-    private readonly IEnumerable<IRelewisePropertyValueConverter> _converters;
-
-    public RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConverter> converters)
-    {
-        _converters = converters;
-    }
-
-    public Dictionary<string, DataValue?> Convert(IEnumerable<IPublishedProperty> properties, string[] cultures)
+    public IReadOnlyDictionary<string, DataValue?> Convert(IEnumerable<IPublishedProperty> properties, string[] cultures)
     {
         if (properties == null) throw new ArgumentNullException(nameof(properties));
         if (cultures == null) throw new ArgumentNullException(nameof(cultures));
@@ -75,7 +69,7 @@ internal class RelewisePropertyConverter : IRelewisePropertyConverter
     {
         var context = new RelewisePropertyConverterContext(property, culture, dataKeys);
 
-        foreach (IRelewisePropertyValueConverter converter in _converters)
+        foreach (IRelewisePropertyValueConverter converter in converters)
         {
             if (converter.CanHandle(context))
                 converter.Convert(context);
