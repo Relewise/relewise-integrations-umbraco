@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Relewise.UmbracoV13", "samp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Relewise.UmbracoV12", "samples\UmbracoV12\Relewise.UmbracoV12.csproj", "{A5E25C8A-6BF8-4D83-91D7-9CABD702C477}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Relewise.UmbracoV14", "samples\UmbracoV14\Relewise.UmbracoV14.csproj", "{B7B0F1ED-4A53-4E2E-AE42-CD22284B65A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +55,10 @@ Global
 		{A5E25C8A-6BF8-4D83-91D7-9CABD702C477}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5E25C8A-6BF8-4D83-91D7-9CABD702C477}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5E25C8A-6BF8-4D83-91D7-9CABD702C477}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7B0F1ED-4A53-4E2E-AE42-CD22284B65A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7B0F1ED-4A53-4E2E-AE42-CD22284B65A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7B0F1ED-4A53-4E2E-AE42-CD22284B65A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7B0F1ED-4A53-4E2E-AE42-CD22284B65A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -63,6 +69,7 @@ Global
 		{59C569DB-80B6-4442-BCAB-C66B88F2E203} = {41BF626B-F972-4C22-93B6-44AA3F463D7D}
 		{031643E0-8D1B-4D04-AF93-363AF1D9B34F} = {41BF626B-F972-4C22-93B6-44AA3F463D7D}
 		{A5E25C8A-6BF8-4D83-91D7-9CABD702C477} = {41BF626B-F972-4C22-93B6-44AA3F463D7D}
+		{B7B0F1ED-4A53-4E2E-AE42-CD22284B65A6} = {41BF626B-F972-4C22-93B6-44AA3F463D7D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2F867AD8-FFBD-46E8-A4F6-6F7367A71DD5}
