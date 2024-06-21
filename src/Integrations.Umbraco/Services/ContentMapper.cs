@@ -66,7 +66,9 @@ internal class ContentMapper : IContentMapper
         }
         else
         {
-            contentUpdate.Content.Data = _propertyConverter.Convert(content.PublishedContent.Properties, culturesToPublish.ToArray());
+            contentUpdate.Content.Data = _propertyConverter
+                .Convert(content.PublishedContent.Properties, culturesToPublish.ToArray())
+                .ToDictionary(x => x.Key, x => x.Value);
         }
 
         contentUpdate.Content.Data ??= new Dictionary<string, DataValue?>();

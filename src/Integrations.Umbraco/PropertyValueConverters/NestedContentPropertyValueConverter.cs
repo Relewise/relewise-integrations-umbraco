@@ -9,15 +9,8 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-internal class NestedContentPropertyValueConverter : IRelewisePropertyValueConverter
+internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvider) : IRelewisePropertyValueConverter
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public NestedContentPropertyValueConverter(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
         return context.Property.PropertyType.EditorAlias.Equals("Umbraco.NestedContent");
@@ -30,13 +23,13 @@ internal class NestedContentPropertyValueConverter : IRelewisePropertyValueConve
         if (elementItems != null)
         {
             // NOTE: This needs to be resolved manually, since it would cause a circular dependency if injected through constructor
-            var propertyConverter = _serviceProvider.GetRequiredService<IRelewisePropertyConverter>();
+            var propertyConverter = serviceProvider.GetRequiredService<IRelewisePropertyConverter>();
 
             var properties = new List<DataValue?>();
 
             foreach (IPublishedElement prop in elementItems)
             {
-                Dictionary<string, DataValue?> converted = propertyConverter.Convert(prop.Properties, context.Culture);
+                IReadOnlyDictionary<string, DataValue?> converted = propertyConverter.Convert(prop.Properties, context.Culture);
 
                 properties.AddRange(converted.Values);
             }
