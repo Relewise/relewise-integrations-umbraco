@@ -47,7 +47,8 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
                         }
                         else
                         {
-                            if (values.First().Value?.Type == DataValue.DataValueTypes.String)
+                            // We only support having strings as multilingual, so we need to check if the values are strings or not.
+                            if (values.All(x => x.Value?.Type == DataValue.DataValueTypes.String))
                             {
                                 dataKeys.Add(values.Key, new Multilingual(values.Select(x => new Multilingual.Value(x.Lang, x.Value)).ToArray()));
                             }
