@@ -47,7 +47,17 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
                         }
                         else
                         {
-                            dataKeys.Add(values.Key, new Multilingual(values.Select(x => new Multilingual.Value(x.Lang, x.Value)).ToArray()));
+                            if (values.First().Value?.Type == DataValue.DataValueTypes.String)
+                            {
+                                dataKeys.Add(values.Key, new Multilingual(values.Select(x => new Multilingual.Value(x.Lang, x.Value)).ToArray()));
+                            }
+                            else
+                            {
+                                foreach ((string Lang, string Key, DataValue? Value) dataValue in values)
+                                {
+                                    dataKeys.Add($"{dataValue.Key}_{dataValue.Lang}", dataValue.Value);
+                                }
+                            }
                         }
                     }
                     else
