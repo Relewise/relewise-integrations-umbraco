@@ -18,7 +18,7 @@
 		<PackageProjectUrl>https://github.com/Relewise/relewise-integrations-umbraco</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Relewise/relewise-integrations-umbraco</RepositoryUrl>
 		<PackageId>Relewise.Integrations.Umbraco</PackageId>
-		<PackageVersion>1.8.0</PackageVersion>
+		<PackageVersion>1.8.1</PackageVersion>
 		<Authors>Relewise</Authors>
 		<Company>Relewise</Company>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
