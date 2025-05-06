@@ -11,7 +11,6 @@ using Relewise.Client.Extensions;
 using Relewise.Client.Search;
 using Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
 using Relewise.Integrations.Umbraco.Services;
-using Umbraco.Cms.Web.BackOffice.Filters;
 using Umbraco.Cms.Web.Common.Attributes;
 using Umbraco.Cms.Web.Common.Controllers;
 
@@ -20,7 +19,8 @@ namespace Relewise.Integrations.Umbraco.Controllers;
 /// <summary>
 /// Defines endpoints for the Dashboard
 /// </summary>
-[JsonCamelCaseFormatter]
+//[JsonCamelCaseFormatter]
+[ApiController]
 [PluginController("Relewise")]
 public class DashboardApiController : UmbracoAuthorizedController
 {

@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.Dashboards;
 
@@ -8,7 +8,7 @@ namespace Relewise.Integrations.Umbraco.Dashboards;
 internal class RelewiseDashboard : IDashboard
 {
     public string Alias => "relewiseDashboard";
-    public string View => "/App_Plugins/Relewise.Dashboard/dashboard.html?v=4";
-    public string[] Sections => new[] { "Settings" };
-    public IAccessRule[] AccessRules => Array.Empty<IAccessRule>();
-}
+    public string View => "/App_Plugins/Relewise.Dashboard/dashboard.html?v=5";
+    public string[] Sections => ["Settings"];
+    public IAccessRule[] AccessRules => [];
+}*/

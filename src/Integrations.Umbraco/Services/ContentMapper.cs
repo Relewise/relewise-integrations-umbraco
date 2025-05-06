@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
 
@@ -15,14 +16,18 @@ namespace Relewise.Integrations.Umbraco.Services;
 internal class ContentMapper : IContentMapper
 {
     private readonly IUmbracoContextFactory _umbracoContextFactory;
+    private readonly IDocumentNavigationQueryService _documentNavigationQueryService;
     private readonly RelewiseUmbracoConfiguration _configuration;
     private readonly IRelewisePropertyConverter _propertyConverter;
     private readonly IServiceProvider _provider;
 
-    public ContentMapper(RelewiseUmbracoConfiguration configuration, IUmbracoContextFactory umbracoContextFactory, IRelewisePropertyConverter propertyConverter, IServiceProvider provider)
+    public ContentMapper(
+        IUmbracoContextFactory umbracoContextFactory, IDocumentNavigationQueryService documentNavigationQueryService, 
+        RelewiseUmbracoConfiguration configuration, IRelewisePropertyConverter propertyConverter, IServiceProvider provider)
     {
-        _configuration = configuration;
         _umbracoContextFactory = umbracoContextFactory;
+        _documentNavigationQueryService = documentNavigationQueryService;
+        _configuration = configuration;
         _propertyConverter = propertyConverter;
         _provider = provider;
     }
@@ -83,18 +88,18 @@ internal class ContentMapper : IContentMapper
         }
     }
 
-    private static List<CategoryPath>? GetCategoryPaths(MapContent content, List<string> culturesToPublish)
+    private List<CategoryPath>? GetCategoryPaths(MapContent content, List<string> culturesToPublish)
     {
-        if (content.PublishedContent.Parent == null)
+        if (!_documentNavigationQueryService.TryGetParentKey(content.PublishedContent.Key, out _))
             return null;
 
-        return new List<CategoryPath>
-        {
+        return
+        [
             new(content.PublishedContent
                 .Breadcrumbs(andSelf: false)
                 .Select(x => new CategoryNameAndId(x.Id.ToString(), MapDisplayName(x, culturesToPublish)))
                 .ToArray())
-        };
+        ];
     }
 
     private static Multilingual MapDisplayName(IPublishedContent content, List<string> culturesToPublish)
@@ -104,7 +109,6 @@ internal class ContentMapper : IContentMapper
 
     private static string GetDefaultCulture(UmbracoContextReference umbracoContextReference)
     {
-        // when not varied by culture the culture info is ""
-        return umbracoContextReference.UmbracoContext.Domains?.DefaultCulture.ToLowerInvariant() ?? string.Empty;
+        return umbracoContextReference.UmbracoContext.Domains.DefaultCulture.ToLowerInvariant();
     }
 }

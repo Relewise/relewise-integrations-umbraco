@@ -53,7 +53,7 @@ internal class ExportContentService : IExportContentService
         if (tracker == null)
             return new ExportContentResult();
 
-        List<ContentUpdate> contentUpdates = new List<ContentUpdate>();
+        List<ContentUpdate> contentUpdates = [];
 
         IEnumerable<Task<MapContentResult>> contentMapping = exportContent.Contents
             .Select(x => contentCache.GetById(x.Id))

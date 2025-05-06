@@ -1,25 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <WarningsAsErrors>true</WarningsAsErrors>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<WarningsAsErrors>true</WarningsAsErrors>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="Infrastructure\Migrations\package.zip" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Relewise.Integrations.Umbraco" Version="1.8.1" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Infrastructure\Migrations\package.zip">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="Infrastructure\Migrations\package.zip" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Integrations.Umbraco\Integrations.Umbraco.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Infrastructure\Migrations\package.zip">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</EmbeddedResource>
+	</ItemGroup>
 
 </Project>

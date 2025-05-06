@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco.Controllers;
-using Relewise.Integrations.Umbraco.Dashboards;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Integrations.Umbraco.Services;
@@ -75,7 +74,7 @@ public static class UmbracoBuilderExtensions
         builder.AddNotificationAsyncHandler<ContentMovedNotification, RelewiseContentMovedNotificationHandler>();
         builder.AddNotificationAsyncHandler<ContentMovedToRecycleBinNotification, RelewiseContentMovedToRecycleBinNotificationHandler>();
 
-        builder.Dashboards().Add<RelewiseDashboard>();
+        //builder.Dashboards().Add<RelewiseDashboard>();
 
         builder.Services.Configure<UmbracoPipelineOptions>(umbPipOptions =>
         {
