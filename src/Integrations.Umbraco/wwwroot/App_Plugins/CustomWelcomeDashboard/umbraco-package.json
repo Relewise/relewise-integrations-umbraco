@@ -1,0 +1,14 @@
+{
+  "id": "CustomWelcomeDashboard",
+  "name": "CustomWelcomeDashboard",
+  "version": "0.0.0",
+  "allowTelemetry": true,
+  "extensions": [
+    {
+      "name": "Custom Welcome Dashboard Bundle",
+      "alias": "CustomWelcomeDashboard.Bundle",
+      "type": "bundle",
+      "js": "/App_Plugins/CustomWelcomeDashboard/custom-welcome-dashboard.js"
+    }
+  ]
+}
