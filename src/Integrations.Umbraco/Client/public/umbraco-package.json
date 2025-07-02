@@ -1,0 +1,25 @@
+{
+  "$schema": "../../umbraco-package-schema.json",
+  "name": "Relewise.Dashboard",
+  "version": "1.0.0",
+  "extensions": [
+    {
+      "type": "dashboard",
+      "alias": "relewise.dashboard",
+      "name": "Relewise Dashboard",
+      "element": "/App_Plugins/relewise-dashboard/relewise-dashboard.js",
+      "elementName": "relewise-dashboard",
+      "weight": 10,
+      "meta": {
+        "label": "Relewise Dashboard",
+        "pathname": "relewise-dashboard"
+      },
+      "conditions": [
+        {
+          "alias": "Umb.Condition.SectionAlias",
+          "match": "Umb.Section.Content"
+        }
+      ]
+    }
+  ]
+}

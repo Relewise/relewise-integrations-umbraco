@@ -4,6 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
@@ -11,17 +13,22 @@ using Relewise.Client.Extensions;
 using Relewise.Client.Search;
 using Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
 using Relewise.Integrations.Umbraco.Services;
-using Umbraco.Cms.Web.Common.Attributes;
+using Umbraco.Cms.Api.Common.Attributes;
+using Umbraco.Cms.Web.Common.Authorization;
 using Umbraco.Cms.Web.Common.Controllers;
+using Umbraco.Cms.Web.Common.Routing;
 
 namespace Relewise.Integrations.Umbraco.Controllers;
 
 /// <summary>
 /// Defines endpoints for the Dashboard
 /// </summary>
-//[JsonCamelCaseFormatter]
 [ApiController]
-[PluginController("Relewise")]
+[BackOfficeRoute("relewisedashboard/api/v{version:apiVersion}")]
+[Authorize(Policy = AuthorizationPolicies.SectionAccessContent)]
+[MapToApi(Constants.ApiName)]
+[ApiVersion("1.0")]
+[ApiExplorerSettings(GroupName = "RelewiseDashboard")]
 public class DashboardApiController : UmbracoAuthorizedController
 {
     private readonly IExportContentService _exportContent;

@@ -74,8 +74,6 @@ public static class UmbracoBuilderExtensions
         builder.AddNotificationAsyncHandler<ContentMovedNotification, RelewiseContentMovedNotificationHandler>();
         builder.AddNotificationAsyncHandler<ContentMovedToRecycleBinNotification, RelewiseContentMovedToRecycleBinNotificationHandler>();
 
-        //builder.Dashboards().Add<RelewiseDashboard>();
-
         builder.Services.Configure<UmbracoPipelineOptions>(umbPipOptions =>
         {
             umbPipOptions.AddFilter(new UmbracoPipelineFilter(nameof(DashboardApiController))
