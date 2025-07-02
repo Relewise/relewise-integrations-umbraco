@@ -6,7 +6,7 @@ export default defineConfig({
       entry: 'src/relewise-dashboard.element.ts',
       formats: ["es"],
     },
-    outDir: "../wwwroot/App_Plugins/RelewiseDashboard",
+    outDir: "../wwwroot/App_Plugins/relewise-dashboard",
     emptyOutDir: true,
     sourcemap: true,
     rollupOptions: {
