@@ -1,35 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
 using Relewise.Client.Extensions;
 using Relewise.Client.Search;
+using Relewise.Integrations.Umbraco.Controllers.Messages;
 using Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
 using Relewise.Integrations.Umbraco.Services;
-using Umbraco.Cms.Api.Common.Attributes;
-using Umbraco.Cms.Web.Common.Authorization;
-using Umbraco.Cms.Web.Common.Controllers;
-using Umbraco.Cms.Web.Common.Routing;
 
 namespace Relewise.Integrations.Umbraco.Controllers;
 
 /// <summary>
 /// Defines endpoints for the Dashboard
 /// </summary>
-[ApiController]
-[BackOfficeRoute("relewisedashboard/api/v{version:apiVersion}")]
-[Authorize(Policy = AuthorizationPolicies.SectionAccessContent)]
-[MapToApi(Constants.ApiName)]
 [ApiVersion("1.0")]
 [ApiExplorerSettings(GroupName = "RelewiseDashboard")]
-public class DashboardApiController : UmbracoAuthorizedController
+public class DashboardApiController : RelewiseApiControllerBase
 {
     private readonly IExportContentService _exportContent;
     private readonly IServiceProvider _provider;
@@ -53,7 +44,6 @@ public class DashboardApiController : UmbracoAuthorizedController
     /// </summary>
     /// <param name="permanentlyDelete"></param>
     /// <param name="token"></param>
-    /// <returns></returns>
     [HttpPost]
     public async Task<IActionResult> ContentExport([FromQuery] bool permanentlyDelete, CancellationToken token)
     {
@@ -65,7 +55,6 @@ public class DashboardApiController : UmbracoAuthorizedController
     /// <summary>
     /// Returns the current Relewise configuration
     /// </summary>
-    /// <returns></returns>
     [HttpGet]
     public IActionResult Configuration()
     {
@@ -125,60 +114,11 @@ public class DashboardApiController : UmbracoAuthorizedController
             // we'll just ignore this exception as it just means that there no default client has been configured, which is okay
         }
 
-        return Ok(new
-        {
+        return Ok(new ConfigurationViewModel(
             _configuration.TrackedContentTypes,
             _configuration.ExportedContentTypes,
-            Named = clients,
-            ContentMiddlewareEnabled = RelewiseContentMiddleware.IsEnabled
-        });
-    }
-
-    [SuppressMessage("ReSharper", "MemberCanBePrivate.Local")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
-    private class NamedOptionsViewObject
-    {
-        public NamedOptionsViewObject(string name, 
-            ClientOptionsViewObject tracker, 
-            ClientOptionsViewObject recommender, 
-            ClientOptionsViewObject searcher,
-            ClientOptionsViewObject searchAdministrator,
-            ClientOptionsViewObject analyzer,
-            ClientOptionsViewObject dataAccessor)
-        {
-            Name = name;
-
-            Tracker = tracker;
-            Recommender = recommender;
-            Searcher = searcher;
-            SearchAdministrator = searchAdministrator;
-            Analyzer = analyzer;
-            DataAccessor = dataAccessor;
-        }
-
-        public string Name { get; }
-
-        public ClientOptionsViewObject Tracker { get; }
-        public ClientOptionsViewObject Recommender { get; }
-        public ClientOptionsViewObject Searcher { get; }
-        public ClientOptionsViewObject SearchAdministrator { get; }
-        public ClientOptionsViewObject Analyzer { get; }
-        public ClientOptionsViewObject DataAccessor { get; }
-    }
-
-    [SuppressMessage("ReSharper", "MemberCanBePrivate.Local")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
-    private class ClientOptionsViewObject
-    {
-        public ClientOptionsViewObject(RelewiseClientOptions options)
-        {
-            DatasetId = options.DatasetId;
-            ServerUrl = options.ServerUrl?.ToString();
-            Timeout = options.Timeout.TotalSeconds;
-        }
-
-        public Guid DatasetId { get; }
-        public string? ServerUrl { get; }
-        public double Timeout { get; }
+            clients,
+            RelewiseContentMiddleware.IsEnabled
+        ));
     }
 }

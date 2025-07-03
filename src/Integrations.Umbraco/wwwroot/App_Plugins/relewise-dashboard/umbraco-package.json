@@ -3,13 +3,18 @@
   "name": "Relewise.Dashboard",
   "version": "1.0.0",
   "extensions": [
+     {
+      "name": "Relewise Dashboard Bundle",
+      "alias": "RelewiseDashboard.Bundle",
+      "type": "bundle",
+      "js": "/App_Plugins/relewise-dashboard/relewise-dashboard.js"
+    },
     {
       "type": "dashboard",
       "alias": "relewise.dashboard",
       "name": "Relewise Dashboard",
-      "element": "/App_Plugins/relewise-dashboard/relewise-dashboard.js",
       "elementName": "relewise-dashboard",
-      "weight": 10,
+      "weight": 1,
       "meta": {
         "label": "Relewise Dashboard",
         "pathname": "relewise-dashboard"

@@ -14,28 +14,28 @@ export type NotificationHeaderModel = {
     type: EventMessageTypeModel;
 };
 
-export type GetUmbracoRelewisedashboardApiV1Data = {
+export type ConfigurationData = {
     body?: never;
     path?: never;
     query?: never;
     url: '/umbraco/relewisedashboard/api/v1';
 };
 
-export type GetUmbracoRelewisedashboardApiV1Errors = {
+export type ConfigurationErrors = {
     /**
      * The resource is protected and requires an authentication token
      */
     401: unknown;
 };
 
-export type GetUmbracoRelewisedashboardApiV1Responses = {
+export type ConfigurationResponses = {
     /**
      * OK
      */
     200: unknown;
 };
 
-export type PostUmbracoRelewisedashboardApiV1Data = {
+export type ContentExportData = {
     body?: never;
     path?: never;
     query?: {
@@ -44,14 +44,14 @@ export type PostUmbracoRelewisedashboardApiV1Data = {
     url: '/umbraco/relewisedashboard/api/v1';
 };
 
-export type PostUmbracoRelewisedashboardApiV1Errors = {
+export type ContentExportErrors = {
     /**
      * The resource is protected and requires an authentication token
      */
     401: unknown;
 };
 
-export type PostUmbracoRelewisedashboardApiV1Responses = {
+export type ContentExportResponses = {
     /**
      * OK
      */

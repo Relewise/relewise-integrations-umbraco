@@ -1,7 +1,14 @@
+using Relewise.Client.DataTypes;
+using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration
+    .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true);
+
+builder.Services.AddRelewise(options => options.ReadFromConfiguration(builder.Configuration));
+builder.Services.AddSingleton<IRelewiseUserLocator, RelewiseUserLocator>();
 // Add services to the container.
 builder.Services.AddUmbraco(builder.Environment, builder.Configuration)
     .AddBackOffice()
@@ -21,6 +28,8 @@ app.UseUmbraco()
     {
         u.UseBackOffice();
         u.UseWebsite();
+
+        u.TrackContentViews();
     })
     .WithEndpoints(u =>
     {
@@ -29,3 +38,12 @@ app.UseUmbraco()
     });
 
 app.Run();
+
+
+public class RelewiseUserLocator : IRelewiseUserLocator
+{
+    public Task<User> GetUser()
+    {
+        return Task.FromResult(User.Anonymous());
+    }
+}
