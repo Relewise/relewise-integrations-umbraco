@@ -353,3 +353,4 @@ appsettings.local.json
 local.settings.json
 
 .vite/
+App_Plugins/

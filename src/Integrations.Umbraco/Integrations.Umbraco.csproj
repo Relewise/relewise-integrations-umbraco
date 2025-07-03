@@ -51,13 +51,22 @@
 		<Content Remove="Client\**" />
 
 		<!-- However make the Umbraco-package.json included for dotnet pack or nuget package and visible to the solution -->
-		<None Include="Client\public\umbraco-package.json" Pack="false" />
+		<!--<None Include="Client\public\umbraco-package.json" Pack="false" />-->
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="wwwroot\" />
+		<None Include="build\**\*.*">
+			<Pack>True</Pack>
+			<PackagePath>buildTransitive</PackagePath>
+		</None>
 	</ItemGroup>
 
+	<ItemGroup>
+		<Content Include="App_Plugins\**\*.*">
+			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+		</Content>
+	</ItemGroup>
 
 	<!-- Restore and build Client files -->
 	<Target Name="RestoreClient" Inputs="Client\package.json;Client\package-lock.json" Outputs="Client\node_modules\.package-lock.json">
@@ -69,7 +78,7 @@
 		<Message Importance="high" Text="Executing Client NPM build script..." />
 		<Exec Command="npm run build" WorkingDirectory="Client" />
 		<ItemGroup>
-			<_ClientAssetsBuildOutput Include="wwwroot\App_Plugins\**" />
+			<_ClientAssetsBuildOutput Include="App_Plugins\**" />
 		</ItemGroup>
 		<WriteLinesToFile File="$(IntermediateOutputPath)client.complete.txt" Lines="@(_ClientAssetsBuildOutput)" Overwrite="true" />
 	</Target>
@@ -78,5 +87,6 @@
 		<None Include="logo.png" Pack="true" PackagePath="\" />
 		<None Include="..\..\README.md" Pack="true" PackagePath="\" />
 		<None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+		<None Include="App_Plugins\**" Pack="true" PackagePath="\App_Plugins\" />
 	</ItemGroup>
 </Project>
