@@ -65,30 +65,6 @@ app.UseUmbraco()
     });
 ```
 
-### Sample site for v9 and v10 - Get it up and running.
-
-The sample site requires .NET 6 and NPM. There is a sample site for both Umbraco v9 and Umbraco v10. 
-The sample site share the same frontend client, which is located in the Umbraco v10 sample site folder.
-The sample site has demo content, so once it's up and running, you can have a look around. 
-
- If you wish to setup and run, then just follow the steps below:
-
-1. Start by cloning the repository.
-2. Setting up the frontend.
-    
-    1. Navigate to `samples/UmbracoV10/client` (also if intend to run the v9 sample - see above)
-    2. Run `npm install` via a command prompt
-    3. Run `npm run serve` via a command prompt
-
-3. Spinning up the site.
-
-    1. Navigate to `samples/UmbracoV9` or `samples/UmbracoV10`, depending on whether you want to sample v9 or v10.
-    2. Run `dotnet run` via a command prompt.
-    3. Access the website from your browser
-
-4. Installing Umbraco - When visiting the site for the first time, you are asked to configure Umbraco. Just follow the instructions.
-5. Publish the content of the site. The site comes with content already created. You just need to login and publish the content
-
 ## 14-day Free Trial
 
 You can get access to a [14-day free trial of Relewise](https://www.relewise.com/free-trial) to get you started with Relewise.
