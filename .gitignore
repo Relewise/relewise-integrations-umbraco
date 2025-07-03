@@ -352,16 +352,4 @@ MigrationBackup/
 appsettings.local.json
 local.settings.json
 
-**samples/UmbracoV9/wwwroot/css/**
-**samples/UmbracoV9/wwwroot/js/**
-**samples/UmbracoV9/wwwroot/vendor/**
-**samples/UmbracoV9/wwwroot/fonts/**
-**samples/UmbracoV9/wwwroot/images/**
-**samples/UmbracoV9/Views/**
-**samples/UmbracoV9/App_Plugins/**
-
-**samples/UmbracoV12/Views/**
-**samples/UmbracoV12/App_Plugins/**
-
-**samples/UmbracoV13/Views/**
-**samples/UmbracoV13/App_Plugins/**
+.vite/

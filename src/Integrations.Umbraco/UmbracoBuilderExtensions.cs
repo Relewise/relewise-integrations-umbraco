@@ -1,24 +1,17 @@
 ﻿using System;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using Relewise.Client.Extensions.DependencyInjection;
-using Relewise.Integrations.Umbraco.Controllers;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Integrations.Umbraco.Services;
-using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.DependencyInjection;
-using Umbraco.Cms.Core.Hosting;
 using Umbraco.Cms.Core.Notifications;
-using Umbraco.Cms.Web.Common.ApplicationBuilder;
-using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco;
 
 /// <summary>
-/// Extensions methods for setting up Relewise in an <see cref="IServiceCollection"/>.
+/// Extensions methods for setting up Relewise in a <see cref="IServiceCollection"/>.
 /// </summary>
 public static class UmbracoBuilderExtensions
 {
@@ -73,25 +66,6 @@ public static class UmbracoBuilderExtensions
         builder.AddNotificationAsyncHandler<ContentDeletedNotification, RelewiseContentDeletedNotificationNotificationHandler>();
         builder.AddNotificationAsyncHandler<ContentMovedNotification, RelewiseContentMovedNotificationHandler>();
         builder.AddNotificationAsyncHandler<ContentMovedToRecycleBinNotification, RelewiseContentMovedToRecycleBinNotificationHandler>();
-
-        builder.Services.Configure<UmbracoPipelineOptions>(umbPipOptions =>
-        {
-            umbPipOptions.AddFilter(new UmbracoPipelineFilter(nameof(DashboardApiController))
-            {
-                Endpoints = app => app.UseEndpoints(endpoints =>
-                {
-                    GlobalSettings globalSettings = app.ApplicationServices.GetRequiredService<IOptions<GlobalSettings>>().Value;
-                    IHostingEnvironment hostingEnvironment = app.ApplicationServices.GetRequiredService<IHostingEnvironment>();
-                    string backOfficeArea = global::Umbraco.Cms.Core.Constants.Web.Mvc.BackOfficePathSegment;
-
-                    var rootSegment = $"{globalSettings.GetUmbracoMvcArea(hostingEnvironment)}/{backOfficeArea}";
-                    endpoints.MapUmbracoRoute<DashboardApiController>(
-                        rootSegment: rootSegment,
-                        areaName: "Relewise",
-                        prefixPathSegment: "Relewise");
-                })
-            });
-        });
 
         return builder;
     }
