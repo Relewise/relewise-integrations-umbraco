@@ -24,12 +24,12 @@ public class ClientOptionsViewObject
     /// </summary>
     public Guid DatasetId { get; }
     /// <summary>
-    ///     URL of the Relewise server this client connects to
+    /// URL of the Relewise server this client connects to
     /// </summary>
     public string? ServerUrl { get; }
 
     /// <summary>
-    ///     Timeout in seconds for requests made by this client
+    /// Timeout in seconds for requests made by this client
     /// </summary>
     public double Timeout { get; }
 }

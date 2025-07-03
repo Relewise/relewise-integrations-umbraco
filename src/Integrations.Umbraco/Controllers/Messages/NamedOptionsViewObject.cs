@@ -8,13 +8,6 @@ public class NamedOptionsViewObject
     /// <summary>
     /// Creates a new instance of <see cref="NamedOptionsViewObject"/>
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="tracker"></param>
-    /// <param name="recommender"></param>
-    /// <param name="searcher"></param>
-    /// <param name="searchAdministrator"></param>
-    /// <param name="analyzer"></param>
-    /// <param name="dataAccessor"></param>
     public NamedOptionsViewObject(string name,
         ClientOptionsViewObject tracker,
         ClientOptionsViewObject recommender,
@@ -37,8 +30,6 @@ public class NamedOptionsViewObject
     /// Unique name for this set of Relewise client options
     /// </summary>
     public string Name { get; }
-
-
     /// <summary>
     /// Represents the options for the Relewise Tracker client
     /// </summary>

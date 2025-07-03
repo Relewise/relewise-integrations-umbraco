@@ -30,10 +30,6 @@ public class ConfigurationViewModel
     /// <summary>
     /// Relewise Package configuration model
     /// </summary>
-    /// <param name="trackedContentTypes"></param>
-    /// <param name="exportedContentTypes"></param>
-    /// <param name="named"></param>
-    /// <param name="contentMiddlewareEnabled"></param>
     public ConfigurationViewModel(IReadOnlyCollection<string> trackedContentTypes, IReadOnlyCollection<string> exportedContentTypes, List<NamedOptionsViewObject> named, bool contentMiddlewareEnabled)
     {
         TrackedContentTypes = trackedContentTypes;
