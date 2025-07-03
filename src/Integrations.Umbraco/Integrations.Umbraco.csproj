@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+		<TargetFrameworks>net9.0</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<WarningsAsErrors>true</WarningsAsErrors>
@@ -11,22 +11,23 @@
 		<Title>Relewise integration for Umbraco</Title>
 		<Description>An extension for Umbraco CMS allowing easy content export to Relewise</Description>
 		<PackageIcon>logo.png</PackageIcon>
-		<PackageTags>Relewise;Umbraco;Umbraco-v9;Umbraco-v10;Umbraco-v11;Umbraco-v12;Umbraco-v13;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace</PackageTags>
+		<PackageTags>Relewise;Umbraco;Umbraco-v9;Umbraco-v10;Umbraco-v11;Umbraco-v12;Umbraco-v13;Umbraco-v15;Umbraco-v16;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace</PackageTags>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<PackageProjectUrl>https://github.com/Relewise/relewise-integrations-umbraco</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/Relewise/relewise-integrations-umbraco</RepositoryUrl>
 		<PackageId>Relewise.Integrations.Umbraco</PackageId>
-		<PackageVersion>1.8.1</PackageVersion>
+		<PackageVersion>1.9.0</PackageVersion>
 		<Authors>Relewise</Authors>
 		<Company>Relewise</Company>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<!-- NU1903: To ignore the warning of 'known high severity vulnerability' from 'Umbraco.Cms.Web.BackOffice' package -->
-		<NoWarn>NU1903</NoWarn>
+		<!-- NU1902: To ignore the warning of 'known moderate severity vulnerability' from 'Umbraco.Cms.Web.Common' package -->
+		<!-- NU1903: To ignore the warning of 'known high severity vulnerability' from 'Umbraco.Cms' package -->
+		<NoWarn>NU1902;NU1903</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -34,41 +35,44 @@
 		<PackageReference Include="Relewise.Client.Extensions" Version="[1.4.1, 2)" />
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-		<!-- Version 10-13 -->
-		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="[10.0.0,14)" />
-		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[10.0.0,14)" />
-	</ItemGroup>
+	<ItemGroup>
+		<!--Version 15-16-->
+		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[15.0.0,17)" />
+		<PackageReference Include="Umbraco.Cms.Web.Website" Version="[15.0.0,17)" />
+		<PackageReference Include="Umbraco.Cms.Api.Common" Version="[15.0.0,17)" />
+		<PackageReference Include="Umbraco.Cms.Api.Management" Version="[15.0.0,17)" />
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
-		<!-- Version 10-12 -->
-		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="[10.0.0,13)" />
-		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[10.0.0,13)" />
-	</ItemGroup>
-
-	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-		<!-- Version 9-10 -->
-		<PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="[9.0.0,11)" />
-		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[9.0.0,11)" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="App_Plugins\Relewise.Dashboard\**\*.*">
-			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-			<PackagePath>App_Plugins\Relewise.Dashboard\</PackagePath>
-		</Content>
-		<None Include="build\**\*.*">
-			<Pack>True</Pack>
-			<PackagePath>buildTransitive</PackagePath>
-		</None>
+		<ClientAssetsInputs Include="Client\**" Exclude="$(DefaultItemExcludes)" />
+
+		<!-- Dont include the client folder as part of packaging nuget build -->
+		<Content Remove="Client\**" />
+
+		<!-- However make the Umbraco-package.json included for dotnet pack or nuget package and visible to the solution -->
+		<None Include="Client\public\umbraco-package.json" Pack="false" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="App_Plugins\**\*.*">
-			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
-		</Content>
+		<Folder Include="wwwroot\" />
 	</ItemGroup>
+
+
+	<!-- Restore and build Client files -->
+	<Target Name="RestoreClient" Inputs="Client\package.json;Client\package-lock.json" Outputs="Client\node_modules\.package-lock.json">
+		<Message Importance="high" Text="Restoring Client NPM packages..." />
+		<Exec Command="npm i" WorkingDirectory="Client" />
+	</Target>
+
+	<Target Name="BuildClient" BeforeTargets="AssignTargetPaths" DependsOnTargets="RestoreClient" Inputs="@(ClientAssetsInputs)" Outputs="$(IntermediateOutputPath)client.complete.txt">
+		<Message Importance="high" Text="Executing Client NPM build script..." />
+		<Exec Command="npm run build" WorkingDirectory="Client" />
+		<ItemGroup>
+			<_ClientAssetsBuildOutput Include="wwwroot\App_Plugins\**" />
+		</ItemGroup>
+		<WriteLinesToFile File="$(IntermediateOutputPath)client.complete.txt" Lines="@(_ClientAssetsBuildOutput)" Overwrite="true" />
+	</Target>
 
 	<ItemGroup>
 		<None Include="logo.png" Pack="true" PackagePath="\" />
