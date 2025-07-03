@@ -1,0 +1,25 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<PropertyGroup>
+		<RelewiseDashboardFilesPath>
+			$(MSBuildThisFileDirectory)..\App_Plugins\relewise-dashboard\**\*.*
+		</RelewiseDashboardFilesPath>
+	</PropertyGroup>
+	<Target Name="CopyRelewiseAssets" BeforeTargets="Build">
+		<ItemGroup>
+			<RelewiseFiles Include="$(RelewiseDashboardFilesPath)" />
+		</ItemGroup>
+		<Message Text="Copying Relewise files: $(RelewiseDashboardFilesPath) - #@(RelewiseFiles->Count()) files" Importance="high" />
+		<Copy SourceFiles="@(RelewiseFiles)"
+		      DestinationFiles="@(RelewiseFiles->'$(MSBuildProjectDirectory)\wwwroot\App_Plugins\relewise-dashboard\%(RecursiveDir)%(Filename)%(Extension)')"
+		      SkipUnchangedFiles="true" />
+	</Target>
+
+	<Target Name="ClearRelewiseAssets" BeforeTargets="Clean">
+		<ItemGroup>
+			<RelewiseDir Include="$(MSBuildProjectDirectory)\wwwroot\App_Plugins\relewise-dashboard\" />
+		</ItemGroup>
+		<Message Text="Clear old Relewise data" Importance="high" />
+		<RemoveDir Directories="@(RelewiseDir)" />
+	</Target>
+
+</Project>
