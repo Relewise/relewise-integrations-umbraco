@@ -59,7 +59,8 @@ public static class UmbracoBuilderExtensions
             .AddValueConverter<IntegerPropertyValueConverter>()
             .AddValueConverter<DecimalPropertyValueConverter>()
             .AddValueConverter<TagsPropertyValueConverter>()
-            .AddValueConverter<NestedContentPropertyValueConverter>();
+            .AddValueConverter<NestedContentPropertyValueConverter>()
+            .AddValueConverter<BlockListPropertyValueConverter>();
 
         builder.AddNotificationAsyncHandler<ContentPublishedNotification, RelewiseContentPublishedNotificationHandler>();
         builder.AddNotificationAsyncHandler<ContentUnpublishedNotification, RelewiseContentUnpublishedNotificationHandler>();
