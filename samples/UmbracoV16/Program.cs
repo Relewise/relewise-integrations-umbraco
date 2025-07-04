@@ -15,6 +15,7 @@ builder.Services.AddUmbraco(builder.Environment, builder.Configuration)
     .AddWebsite()
     .AddComposers()
     .AddRelewise(options => options
+        .AddContentType("homePage", contentType => contentType.AutoMap())
         .AddContentType("contentPage", contentType => contentType.AutoMap()))
     .Build();
 
