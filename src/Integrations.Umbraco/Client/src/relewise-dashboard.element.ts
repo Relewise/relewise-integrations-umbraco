@@ -129,13 +129,10 @@ services.AddUmbraco(_env, _config)
             
             ${this.configuration && this.configuration.factoryFailed ? html`
                 <div>
-                    <span class="error">No settings have been configured. Please check your call to the 'services.AddRelewise(options => { /* options goes here */ })'-method in 'Startup.cs':</span><br />
+                    <span class="error">No settings have been configured. Please check your call to the 'services.AddRelewise(options => { /* options goes here */ })'-method in 'Program.cs':</span><br />
                     <pre>
-public void ConfigureServices(IServiceCollection services)
-{
-	services.AddRelewise(options => options.ReadFromConfiguration(_config));
-...			
-}</pre>
+builder.Services.AddRelewise(options => options.ReadFromConfiguration(builder.Configuration));
+</pre>
                     <span>Which then reads from the following configuration in appsettings.json:</span>
                     <pre>
 "Relewise": {
