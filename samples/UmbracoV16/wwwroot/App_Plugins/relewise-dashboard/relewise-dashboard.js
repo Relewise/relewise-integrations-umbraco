@@ -3,7 +3,7 @@ const t = [
     name: "Relewise Dashboard Entrypoint",
     alias: "RelewiseDashboard.Entrypoint",
     type: "backofficeEntryPoint",
-    js: () => import("./entrypoint-HsYqf3QU.js")
+    js: () => import("./entrypoint-C7L6aEx2.js")
   }
 ], e = [
   ...t
