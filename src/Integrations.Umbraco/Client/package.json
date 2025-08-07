@@ -10,9 +10,9 @@
   },
   "devDependencies": {
     "@hey-api/client-fetch": "^0.10.0",
-    "@hey-api/openapi-ts": "^0.66.7",
+    "@hey-api/openapi-ts": "0.80.5",
     "@umbraco-cms/backoffice": "^*",
-    "chalk": "^5.4.1",
+    "chalk": "5.5.0",
     "cross-env": "^7.0.3",
     "node-fetch": "^3.3.2",
     "typescript": "^5.8.3",

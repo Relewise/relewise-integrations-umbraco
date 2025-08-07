@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
@@ -56,6 +57,7 @@ public class DashboardApiController : RelewiseApiControllerBase
     /// Returns the current Relewise configuration
     /// </summary>
     [HttpGet]
+    [ProducesResponseType<ConfigurationViewModel>(StatusCodes.Status200OK)]
     public IActionResult Configuration()
     {
         IRelewiseClientFactory clientFactory;
@@ -69,11 +71,7 @@ public class DashboardApiController : RelewiseApiControllerBase
         }
         catch (Exception ex)
         {
-            return Ok(new
-            {
-                FactoryFailed = true,
-                ErrorMessage = ex.Message
-            });
+            return Ok(new ConfigurationErrorViewModel(ex.Message));
         }
 
         List<NamedOptionsViewObject> clients = clientFactory.ClientNames

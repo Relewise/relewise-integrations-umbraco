@@ -1,6 +1,6 @@
 import { html, css, customElement, state } from '@umbraco-cms/backoffice/external/lit';
 import { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';
-import { RelewiseDashboardService } from './api';
+import { ConfigurationViewModel, RelewiseDashboard } from './api';
 
 @customElement('relewise-dashboard')
 export class RelewiseDashboardElement extends UmbLitElement {
@@ -18,7 +18,7 @@ export class RelewiseDashboardElement extends UmbLitElement {
     success: string | null = null;
 
     @state()
-    configuration: any | null = null;
+    configuration: ConfigurationViewModel | { factoryFailed: boolean, errorMessage: string } | null = null;
 
     @state()
     errorMessage: string | null = null;
@@ -34,7 +34,7 @@ export class RelewiseDashboardElement extends UmbLitElement {
         this.errorMessage = "";
         this.success = "";
         try {
-            await RelewiseDashboardService.contentExport({ throwOnError: true, query: { permanentlyDelete } });
+            await RelewiseDashboard.contentExport({ throwOnError: true, query: { permanentlyDelete } });
 
             this.exportLoading = false;
             this.success = "Content was successfully exported to Relewise";
@@ -62,8 +62,8 @@ export class RelewiseDashboardElement extends UmbLitElement {
 
     async init() {
         try {
-            const result = await RelewiseDashboardService.configuration({ throwOnError: true });
-            console.log("Configuration result", result);
+            const result = await RelewiseDashboard.configuration({ throwOnError: true });
+
             if (result.response.status === 200) {
                 this.unhandledError = false;
                 this.configuration = result.data;
@@ -92,7 +92,7 @@ export class RelewiseDashboardElement extends UmbLitElement {
                     label="Export content" 
                     look="primary" 
                     @click=${() => this.exportContent()} 
-                    ?disabled=${this.exportLoading || this.unhandledError || this.relewiseNotAddedToUmbracoBuilder || (this.configuration && this.configuration.factoryFailed)}>
+                    ?disabled=${this.exportLoading || this.unhandledError || this.relewiseNotAddedToUmbracoBuilder || (this.configuration && 'factoryFailed' in this.configuration && this.configuration.factoryFailed)}>
                     Export content
                 </uui-button>
 
@@ -101,7 +101,7 @@ export class RelewiseDashboardElement extends UmbLitElement {
                     label=" Export content and remove old data" 
                     look="primary" color="danger" 
                     @click=${() => this.exportContentPermanentlyDelete()} 
-                    ?disabled=${this.exportLoading || this.unhandledError || this.relewiseNotAddedToUmbracoBuilder || (this.configuration && this.configuration.factoryFailed)}>
+                    ?disabled=${this.exportLoading || this.unhandledError || this.relewiseNotAddedToUmbracoBuilder || (this.configuration && 'factoryFailed' in this.configuration && this.configuration.factoryFailed)}>
                     Export content and remove old data
                 </button>
             </div>
@@ -127,7 +127,7 @@ services.AddUmbraco(_env, _config)
                 Note the '.AddRelewise()' method-call above - insert that and re-run the site.`
                 : ''}
             
-            ${this.configuration && this.configuration.factoryFailed ? html`
+            ${this.configuration && 'factoryFailed' in this.configuration && this.configuration.factoryFailed ? html`
                 <div>
                     <span class="error">No settings have been configured. Please check your call to the 'services.AddRelewise(options => { /* options goes here */ })'-method in 'Program.cs':</span><br />
                     <pre>
@@ -148,7 +148,7 @@ builder.Services.AddRelewise(options => options.ReadFromConfiguration(builder.Co
                 </div>
             ` : ''}
 
-            ${this.configuration && this.configuration.trackedContentTypes ? html`<div>
+            ${this.configuration && 'trackedContentTypes' in this.configuration && this.configuration.trackedContentTypes ? html`<div>
                     Tracked content types are:
                     ${this.configuration && this.configuration.trackedContentTypes.length > 0 ? html`<strong>${this.configuration.trackedContentTypes.join(', ')}</strong>` : ''}
                     ${this.configuration && this.configuration.trackedContentTypes.length === 0 ? html`<span style="font-style: italic;">No tracked content type have been configured</span>` : ''}
@@ -174,7 +174,7 @@ app.UseUmbraco()
     
                     ` : ''}
 
-                  ${this.configuration && this.configuration.exportedContentTypes ? html` <div style="margin-top: 20px;">
+                  ${this.configuration &&  'trackedContentTypes' in this.configuration &&this.configuration.exportedContentTypes ? html` <div style="margin-top: 20px;">
                     Exported content types are:
                     ${this.configuration && this.configuration.exportedContentTypes.length > 0 ? html`<strong>${this.configuration.exportedContentTypes.join(', ')}</strong>` : ''}
                     ${this.configuration && this.configuration.exportedContentTypes.length === 0 ? html`<span style="font-style: italic;">No exported content type have been configured</span>` : ''}
@@ -188,7 +188,7 @@ app.UseUmbraco()
 
           </uui-box>
 
-          ${this.configuration && this.configuration.named ? html`
+          ${this.configuration && 'named' in this.configuration && this.configuration.named ? html`
           <uui-box headline="Clients">
 
         <uui-table>
