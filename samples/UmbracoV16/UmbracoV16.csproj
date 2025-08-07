@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -28,4 +28,13 @@
     <RazorCompileOnPublish>false</RazorCompileOnPublish>
   </PropertyGroup>
 
+	<ItemGroup>
+		<AppClientFiles Include="..\..\src\Integrations.Umbraco\App_Plugins\**\*" />
+	</ItemGroup>
+
+	<Target Name="CopyCommonContent" AfterTargets="Build" Inputs="..\..\src\Integrations.Umbraco\obj\client.complete.txt"
+	        Outputs="obj\client.copied.txt">
+		<Message Text="Copying App Client Files" Importance="high" />
+		<Copy SourceFiles="@(AppClientFiles)" DestinationFiles="wwwroot\App_Plugins\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+	</Target>
 </Project>
