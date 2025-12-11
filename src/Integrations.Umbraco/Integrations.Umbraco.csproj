@@ -35,7 +35,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!--Version 15-17-->
+		<!--Version 17-->
 		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[17.0.0,18)" />
 		<PackageReference Include="Umbraco.Cms.Web.Website" Version="[17.0.0,18)" />
 		<PackageReference Include="Umbraco.Cms.Api.Common" Version="[17.0.0,18)" />
