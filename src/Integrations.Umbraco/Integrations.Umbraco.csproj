@@ -30,16 +30,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Relewise.Client" Version="[1.96.0, 2)" />
-		<PackageReference Include="Relewise.Client.Extensions" Version="[1.4.1, 2)" />
+		<PackageReference Include="Relewise.Client" Version="1.259.0" />
+		<PackageReference Include="Relewise.Client.Extensions" Version="1.7.0" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<!--Version 15-16-->
-		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[15.0.0,17)" />
-		<PackageReference Include="Umbraco.Cms.Web.Website" Version="[15.0.0,17)" />
-		<PackageReference Include="Umbraco.Cms.Api.Common" Version="[15.0.0,17)" />
-		<PackageReference Include="Umbraco.Cms.Api.Management" Version="[15.0.0,17)" />
+		<!--Version 15-17-->
+		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[15.0.0,18)" />
+		<PackageReference Include="Umbraco.Cms.Web.Website" Version="[15.0.0,18)" />
+		<PackageReference Include="Umbraco.Cms.Api.Common" Version="[15.0.0,18)" />
+		<PackageReference Include="Umbraco.Cms.Api.Management" Version="[15.0.0,18)" />
 
 	</ItemGroup>
 

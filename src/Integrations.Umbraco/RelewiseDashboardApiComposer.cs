@@ -63,12 +63,9 @@ public class RelewiseDashboardApiComposer : IComposer
     // This is used to generate nice operation IDs in our swagger json file
     // So that the gnerated TypeScript client has nice method names and not too verbose
     // https://docs.umbraco.com/umbraco-cms/tutorials/creating-a-backoffice-api/umbraco-schema-and-operation-ids#operation-ids
-    private class CustomOperationHandler : OperationIdHandler
+    private class CustomOperationHandler(IOptions<ApiVersioningOptions> apiVersioningOptions)
+        : OperationIdHandler(apiVersioningOptions)
     {
-        public CustomOperationHandler(IOptions<ApiVersioningOptions> apiVersioningOptions) : base(apiVersioningOptions)
-        {
-        }
-
         protected override bool CanHandle(ApiDescription apiDescription, ControllerActionDescriptor controllerActionDescriptor)
         {
             return controllerActionDescriptor.ControllerTypeInfo.Namespace?.StartsWith("Relewise.Integrations.Umbraco.Controllers", comparisonType: StringComparison.InvariantCultureIgnoreCase) is true;
