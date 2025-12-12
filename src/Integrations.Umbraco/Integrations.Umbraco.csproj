@@ -11,7 +11,7 @@
 		<Title>Relewise integration for Umbraco</Title>
 		<Description>An extension for Umbraco CMS allowing easy content export to Relewise</Description>
 		<PackageIcon>logo.png</PackageIcon>
-		<PackageTags>Relewise;Umbraco;Umbraco-v9;Umbraco-v10;Umbraco-v11;Umbraco-v12;Umbraco-v13;Umbraco-v15;Umbraco-v16;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace</PackageTags>
+		<PackageTags>Relewise;Umbraco;Umbraco-v9;Umbraco-v10;Umbraco-v11;Umbraco-v12;Umbraco-v13;Umbraco-v15;Umbraco-v16;Umbraco-v17;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace</PackageTags>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
