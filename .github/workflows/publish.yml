@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        dotnet-version: ["9.0.x"]
+        dotnet-version: ["10.0.x"]
     defaults:
       run:
         working-directory: ./src/Integrations.Umbraco
