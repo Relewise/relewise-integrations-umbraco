@@ -71,7 +71,7 @@ You can get access to a [14-day free trial of Relewise](https://www.relewise.com
 
 ## Resources
 
-Find more information on the Umbraco Marketplace: https://umbraco.com/marketplace/relewise/
+Find more information on the [Umbraco Marketplace](https://marketplace.umbraco.com/package/relewise.integrations.umbraco).
 
 Documentation can be found at https://docs.relewise.com.
 
