@@ -8,8 +8,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Umbraco.Cms" Version="17.0.2" />
-		<PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" Version="17.0.2" />
+		<PackageReference Include="Umbraco.Cms" Version="17.5.3" />
+		<PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" Version="17.5.3" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -30,13 +30,12 @@
 		<RazorCompileOnPublish>false</RazorCompileOnPublish>
 	</PropertyGroup>
 
-
-	<ItemGroup>
-		<AppClientFiles Include="..\..\src\Integrations.Umbraco\App_Plugins\**\*" />
-	</ItemGroup>
 	<Target Name="CopyCommonContent" AfterTargets="Build" Inputs="..\..\src\Integrations.Umbraco\obj\Debug\net10.0\client.complete.txt"
 	        Outputs="obj\client.copied.txt">
 		<Message Text="Copying App Client Files" Importance="high" />
+		<ItemGroup>
+			<AppClientFiles Include="..\..\src\Integrations.Umbraco\App_Plugins\**\*" />
+		</ItemGroup>
 		<Copy SourceFiles="@(AppClientFiles)" DestinationFiles="wwwroot\App_Plugins\%(RecursiveDir)%(Filename)%(Extension)" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
 	</Target>
 
