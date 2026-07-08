@@ -104,6 +104,9 @@ Upgrade Umbraco deliberately as one compatible set.
 - Keep `@umbraco-cms/backoffice` in `src/Integrations.Umbraco/Client/package.json` in its existing declaration style. If it is `^*`, do not change it.
 - After an Umbraco upgrade, inspect compile errors for breaking API changes and fix compatibility issues that are direct consequences of the upgrade.
 - Keep package metadata aligned when relevant, including `PackageTags` and `umbraco-marketplace.json`, but do not change supported-major claims unless the dependency upgrade actually changes the supported Umbraco major.
+- When a new Umbraco major is released and the goal is to support it if compatible, update the sample project to the latest patch of that new major and run the full validation suite. If validation passes without package-code compatibility fixes, expand the package project's upper-bound range to include that major while preserving the existing lower bound; for example `[17.0.0,18)` can become `[17.0.0,19)` after validating Umbraco 18.
+- When expanding supported Umbraco majors, update NuGet `PackageTags` with the new `Umbraco-vN` tag and update `umbraco-marketplace.json` tags or version metadata when present so marketplace support signals match the package dependency range.
+- Record whether the new major was validated only through the sample project or also required package-code fixes. If fixes were required, summarize them and keep the widened range only when the fixed package builds successfully against the new major.
 
 If the user asks for a major Umbraco upgrade, confirm the target major and adjust ranges consistently before proceeding.
 

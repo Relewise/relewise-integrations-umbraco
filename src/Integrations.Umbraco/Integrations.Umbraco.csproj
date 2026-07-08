@@ -11,7 +11,7 @@
 		<Title>Relewise integration for Umbraco</Title>
 		<Description>An extension for Umbraco CMS allowing easy content export to Relewise</Description>
 		<PackageIcon>logo.png</PackageIcon>
-		<PackageTags>Relewise;Umbraco;Umbraco-v9;Umbraco-v10;Umbraco-v11;Umbraco-v12;Umbraco-v13;Umbraco-v15;Umbraco-v16;Umbraco-v17;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace;Shoppertainment;retail-media;display-ads</PackageTags>
+		<PackageTags>Relewise;Umbraco;Umbraco-v9;Umbraco-v10;Umbraco-v11;Umbraco-v12;Umbraco-v13;Umbraco-v15;Umbraco-v16;Umbraco-v17;Umbraco-v18;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace;Shoppertainment;retail-media;display-ads</PackageTags>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -35,11 +35,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!--Version 17-->
-		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[17.0.0,18)" />
-		<PackageReference Include="Umbraco.Cms.Web.Website" Version="[17.0.0,18)" />
-		<PackageReference Include="Umbraco.Cms.Api.Common" Version="[17.0.0,18)" />
-		<PackageReference Include="Umbraco.Cms.Api.Management" Version="[17.0.0,18)" />
+		<!--Version 17-18-->
+		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[17.0.0,19)" />
+		<PackageReference Include="Umbraco.Cms.Web.Website" Version="[17.0.0,19)" />
+		<PackageReference Include="Umbraco.Cms.Api.Common" Version="[17.0.0,19)" />
+		<PackageReference Include="Umbraco.Cms.Api.Management" Version="[17.0.0,19)" />
 	</ItemGroup>
 
 	<ItemGroup>
