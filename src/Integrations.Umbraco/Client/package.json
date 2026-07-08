@@ -9,13 +9,13 @@
     "generate-client": "node scripts/generate-openapi.js https://localhost:44381/umbraco/swagger/relewisedashboard/swagger.json"
   },
   "devDependencies": {
-    "@hey-api/client-fetch": "^0.10.0",
-    "@hey-api/openapi-ts": "0.80.5",
+    "@hey-api/client-fetch": "^0.13.1",
+    "@hey-api/openapi-ts": "0.99.0",
     "@umbraco-cms/backoffice": "^*",
-    "chalk": "5.5.0",
-    "cross-env": "^7.0.3",
+    "chalk": "5.6.2",
+    "cross-env": "^10.1.0",
     "node-fetch": "^3.3.2",
-    "typescript": "^5.8.3",
-    "vite": "^6.3.4"
+    "typescript": "^6.0.3",
+    "vite": "^8.1.3"
   }
 }
