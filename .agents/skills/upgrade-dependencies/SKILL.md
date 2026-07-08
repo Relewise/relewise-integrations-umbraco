@@ -81,9 +81,10 @@ Preserve existing dependency declaration styles.
 NuGet rules:
 
 - If a package uses NuGet range syntax with brackets or parentheses, keep it as a range.
-- For lower-bound ranges such as `[17.0.0,18)`, only bump the lower bound when upgrading; keep the existing upper bound and bracket/parenthesis style.
+- For lower-bound ranges such as `[17.0.0,18)`, keep the existing lower bound unless the package project genuinely requires a newer minimum version because of direct API usage, compatibility fixes, security policy, or another explicit reason. If a lower bound must be raised, keep the existing upper bound and bracket/parenthesis style.
 - Do not convert ranged package references to pinned versions.
 - For exact versions in sample projects, update to exact versions unless the existing declaration is already a range.
+- For `Relewise.Client` and `Relewise.Client.Extensions` in the package project, prefer the minimum needed supported version over the latest available version. Only raise the lower bound when the integration code requires newer client APIs or fixes, and document that reason in the PR body.
 
 npm rules:
 
@@ -98,8 +99,8 @@ Record skipped or preserved ranged dependencies in both the PR body and final ou
 Upgrade Umbraco deliberately as one compatible set.
 
 - Treat all `Umbraco.Cms*` NuGet packages as a coordinated group.
-- In `src/Integrations.Umbraco/Integrations.Umbraco.csproj`, preserve the package project's compatibility range. For example, `[17.0.0,18)` should become `[17.x.y,18)` when upgrading within Umbraco 17, not `17.x.y` and not `[17.x.y,19)`.
-- In `samples/Umbraco/Umbraco.csproj`, keep exact Umbraco package versions exact and align all sample Umbraco packages to the same target version.
+- In `src/Integrations.Umbraco/Integrations.Umbraco.csproj`, preserve the package project's compatibility range and do not raise the lower bound just because the sample or validation target is upgraded. For example, keep `[17.0.0,18)` as `[17.0.0,18)` unless package code needs a newer minimum; do not change it to `17.x.y`, `[17.x.y,18)`, or `[17.x.y,19)` without a concrete compatibility reason.
+- In `samples/Umbraco/Umbraco.csproj`, keep exact Umbraco package versions exact and align all sample Umbraco packages to the same target version. The sample project is only a validation/sample host and must not drive the package project's minimum supported Umbraco version.
 - Keep `@umbraco-cms/backoffice` in `src/Integrations.Umbraco/Client/package.json` in its existing declaration style. If it is `^*`, do not change it.
 - After an Umbraco upgrade, inspect compile errors for breaking API changes and fix compatibility issues that are direct consequences of the upgrade.
 - Keep package metadata aligned when relevant, including `PackageTags` and `umbraco-marketplace.json`, but do not change supported-major claims unless the dependency upgrade actually changes the supported Umbraco major.
