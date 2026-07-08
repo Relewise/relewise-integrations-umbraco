@@ -1,0 +1,4 @@
+interface:
+  display_name: "Upgrade Dependencies"
+  short_description: "Upgrade NuGet, npm, and Umbraco dependencies"
+  default_prompt: "Use $upgrade-dependencies with this Trello card to upgrade repository dependencies and open a PR."
