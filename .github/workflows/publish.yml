@@ -15,7 +15,7 @@ jobs:
         working-directory: ./src/Integrations.Umbraco
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
       uses: actions/setup-dotnet@v4
