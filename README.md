@@ -1,5 +1,15 @@
 # Relewise.Integrations.Umbraco [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![NuGet version](https://img.shields.io/nuget/v/Relewise.Integrations.Umbraco)](https://www.nuget.org/packages/Relewise.Integrations.Umbraco) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://https://github.com/Relewise/relewise-sdk-csharp-extensions/pulls)
 
+## Documentation
+
+Start with [the documentation overview](docs/README.md) to choose between automatic mapping, a custom content mapper, and a property converter.
+
+- [Custom content mapping](docs/custom-content-mapping.md): the mapping pipeline, `UseMapper(...)`, registration, field ownership, and cultures.
+- [Block List, Block Grid, and nested content](docs/block-editors.md): default support, traversal, rich text, visibility, and referenced content.
+- [Complete mapper example](docs/examples/AdvancedContentMapping/README.md): buildable C# code you can adapt to your content model.
+- [Validation and troubleshooting](docs/validation-and-troubleshooting.md): export checks, missing fields, duplicate keys, and stale data.
+
+
 ### Installing Relewise.Integrations.Umbraco 
 
 First make sure to have [Umbraco installed](https://docs.umbraco.com/umbraco-cms/fundamentals/setup/install/install-umbraco-with-templates#install-the-template):
@@ -47,6 +57,8 @@ builder.CreateUmbracoBuilder()
         .AddContentType("blogEntry", contentType => contentType.AutoMap()))
     .Build();
 ```
+
+`BlogMapper` above represents your own `IContentTypeMapping` implementation; it is not included in the package. See [how to write and register a mapper](docs/custom-content-mapping.md#write-a-minimal-mapper), or use the [complete Block List and Block Grid example](docs/examples/AdvancedContentMapping/README.md).
 
 If you'd also like these content types to be automatically tracked, you can add our middleware to the UmbracoBuilder (`.UseUmbraco(...)`):
 ```csharp
