@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Umbraco.Cms.Api.Common.OpenApi;
 using Umbraco.Cms.Api.Management.OpenApi;
@@ -23,15 +24,19 @@ public class RelewiseDashboardApiComposer : IComposer
             .WithBackOfficeAuthentication()
             .ConfigureOpenApiOptions(options => options.AddOperationTransformer((operation, context, _) =>
             {
-                if (context.Description.ActionDescriptor is ControllerActionDescriptor controllerActionDescriptor &&
-                    controllerActionDescriptor.ControllerTypeInfo.Namespace?.StartsWith(
-                        "Relewise.Integrations.Umbraco.Controllers",
-                        comparisonType: StringComparison.InvariantCultureIgnoreCase) is true)
+                if (context.Description.ActionDescriptor is ControllerActionDescriptor descriptor &&
+                    IsRelewiseController(descriptor))
                 {
                     operation.OperationId = context.Description.ActionDescriptor.RouteValues["action"];
                 }
 
-                return System.Threading.Tasks.Task.CompletedTask;
+                return Task.CompletedTask;
             })));
+    }
+
+    private static bool IsRelewiseController(ControllerActionDescriptor descriptor)
+    {
+        return descriptor.ControllerTypeInfo.Namespace?
+            .StartsWith("Relewise.Integrations.Umbraco.Controllers", StringComparison.InvariantCultureIgnoreCase) is true;
     }
 }
