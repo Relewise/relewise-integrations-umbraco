@@ -20,6 +20,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Artifacts", "Artifacts", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Umbraco", "samples\Umbraco\Umbraco.csproj", "{2B892876-F7E1-4601-3DCF-7AD90472E3C2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{D3E76538-840D-41FB-91D3-EF826412BE21}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integrations.Umbraco.Tests", "src\Integrations.Umbraco.Tests\Integrations.Umbraco.Tests.csproj", "{827DE46E-2EE0-443F-A74B-32E13FFB5F92}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,12 +38,17 @@ Global
 		{2B892876-F7E1-4601-3DCF-7AD90472E3C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2B892876-F7E1-4601-3DCF-7AD90472E3C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2B892876-F7E1-4601-3DCF-7AD90472E3C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{827DE46E-2EE0-443F-A74B-32E13FFB5F92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{827DE46E-2EE0-443F-A74B-32E13FFB5F92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{827DE46E-2EE0-443F-A74B-32E13FFB5F92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{827DE46E-2EE0-443F-A74B-32E13FFB5F92}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2B892876-F7E1-4601-3DCF-7AD90472E3C2} = {41BF626B-F972-4C22-93B6-44AA3F463D7D}
+		{827DE46E-2EE0-443F-A74B-32E13FFB5F92} = {D3E76538-840D-41FB-91D3-EF826412BE21}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2F867AD8-FFBD-46E8-A4F6-6F7367A71DD5}

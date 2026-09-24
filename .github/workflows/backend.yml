@@ -17,5 +17,5 @@ jobs:
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
 
-      - name: Build with dotnet
-        run: dotnet build src/Integrations.Umbraco/ --configuration Debug
+      - name: Test with dotnet
+        run: dotnet test Relewise.Integrations.Umbraco.sln --configuration Debug
