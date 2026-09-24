@@ -35,11 +35,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!--Version 17-18-->
-		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[17.0.0,19)" />
-		<PackageReference Include="Umbraco.Cms.Web.Website" Version="[17.0.0,19)" />
-		<PackageReference Include="Umbraco.Cms.Api.Common" Version="[17.0.0,19)" />
-		<PackageReference Include="Umbraco.Cms.Api.Management" Version="[17.0.0,19)" />
+		<!--Version 18-->
+		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[18.2.0,19)" />
+		<PackageReference Include="Umbraco.Cms.Web.Website" Version="[18.2.0,19)" />
+		<PackageReference Include="Umbraco.Cms.Api.Common" Version="[18.2.0,19)" />
+		<PackageReference Include="Umbraco.Cms.Api.Management" Version="[18.2.0,19)" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
