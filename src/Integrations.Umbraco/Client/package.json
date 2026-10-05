@@ -12,7 +12,7 @@
     "@hey-api/client-fetch": "^0.13.1",
     "@hey-api/openapi-ts": "0.99.0",
     "@umbraco-cms/backoffice": "^*",
-    "chalk": "6.0.0",
+    "chalk": "6.0.1",
     "cross-env": "^10.1.0",
     "node-fetch": "^3.3.2",
     "typescript": "^6.0.3",
