@@ -77,9 +77,9 @@ app.UseUmbraco()
     });
 ```
 
-## 14-day Free Trial
+## Book a Demo
 
-You can get access to a [14-day free trial of Relewise](https://www.relewise.com/free-trial) to get you started with Relewise.
+You can click here to [Book a Relewise demo](https://www.relewise.com/book-a-demo).
 
 ## Resources
 
