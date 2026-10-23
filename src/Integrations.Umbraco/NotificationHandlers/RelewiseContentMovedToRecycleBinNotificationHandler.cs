@@ -30,7 +30,7 @@ internal class RelewiseContentMovedToRecycleBinNotificationHandler : INotificati
 
         string[] ids = notification.MoveInfoCollection
             .Where(x => _configuration.CanMap(x.Entity))
-            .Select(x => x.Entity.Id.ToString())
+            .Select(x => _configuration.GetContentId(x.Entity))
             .ToArray();
 
         if (ids.Length == 0)

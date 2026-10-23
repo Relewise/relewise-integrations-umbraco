@@ -43,6 +43,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="Relewise.Integrations.Umbraco.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ClientAssetsInputs Include="Client\**" Exclude="$(DefaultItemExcludes)" />
 
 		<!-- Dont include the client folder as part of packaging nuget build -->

@@ -49,7 +49,7 @@ internal class ContentMapper : IContentMapper
             culturesToPublish.Add(GetDefaultCulture(umbracoContextReference));
         }
 
-        var contentUpdate = new ContentUpdate(new Content(content.PublishedContent.Id.ToString())
+        var contentUpdate = new ContentUpdate(new Content(_configuration.GetContentId(content.PublishedContent))
         {
             DisplayName = MapDisplayName(content.PublishedContent, culturesToPublish),
             CategoryPaths = GetCategoryPaths(content, culturesToPublish)
@@ -97,7 +97,7 @@ internal class ContentMapper : IContentMapper
         [
             new(content.PublishedContent
                 .Breadcrumbs(andSelf: false)
-                .Select(x => new CategoryNameAndId(x.Id.ToString(), MapDisplayName(x, culturesToPublish)))
+                .Select(x => new CategoryNameAndId(_configuration.GetContentId(x), MapDisplayName(x, culturesToPublish)))
                 .ToArray())
         ];
     }

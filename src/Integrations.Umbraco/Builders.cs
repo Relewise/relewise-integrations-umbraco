@@ -8,6 +8,12 @@ namespace Relewise.Integrations.Umbraco;
 /// </summary>
 public class RelewiseUmbracoOptionsBuilder
 {
+    /// <summary>
+    /// Use stable Umbraco content keys (GUIDs) as Relewise IDs. Defaults to false.
+    /// Applies to export, category paths, tracking, and publication lifecycle actions.
+    /// </summary>
+    public bool UseContentKeysAsIds { get; set; }
+
     internal Dictionary<string, ContentTypeBuilder?> ContentBuilders { get; } = new();
 
     /// <summary>
