@@ -1,0 +1,37 @@
+{
+  "installedDllSha256": "0C3799A7A1253E39D3FB5810C4D284157834D6A1CCC430C4346059024F142561",
+  "scenarios": [
+    {
+      "Scenario": "Fresh Dataset",
+      "Passed": true,
+      "Observed": "Authenticated ContentQuery returned HTTP 200 and zero contents before publishing."
+    },
+    {
+      "Scenario": "First publish",
+      "Passed": true,
+      "Observed": "Formatted HTML, heading, bold, italic, list, link, &amp; and Danish letters arrived exactly as published."
+    },
+    {
+      "Scenario": "draft-saved",
+      "Passed": true,
+      "Observed": "HTTP 200; One matching content record; Content enabled; Tiptap editor; HTML exactly matches published value; Previous published HTML retained"
+    },
+    {
+      "Scenario": "republished",
+      "Passed": true,
+      "Observed": "HTTP 200; One matching content record; Content enabled; Tiptap editor; HTML exactly matches published value; Expected text present"
+    },
+    {
+      "Scenario": "empty-published",
+      "Passed": true,
+      "Observed": "HTTP 200; One matching content record; Content enabled; Tiptap editor; HTML exactly matches published value; Previous text removed from empty field"
+    },
+    {
+      "Scenario": "restored-rich-text",
+      "Passed": true,
+      "Observed": "HTTP 200; One matching content record; Content enabled; Tiptap editor; HTML exactly matches published value; Expected text present"
+    }
+  ],
+  "package": "0.0.0-tiptap-smoke-d65ccb0",
+  "matchesBranchBuild": true
+}
