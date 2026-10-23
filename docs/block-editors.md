@@ -22,6 +22,7 @@ The current `AddRelewise` registration includes converters for:
 | Editor alias | Default behavior |
 | --- | --- |
 | `Umbraco.TextBox` | String |
+| `Umbraco.RichText` (Tiptap), `Umbraco.TinyMCE` | Published HTML string |
 | `Umbraco.TrueFalse` | Boolean |
 | `Umbraco.Integer` | Integer |
 | `Umbraco.Decimal` | Number |
@@ -31,7 +32,7 @@ The current `AddRelewise` registration includes converters for:
 
 Source: [default registrations](../src/Integrations.Umbraco/UmbracoBuilderExtensions.cs).
 
-The repository also includes public `TextAreaPropertyValueConverter`, `RichTextEditorPropertyValueConverter`, `MediaPickerValueConverter`, and `ImageCropperValueConverter` classes, but they are **not registered by default**. If their supported aliases and value types match your site, register the converters you need:
+The repository also includes public `TextAreaPropertyValueConverter`, `MediaPickerValueConverter`, and `ImageCropperValueConverter` classes, but they are **not registered by default**. If their supported aliases and value types match your site, register the converters you need:
 
 ```csharp
 using Relewise.Integrations.Umbraco;
@@ -40,7 +41,7 @@ using Relewise.Integrations.Umbraco.PropertyValueConverters;
 builder.Services.AddValueConverter<TextAreaPropertyValueConverter>();
 ```
 
-Do not infer support from a class name alone. For example, the included rich-text converter checks `Umbraco.TinyMCE` and does not implement general modern rich-text or embedded-block extraction. The complete example reads its chosen block fields itself and does not depend on that converter.
+The default rich-text converter supports the `Umbraco.RichText` editor alias used by Tiptap and the legacy `Umbraco.TinyMCE` alias. It exports the published `IHtmlEncodedString` as HTML under the property alias, respecting the property's culture. Embedded-block rendering is delegated to Umbraco's published-value converter; the integration does not traverse raw rich-text JSON or extract plain text. The complete example reads its chosen block fields itself and does not depend on this converter.
 
 There is **no default Block Grid converter** in these registrations. Block Grid and the older Grid Layout editor are also different editors; neither gains support merely because Block List is supported.
 
