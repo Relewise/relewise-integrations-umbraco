@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -20,10 +21,15 @@ public class RelewiseUmbracoConfiguration
     public RelewiseUmbracoConfiguration(IServiceProvider provider)
 #pragma warning restore 1591
     {
-        var options = new RelewiseUmbracoOptionsBuilder();
+        var options = new RelewiseUmbracoOptionsBuilder
+        {
+            UseContentKeysAsIds = provider.GetService<IConfiguration>()?.GetValue<bool>("Relewise:Umbraco:UseContentKeysAsIds") ?? false
+        };
 
         foreach (Configure configure in provider.GetServices<Configure>())
             configure(options, provider);
+
+        UseContentKeysAsIds = options.UseContentKeysAsIds;
 
         _trackableDocTypes = options.ContentBuilders.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -38,6 +44,32 @@ public class RelewiseUmbracoConfiguration
             .Where(x => x.Value is { Mapper: { } })
             .ToDictionary(x => x.Key, x => x.Value?.Mapper, StringComparer.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// Whether stable Umbraco content keys are used as Relewise IDs.
+    /// Read from Relewise:Umbraco:UseContentKeysAsIds, with registration callbacks taking precedence.
+    /// </summary>
+    public bool UseContentKeysAsIds { get; }
+
+    /// <summary>
+    /// Resolves the Relewise ID for published content, including references in custom mappers.
+    /// </summary>
+    public string GetContentId(IPublishedContent content)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        return GetContentId(content.Id, content.Key);
+    }
+
+    /// <summary>
+    /// Resolves the same Relewise ID for unpublished, recycled, or deleted content.
+    /// </summary>
+    public string GetContentId(IContent content)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        return GetContentId(content.Id, content.Key);
+    }
+
+    private string GetContentId(int id, Guid key) => UseContentKeysAsIds ? key.ToString("D") : id.ToString();
 
     /// <summary>
     /// Contains all contentType aliases that are being tracked

@@ -50,7 +50,7 @@ internal class RelewiseContentMiddleware
 
                         try
                         {
-                            await tracker.TrackAsync(new ContentView(user, content.Id.ToString()));
+                            await tracker.TrackAsync(new ContentView(user, _configuration.GetContentId(content)));
                         }
                         catch (HttpRequestException ex)
                         {
