@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Relewise.Integrations.Umbraco;
 
@@ -20,10 +21,7 @@ public static class ServiceCollectionExtensions
 
         var descriptor = new ServiceDescriptor(typeof(IRelewisePropertyValueConverter), typeof(T), ServiceLifetime.Singleton);
 
-        if (!services.Contains(descriptor))
-        {
-            services.Add(descriptor);
-        }
+        services.TryAddEnumerable(descriptor);
 
         return services;
     }

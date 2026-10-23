@@ -55,6 +55,7 @@ public static class UmbracoBuilderExtensions
 
         builder.Services
             .AddValueConverter<TextFieldPropertyValueConverter>()
+            .AddValueConverter<RichTextEditorPropertyValueConverter>()
             .AddValueConverter<CheckboxPropertyValueConverter>()
             .AddValueConverter<IntegerPropertyValueConverter>()
             .AddValueConverter<DecimalPropertyValueConverter>()

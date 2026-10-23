@@ -5,20 +5,20 @@ using Umbraco.Cms.Core.Strings;
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
 /// <summary>
-/// Handles extracting property values for 'Umbraco.TinyMCE'
+/// Handles extracting published HTML for 'Umbraco.RichText' (Tiptap) and 'Umbraco.TinyMCE'.
 /// </summary>
 public class RichTextEditorPropertyValueConverter : IRelewisePropertyValueConverter
 {
     /// <inheritdoc />
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
-        return context.Property.PropertyType.EditorAlias.Equals("Umbraco.TinyMCE");
+        return context.Property.PropertyType.EditorAlias is "Umbraco.RichText" or "Umbraco.TinyMCE";
     }
 
     /// <inheritdoc />
     public void Convert(RelewisePropertyConverterContext context)
     {
-        HtmlEncodedString? value = context.Property.GetValue<HtmlEncodedString>(context.Culture);
-        context.Add(context.Property.Alias, new DataValue(value?.ToString()));
+        IHtmlEncodedString? value = context.Property.GetValue<IHtmlEncodedString>(context.Culture);
+        context.Add(context.Property.Alias, new DataValue(value?.ToHtmlString()));
     }
 }
