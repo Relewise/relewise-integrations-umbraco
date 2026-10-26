@@ -6,6 +6,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     strategy:
       fail-fast: true
       matrix:
@@ -34,7 +37,13 @@ jobs:
       run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
     - name: Pack
       run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
+    - name: Log in to NuGet.org
+      uses: NuGet/login@v1
+      id: nuget-login
+      with:
+        user: bhk.relewise
+
     - name: Push
       run: dotnet nuget push Relewise.Integrations.Umbraco.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_TOKEN}
       env:
-        NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
+        NUGET_TOKEN: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
