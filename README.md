@@ -2,6 +2,10 @@
 
 ## Documentation
 
+Version 19 targets **Umbraco 19 / .NET 11** exclusively. See the
+[upgrade and core search provider guide](docs/umbraco-19-search.md) for setup,
+supported query features, and validation.
+
 Start with [the documentation overview](docs/README.md) to choose between automatic mapping, a custom content mapper, and a property converter.
 
 - [Custom content mapping](docs/custom-content-mapping.md): the mapping pipeline, `UseMapper(...)`, registration, field ownership, and cultures.

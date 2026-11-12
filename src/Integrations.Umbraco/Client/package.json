@@ -6,16 +6,20 @@
   "scripts": {
     "watch": "tsc && vite build --watch",
     "build": "tsc && vite build",
-    "generate-client": "node scripts/generate-openapi.js https://localhost:44381/umbraco/swagger/relewisedashboard/swagger.json"
+    "generate-client": "node scripts/generate-openapi.js https://localhost:44381/umbraco/openapi/relewisedashboard.json"
+  },
+  "engines": {
+    "node": ">=24.13",
+    "npm": ">=11"
   },
   "devDependencies": {
     "@hey-api/client-fetch": "^0.13.1",
     "@hey-api/openapi-ts": "0.99.0",
-    "@umbraco-cms/backoffice": "^*",
+    "@umbraco-cms/backoffice": "^19.0.0-rc1",
     "chalk": "6.0.1",
     "cross-env": "^10.1.0",
     "node-fetch": "^3.3.2",
     "typescript": "^6.0.3",
-    "vite": "^7.3.6"
+    "vite": "^7.3.8"
   }
 }

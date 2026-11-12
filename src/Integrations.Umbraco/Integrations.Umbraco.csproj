@@ -1,7 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net10.0</TargetFrameworks>
+		<TargetFrameworks>net11.0</TargetFrameworks>
+		<Version>19.0.0-rc1</Version>
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<WarningsAsErrors>true</WarningsAsErrors>
@@ -11,7 +12,7 @@
 		<Title>Relewise integration for Umbraco</Title>
 		<Description>An extension for Umbraco CMS allowing easy content export to Relewise</Description>
 		<PackageIcon>logo.png</PackageIcon>
-		<PackageTags>Relewise;Umbraco;Umbraco-v9;Umbraco-v10;Umbraco-v11;Umbraco-v12;Umbraco-v13;Umbraco-v15;Umbraco-v16;Umbraco-v17;Umbraco-v18;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace;Shoppertainment;retail-media;display-ads</PackageTags>
+		<PackageTags>Relewise;Umbraco;Umbraco-v19;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace;Shoppertainment;retail-media;display-ads</PackageTags>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -30,16 +31,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Relewise.Client" Version="[1.96.0, 2)" />
+		<PackageReference Include="Relewise.Client" Version="[1.326.0, 2)" />
 		<PackageReference Include="Relewise.Client.Extensions" Version="[1.4.1, 2)" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<!--Version 18-->
-		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[18.2.0,19)" />
-		<PackageReference Include="Umbraco.Cms.Web.Website" Version="[18.2.0,19)" />
-		<PackageReference Include="Umbraco.Cms.Api.Common" Version="[18.2.0,19)" />
-		<PackageReference Include="Umbraco.Cms.Api.Management" Version="[18.2.0,19)" />
+		<!-- Umbraco 19 only: core search and cookie authentication require v19. -->
+		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[19.0.0-rc1,20)" />
+		<PackageReference Include="Umbraco.Cms.Web.Website" Version="[19.0.0-rc1,20)" />
+		<PackageReference Include="Umbraco.Cms.Api.Common" Version="[19.0.0-rc1,20)" />
+		<PackageReference Include="Umbraco.Cms.Api.Management" Version="[19.0.0-rc1,20)" />
 	</ItemGroup>
 
 	<ItemGroup>

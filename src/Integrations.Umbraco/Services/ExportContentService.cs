@@ -10,6 +10,7 @@ using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
 using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
+using Relewise.Integrations.Umbraco.Search;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.PublishedCache;
@@ -113,7 +114,9 @@ internal class ExportContentService : IExportContentService
             await tracker.TrackAsync(new ContentAdministrativeAction(
                 Language.Undefined,
                 Currency.Undefined,
-                new FilterCollection(new ContentDataFilter(Constants.VersionKey, new EqualsCondition(version, negated: true), filterOutIfKeyIsNotFound: false)),
+                new FilterCollection(
+                    new ContentDataFilter(Constants.VersionKey, new EqualsCondition(version, negated: true), filterOutIfKeyIsNotFound: false),
+                    new ContentDataFilter(RelewiseSearchProvider.OwnerKey, new HasValueCondition(negated: true), filterOutIfKeyIsNotFound: false)),
                 exportAllContent.PermanentlyDelete ? ContentAdministrativeAction.UpdateKind.Delete : ContentAdministrativeAction.UpdateKind.Disable), 
                 token);
         }

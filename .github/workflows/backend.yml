@@ -8,9 +8,13 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        dotnet-version: ["10.0.x"]
+        dotnet-version: ["11.0.x"]
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
 
       - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
         uses: actions/setup-dotnet@v6

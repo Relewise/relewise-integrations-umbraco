@@ -14,7 +14,7 @@ Use this integration to export published Umbraco pages to Relewise and track con
 
 ## Version scope
 
-These guides describe the public APIs and implementation in this repository. The complete example targets .NET 10, Relewise.Integrations.Umbraco 17.0.0, and Umbraco 17.6.2. The repository's current source accepts Umbraco 17–18, but that does not mean every historical integration release or editor uses the same value types. Check the dependencies of your installed package and the documentation on its corresponding branch or tag before copying examples into older projects.
+These guides describe the public APIs and implementation in this repository. The current source and complete example target .NET 11 and Umbraco 19.0.0-rc1 exclusively. For older Umbraco versions, use an earlier integration major and the documentation on its corresponding branch or tag. See [Umbraco 19 and core search](umbraco-19-search.md) for the new provider, upgrade requirements, and testing.
 
 “Grid” in these guides means **Block Grid**, unless explicitly described as the legacy Grid Layout editor. They have different data models.
 

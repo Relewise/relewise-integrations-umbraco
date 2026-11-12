@@ -1,0 +1,7 @@
+simulation: umbraco19
+routing: path
+mocks:
+  - name: relewise-core-search-smoke
+    routeKey: relewise
+    origin: relewise-smoke.invalid
+    path: postman/mocks/relewise

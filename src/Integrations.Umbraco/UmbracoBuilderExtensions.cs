@@ -5,8 +5,12 @@ using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Integrations.Umbraco.Services;
+using Relewise.Integrations.Umbraco.Search;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Notifications;
+using Umbraco.Cms.Core.Search.Configuration;
+using Umbraco.Cms.Core.Search.Indexing;
+using Umbraco.Cms.Core.Models;
 
 namespace Relewise.Integrations.Umbraco;
 
@@ -15,6 +19,40 @@ namespace Relewise.Integrations.Umbraco;
 /// </summary>
 public static class UmbracoBuilderExtensions
 {
+    /// <summary>Uses Relewise for selected Umbraco core search indexes. Call alongside AddRelewise.</summary>
+    /// <param name="builder">The Umbraco builder.</param>
+    /// <param name="configure">Required site/environment scope and optional client, language and indexes.</param>
+    public static IUmbracoBuilder AddRelewiseSearchProvider(this IUmbracoBuilder builder, Action<RelewiseSearchOptions> configure)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(configure);
+        builder.Services.AddOptions<RelewiseSearchOptions>().Configure(configure)
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Scope), "A unique Relewise search Scope is required.")
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Language), "A Relewise search Language is required.");
+        builder.Services.TryAddTransient<RelewiseSearchProvider>();
+        builder.Services.AddOptions<IndexOptions>().PostConfigure<Microsoft.Extensions.Options.IOptions<RelewiseSearchOptions>>((indexes, searchOptions) =>
+        {
+            foreach (string alias in searchOptions.Value.IndexAliases)
+            {
+                if (alias == global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent)
+                    indexes.RegisterContentIndex<RelewiseSearchProvider, RelewiseSearchProvider, IPublishedContentChangeStrategy>(alias, UmbracoObjectTypes.Document);
+                else
+                {
+                    UmbracoObjectTypes objectType = alias switch
+                    {
+                        global::Umbraco.Cms.Core.Constants.Search.IndexAliases.DraftContent => UmbracoObjectTypes.Document,
+                        global::Umbraco.Cms.Core.Constants.Search.IndexAliases.DraftMedia => UmbracoObjectTypes.Media,
+                        global::Umbraco.Cms.Core.Constants.Search.IndexAliases.DraftMembers => UmbracoObjectTypes.Member,
+                        global::Umbraco.Cms.Core.Constants.Search.IndexAliases.DraftElements => UmbracoObjectTypes.Element,
+                        _ => throw new ArgumentException($"Unknown core search index '{alias}'.", nameof(configure))
+                    };
+                    indexes.RegisterContentIndex<RelewiseSearchProvider, RelewiseSearchProvider, IDraftContentChangeStrategy>(alias, objectType);
+                }
+            }
+        });
+        return builder;
+    }
+
     /// <summary>
     /// Registers services and configures <see cref="RelewiseUmbracoOptionsBuilder"/>.
     /// </summary>

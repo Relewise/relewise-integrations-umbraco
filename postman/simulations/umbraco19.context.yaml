@@ -1,0 +1,22 @@
+purpose: Exercise Umbraco 19 with the packed integration and real Relewise C# SDK over HTTP, without production writes.
+assumptions:
+  - id: wire-models
+    status: supported
+    claim: The fixture uses ContentSearchRequest, ContentSearchResponse, ContentUpdate and ContentAdministrativeAction shapes.
+    source: Relewise Developer MCP and Relewise.Client 1.326.0 type inspection.
+  - id: relevance
+    status: unknown
+    claim: This simulation does not establish live relevance, NLP, latency, indexing consistency or Dataset configuration.
+    reason: The local fixture uses literal text matching and is not a search engine implementation.
+  - id: live-validation
+    status: supported
+    claim: A separate live test host passed protection, cultures, segments, ranges, sorting, facets, pagination and scoped-reset checks against the dedicated BHK - Umbraco v19 Dataset.
+    source: tests/Umbraco19.Smoke/LiveSearchChecks.cs
+  - id: local-state
+    status: supported
+    claim: The fixture uses process-local single-session state, reset when the simulation stops.
+    reason: pm.state failed on this Windows runtime with an OpenSSL entropy error.
+  - id: owning-mock
+    status: unknown
+    claim: An owning-team published mock was not checked.
+    reason: Postman CLI is not signed in; the fixture is local only.

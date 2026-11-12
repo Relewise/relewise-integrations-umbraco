@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <CompressionEnabled>false</CompressionEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Intentionally consume the packed artifact, not a ProjectReference. -->
+    <PackageReference Include="Relewise.Integrations.Umbraco" Version="19.0.0-rc1" />
+    <PackageReference Include="Umbraco.Cms" Version="19.0.0-rc1" />
+  </ItemGroup>
+</Project>

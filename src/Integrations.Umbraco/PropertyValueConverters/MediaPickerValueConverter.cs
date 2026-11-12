@@ -3,26 +3,25 @@ using System.Collections.Generic;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 using Umbraco.Cms.Core.Models.PublishedContent;
-using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
 /// <summary>
-/// Handles extracting property values for 'Umbraco.MediaPicker3'
+/// Extracts media URLs from Umbraco 19's single and multiple media pickers.
 /// </summary>
 public class MediaPickerValueConverter : IRelewisePropertyValueConverter
 {
     /// <inheritdoc />
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
-        return context.Property.PropertyType.EditorAlias.Equals("Umbraco.MediaPicker3");
+        return context.Property.PropertyType.EditorAlias is "Umbraco.MediaPicker3" or "Umbraco.MediaPicker.Single" or "Umbraco.MultipleMediaPicker";
     }
 
     /// <inheritdoc />
     public void Convert(RelewisePropertyConverterContext context)
     {
-        bool isMultiple = context.Property.PropertyType.DataType.ConfigurationAs<MediaPicker3Configuration>()?.Multiple ?? false;
+        bool isMultiple = context.Property.PropertyType.EditorAlias != "Umbraco.MediaPicker.Single";
 
         if (isMultiple)
         {
