@@ -214,7 +214,7 @@ public sealed class RelewiseSearchProvider : global::Umbraco.Cms.Core.Search.IIn
     {
         EnsureIndex(alias);
         var request = new ContentSearchRequest(new Language(_options.Language), Currency.Undefined, User.Anonymous(),
-            "Umbraco core search", query, skip, take)
+            "Umbraco core search", string.IsNullOrWhiteSpace(query) ? null : query, skip, take)
         {
             Filters = new FilterCollection(),
             Facets = new Relewise.Client.DataTypes.Search.Facets.Queries.ContentFacetQuery(),

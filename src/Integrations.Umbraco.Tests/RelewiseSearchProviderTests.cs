@@ -208,6 +208,15 @@ public class RelewiseSearchProviderTests
 
     private sealed record UnknownFilter() : UFilter("unknown", false);
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void BlankQueriesUseTermlessSearch(string? term)
+    {
+        Assert.Null(Provider().QueryRequest(Index, term, [], null, null, null, 0, 10).Term);
+    }
+
     private static Dictionary<string, DataValue?> BaseData() => new()
     {
         [RelewiseSearchProvider.OwnerKey] = "test-site", [RelewiseSearchProvider.IndexKey] = Index,
