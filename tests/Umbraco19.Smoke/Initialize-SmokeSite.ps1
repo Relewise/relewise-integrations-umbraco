@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 if (Test-Path -LiteralPath $Directory) { throw 'Choose a new directory to preserve any existing site/database.' }
 New-Item -ItemType Directory -Path $Directory | Out-Null
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Program.cs'), (Join-Path $PSScriptRoot 'LiveSearchChecks.cs'), (Join-Path $PSScriptRoot 'Umbraco19.Smoke.csproj') -Destination $Directory
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Program.cs'), (Join-Path $PSScriptRoot 'LiveSearchChecks.cs'), (Join-Path $PSScriptRoot 'VisitorSmoke.cs'), (Join-Path $PSScriptRoot 'Umbraco19.Smoke.csproj') -Destination $Directory
 $project = Join-Path $Directory 'Umbraco19.Smoke.csproj'
 $xml = [xml](Get-Content -LiteralPath $project -Raw)
 ($xml.Project.ItemGroup.PackageReference | Where-Object Include -eq 'Relewise.Integrations.Umbraco').Version = $PackageVersion

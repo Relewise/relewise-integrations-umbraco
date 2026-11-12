@@ -142,6 +142,19 @@ protection, cultures, segments, ranges, sorting, facets, paging and scoped clean
 Use a dedicated disposable Dataset: the verification performs real writes/deletes.
 Revoke its temporary credential when testing is complete.
 
+For a browser lifecycle smoke test, call `/smoke/setup-body` after `/smoke/seed`
+to add a Textarea property to the fixture's document type. Create and edit another
+Smoke page through `/umbraco`, then use `/smoke/search` as an anonymous visitor.
+The form queries the configured published-content searcher and links results to
+`/smoke/page/{key}`, which renders the published cache. The search page displays the
+raw remote match count and every returned ID, including stale IDs whose content
+is no longer published, so cache filtering cannot hide an indexing failure.
+Verify draft exclusion, publication, body search, unpublished edits, republication,
+unpublication, recycle-bin deletion and a native published-index rebuild. Wait for
+remote indexing between checks; a manual Relewise Search Index refresh may shorten
+the dedicated Dataset's refresh delay without manually invoking the provider.
+See [the recorded browser run](validation/umbraco-19-browser-smoke.md).
+
 The optional Postman simulation in `postman/simulations/umbraco19.sim.yaml` checks
 SDK HTTP wiring against a local fixture, using `Smoke:UseJson=true` and a dummy key.
 It is not evidence for live ranking or backend indexing behavior. Its context file

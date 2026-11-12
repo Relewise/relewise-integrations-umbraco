@@ -52,6 +52,17 @@ app.MapPost("/smoke/seed", async (IContentTypeService types, IContentService con
     var result = content.Publish(page, ["*"]);
     return Results.Ok(new { page.Key, Published = result.Success });
 });
+app.MapPost("/smoke/setup-body", async (IContentTypeService types, IDataTypeService dataTypes, IShortStringHelper strings) =>
+{
+    var type = types.Get("smokePage") ?? throw new InvalidOperationException("Run /smoke/seed first.");
+    if (!type.PropertyTypes.Any(property => property.Alias == "bodyText"))
+    {
+        var dataType = (await dataTypes.GetAllAsync()).First(item => item.Name == "Textarea");
+        type.AddPropertyType(new PropertyType(strings, dataType, "bodyText") { Name = "Body text" });
+        await types.UpdateAsync(type, Constants.Security.SuperUserKey);
+    }
+    return Results.Ok();
+});
 app.MapPost("/smoke/provider", async (IIndexerResolver indexers, ISearcherResolver searchers) =>
 {
     string alias = Constants.Search.IndexAliases.PublishedContent;
@@ -76,4 +87,5 @@ app.MapGet("/smoke/version", () => Results.Ok(new
 }));
 app.MapPost("/smoke/verify", (Relewise.Integrations.Umbraco.Search.RelewiseSearchProvider provider,
     Relewise.Client.Extensions.IRelewiseClientFactory clients) => LiveSearchChecks.Run(provider, clients));
+app.MapVisitorSmoke();
 await app.RunAsync();
