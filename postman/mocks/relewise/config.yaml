@@ -1,0 +1,7 @@
+version: 1
+name: relewise-core-search-smoke
+origin: relewise-smoke.invalid
+interceptRequests: true
+scenarios:
+  - name: default
+    path: default.js

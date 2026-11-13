@@ -20,7 +20,8 @@ public static class UmbracoApplicationBuilderContextExtensions
     {
         if (builder == null) throw new ArgumentNullException(nameof(builder));
 
-        if (builder.ApplicationServices.GetService<IRelewiseUserLocator>() == null)
+        // Check the registration without resolving a request-scoped locator at startup.
+        if (builder.ApplicationServices.GetService<IServiceProviderIsService>()?.IsService(typeof(IRelewiseUserLocator)) is false)
             throw new InvalidOperationException($"Could not find {nameof(IRelewiseUserLocator)} registered in the DI. Did you remember to add it to the servicecollection? It is required to automatically track page views.");
 
         builder.AppBuilder.UseMiddleware<RelewiseContentMiddleware>();

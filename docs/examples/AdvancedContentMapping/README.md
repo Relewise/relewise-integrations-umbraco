@@ -12,13 +12,13 @@ This is a compileable library example, not a running Umbraco site. It shows a re
 
 ## Build
 
-From the repository root, with the .NET 10 SDK installed:
+From the repository root, with the .NET 11 SDK installed:
 
 ```sh
 dotnet build docs/examples/AdvancedContentMapping/AdvancedContentMapping.csproj
 ```
 
-The example pins Relewise.Integrations.Umbraco 17.0.0 and Umbraco 17.6.2. It references the released package instead of rebuilding this repository's dashboard frontend. Building does not require API credentials, an Umbraco database, or a dataset. It does not validate live export behavior.
+The example references this repository's integration project and Umbraco 19.0.0-rc1. Building also builds the dashboard frontend, which requires Node 24.13+ and npm 11+. It does not require API credentials, an Umbraco database, or a Dataset, and does not validate live export behavior.
 
 For another supported release, use package versions compatible with your host application and rebuild. HtmlAgilityPack is an explicit **example dependency** for HTML text extraction; it is not a new dependency added to the integration package itself.
 

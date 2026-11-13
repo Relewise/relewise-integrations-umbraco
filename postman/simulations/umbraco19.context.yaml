@@ -1,0 +1,18 @@
+purpose: Exercise Umbraco 19 with the packed integration and real Relewise C# SDK over HTTP, without production writes.
+assumptions:
+  - id: wire-models
+    status: supported
+    claim: The fixture uses ContentSearchRequest, ContentSearchResponse, ContentUpdate and ContentAdministrativeAction shapes.
+    source: Relewise Developer MCP and Relewise.Client 1.326.0 type inspection.
+  - id: relevance
+    status: unknown
+    claim: This simulation does not establish live relevance, NLP, latency, indexing consistency or Dataset configuration.
+    reason: The local fixture uses literal text matching and is not a search engine implementation.
+  - id: local-state
+    status: supported
+    claim: The fixture uses process-local single-session state, reset when the simulation stops.
+    reason: State is intentionally isolated to the local fixture process rather than shared across test runs.
+  - id: owning-mock
+    status: unknown
+    claim: This local SDK-wiring fixture is not an owning-team backend contract.
+    reason: Use the live provider checks to validate backend semantics; this fixture only checks supported request/response shapes.

@@ -17,13 +17,11 @@ internal class RelewiseContentMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly RelewiseUmbracoConfiguration _configuration;
-    private readonly IRelewiseUserLocator _userLocator;
 
-    public RelewiseContentMiddleware(RequestDelegate next, RelewiseUmbracoConfiguration configuration, IRelewiseUserLocator userLocator)
+    public RelewiseContentMiddleware(RequestDelegate next, RelewiseUmbracoConfiguration configuration)
     {
         _next = next;
         _configuration = configuration;
-        _userLocator = userLocator;
 
         IsEnabled = true;
     }
@@ -46,7 +44,7 @@ internal class RelewiseContentMiddleware
 
                     if (tracker != null)
                     {
-                        User user = await _userLocator.GetUser();
+                        User user = await context.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser();
 
                         try
                         {

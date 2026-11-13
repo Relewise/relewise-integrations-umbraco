@@ -9,14 +9,25 @@ builder.Configuration
 
 builder.Services.AddRelewise(options => options.ReadFromConfiguration(builder.Configuration));
 
-builder.CreateUmbracoBuilder()
+var umbracoBuilder = builder.CreateUmbracoBuilder()
     .AddBackOffice()
     .AddWebsite()
     .AddComposers()
     .AddRelewise(options => options
         .AddContentType("homePage", contentType => contentType.AutoMap())
-        .AddContentType("contentPage", contentType => contentType.AutoMap()))
-    .Build();
+        .AddContentType("contentPage", contentType => contentType.AutoMap()));
+
+if (builder.Configuration.GetValue<bool>("Relewise:Umbraco:Search:Enabled"))
+{
+    umbracoBuilder.AddRelewiseSearchProvider(options =>
+    {
+        options.Scope = builder.Configuration["Relewise:Umbraco:Search:Scope"]
+            ?? throw new InvalidOperationException("Configure Relewise:Umbraco:Search:Scope when enabling core search.");
+        options.Language = builder.Configuration["Relewise:Umbraco:Search:Language"] ?? "en";
+    });
+}
+
+umbracoBuilder.Build();
 
 WebApplication app = builder.Build();
 
