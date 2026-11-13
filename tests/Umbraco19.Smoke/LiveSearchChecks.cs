@@ -49,6 +49,9 @@ internal static class LiveSearchChecks
         Check(ready.Total == 2 && readyMetadata.DocumentCount == 5, "Text and termless views have indexed all variations", checks);
         var anonymous = await provider.SearchAsync(index, "Providercheck");
         Check(anonymous.Total == 1 && anonymous.Documents.Single().Id == publicKey, "Anonymous protection", checks);
+        var emptyPrincipal = await provider.SearchAsync(index, "Providercheck", accessContext: new AccessContext(Guid.Empty, [groupKey]));
+        Check(emptyPrincipal.Total == 1 && emptyPrincipal.Documents.Single().Id == publicKey,
+            "Empty principal cannot use group permissions", checks);
         var member = await provider.SearchAsync(index, "Providercheck", accessContext: new AccessContext(Guid.NewGuid(), [groupKey]));
         Check(member.Total == 2, "Member group access", checks);
         var english = await provider.SearchAsync(index, "English", culture: "en");

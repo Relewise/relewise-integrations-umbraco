@@ -82,6 +82,23 @@ public class RelewiseSearchProviderTests
     }
 
     [Fact]
+    public void EmptyPrincipalCannotUseGroupPermissionsButExplicitBypassStillWorks()
+    {
+        Guid group = Guid.NewGuid();
+        var provider = Provider();
+        var data = BaseData();
+        data[RelewiseSearchProvider.ProtectedKey] = true;
+        data[RelewiseSearchProvider.AccessKey] = new DataValue(new[] { group.ToString("D") });
+
+        Assert.False(Matches(provider.QueryRequest(Index, null, [], null, null, new AccessContext(Guid.Empty, [group]), 0, 10).Filters!, data));
+        Assert.False(Matches(provider.QueryRequest(Index, null, [], null, null, new AccessContext(Guid.NewGuid(), []), 0, 10).Filters!, data));
+        Assert.True(Matches(provider.QueryRequest(Index, null, [], null, null, new AccessContext(Guid.NewGuid(), [group]), 0, 10).Filters!, data));
+        Assert.True(Matches(provider.QueryRequest(Index, null, [], null, null, AccessContext.BypassProtection(), 0, 10).Filters!, data));
+        data[RelewiseSearchProvider.ProtectedKey] = false;
+        Assert.True(Matches(provider.QueryRequest(Index, null, [], null, null, new AccessContext(Guid.Empty, [group]), 0, 10).Filters!, data));
+    }
+
+    [Fact]
     public void SegmentSelectionAvoidsReturningBothDefaultAndOverride()
     {
         var provider = Provider();

@@ -26,6 +26,7 @@ public static class UmbracoBuilderExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(configure);
+        builder.Services.AddHttpContextAccessor();
         builder.Services.AddOptions<RelewiseSearchOptions>().Configure(configure)
             .Validate(options => !string.IsNullOrWhiteSpace(options.Scope), "A unique Relewise search Scope is required.")
             .Validate(options => !string.IsNullOrWhiteSpace(options.Language), "A Relewise search Language is required.");

@@ -7,6 +7,7 @@ Use this integration to export published Umbraco pages to Relewise and track con
 | I want to… | Read |
 | --- | --- |
 | Choose numeric IDs or stable content keys across environments | [Content IDs across environments](../README.md#content-ids-across-environments) |
+| Use Relewise through Umbraco's core search API | [Umbraco 19 and core search](umbraco-19-search.md) |
 | Understand automatic mapping and choose an extension point | [Custom content mapping](custom-content-mapping.md) |
 | Export readable text from Block List, Block Grid, or nested blocks | [Mapping block editors](block-editors.md) |
 | Copy and build a complete mapper | [Advanced content mapping example](examples/AdvancedContentMapping/README.md) |
@@ -14,7 +15,7 @@ Use this integration to export published Umbraco pages to Relewise and track con
 
 ## Version scope
 
-These guides describe the public APIs and implementation in this repository. The current source and complete example target .NET 11 and Umbraco 19.0.0-rc1 exclusively. For older Umbraco versions, use an earlier integration major and the documentation on its corresponding branch or tag. See [Umbraco 19 and core search](umbraco-19-search.md) for the new provider, upgrade requirements, and testing.
+These guides describe the public APIs and implementation in this repository. The current source and complete example target .NET 11 and Umbraco 19.0.0-rc1 exclusively. For older Umbraco versions, use an earlier integration major and the documentation on its corresponding branch or tag. See [Umbraco 19 and core search](umbraco-19-search.md) for the new provider and upgrade requirements.
 
 “Grid” in these guides means **Block Grid**, unless explicitly described as the legacy Grid Layout editor. They have different data models.
 

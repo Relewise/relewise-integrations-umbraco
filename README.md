@@ -1,10 +1,10 @@
-# Relewise.Integrations.Umbraco [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![NuGet version](https://img.shields.io/nuget/v/Relewise.Integrations.Umbraco)](https://www.nuget.org/packages/Relewise.Integrations.Umbraco) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://https://github.com/Relewise/relewise-sdk-csharp-extensions/pulls)
+# Relewise.Integrations.Umbraco [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![NuGet version](https://img.shields.io/nuget/v/Relewise.Integrations.Umbraco)](https://www.nuget.org/packages/Relewise.Integrations.Umbraco) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Relewise/relewise-integrations-umbraco/pulls)
 
 ## Documentation
 
 Version 19 targets **Umbraco 19 / .NET 11** exclusively. See the
 [upgrade and core search provider guide](docs/umbraco-19-search.md) for setup,
-supported query features, and validation.
+supported query features, and behavioral user identity.
 
 Start with [the documentation overview](docs/README.md) to choose between automatic mapping, a custom content mapper, and a property converter.
 
@@ -12,6 +12,7 @@ Start with [the documentation overview](docs/README.md) to choose between automa
 - [Block List, Block Grid, and nested content](docs/block-editors.md): default support, traversal, rich text, visibility, and referenced content.
 - [Complete mapper example](docs/examples/AdvancedContentMapping/README.md): buildable C# code you can adapt to your content model.
 - [Validation and troubleshooting](docs/validation-and-troubleshooting.md): export checks, missing fields, duplicate keys, and stale data.
+- [Umbraco core search provider](docs/umbraco-19-search.md): registration, queries, access control, and supported features.
 
 
 ### Installing Relewise.Integrations.Umbraco 
@@ -75,11 +76,25 @@ app.UseUmbraco()
     })
     .WithEndpoints(u =>
     {
-        u.UseInstallerEndpoints();
         u.UseBackOfficeEndpoints();
         u.UseWebsiteEndpoints();
     });
 ```
+
+### Behavioral user identity
+
+The default `IRelewiseUserLocator` returns `User.Anonymous()`. To identify visitors,
+register your own locator before building Umbraco:
+
+```csharp
+builder.Services.AddScoped<IRelewiseUserLocator, MyUserLocator>();
+```
+
+`MyUserLocator` is your implementation of `GetUser()`. Return the same temporary and
+authenticated IDs used by your other Relewise behavioral tracking, according to your
+site's consent policy. Automatic content views and the core search provider both
+use this locator from the current request's services. See [search user identity and
+access control](docs/umbraco-19-search.md#user-identity-and-behavioral-tracking).
 
 ## Content IDs across environments
 

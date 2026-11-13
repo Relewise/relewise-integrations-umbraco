@@ -2,8 +2,7 @@
 // This checks routing and serialization; it does not model Relewise relevance or NLP.
 const http = require('http');
 const stateKey = 'relewise-smoke-documents';
-// A single-session local fixture. pm.state on this Windows runtime fails with an
-// OpenSSL entropy error; process-local state also resets when the simulation stops.
+// A single-session fixture; process-local state resets when the simulation stops.
 const localState = new Map();
 const value = data => data?.Value ?? data?.value;
 const property = (object, key) => object?.[key] ?? object?.[key[0].toLowerCase() + key.slice(1)];
@@ -59,6 +58,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'GET' && req.url === '/smoke/state') { res.end(JSON.stringify(documents)); return; }
     if (req.method !== 'POST') { res.statusCode = 501; res.end('{}'); return; }
     localState.set('relewise-smoke-last', { path: req.url, body });
+    if (/\/v1\/TrackContentViewRequest$/.test(req.url)) { res.end('{}'); return; }
     if (/\/v1\/(BatchedTrackingRequest|TrackContentUpdateRequest|TrackContentAdministrativeActionRequest)$/.test(req.url)) {
       for (const item of property(body, 'Items') || [property(body, 'AdministrativeAction') || property(body, 'ContentUpdate')]) {
         if (kind(item) === 'ContentUpdate') {

@@ -12,6 +12,7 @@ using Umbraco.Cms.Core.Strings;
 var builder = WebApplication.CreateBuilder(args);
 if (!builder.Environment.IsDevelopment()) throw new InvalidOperationException("This test host requires the Development environment.");
 builder.WebHost.UseUrls("http://127.0.0.1:5519");
+builder.Host.UseDefaultServiceProvider(options => { options.ValidateScopes = true; options.ValidateOnBuild = true; });
 builder.Configuration.AddJsonFile("local.settings.json", optional: false);
 builder.Services.AddRelewise(options => options.ReadFromConfiguration(builder.Configuration));
 builder.CreateUmbracoBuilder().AddBackOffice().AddWebsite().AddDeliveryApi().AddComposers()
@@ -34,9 +35,12 @@ if (builder.Configuration.GetValue<bool>("Smoke:UseJson"))
             ((Relewise.Client.ClientBase)client).UseJsonCompression = false;
         }
     }
+    var viewTracker = (Relewise.Client.ClientBase)app.Services.GetRequiredService<Relewise.Client.ITracker>();
+    viewTracker.UseFastBinarySerializer = false;
+    viewTracker.UseJsonCompression = false;
 }
 await app.BootUmbracoAsync();
-app.UseUmbraco().WithMiddleware(u => { u.UseBackOffice(); u.UseWebsite(); })
+app.UseUmbraco().WithMiddleware(u => { u.UseBackOffice(); u.UseWebsite(); u.TrackContentViews(); })
     .WithEndpoints(u => { u.UseBackOfficeEndpoints(); u.UseWebsiteEndpoints(); });
 
 app.MapPost("/smoke/seed", async (IContentTypeService types, IContentService content, IShortStringHelper strings) =>
@@ -52,14 +56,33 @@ app.MapPost("/smoke/seed", async (IContentTypeService types, IContentService con
     var result = content.Publish(page, ["*"]);
     return Results.Ok(new { page.Key, Published = result.Success });
 });
-app.MapPost("/smoke/setup-body", async (IContentTypeService types, IDataTypeService dataTypes, IShortStringHelper strings) =>
+app.MapPost("/smoke/setup-body", async (IContentTypeService types, IDataTypeService dataTypes,
+    ITemplateService templates, IContentService content, IShortStringHelper strings) =>
 {
     var type = types.Get("smokePage") ?? throw new InvalidOperationException("Run /smoke/seed first.");
     if (!type.PropertyTypes.Any(property => property.Alias == "bodyText"))
     {
         var dataType = (await dataTypes.GetAllAsync()).First(item => item.Name == "Textarea");
         type.AddPropertyType(new PropertyType(strings, dataType, "bodyText") { Name = "Body text" });
-        await types.UpdateAsync(type, Constants.Security.SuperUserKey);
+    }
+    var template = await templates.GetAsync("smokePage");
+    if (template is null)
+    {
+        template = new Template(strings, "Smoke page", "smokePage")
+        {
+            Content = "@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage\n@using Umbraco.Extensions\n<!doctype html><html lang=\"en\"><head><title>@Model.Name</title></head><body><h1>@Model.Name</h1><p>@Model.Value(\"bodyText\")</p><a href=\"/smoke/search\">Search</a></body></html>"
+        };
+        await templates.CreateAsync(template, Constants.Security.SuperUserKey);
+    }
+    type.AllowedTemplates = [template];
+    type.SetDefaultTemplate(template);
+    await types.UpdateAsync(type, Constants.Security.SuperUserKey);
+    foreach (var page in content.GetRootContent().Where(page => page.ContentType.Alias == "smokePage"))
+    {
+        bool published = page.Published;
+        page.TemplateId = template.Id;
+        content.Save(page);
+        if (published) content.Publish(page, ["*"]);
     }
     return Results.Ok();
 });

@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using Umbraco.Cms.Core.Search;
 using Umbraco.Cms.Core.Web;
+using Umbraco.Extensions;
 
 internal static class VisitorSmoke
 {
@@ -18,7 +19,8 @@ internal static class VisitorSmoke
             foreach (var result in results.Documents)
             {
                 var page = context.UmbracoContext.Content?.GetById(result.Id);
-                html.Append($"<li data-key=\"{result.Id}\"><a href=\"/smoke/page/{result.Id}\">{Encode(page?.Name ?? "[not published]")}</a> ({result.Id})</li>");
+                string url = page is null ? $"/smoke/page/{result.Id}" : page.Url();
+                html.Append($"<li data-key=\"{result.Id}\"><a href=\"{Encode(url)}\">{Encode(page?.Name ?? "[not published]")}</a> ({result.Id})</li>");
             }
             html.Append("</ul>");
             return Results.Content(Layout(html.ToString()), "text/html");

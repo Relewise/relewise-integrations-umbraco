@@ -4,7 +4,8 @@ using Relewise.Client.DataTypes;
 namespace Relewise.Integrations.Umbraco;
 
 /// <summary>
-/// Defines a common way for the Relewise Umbraco Integration to find the Relewise <see cref="User"/> for the current request
+/// Resolves the Relewise <see cref="User"/> shared by behavioral tracking and core search for the current request.
+/// Register a custom implementation to preserve your site's user identifiers and consent policy.
 /// </summary>
 public interface IRelewiseUserLocator
 {

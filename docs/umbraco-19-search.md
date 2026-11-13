@@ -53,9 +53,11 @@ site needing different linguistic processing per culture should use separate
 configured provider instances/Datasets rather than treating the language setting
 as automatic culture-to-language mapping.
 
-The credential needs ContentUpdate, ContentAdministrativeAction, batched tracking,
-and ContentSearchRequest permissions. Store it in server configuration or a secret
-store. Never expose the indexing credential in browser code.
+The provider credential needs ContentUpdate, ContentAdministrativeAction, batched
+tracking, and ContentSearchRequest permissions. Automatic page-view tracking also
+needs ContentView permission on its tracker's credential. Store credentials in
+server configuration or a secret store. Never expose the indexing credential in
+browser code.
 
 ## Index selection and querying
 
@@ -84,6 +86,27 @@ var results = await searcher.SearchAsync(alias, "solar panels", culture: "en-us"
 Results contain Umbraco GUIDs, regardless of the ordinary export's numeric/GUID ID
 setting. Rebuild the selected indexes using Umbraco's Search management screen after
 enabling the provider. Existing Examine entries are not imported automatically.
+
+## User identity and behavioral tracking
+
+Core searches and automatic content views both resolve `IRelewiseUserLocator` from
+the current HTTP request's services. Register your site's locator before building
+Umbraco, for example `builder.Services.AddScoped<IRelewiseUserLocator, MyUserLocator>();`.
+Return the same temporary/authenticated identifiers and other User data that your
+behavioral tracking uses. The default locator remains anonymous; the integration
+does not generate a tracking ID or override your locator's consent decisions.
+
+The provider resolves the user once per search and reuses it for the main query
+and its facet requests. Index metadata and searches outside an HTTP request remain
+anonymous. A scoped locator is supported by both search and content-view middleware,
+so one visitor's identity is not captured in a singleton middleware or resolver.
+
+Umbraco's `AccessContext` remains independent authorization data: it controls access
+to protected content, rather than defining a Relewise user ID. An empty principal
+is anonymous even if group IDs are supplied; only the explicit protection bypass
+can override that rule. Identity alignment does not change the scoped provider
+entity IDs or convert behavioral events for legacy exported content into events for
+those separate provider entities.
 
 ## Behavior and limits
 
@@ -118,44 +141,10 @@ publication notifications; it does not independently synchronize referencing pag
 when only a Library Element is published. Use core search for that scenario or
 explicitly republish/export the affected documents.
 
-## Local validation
+## Sample configuration
 
-The regular sample also supports enabling the provider through ignored local settings:
+The regular sample supports enabling the provider through ignored local settings:
 set `Relewise:Umbraco:Search:Enabled` to `true`, set a unique
 `Relewise:Umbraco:Search:Scope`, and optionally set `Language` (default `en`).
 
-Build/test the solution, then pack the integration and restore the
-`tests/Umbraco19.Smoke` test host from that local NuGet feed. This host intentionally
-uses a PackageReference. Run it from a disposable directory, with a fresh SQLite
-database and a `local.settings.json`; bind it to loopback only. Its `/smoke/*` routes
-are test operations and **must never be deployed**.
-
-`tests/Umbraco19.Smoke/Initialize-SmokeSite.ps1` creates that disposable directory.
-Pass `-CredentialFile` with an existing local settings file containing a `Relewise`
-section to run against a dedicated live Dataset. Without it, the host uses a dummy
-credential and the optional local simulation. The generated local settings also
-contain the unattended backoffice user's password; keep them outside source control.
-
-`/smoke/seed` creates and publishes a real page. `/smoke/provider` exercises the core
-resolver, indexing, searching and metadata. `/smoke/verify` runs live checks for
-protection, cultures, segments, ranges, sorting, facets, paging and scoped cleanup.
-Use a dedicated disposable Dataset: the verification performs real writes/deletes.
-Revoke its temporary credential when testing is complete.
-
-For a browser lifecycle smoke test, call `/smoke/setup-body` after `/smoke/seed`
-to add a Textarea property to the fixture's document type. Create and edit another
-Smoke page through `/umbraco`, then use `/smoke/search` as an anonymous visitor.
-The form queries the configured published-content searcher and links results to
-`/smoke/page/{key}`, which renders the published cache. The search page displays the
-raw remote match count and every returned ID, including stale IDs whose content
-is no longer published, so cache filtering cannot hide an indexing failure.
-Verify draft exclusion, publication, body search, unpublished edits, republication,
-unpublication, recycle-bin deletion and a native published-index rebuild. Wait for
-remote indexing between checks; a manual Relewise Search Index refresh may shorten
-the dedicated Dataset's refresh delay without manually invoking the provider.
-See [the recorded browser run](validation/umbraco-19-browser-smoke.md).
-
-The optional Postman simulation in `postman/simulations/umbraco19.sim.yaml` checks
-SDK HTTP wiring against a local fixture, using `Smoke:UseJson=true` and a dummy key.
-It is not evidence for live ranking or backend indexing behavior. Its context file
-records the boundaries.
+For contributor test setup, see the [disposable smoke host](../tests/Umbraco19.Smoke/README.md).

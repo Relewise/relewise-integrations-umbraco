@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Relewise.Client;
 using Language = Relewise.Client.DataTypes.Language;
@@ -49,13 +51,16 @@ public sealed class RelewiseSearchProvider : global::Umbraco.Cms.Core.Search.IIn
     internal const string GenerationKey = "rwUmbracoSearchGeneration";
     private readonly IRelewiseClientFactory _clients;
     private readonly RelewiseSearchOptions _options;
+    private readonly IHttpContextAccessor? _httpContextAccessor;
     private static readonly SemaphoreSlim[] WriteLocks = Enumerable.Range(0, 64).Select(_ => new SemaphoreSlim(1, 1)).ToArray();
 
     /// <summary>Creates the provider using the configured named Relewise client.</summary>
-    public RelewiseSearchProvider(IRelewiseClientFactory clients, IOptions<RelewiseSearchOptions> options)
+    public RelewiseSearchProvider(IRelewiseClientFactory clients, IOptions<RelewiseSearchOptions> options,
+        IHttpContextAccessor? httpContextAccessor = null)
     {
         _clients = clients;
         _options = options.Value;
+        _httpContextAccessor = httpContextAccessor;
         ArgumentException.ThrowIfNullOrWhiteSpace(_options.Scope);
         ArgumentException.ThrowIfNullOrWhiteSpace(_options.Language);
     }
@@ -171,8 +176,14 @@ public sealed class RelewiseSearchProvider : global::Umbraco.Cms.Core.Search.IIn
         ArgumentOutOfRangeException.ThrowIfNegative(skip);
         ArgumentOutOfRangeException.ThrowIfNegative(take);
         ArgumentOutOfRangeException.ThrowIfNegative(maxSuggestions);
+        // Use the same request-scoped identity/consent policy as behavioral tracking.
+        // Umbraco's access context is authorization data, not a Relewise user identifier.
+        User user = _httpContextAccessor?.HttpContext is { } context
+            ? await context.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser()
+            : User.Anonymous();
         UFilter[] allFilters = filters?.ToArray() ?? [];
         ContentSearchRequest request = QueryRequest(indexAlias, query, allFilters, culture, segment, accessContext, skip, take);
+        request.User = user;
         ApplySorting(request, sorters ?? []);
         ContentSearchResponse response = await Execute(request);
         Document[] documents = take == 0 ? [] : (response.Results ?? []).Select(result =>
@@ -184,6 +195,7 @@ public sealed class RelewiseSearchProvider : global::Umbraco.Cms.Core.Search.IIn
             // A facet's own filter is omitted, matching Umbraco's drill-sideways behavior.
             ContentSearchRequest facetRequest = QueryRequest(indexAlias, query,
                 allFilters.Where(f => f.FieldName != facet.FieldName), culture, segment, accessContext, 0, 0);
+            facetRequest.User = user;
             facetResults.Add(await ComputeFacet(facetRequest, facet));
         }
         // Suggestions are optional in the core contract; no unrelated product term predictions are returned.
@@ -202,7 +214,7 @@ public sealed class RelewiseSearchProvider : global::Umbraco.Cms.Core.Search.IIn
         if (access?.Bypass != true)
         {
             var allowed = new List<RFilter> { Equal(ProtectedKey, false) };
-            if (access is not null)
+            if (access is not null && access.PrincipalId != Guid.Empty)
                 allowed.AddRange((access.GroupIds ?? []).Append(access.PrincipalId).Select(id => Contains(AccessKey, id.ToString("D"))));
             request.Filters!.Add(new OrFilter(allowed.ToArray()));
         }
