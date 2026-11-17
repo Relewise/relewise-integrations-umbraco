@@ -117,8 +117,8 @@ These switches do not allow choosing an inconsistent event type.
 Use `Map(destinationProperty, sourcePropertyAlias)` for built-in Relewise properties
 except identity. Use `MapData(propertyAlias, configure)` for custom `Data` entries:
 only the Umbraco property alias is required, and the destination key defaults to it.
-An optional callback configures one extensible `DataMappingOptions` type, initially
-exposing only `DataKey`:
+An optional callback configures one extensible `DataMappingOptions` type with
+`DataKey` and optional field-specific converter selection:
 
 ```csharp
 public void MapData(string propertyAlias, Action<DataMappingOptions>? configure = null);
@@ -141,7 +141,8 @@ Replace the `AddRelewise` callback in example 2 with:
     });
     mapping.MapData("heroImage", data =>
     {
-        data.DataKey = "imageUrl"; // Requires a converter producing a media URL.
+        data.DataKey = "imageUrl"; // Override the destination key.
+        data.UseConverter<MediaUrlConverter>(); // Select only this converter for this field.
     });
 }))
 ```
@@ -153,6 +154,41 @@ conversions must fail validation rather than silently lose data. Summary, body, 
 image are customer-defined Data keys, not special search-adapter fields.
 Searchability and weighting are configured in My Relewise.
 Published URL metadata remains available independently of these selections.
+
+### Converter defaults and custom registration
+
+Without `UseConverter`, use the existing automatic pipeline: registered built-in
+Relewise converters and globally registered custom converters whose `CanHandle`
+accepts the property. This does not imply support for every Umbraco editor or an
+automatic media-to-URL conversion. Retain existing culture handling.
+
+Register a custom converter globally using today's API, before building the site:
+
+```csharp
+builder.Services.AddValueConverter<MyCustomConverter>(); // Implements IRelewisePropertyValueConverter; CanHandle selects properties.
+```
+
+All matching converters run today, not just the first. Registration order does not
+provide an override: writing the same Data key twice can throw. Preserve that
+behavior and the existing singleton lifetime; global converters must be safe to
+share and must not constructor-inject scoped dependencies.
+
+With `data.UseConverter<MediaUrlConverter>()`, run only the selected converter for
+that field, bypassing automatic selection. The converter does not enter the global
+pipeline or affect other mappings. `UseConverter<T>()` arranges concrete-type DI
+registration, so no separate `AddValueConverter<T>()` call is needed. Resolve it
+within each export operation's scope; field-only instances may use scoped
+dependencies. Honor explicit DI registrations and never capture a scoped converter
+in singleton configuration. Fail clearly if the selected converter cannot handle
+the input; do not silently fall back to another converter.
+
+`MyCustomConverter` and `MediaUrlConverter` are illustrative application classes,
+not new built-in types. Prefer reusing `IRelewisePropertyValueConverter` and its
+culture-aware context rather than adding another public interface. Before settling
+the adapter contract, prove field isolation and `DataKey` remapping, including
+existing converters that emit multiple keys. Preserve multilingual values and
+report conversion failures with document, property, and culture context. Typed
+conversion for built-in entity properties remains a separate design decision.
 
 `AutoMap()` retains today's behavior. Do not silently combine it, declarative
 field mappings, or `UseMapper` when they would write the same destination. Existing
