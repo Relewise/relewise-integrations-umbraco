@@ -376,52 +376,61 @@ rather than merely copy property values:
   a Variant view includes its Product and Variant IDs. Listing variants does not
   emit a view for each one. No separately configurable view-event type.
 
-## 5. Index independently; opt into native search
+## 5. One Relewise indexing pipeline; independent search configuration
 
-Mapped entities use Umbraco 19's content-change and rebuild flow even when native
-search continues through Examine or an external frontend queries Relewise directly.
-Indexing, native search, and tracking are independently usable capabilities.
+One Relewise indexing pipeline uses Umbraco 19's content-change and rebuild flow
+to maintain mapped entities. It replaces the integration's existing notification
+handlers as independent exporters. Existing mapping configuration remains supported;
+customers do not select between indexing mechanisms.
 
-**Proposed architecture, pending an RC1 integration test:** preserve Examine's
-existing indexing registration and add an independent Umbraco indexing pipeline
-that exports mapped entities to Relewise, using the appropriate content-change
-strategy. Both pipelines receive relevant Umbraco changes. Native-search opt-in
-changes query routing without stopping either indexing pipeline; replacing
-Examine's indexer while leaving searches against it would risk stale results.
+All writes use a shared export engine for mapping, identity resolution, converters,
+relationships, and administrative actions. The dashboard's full export and existing
+public export/rebuild entry points use that same engine and coordinate with ongoing
+updates. They do not create a second writer. Dependency changes, such as a Brand
+change affecting Products, also enter this pipeline. Repeated processing and
+concurrent updates must preserve one entity identity and the latest intended state,
+including when multiple application instances are running.
 
-**There is one fixed Relewise index.** A separate Umbraco registration alias names
-an internal indexing pipeline, not another Relewise index. Export and search use
-that same single Relewise index. Expose no Relewise `IndexId`, index creation, or
-infrastructure-alias configuration.
+Preserve Examine's existing indexing registration and add a separate internal
+Umbraco registration for the Relewise pipeline. Each backend continues receiving
+relevant changes. **There is one fixed Relewise index:** the internal Umbraco
+registration alias identifies a pipeline, not another Relewise index. Export and
+search use that same single Relewise index; infrastructure aliases remain internal.
 
-Configure native search directly through the mutable `Search` options object:
+RC1 requires both an indexer type and a searcher type in a content-index registration.
+The internal registration satisfies that requirement without changing the searcher
+selected for ordinary published-content queries. Indexing itself does not invoke
+the searcher. The complete registration arrangement still requires an RC1 integration
+test.
+
+Configure search through Umbraco's published-content search abstraction separately:
 
 ```csharp
-options.Search.UseRelewiseForPublishedContent = true; // Route native published-content searches through Relewise.
+options.Search.UseRelewiseForPublishedContent = true; // Execute searches through Umbraco's published-content abstraction in Relewise.
 options.Search.Target = SearchTarget.Products; // Search nodes mapped as Relewise Products.
 ```
 
 | Setting | Default | Behavior |
 | --- | --- | --- |
-| `UseRelewiseForPublishedContent` | `false` | Leave native search unchanged; Relewise indexing continues. |
+| `UseRelewiseForPublishedContent` | `false` | Leave the existing search provider selected; Relewise indexing continues. |
 | `Target` | `SearchTarget.Content` | When enabled, select `ContentSearchRequest` for nodes mapped as Relewise Content. `SearchTarget.Products` selects `ProductSearchRequest` for nodes mapped as Relewise Products. |
 
-`Target` applies only when native Relewise search is enabled. Both targets return
-Umbraco document keys using the shared identity association and must honor core
-filtering, access, culture, sorting, and pagination semantics. A mixed Content/Product
-target remains unresolved; expose no such value until ranking and pagination are
-defined. Keep future independent settings on this options object, without a factory
-strategy type, a nested `PublishedContent` wrapper, or a `Configure` method.
+Enabling search changes query routing only: it neither registers another Relewise
+indexing pipeline nor stops the existing provider's indexing. `Target` applies only
+when Relewise is selected for these queries. Both targets return Umbraco document
+keys through the shared identity association and must honor filtering, access,
+culture, sorting, and pagination semantics. A mixed Content/Product target requires
+an agreed ranking and pagination contract before it can be exposed. Future search
+settings belong on the mutable `Search` options object.
 
-This does not create a search page. Exporting data or querying Relewise directly
-does not require native-search opt-in. Draft, media, member, and Library Element
-pipelines are outside this example. Tracking remains independently configured.
+A separate frontend can query Relewise directly regardless of the selected Umbraco
+search provider. Tracking is independently configured. Search-page implementation
+and draft, media, member, and Library Element pipelines are outside this example.
 
 Export all published cultures and derive each search request's language from its
 effective Umbraco culture, falling back to the site's default when none exists.
-Do not expose a site-wide search `Language`, force English, or change core
-culture-filter semantics. Relewise language keys must match exported values and
-requests.
+Relewise language keys must match exported values and requests. Preserve core
+culture-filter semantics; expose no site-wide search `Language` or Relewise `IndexId`.
 
 ## 6. Contribute Product data without administrative actions
 
@@ -452,10 +461,9 @@ internal construction, and no public implementation interface:
 | `AdministrativeActionPolicy.None()` | Send no enable, disable, or delete actions from this mapping, including full-export cleanup and actions for its exported Variants. |
 
 This follows Relewise's separation of data updates (`ProductUpdate`) and lifecycle
-actions (`ProductAdministrativeAction`). It replaces `Ownership`, not the mapping
-API: no separate `EnrichProduct` or `UpdateExistingOnly` method. Referenced Brands
-and Categories retain their own mappings' policies; disabling actions on a Product
-mapping does not change those independently configured mappings.
+actions (`ProductAdministrativeAction`). Referenced Brands and Categories retain
+their own mappings' policies; disabling actions on a Product mapping does not change
+those independently configured mappings.
 
 With `None()`, publish/update exports only declared fields. Unpublish/removal stops
 further exports but leaves contributed fields in place. Automatic field withdrawal
@@ -511,14 +519,18 @@ Before accepting the indexing/search arrangement, verify locally on RC1 that:
 
 - Indexing-only installations process publish, update, unpublish/removal, and rebuild
   events through Umbraco's flow while Examine remains current and searchable.
-- Enabling native Relewise search preserves both indexing pipelines and applies the
-  selected target with correct totals, paging, access, and culture behavior.
-- Existing export/rebuild entry points share the same mapping pipeline, without
-  duplicate export processing from parallel legacy and core indexing handlers.
+- Enabling Relewise for Umbraco's search abstraction changes query routing only,
+  preserving one Relewise indexing pipeline and the existing provider's indexing.
+  The selected target returns correct totals, paging, access, and culture behavior.
+- The old notification-driven exporters are not independently registered. Dashboard
+  exports, public export/rebuild calls, and core indexing use the shared export engine.
+- Overlapping exports, rebuilds, repeated events, and multiple application instances
+  preserve the latest published/removal state without duplicate entities.
 - Brand and Category changes and Variant changes/moves update affected entities;
   the integration handles dependencies not covered by Umbraco's change strategy.
-- Rebuild cleanup respects each mapping's administrative-action policy, including
-  exported Variants, and preserves unrelated entities in the single Relewise index.
+- Rebuild/removal operations respect administrative-action policies and affected
+  descendants/Variants. A failed or cancelled rebuild cannot trigger destructive
+  cleanup; a rebuild never clears unrelated entities from the single Relewise index.
 
 Deliver in that order: compatible Content configuration, shared search semantics,
 catalogue mapping, then data contributions with administrative actions suppressed.
