@@ -114,9 +114,10 @@ These switches do not allow choosing an inconsistent event type.
 
 ## 3. Map built-in properties and custom Data
 
-Use `Map(destinationProperty, sourcePropertyAlias)` for built-in Relewise value
-properties, such as `DisplayName`, `ListPrice`, and `Assortments`. Identity and entity
-relationships use dedicated mapping methods.
+Use `Map(destinationProperty, sourcePropertyAlias, configure)` for built-in Relewise
+value properties, such as `DisplayName`, `ListPrice`, and `Assortments`. Identity and entity
+relationships use dedicated mapping methods. The optional callback receives
+`PropertyMappingOptions<TValue>`, inferred from the destination property type.
 
 Use `MapData(sourcePropertyAlias, configure)` for custom `Data` entries. Only the
 source Umbraco property alias is required; the destination Data key defaults to that
@@ -137,7 +138,7 @@ or image helpers. Identity uses the dedicated `IdFromProperty` method below.
 | --- | --- |
 | `MapContent`, `MapProduct`, `MapBrand`, `MapProductCategory`, `MapContentCategory` | `documentTypeAlias`, `configure` |
 | `VariantsFromChildren` | `documentTypeAlias`, `configure` |
-| `Map` | `destinationProperty`, `sourcePropertyAlias` |
+| `Map` | `destinationProperty`, `sourcePropertyAlias`, `configure` (optional) |
 | `MapData` | `sourcePropertyAlias`, `configure` (optional) |
 | `IdFromProperty`, `BrandFrom`, `AdditionalCategoriesFrom` | `sourcePropertyAlias` |
 
@@ -146,7 +147,8 @@ identifies a property on a source document. `destinationProperty` is an expressi
 selecting a built-in Relewise property; `DataKey` names a destination entry in the
 Relewise `Data` dictionary. Use `configure` for configuration callback parameters;
 example callback variables use `options` at the root, `mapping` for entities,
-`variant` for child Variants, and `data` for Data mapping options.
+`variant` for child Variants, `property` for built-in property mapping options, and
+`data` for Data mapping options.
 
 Apply these names in signatures, XML documentation, validation messages, and guides
 when implementing the proposed API. Preserve existing public parameter names and
@@ -173,18 +175,58 @@ Replace the `AddRelewise` callback in example 2 with:
 }))
 ```
 
-Keep extraction/conversion separate from destination selection and retain existing
-converter APIs. Built-in destinations require typed conversion; the extension
-contract remains to be agreed. An expression is not a raw assignment. Unsupported
-conversions must fail validation rather than silently lose data. Summary, body, and
-image are customer-defined Data keys, not special search-adapter fields.
-Searchability and weighting are configured in My Relewise.
-Published URL metadata remains available independently of these selections.
+Summary, body, and image are customer-defined Data keys, not special search-adapter
+fields. Searchability and weighting are configured in My Relewise. Published URL
+metadata remains available independently of these selections.
+
+### Strongly typed built-in property converters
+
+Proposed signature on the Product mapping builder (other entity builders select
+their own destination entity type):
+
+```csharp
+public void Map<TValue>(
+    Expression<Func<Product, TValue>> destinationProperty,
+    string sourcePropertyAlias,
+    Action<PropertyMappingOptions<TValue>>? configure = null);
+```
+
+`TValue` flows from the destination expression into the options and converter.
+The proposed converter contract is deliberately narrow:
+
+```csharp
+public interface IPropertyMappingConverter<TValue>
+{
+    TValue Convert(PropertyMappingContext context);
+}
+```
+
+On `PropertyMappingOptions<TValue>`, the proposed method signature is:
+
+```csharp
+public void UseConverter<TConverter>()
+    where TConverter : class, IPropertyMappingConverter<TValue>;
+```
+
+A `ListPrice` converter must produce the destination's `MultiCurrency` type; a
+`DisplayName` converter must produce `Multilingual`. A string-producing converter
+cannot be selected for either. Preserve SDK nullability in these contracts; do not
+introduce public object-returning converters or unchecked destination casts.
+`PropertyMappingContext` supplies the source `IPublishedProperty` and published
+cultures so converters can construct complete multilingual values. It is distinct
+from the existing Data-writing `RelewisePropertyConverterContext`.
+
+Accept only direct, supported destination properties; reject computed expressions,
+identity, and relationships. Without an explicit converter, select only compatible
+built-in typed conversions. Destination compatibility is checked at compile time;
+the source editor/value still needs runtime validation because it is selected by
+alias. Define null/missing-value handling and report unsupported input or conversion
+failures with document, source property alias, and culture context.
 
 ### Converter defaults and custom registration
 
-Without `UseConverter`, use the existing automatic pipeline: registered built-in
-Relewise converters and globally registered custom converters whose `CanHandle`
+For `MapData` without `UseConverter`, use the existing automatic pipeline:
+registered built-in Relewise converters and globally registered custom converters whose `CanHandle`
 accepts the property. This does not imply support for every Umbraco editor or an
 automatic media-to-URL conversion. Retain existing culture handling.
 
@@ -199,22 +241,24 @@ provide an override: writing the same Data key twice can throw. Preserve that
 behavior and the existing singleton lifetime; global converters must be safe to
 share and must not constructor-inject scoped dependencies.
 
-With `data.UseConverter<MediaUrlConverter>()`, run only the selected converter for
-that field, bypassing automatic selection. The converter does not enter the global
-pipeline or affect other mappings. `UseConverter<T>()` arranges concrete-type DI
-registration, so no separate `AddValueConverter<T>()` call is needed. Resolve it
+For both `data.UseConverter<TConverter>()` and `property.UseConverter<TConverter>()`,
+run only the selected converter for that mapping, bypassing automatic selection.
+The converter does not enter the global pipeline or affect other mappings. `UseConverter<TConverter>()` arranges concrete-type
+DI registration, so no separate global registration call is needed. Resolve it
 within each export operation's scope; field-only instances may use scoped
 dependencies. Honor explicit DI registrations and never capture a scoped converter
 in singleton configuration. Fail clearly if the selected converter cannot handle
 the input; do not silently fall back to another converter.
 
 `MyCustomConverter` and `MediaUrlConverter` are illustrative application classes,
-not new built-in types. Prefer reusing `IRelewisePropertyValueConverter` and its
-culture-aware context rather than adding another public interface. Before settling
+not new built-in types. For `MapData`, prefer reusing
+`IRelewisePropertyValueConverter` and its culture-aware context rather than adding
+another Data converter interface. Before settling
 the adapter contract, prove field isolation and `DataKey` remapping, including
 existing converters that emit multiple keys. Preserve multilingual values and
-report conversion failures with document, property, and culture context. Typed
-conversion for built-in entity properties remains a separate design decision.
+report conversion failures with document, source property alias, and culture context.
+Legacy Data-writing converters do not automatically qualify as typed converters
+for `Map`; share DI/error-handling behavior internally, not a forced public contract.
 
 `AutoMap()` retains today's behavior. Do not silently combine it, declarative
 field mappings, or `UseMapper` when they would write the same destination. Existing
@@ -249,8 +293,14 @@ Use the same bootstrap and SDK connection. Entity methods name the Relewise targ
     {
         mapping.IdFromProperty("sku"); // Canonical Product ID for export, search, and tracking.
         mapping.Map(entity => entity.DisplayName, "heading"); // Built-in Multilingual value from published cultures.
-        mapping.Map(entity => entity.ListPrice, "listPrices"); // Built-in MultiCurrency; source must include currency codes.
-        mapping.Map(entity => entity.SalesPrice, "salePrices"); // Built-in MultiCurrency; same conversion requirement.
+        mapping.Map(entity => entity.ListPrice, "listPrices", property =>
+        {
+            property.UseConverter<PriceConverter>(); // Produces MultiCurrency from currency-labelled source values.
+        });
+        mapping.Map(entity => entity.SalesPrice, "salePrices", property =>
+        {
+            property.UseConverter<PriceConverter>(); // Same typed converter; independently mapped source property.
+        });
         mapping.Map(entity => entity.Assortments, "markets"); // Built-in list of integer assortment IDs.
         mapping.MapData("description"); // Customer-defined Data, not a built-in description property.
         mapping.BrandFrom("brand"); // Single picker to a mapped Brand; resolves its canonical ID.
@@ -271,8 +321,9 @@ Use the same bootstrap and SDK connection. Entity methods name the Relewise targ
 })
 ```
 
-The price properties above require currency-labelled source values and a converter
-that produces `MultiCurrency`; an ordinary decimal has no implied currency.
+`PriceConverter` is an illustrative application implementation of
+`IPropertyMappingConverter<MultiCurrency>` (with the SDK's nullable annotations).
+The source must supply currency codes; an ordinary decimal has no implied currency.
 `Assortments` requires integer IDs. Brand's string DisplayName needs an explicit
 culture selection when its source varies by culture; that conversion policy remains
 to be agreed. Product and Category DisplayName preserve published languages.
@@ -401,9 +452,10 @@ Keep the public surface small and preserve the first two bootstrap examples:
 | Configuration | Recommendation |
 | --- | --- |
 | `MapData` | Keep its optional `DataMappingOptions` callback; add settings there as concrete needs arise. |
-| `Map` and relationship methods | Keep today's proposed calls. Add overloads with optional configuration callbacks when typed conversion, picker selection, or relationship behavior actually needs configuration; do not expose empty options types now. |
+| `Map` | Keep the optional `PropertyMappingOptions<TValue>` callback for typed converter selection and future property settings; short calls remain valid. |
+| Relationship methods | Add configuration overloads when picker selection or relationship behavior needs them; do not expose empty options types now. |
 | Identity | Keep `IdFromProperty` and the existing `UseContentKeysAsIds` default. Add a dedicated overload if custom calculation needs configuration; every reference must still use the shared resolver. |
-| Converters and mappers | Preserve existing contracts and registrations. Add adapters or narrow new contracts only after proving the required conversion and scope behavior. |
+| Converters and mappers | Preserve existing Data converter/mapper contracts and registrations; add only the narrow typed converter contract needed by `Map`. Prove adapters and scope behavior. |
 | Search, export, and view tracking | Keep genuine on/off switches for now. Administrative actions have several possible behaviors, whereas enabling a feature remains binary. Add separate settings or overloads if requirements expand; never repurpose an existing boolean. |
 
 Preserve existing method signatures when adding overloads; adding an optional
