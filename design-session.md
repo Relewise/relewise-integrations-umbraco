@@ -112,182 +112,180 @@ also remain supported; their proposed equivalent is
 views, omit the view middleware or set `type.TrackViews = false` on that mapping.
 These switches do not allow choosing an inconsistent event type.
 
-## 3. Choose readable fields and optionally use native Umbraco search
+## 3. Map built-in properties and custom Data
 
-Starting from example 2, replace its `AddRelewise` callback with:
+Use `Map(destinationProperty, sourcePropertyAlias)` for built-in Relewise properties
+and `MapData(destinationKey, sourcePropertyAlias)` for entries in its `Data` dictionary.
+Both put the destination first. Expressions select SDK properties; aliases select
+Umbraco properties. There are no separate `TitleFrom`, `DisplayNameFrom`,
+`SummaryFrom`, `SearchTextFrom`, `ImageFrom`, or `IdFromProperty` shortcuts.
+
+Replace the `AddRelewise` callback in example 2 with:
 
 ```csharp
-.AddRelewise(options =>
+.AddRelewise(options => options.MapContent("article", mapping =>
 {
-    options.MapContent("article", article =>
-    {
-        article.TitleFrom("heading"); // Readable DisplayName/title; defaults to the published page name.
-        article.SummaryFrom("summary"); // Export a summary field for result presentation.
-        article.SearchTextFrom("bodyText"); // Export selected searchable text; do not append it to DisplayName.
-        article.ImageFrom("heroImage"); // Export a result image URL from this property.
-    });
-
-    options.Search.UseRelewiseForPublishedContent = true; // Replace Umbraco's published-content search provider with Relewise.
-})
+    mapping.Map(entity => entity.DisplayName, "heading"); // Built-in multilingual DisplayName from published cultures.
+    mapping.MapData("summary", "summary"); // Custom Data key, then Umbraco property alias.
+    mapping.MapData("body", "bodyText"); // Body remains separate for search weighting.
+    mapping.MapData("imageUrl", "heroImage"); // Requires a converter producing a media URL.
+}))
 ```
 
-These are opt-in field selections, not changes to `AutoMap()` in example 2.
-Published URLs and the selected fields should be usable by a frontend calling
-Relewise directly. Use custom mapping for block extraction or other complex data.
-Custom mapping takes over application field mapping, as it does today; it is not
-silently combined with AutoMap. Fields selected declaratively must have one owner.
+Keep extraction/conversion separate from destination selection and retain existing
+converter APIs. Built-in destinations require typed conversion; the extension
+contract remains to be agreed. An expression is not a raw assignment. Unsupported
+conversions must fail validation rather than silently lose data. Summary, body, and image are customer-defined Data keys, not special
+search-adapter fields. Searchability and weighting are configured in My Relewise.
+Published URL metadata remains available independently of these selections.
 
-The search switch means exactly that Relewise serves Umbraco's published-content
-search abstraction. It does not create a search page, enable every Umbraco index,
-or become necessary for exporting data. Keep it off for an indexing-only/headless
-integration. Draft/media/member/Library Element indexes remain separate explicit
-choices, not part of this example.
+`AutoMap()` retains today's behavior. Do not silently combine it, declarative
+field mappings, or `UseMapper` when they would write the same destination. Existing
+custom mappers remain the escape hatch for complex extraction; their replacement
+contracts and conflict validation must be settled before implementation.
 
-**No configurable Relewise `IndexId`.** Use the Dataset's default index and document
-which exported fields should be indexed and weighted in My Relewise. Do not create
-or rewrite another index automatically. The documentation confirms one default
-index is sufficient in the vast majority of cases, including multiple languages;
-additional indexes are an optional special case. That capability does not justify
-another option in this integration's initial public API.
+## 4. Map Products, child Variants, Categories, and Brands
 
-**No site-wide search `Language`.** Export the page's published cultures as
-multilingual data. Derive each search request's Relewise language from its effective
-Umbraco culture; use the site's default culture when no effective culture exists.
-This language selection must not change the core API's culture-filter semantics.
-Relewise's configured language keys must match those used in the exported data and
-requests. Do not silently force every request to English. Culture aliases or
-fallback policies need a concrete use case before adding more configuration.
-
-Keep title, summary, and body separate so the customer can configure weighting.
-Do not hide unwanted page text in a catch-all DisplayName merely to use the default
-index without configuration.
-
-## 4. Map a Product catalogue with hierarchical variants
-
-This replaces the mapping callback in the same bootstrap; it does not introduce
-another SDK connection or integration registration system.
+Use the same bootstrap and SDK connection. Entity methods name the Relewise target;
+the first argument identifies the source Umbraco document type.
 
 ```csharp
 .AddRelewise(options =>
 {
-    options.MapProductCategory("productCategory", category =>
+    options.MapProductCategory("productCategory", mapping =>
     {
-        category.IdFromProperty("categoryId"); // Stable ID reused by Product category paths.
-        category.TitleFrom("title"); // Category display name.
+        mapping.Map(entity => entity.Id, "categoryId"); // Stable ID reused in Product category paths.
+        mapping.Map(entity => entity.DisplayName, "heading"); // Multilingual category name.
     });
 
-    options.MapBrand("brand", brand =>
+    options.MapBrand("brand", mapping =>
     {
-        brand.IdFromProperty("brandId"); // Stable ID referenced by Products.
-        brand.ImageFrom("logo"); // Optional presentation data.
+        mapping.Map(entity => entity.Id, "brandId"); // Stable ID referenced by Products.
+        mapping.Map(entity => entity.DisplayName, "name"); // SDK Brand name is a string, not Multilingual.
+        mapping.MapData("logoUrl", "logo"); // Custom Data; requires media-to-URL conversion.
     });
 
-    options.MapProduct("product", product =>
+    options.MapProduct("product", mapping =>
     {
-        product.IdFromProperty("sku"); // Product ID; can match an existing commerce identifier.
-        product.TitleFrom("title"); // Product display name.
-        product.BrandFrom("brand"); // Single-item picker pointing to a mapped Brand document.
-        product.AdditionalCategoriesFrom("additionalCategories"); // Optional multi-item picker of mapped Product Categories.
-        product.UseMapper<ProductMapper>(); // Application mapper for prices, specifications, and other Product data.
+        mapping.Map(entity => entity.Id, "sku"); // Canonical Product ID for export, search, and tracking.
+        mapping.Map(entity => entity.DisplayName, "heading"); // Built-in Multilingual value from published cultures.
+        mapping.Map(entity => entity.ListPrice, "listPrices"); // Built-in MultiCurrency; source must include currency codes.
+        mapping.Map(entity => entity.SalesPrice, "salePrices"); // Built-in MultiCurrency; same conversion requirement.
+        mapping.Map(entity => entity.Assortments, "markets"); // Built-in list of integer assortment IDs.
+        mapping.MapData("description", "description"); // Customer-defined Data, not a built-in description property.
+        mapping.BrandFrom("brand"); // Single picker to a mapped Brand; resolves its canonical ID.
+        mapping.AdditionalCategoriesFrom("extraCategories"); // Multi-picker adds paths alongside mapped category ancestors.
 
-        product.VariantsFromChildren("productVariant", variant =>
+        mapping.VariantsFromChildren("productVariant", variant =>
         {
-            variant.IdFromProperty("sku"); // Variant ID within the parent Product, not a standalone Product ID.
-            variant.UseMapper<VariantMapper>(); // Application mapper for variant fields.
+            variant.Map(entity => entity.Id, "sku"); // Variant ID within this parent Product.
+            variant.MapData("size", "size"); // Custom Variant Data using the same destination-first convention.
         });
     });
-})
-```
 
-`ProductMapper` and `VariantMapper` are application implementations. Their exact
-contracts are a later design decision; do not add a parallel public framework for
-each entity type just to support these examples. Declarative identity and
-relationships remain integration responsibilities when a mapper fills other data.
-
-The rules are deliberately limited:
-
-- One primary entity target per document type. No dual Content/Product mapping.
-- Variants must be direct child documents of their Product. No arbitrary parent
-  picker, cross-tree variant links, or block-based variants initially.
-- Product category paths come from mapped category ancestors, skipping folders.
-  Additional picker targets add their complete category paths, without duplicates.
-- Brand references use the Brand mapping's ID. Variants inherit the Product's
-  category/brand relationships. Umbraco personalization segments are not variants.
-- `MapContentCategory` provides the corresponding editorial taxonomy option;
-  Product Categories and Content Categories remain distinct.
-- Automatic events follow the target: ContentView, ProductView (with Variant ID
-  for a variant), the matching category view, or BrandView. Listing variants on a
-  Product page does not emit a view for every variant.
-
-## 5. Supplement an externally managed catalogue
-
-Ordinary Content mappings can coexist with Product supplementation:
-
-```csharp
-.AddRelewise(options =>
-{
-    options.MapContent("guide", guide => guide.AutoMap()); // Keep exporting guides as ordinary Content.
-
-    options.MapProduct("productEditorialPage", product =>
+    options.MapContentCategory("topic", mapping =>
     {
-        product.IdFromProperty("commerceProductId"); // Address the existing commerce Product.
-        product.Ownership = EntityOwnership.Supplement; // Contribute selected fields without owning Product lifecycle.
-        product.DataFrom("editorialSummary", "summary"); // Destination Data key, then Umbraco property alias.
-        product.DataFrom("editorialImage", "image"); // Update only this declared editorial field.
+        mapping.Map(entity => entity.Id, "topicId"); // Editorial taxonomy; separate from Product Categories.
+        mapping.Map(entity => entity.DisplayName, "heading"); // Multilingual category name.
     });
 })
 ```
 
-New typed mappings otherwise default to owning their entity. Supplementation sends
-only approved fields: no implicit DisplayName, URL, price, brand, category, or
-variant replacement. Unpublishing withdraws the editorial contribution; it does
-not disable/delete the external Product. Removed fields must be removable without
-clearing other systems' data. Replacing an external Product's variant collection
-is not allowed.
+The price properties above require currency-labelled source values and a converter
+that produces `MultiCurrency`; an ordinary decimal has no implied currency.
+`Assortments` requires integer IDs. Brand's string DisplayName needs an explicit
+culture selection when its source varies by culture; that conversion policy remains
+to be agreed. Product and Category DisplayName preserve published languages.
 
-Validate selective removal and missing-target behavior before implementation.
-An existence read followed by an upsert is not an atomic update-if-existing
-operation. We must not promise that supplementation cannot create partial Products
-until that backend behavior has been resolved.
+Relationship methods remain explicit because they resolve documents and hierarchy,
+rather than merely copy property values:
 
-**Why the earlier `Source` setting?** It was intended to identify ownership for
-cleanup and field withdrawal, not to configure mapping or search. That ownership
-problem is real, but a mandatory public `Source` string is not established as the
-right solution. Remove it from the proposed bootstrap. Track local contributions
-internally and design explicit ownership/adoption rules for shared catalogues.
-Neither an automatic installation ID nor a Source string alone isolates cloned
-environments or prevents an external writer overwriting a field. Do not solve
-this by adding another unexplained setter.
+- One primary entity target per document type; no dual Content/Product mapping.
+- Variants are direct child documents of their Product. No arbitrary parent picker,
+  cross-tree links, or block-based variants initially.
+- Product category paths come from mapped category ancestors, skipping folders.
+  Additional picked categories contribute complete paths without duplicates.
+- Brand references use the mapped Brand ID. Variants inherit their Product's
+  category/brand relationships. Umbraco personalization segments are not variants.
+- `TrackEntityViews()` derives the event and canonical ID from the target mapping;
+  a Variant view includes its Product and Variant IDs. Listing variants does not
+  emit a view for each one. No separately configurable view-event type.
 
-## 6. Decisions to settle before implementation
+## 5. Opt into Umbraco's search provider
 
-1. **Compatibility and public API:** agree the first two examples, aliases and
-   eventual obsolescence. Keep existing mapper/converter capabilities. Follow the
-   current code style and XML documentation; keep dispatch, transport, ownership
-   storage, and lifecycle machinery internal.
-2. **Identity and lifecycle:** export, search, references, and tracking must address
-   the same entity, using the same request-scoped `IRelewiseUserLocator`. Preserve
-   existing Content IDs. Prove culture/segment behavior before accepting another
-   separate search-entity family. Handle variant moves and shared category/brand
-   changes through their affected aggregates, including indexing-only use.
-3. **Search and supplementation:** settle Product/variant result collapse, mixed
-   Content/Product ranking and paging, unmapped document types, protected/headless
-   access, and safe contribution cleanup. These are implementation gates, not
-   additional configuration knobs to expose prematurely.
+Add this inside the same configuration callback when Relewise should serve
+Umbraco's published-content search abstraction:
 
-Recommended order: agree the equivalent Content bootstrap first; prove shared
-identity and search semantics; add owned Product/Variant/Category/Brand mapping;
-then add supplementation once its update guarantees are clear. No implementation
-changes are requested by this document.
+```csharp
+options.Search.UseRelewiseForPublishedContent = true; // Replace the native published-content search provider with Relewise.
+```
+
+This does not create a search page. Exporting data or querying Relewise directly
+does not require it. Draft, media, member, and Library Element indexes are outside
+this example.
+
+Use the Dataset's default Relewise index; expose no `IndexId`. Export all published
+cultures and derive each request's language from its effective Umbraco culture,
+falling back to the site's default when none exists. Do not expose a site-wide
+search `Language`, force English, or change core culture-filter semantics.
+Relewise language keys must match exported values and requests.
+
+## 6. Supplement an externally managed Product
+
+Content mappings can coexist with editorial contributions to commerce Products:
+
+```csharp
+.AddRelewise(options =>
+{
+    options.MapContent("guide", mapping => mapping.AutoMap()); // Existing Content export capabilities remain available.
+    options.MapProduct("productEditorialPage", mapping =>
+    {
+        mapping.Map(entity => entity.Id, "commerceProductId"); // Address the existing commerce Product.
+        mapping.Ownership = EntityOwnership.Supplement; // Contribute fields without owning Product lifecycle.
+        mapping.MapData("editorialSummary", "summary"); // Update only this declared editorial contribution.
+    });
+})
+```
+
+New entity mappings otherwise own their entity. Supplementation must update only
+approved fields and withdraw only its contributions on unpublish/removal; it must
+never disable/delete the external Product or replace externally managed variants.
+This matters to mapping because it determines what a declared field may update
+and remove. Do not introduce a mandatory public `Source` setting for this purpose.
+
+Safe selective removal and missing-target behavior are implementation gates.
+An existence read followed by an upsert does not guarantee update-if-existing;
+we must resolve this before promising that partial Products cannot be created.
+
+## 7. Decisions before implementation
+
+1. Agree these names and conversion/conflict rules. Keep existing APIs working;
+   introduce obsolescence only with migration guidance. Follow existing code style
+   and XML documentation, and keep public builders/contracts to the minimum needed.
+2. Prove shared identity across export, search, relationships, and lifecycle actions.
+   Search and automatic views use the same request-scoped `IRelewiseUserLocator`.
+   Preserve Content IDs and culture/segment semantics; handle Variant moves and
+   affected Product/category/brand aggregates, including indexing-only sites.
+3. Resolve Product/Variant result collapse, mixed Content/Product ranking and
+   paging, unmapped document types, protected/headless access, and supplementation
+   guarantees. Keep dispatch, transport, and contribution storage internal.
+
+Deliver in that order: compatible Content configuration, shared search semantics,
+owned catalogue mapping, then supplementation. This document proposes configuration;
+it does not authorize implementation.
 
 ## References
 
 - [Existing setup and tracking](README.md#using-relewiseintegrationsumbraco)
 - [Existing custom mapper and converter contracts](docs/custom-content-mapping.md)
-- [Relewise Search Index: default index and optional additional indexes](https://docs.relewise.com/docs/myrelewise/search-index.html)
-- [Relewise languages, multilingual data, and request language](https://docs.relewise.com/docs/intro/languages-currencies.html)
+- [AutoMapper: type and destination-member mapping](https://docs.automapper.io/en/latest/Projection.html)
+- [Mapster: destination-first Map configuration](https://github.com/MapsterMapper/Mapster/wiki/Configuration)
+- [Umbraco core: mapping definitions](https://docs.umbraco.com/umbraco-cms/13.latest/reference/mapping)
+- [Community UmbracoMapper: property mapping and conversion](https://github.com/AndyButland/UmbracoMapper)
+- [Umbraco UI Builder: field value mappers](https://docs.umbraco.com/umbraco-ui-builder/advanced/value-mappers)
+- [Relewise default index and optional additional indexes](https://docs.relewise.com/docs/myrelewise/search-index.html)
+- [Relewise multilingual data and request language](https://docs.relewise.com/docs/intro/languages-currencies.html)
 
-The index/language statements were checked against the Relewise Developer MCP and
-the SDK's `SearchRequest.IndexSelector`, `SearchIndexSelector.Default`, and
-per-request `Language`. Existing guides describe current behavior, not the
-proposed APIs in examples 2–5.
+Framework APIs informed the naming; no mapping-library dependency is proposed.
+Built-in Product properties were checked against the Relewise Developer MCP and
+SDK. Only example 1 uses entirely existing APIs; all other examples are proposals.
