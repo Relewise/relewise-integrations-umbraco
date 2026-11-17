@@ -73,8 +73,8 @@ builder.CreateUmbracoBuilder()
     .AddWebsite()
     .AddComposers()
     .AddRelewise(options => options
-        .MapContent("homePage", type => type.AutoMap()) // Explicit Content target; same automatic conversion as today.
-        .MapContent("contentPage", type => type.AutoMap()))
+        .MapContent("homePage", mapping => mapping.AutoMap()) // Explicit Content target; same automatic conversion as today.
+        .MapContent("contentPage", mapping => mapping.AutoMap()))
     .Build();
 
 var app = builder.Build();
@@ -108,25 +108,51 @@ contracts should be introduced only where the other entity types require them.
 
 The existing GUID setting stays explicit. Tracking-only Content registrations
 also remain supported; their proposed equivalent is
-`MapContent("page", type => type.Export = false)`. For export without automatic
-views, omit the view middleware or set `type.TrackViews = false` on that mapping.
+`MapContent("page", mapping => mapping.Export = false)`. For export without automatic
+views, omit the view middleware or set `mapping.TrackViews = false` on that mapping.
 These switches do not allow choosing an inconsistent event type.
 
 ## 3. Map built-in properties and custom Data
 
-Use `Map(destinationProperty, sourcePropertyAlias)` for built-in Relewise properties
-except identity. Use `MapData(propertyAlias, configure)` for custom `Data` entries:
-only the Umbraco property alias is required, and the destination key defaults to it.
-An optional callback configures one extensible `DataMappingOptions` type with
+Use `Map(destinationProperty, sourcePropertyAlias)` for built-in Relewise value
+properties, such as `DisplayName`, `ListPrice`, and `Assortments`. Identity and entity
+relationships use dedicated mapping methods.
+
+Use `MapData(sourcePropertyAlias, configure)` for custom `Data` entries. Only the
+source Umbraco property alias is required; the destination Data key defaults to that
+alias. An optional callback configures one extensible `DataMappingOptions` type with
 `DataKey` and optional field-specific converter selection:
 
 ```csharp
-public void MapData(string propertyAlias, Action<DataMappingOptions>? configure = null);
+public void MapData(string sourcePropertyAlias, Action<DataMappingOptions>? configure = null);
 ```
 
 `Map` selects the destination first. `MapData` selects the source first because its
 destination override is optional. There are no separate title, summary, search-text,
 or image helpers. Identity uses the dedicated `IdFromProperty` method below.
+
+### Consistent API terminology
+
+| Proposed method(s) | Parameter names, in order |
+| --- | --- |
+| `MapContent`, `MapProduct`, `MapBrand`, `MapProductCategory`, `MapContentCategory` | `documentTypeAlias`, `configure` |
+| `VariantsFromChildren` | `documentTypeAlias`, `configure` |
+| `Map` | `destinationProperty`, `sourcePropertyAlias` |
+| `MapData` | `sourcePropertyAlias`, `configure` (optional) |
+| `IdFromProperty`, `BrandFrom`, `AdditionalCategoriesFrom` | `sourcePropertyAlias` |
+
+`documentTypeAlias` identifies a source Umbraco Document Type; `sourcePropertyAlias`
+identifies a property on a source document. `destinationProperty` is an expression
+selecting a built-in Relewise property; `DataKey` names a destination entry in the
+Relewise `Data` dictionary. Use `configure` for configuration callback parameters;
+example callback variables use `options` at the root, `mapping` for entities,
+`variant` for child Variants, and `data` for Data mapping options.
+
+Apply these names in signatures, XML documentation, validation messages, and guides
+when implementing the proposed API. Preserve existing public parameter names and
+contracts, including `AddContentType` and `UseContentKeysAsIds`, for compatibility
+with named arguments and existing configuration. This table describes proposed
+method shapes, not additional overloads or changes to existing APIs.
 
 Replace the `AddRelewise` callback in example 2 with:
 
@@ -198,7 +224,7 @@ contracts and conflict validation must be settled before implementation.
 ## 4. Map Products, child Variants, Categories, and Brands
 
 Use the same bootstrap and SDK connection. Entity methods name the Relewise target;
-the first argument identifies the source Umbraco document type.
+`documentTypeAlias` identifies the source Umbraco Document Type.
 
 ```csharp
 .AddRelewise(options =>
@@ -233,7 +259,7 @@ the first argument identifies the source Umbraco document type.
         mapping.VariantsFromChildren("productVariant", variant =>
         {
             variant.IdFromProperty("sku"); // Variant ID within this parent Product.
-            variant.MapData("size"); // Same source alias and destination Data key.
+            variant.MapData("size"); // Same source property alias and destination Data key.
         });
     });
 
