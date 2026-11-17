@@ -318,7 +318,7 @@ falling back to the site's default when none exists. Do not expose a site-wide
 search `Language`, force English, or change core culture-filter semantics.
 Relewise language keys must match exported values and requests.
 
-## 6. Supplement an externally managed Product
+## 6. Contribute Product data without administrative actions
 
 Content mappings can coexist with editorial contributions to commerce Products:
 
@@ -328,8 +328,8 @@ Content mappings can coexist with editorial contributions to commerce Products:
     options.MapContent("guide", mapping => mapping.AutoMap()); // Existing Content export capabilities remain available.
     options.MapProduct("productEditorialPage", mapping =>
     {
-        mapping.IdFromProperty("commerceProductId"); // Address the existing commerce Product.
-        mapping.Ownership = EntityOwnership.Supplement; // Contribute fields without owning Product lifecycle.
+        mapping.IdFromProperty("commerceProductId"); // Use the same Product ID as the commerce integration.
+        mapping.AdministrativeActions = AdministrativeActionPolicy.None(); // Export data; leave enable, disable, and delete to commerce.
         mapping.MapData("summary", data =>
         {
             data.DataKey = "editorialSummary"; // Update only this declared editorial contribution.
@@ -338,15 +338,52 @@ Content mappings can coexist with editorial contributions to commerce Products:
 })
 ```
 
-New entity mappings otherwise own their entity. Supplementation must update only
-approved fields and withdraw only its contributions on unpublish/removal; it must
-never disable/delete the external Product or replace externally managed variants.
-This matters to mapping because it determines what a declared field may update
-and remove. Do not introduce a mandatory public `Source` setting for this purpose.
+Use one immutable `AdministrativeActionPolicy` type with named factory methods,
+internal construction, and no public implementation interface:
 
-Safe selective removal and missing-target behavior are implementation gates.
-An existence read followed by an upsert does not guarantee update-if-existing;
-we must resolve this before promising that partial Products cannot be created.
+| Factory | Behavior |
+| --- | --- |
+| `AdministrativeActionPolicy.Synchronize()` | Default: follow the integration's documented Umbraco publication/removal rules. Preserve existing Content behavior; unpublish does not automatically mean permanent deletion. |
+| `AdministrativeActionPolicy.None()` | Send no enable, disable, or delete actions from this mapping, including full-export cleanup and actions for its exported Variants. |
+
+This follows Relewise's separation of data updates (`ProductUpdate`) and lifecycle
+actions (`ProductAdministrativeAction`). It replaces `Ownership`, not the mapping
+API: no separate `EnrichProduct` or `UpdateExistingOnly` method. Referenced Brands
+and Categories retain their own mappings' policies; disabling actions on a Product
+mapping does not change those independently configured mappings.
+
+With `None()`, publish/update exports only declared fields. Unpublish/removal stops
+further exports but leaves contributed fields in place. Automatic field withdrawal
+is deferred. Do not send implicit defaults, replace unrelated data or externally
+managed Variants, or use `ClearAndReplace`: that update mode can also re-enable a
+disabled Product. Verify partial-update and collection semantics before implementation.
+
+This policy does not guarantee that a Product already exists. Standard Product
+update modes can create missing Products; both integrations must use the same ID,
+and import order may otherwise produce a partially populated Product. An existence
+read followed by an upsert does not provide atomic update-if-existing behavior.
+Document this limit rather than introducing an unsupported promise.
+
+Additional named factories or overloads can express future policies with parameters.
+Retain the original factory signatures and their semantics; expose no raw SDK
+administrative-action enum or configurable cleanup machinery at this stage.
+
+### Extensibility review of the remaining configuration
+
+Keep the public surface small and preserve the first two bootstrap examples:
+
+| Configuration | Recommendation |
+| --- | --- |
+| `MapData` | Keep its optional `DataMappingOptions` callback; add settings there as concrete needs arise. |
+| `Map` and relationship methods | Keep today's proposed calls. Add overloads with optional configuration callbacks when typed conversion, picker selection, or relationship behavior actually needs configuration; do not expose empty options types now. |
+| Identity | Keep `IdFromProperty` and the existing `UseContentKeysAsIds` default. Add a dedicated overload if custom calculation needs configuration; every reference must still use the shared resolver. |
+| Converters and mappers | Preserve existing contracts and registrations. Add adapters or narrow new contracts only after proving the required conversion and scope behavior. |
+| Search, export, and view tracking | Keep genuine on/off switches for now. Administrative actions have several possible behaviors, whereas enabling a feature remains binary. Add separate settings or overloads if requirements expand; never repurpose an existing boolean. |
+
+Preserve existing method signatures when adding overloads; adding an optional
+parameter to an existing signature alone does not preserve binary compatibility.
+Keep policy types immutable and options callbacks concerned with configuration;
+dispatch, resolution, transport, and lifecycle machinery remain internal.
 
 ## 7. Decisions before implementation
 
@@ -358,12 +395,14 @@ we must resolve this before promising that partial Products cannot be created.
    Preserve Content IDs and culture/segment semantics; handle Variant moves and
    affected Product/category/brand aggregates, including indexing-only sites.
 3. Resolve Product/Variant result collapse, mixed Content/Product ranking and
-   paging, unmapped document types, protected/headless access, and supplementation
-   guarantees. Keep dispatch, transport, and contribution storage internal.
+   paging, unmapped document types, protected/headless access, and partial-update
+   guarantees. Prove administrative-action suppression across cleanup and Variants;
+   confirm which new entity mappings expose the policy. Keep dispatch and transport
+   internal.
 
 Deliver in that order: compatible Content configuration, shared search semantics,
-owned catalogue mapping, then supplementation. This document proposes configuration;
-it does not authorize implementation.
+catalogue mapping, then data contributions with administrative actions suppressed.
+This document proposes configuration; it does not authorize implementation.
 
 ## References
 
@@ -374,6 +413,8 @@ it does not authorize implementation.
 - [Umbraco core: mapping definitions](https://docs.umbraco.com/umbraco-cms/13.latest/reference/mapping)
 - [Community UmbracoMapper: property mapping and conversion](https://github.com/AndyButland/UmbracoMapper)
 - [Umbraco UI Builder: field value mappers](https://docs.umbraco.com/umbraco-ui-builder/advanced/value-mappers)
+- [Relewise entity updates and administrative actions](https://docs.relewise.com/docs/developer/implementation-steps.html)
+- [Relewise Product update modes and creation behavior](https://docs.relewise.com/docs/developer/sdks/dotnet/product-update/entity-integration.html)
 - [Relewise default index and optional additional indexes](https://docs.relewise.com/docs/myrelewise/search-index.html)
 - [Relewise multilingual data and request language](https://docs.relewise.com/docs/intro/languages-currencies.html)
 
