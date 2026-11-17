@@ -212,9 +212,9 @@ A `ListPrice` converter must produce the destination's `MultiCurrency` type; a
 `DisplayName` converter must produce `Multilingual`. A string-producing converter
 cannot be selected for either. Preserve SDK nullability in these contracts; do not
 introduce public object-returning converters or unchecked destination casts.
-`PropertyMappingContext` supplies the source `IPublishedProperty` and published
-cultures so converters can construct complete multilingual values. It is distinct
-from the existing Data-writing `RelewisePropertyConverterContext`.
+`PropertyMappingContext` supplies the source document, element, property, and
+operation context described below. It is distinct from the existing Data-writing
+`RelewisePropertyConverterContext`.
 
 Accept only direct, supported destination properties; reject computed expressions,
 identity, and relationships. Without an explicit converter, select only compatible
@@ -222,6 +222,51 @@ built-in typed conversions. Destination compatibility is checked at compile time
 the source editor/value still needs runtime validation because it is selected by
 alias. Define null/missing-value handling and report unsupported input or conversion
 failures with document, source property alias, and culture context.
+
+### Context for mappers and converters
+
+Mapping/conversion methods receive contextual source information, not just a scalar
+value. Keep the following concepts consistent across mapper and converter contexts:
+
+| Context | Purpose |
+| --- | --- |
+| Owning document (`PublishedContent`, `IPublishedContent`) | Read sibling properties, ancestors, and site context. |
+| Current element (`SourceElement`, `IPublishedElement`) | Read surrounding fields on the current document or nested block. |
+| Source property (`Property`, `IPublishedProperty`; converters only) | Access its editor, alias, and culture-dependent values. |
+| Cultures | Published cultures for complete multilingual output; the current culture for existing per-culture Data conversion. |
+| Destination | The mapper's typed target update, or the converter's selected built-in property/Data key. |
+| Operation | Cancellation and explicitly supplied operation-specific context. |
+
+At document level, `SourceElement` is the owning document. Nested conversion changes
+`SourceElement` and `Property` while retaining `PublishedContent` and the operation
+context. For example, a price converter can read currency from its enclosing block
+and market information from the owning page's ancestors. Preserve this information
+through recursive block conversion. Typed converters return the complete `TValue`;
+existing Data converters retain their per-culture invocation and writing behavior.
+
+Keep contextual metadata read-only and destination writes limited to the mapping's
+responsibility. Share context plumbing internally; a public base-class hierarchy
+or untyped global service/state dictionary is not required.
+
+Constructor-inject services and application configuration into mapper/converter
+instances. Resolve new DI-managed instances in the export operation's scope; do not
+capture scoped services in singleton builders or converters. Existing globally
+registered converters remain singletons, and existing supplied mapper instances
+retain their lifetime requirements. Preserve existing context service access for
+compatibility; richer execution must use the operation's service scope.
+
+Background indexing, explicit exports, and rebuilds establish the required Umbraco
+context and resolve site/culture context explicitly, without requiring an HTTP
+request. Before finalizing the new typed converter interface, settle asynchronous
+conversion and cancellation for service lookups; preserve synchronous legacy APIs.
+
+Preserve `IContentTypeMapping`, `ContentMappingContext`, and
+`IRelewisePropertyValueConverter` contracts. Extend context additively and provide
+a context-aware aggregate conversion overload. Existing property/culture-only calls
+remain valid for existing converters, but cannot supply an owning document that
+was never passed. Context-dependent converters must require that information and
+report its absence clearly. The shared export engine supplies full source context;
+adapters must preserve it through legacy mappers and nested conversions.
 
 ### Converter defaults and custom registration
 
@@ -515,8 +560,12 @@ dispatch, resolution, transport, and lifecycle machinery remain internal.
    confirm which new entity mappings expose the policy. Keep dispatch and transport
    internal.
 
-Before accepting the indexing/search arrangement, verify locally on RC1 that:
+Before accepting the mapping/indexing/search arrangement, verify locally on RC1 that:
 
+- Nested converters retain the owning document and operation context while selecting
+  the correct block, property, and culture. Legacy mapper/converter calls keep working.
+- Scoped dependencies are resolved and disposed per export operation, and contextual
+  mapping works during background indexing and rebuilds without an HTTP request.
 - Indexing-only installations process publish, update, unpublish/removal, and rebuild
   events through Umbraco's flow while Examine remains current and searchable.
 - Enabling Relewise for Umbraco's search abstraction changes query routing only,
