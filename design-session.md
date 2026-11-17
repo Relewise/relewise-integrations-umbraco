@@ -261,10 +261,25 @@ options.UseContentKeysAsIds = true; // Existing option; selects Umbraco keys for
 ```
 
 `IdFromProperty("sku")` overrides that default for one mapping. Use it instead of
-`Map(entity => entity.Id, ...)`; identity is resolved once for export, search,
-tracking, relationships, and lifecycle actions. Pickers resolve the referenced
-mapping's ID, and Variants retain their parent Product identity as well as their own.
-Empty/invalid overridden IDs produce a clear error, never a silent node-ID fallback.
+`Map(entity => entity.Id, ...)`. One internal identity resolver applies the same
+strategy for entity export, references, search, tracking, and lifecycle actions.
+
+**Every supported entity reference uses the referenced entity's mapping**, for
+both single references and every item in a list. The referencing entity's ID
+strategy does not determine the target ID. For example, `BrandFrom("brand")` reads
+the picked Brand document and applies its `MapBrand` configuration: with
+`IdFromProperty("brandId")`, both the exported Brand and the Product's Brand
+reference use that document's `brandId` value, not its Umbraco node ID or key.
+
+This also applies to all Product and Content Category path entries, additional
+picked categories, and Product/Variant relationships. Resolve each target through
+its own mapping; a Variant retains both its resolved parent Product ID and its own
+resolved Variant ID. Without an override, use the target mapping's node ID/key
+default. Missing target mappings, incompatible entity types, or empty/invalid
+overridden IDs produce a clear mapping error, never a silent node-ID fallback.
+
+This is automatic behavior of the existing proposed relationship methods. No extra
+ID selector, resolver registration, or per-reference configuration is required.
 
 Custom ID calculation must remain possible through custom mapping; settle its
 precedence with `IdFromProperty` before introducing another public method. Changing
