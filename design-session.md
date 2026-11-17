@@ -115,10 +115,18 @@ These switches do not allow choosing an inconsistent event type.
 ## 3. Map built-in properties and custom Data
 
 Use `Map(destinationProperty, sourcePropertyAlias)` for built-in Relewise properties
-and `MapData(destinationKey, sourcePropertyAlias)` for entries in its `Data` dictionary.
-Both put the destination first. Expressions select SDK properties; aliases select
-Umbraco properties. There are no separate `TitleFrom`, `DisplayNameFrom`,
-`SummaryFrom`, `SearchTextFrom`, `ImageFrom`, or `IdFromProperty` shortcuts.
+except identity. Use `MapData(propertyAlias, configure)` for custom `Data` entries:
+only the Umbraco property alias is required, and the destination key defaults to it.
+An optional callback configures one extensible `DataMappingOptions` type, initially
+exposing only `DataKey`:
+
+```csharp
+public void MapData(string propertyAlias, Action<DataMappingOptions>? configure = null);
+```
+
+`Map` selects the destination first. `MapData` selects the source first because its
+destination override is optional. There are no separate title, summary, search-text,
+or image helpers. Identity uses the dedicated `IdFromProperty` method below.
 
 Replace the `AddRelewise` callback in example 2 with:
 
@@ -126,17 +134,24 @@ Replace the `AddRelewise` callback in example 2 with:
 .AddRelewise(options => options.MapContent("article", mapping =>
 {
     mapping.Map(entity => entity.DisplayName, "heading"); // Built-in multilingual DisplayName from published cultures.
-    mapping.MapData("summary", "summary"); // Custom Data key, then Umbraco property alias.
-    mapping.MapData("body", "bodyText"); // Body remains separate for search weighting.
-    mapping.MapData("imageUrl", "heroImage"); // Requires a converter producing a media URL.
+    mapping.MapData("summary"); // Umbraco "summary" becomes Data["summary"].
+    mapping.MapData("bodyText", data =>
+    {
+        data.DataKey = "body"; // Override the destination key; keep body separate for search weighting.
+    });
+    mapping.MapData("heroImage", data =>
+    {
+        data.DataKey = "imageUrl"; // Requires a converter producing a media URL.
+    });
 }))
 ```
 
 Keep extraction/conversion separate from destination selection and retain existing
 converter APIs. Built-in destinations require typed conversion; the extension
 contract remains to be agreed. An expression is not a raw assignment. Unsupported
-conversions must fail validation rather than silently lose data. Summary, body, and image are customer-defined Data keys, not special
-search-adapter fields. Searchability and weighting are configured in My Relewise.
+conversions must fail validation rather than silently lose data. Summary, body, and
+image are customer-defined Data keys, not special search-adapter fields.
+Searchability and weighting are configured in My Relewise.
 Published URL metadata remains available independently of these selections.
 
 `AutoMap()` retains today's behavior. Do not silently combine it, declarative
@@ -154,38 +169,41 @@ the first argument identifies the source Umbraco document type.
 {
     options.MapProductCategory("productCategory", mapping =>
     {
-        mapping.Map(entity => entity.Id, "categoryId"); // Stable ID reused in Product category paths.
+        mapping.IdFromProperty("categoryId"); // Stable ID reused in Product category paths.
         mapping.Map(entity => entity.DisplayName, "heading"); // Multilingual category name.
     });
 
     options.MapBrand("brand", mapping =>
     {
-        mapping.Map(entity => entity.Id, "brandId"); // Stable ID referenced by Products.
+        mapping.IdFromProperty("brandId"); // Stable ID referenced by Products.
         mapping.Map(entity => entity.DisplayName, "name"); // SDK Brand name is a string, not Multilingual.
-        mapping.MapData("logoUrl", "logo"); // Custom Data; requires media-to-URL conversion.
+        mapping.MapData("logo", data =>
+        {
+            data.DataKey = "logoUrl"; // Custom Data; requires media-to-URL conversion.
+        });
     });
 
     options.MapProduct("product", mapping =>
     {
-        mapping.Map(entity => entity.Id, "sku"); // Canonical Product ID for export, search, and tracking.
+        mapping.IdFromProperty("sku"); // Canonical Product ID for export, search, and tracking.
         mapping.Map(entity => entity.DisplayName, "heading"); // Built-in Multilingual value from published cultures.
         mapping.Map(entity => entity.ListPrice, "listPrices"); // Built-in MultiCurrency; source must include currency codes.
         mapping.Map(entity => entity.SalesPrice, "salePrices"); // Built-in MultiCurrency; same conversion requirement.
         mapping.Map(entity => entity.Assortments, "markets"); // Built-in list of integer assortment IDs.
-        mapping.MapData("description", "description"); // Customer-defined Data, not a built-in description property.
+        mapping.MapData("description"); // Customer-defined Data, not a built-in description property.
         mapping.BrandFrom("brand"); // Single picker to a mapped Brand; resolves its canonical ID.
         mapping.AdditionalCategoriesFrom("extraCategories"); // Multi-picker adds paths alongside mapped category ancestors.
 
         mapping.VariantsFromChildren("productVariant", variant =>
         {
-            variant.Map(entity => entity.Id, "sku"); // Variant ID within this parent Product.
-            variant.MapData("size", "size"); // Custom Variant Data using the same destination-first convention.
+            variant.IdFromProperty("sku"); // Variant ID within this parent Product.
+            variant.MapData("size"); // Same source alias and destination Data key.
         });
     });
 
     options.MapContentCategory("topic", mapping =>
     {
-        mapping.Map(entity => entity.Id, "topicId"); // Editorial taxonomy; separate from Product Categories.
+        mapping.IdFromProperty("topicId"); // Editorial taxonomy; separate from Product Categories.
         mapping.Map(entity => entity.DisplayName, "heading"); // Multilingual category name.
     });
 })
@@ -196,6 +214,25 @@ that produces `MultiCurrency`; an ordinary decimal has no implied currency.
 `Assortments` requires integer IDs. Brand's string DisplayName needs an explicit
 culture selection when its source varies by culture; that conversion policy remains
 to be agreed. Product and Category DisplayName preserve published languages.
+
+### Identity defaults and overrides
+
+All mappings (Content, Product, Variant, Brand, and both Category types) default to
+the Umbraco node's numeric ID. Preserve the existing root option to use GUID keys:
+
+```csharp
+options.UseContentKeysAsIds = true; // Existing option; selects Umbraco keys for mappings without an ID override.
+```
+
+`IdFromProperty("sku")` overrides that default for one mapping. Use it instead of
+`Map(entity => entity.Id, ...)`; identity is resolved once for export, search,
+tracking, relationships, and lifecycle actions. Pickers resolve the referenced
+mapping's ID, and Variants retain their parent Product identity as well as their own.
+Empty/invalid overridden IDs produce a clear error, never a silent node-ID fallback.
+
+Custom ID calculation must remain possible through custom mapping; settle its
+precedence with `IdFromProperty` before introducing another public method. Changing
+an ID mapping after ingestion is an identity migration, not an ordinary field update.
 
 Relationship methods remain explicit because they resolve documents and hierarchy,
 rather than merely copy property values:
@@ -240,9 +277,12 @@ Content mappings can coexist with editorial contributions to commerce Products:
     options.MapContent("guide", mapping => mapping.AutoMap()); // Existing Content export capabilities remain available.
     options.MapProduct("productEditorialPage", mapping =>
     {
-        mapping.Map(entity => entity.Id, "commerceProductId"); // Address the existing commerce Product.
+        mapping.IdFromProperty("commerceProductId"); // Address the existing commerce Product.
         mapping.Ownership = EntityOwnership.Supplement; // Contribute fields without owning Product lifecycle.
-        mapping.MapData("editorialSummary", "summary"); // Update only this declared editorial contribution.
+        mapping.MapData("summary", data =>
+        {
+            data.DataKey = "editorialSummary"; // Update only this declared editorial contribution.
+        });
     });
 })
 ```
