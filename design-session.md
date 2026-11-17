@@ -141,6 +141,8 @@ or image helpers. Identity uses the dedicated `IdFromProperty` method below.
 | `Map` | `destinationProperty`, `sourcePropertyAlias`, `configure` (optional) |
 | `MapData` | `sourcePropertyAlias`, `configure` (optional) |
 | `IdFromProperty`, `BrandFrom`, `AdditionalCategoriesFrom` | `sourcePropertyAlias` |
+| `SearchProviders.AddContent`, `SearchProviders.AddProduct` | `providerAlias`, `configure` |
+| `ConfigureRequest` | `configure` (receives the typed `request` and runtime `context`) |
 
 `documentTypeAlias` identifies a source Umbraco Document Type; `sourcePropertyAlias`
 identifies a property on a source document. `destinationProperty` is an expression
@@ -148,7 +150,8 @@ selecting a built-in Relewise property; `DataKey` names a destination entry in t
 Relewise `Data` dictionary. Use `configure` for configuration callback parameters;
 example callback variables use `options` at the root, `mapping` for entities,
 `variant` for child Variants, `property` for built-in property mapping options, and
-`data` for Data mapping options.
+`data` for Data mapping options. Search examples use `provider` for provider options
+and `request`/`context` for per-request customization.
 
 Apply these names in signatures, XML documentation, validation messages, and guides
 when implementing the proposed API. Preserve existing public parameter names and
@@ -373,6 +376,26 @@ The source must supply currency codes; an ordinary decimal has no implied curren
 culture selection when its source varies by culture; that conversion policy remains
 to be agreed. Product and Category DisplayName preserve published languages.
 
+### Mapping registration and Document Type metadata
+
+| Method | Allowed registrations per integration configuration |
+| --- | --- |
+| `MapContent` | Multiple; each `documentTypeAlias` must be unique. |
+| `MapProduct`, `MapBrand`, `MapProductCategory`, `MapContentCategory` | At most one call to each method, even with different aliases. |
+
+Duplicate registrations throw an exception identifying the attempted and existing
+registration. A Document Type cannot map to different entity targets. These rules
+apply to the proposed mapping API; preserve the existing `AddContentType` contract.
+Also detect different source documents claiming the same canonical Relewise entity
+during indexing. Contributions from an external commerce system remain supported.
+
+Every exported entity carries its source Document Type alias as a single string
+Data value, whether or not search providers are configured or filter on it. Each
+Content document becomes its own entity with one source alias. The source node/key
+to canonical entity ID association also remains available for result resolution.
+Finalize the metadata key consistently across entity types while preserving existing
+Content metadata compatibility; it is integration-maintained, not another setter.
+
 ### Identity defaults and overrides
 
 All mappings (Content, Product, Variant, Brand, and both Category types) default to
@@ -448,25 +471,95 @@ selected for ordinary published-content queries. Indexing itself does not invoke
 the searcher. The complete registration arrangement still requires an RC1 integration
 test.
 
-Configure search through Umbraco's published-content search abstraction separately:
+### Named Content and Product search providers
+
+Register query providers independently of mappings. Only `AddContent` and
+`AddProduct` are exposed; Category and other searches remain SDK capabilities.
+The example assumes Content mappings for `article` and `guide` and one Product
+mapping have already been registered:
 
 ```csharp
-options.Search.UseRelewiseForPublishedContent = true; // Execute searches through Umbraco's published-content abstraction in Relewise.
-options.Search.Target = SearchTarget.Products; // Search nodes mapped as Relewise Products.
+options.SearchProviders.AddContent("editorial", provider =>
+{
+    provider.DocumentTypeAliases = ["article", "guide"]; // Include either Content mapping.
+});
+
+options.SearchProviders.AddProduct("catalogue", provider =>
+{
+    provider.DisplayedAtLocation = "Website product search"; // Optional analytics/merchandising label.
+    provider.ConfigureRequest((request, context) =>
+    {
+        request.ContextValues = new() { ["SearchExperience"] = "Catalogue" }; // Per-request merchandising context.
+    });
+});
+
+options.SearchProviders.AddProduct("offers", provider =>
+{
+    provider.ConfigureRequest((request, context) =>
+    {
+        request.Filters!.Add(new ProductDataFilter("isOnSale", new EqualsCondition(true))); // Requires an exported boolean Data field.
+    });
+});
+
+options.SearchProviders.DefaultPublishedContentProviderAlias = "editorial"; // Select for ordinary Umbraco published-content searches.
 ```
 
-| Setting | Default | Behavior |
-| --- | --- | --- |
-| `UseRelewiseForPublishedContent` | `false` | Leave the existing search provider selected; Relewise indexing continues. |
-| `Target` | `SearchTarget.Content` | When enabled, select `ContentSearchRequest` for nodes mapped as Relewise Content. `SearchTarget.Products` selects `ProductSearchRequest` for nodes mapped as Relewise Products. |
+`providerAlias` is a unique name used to explicitly select a query provider through
+Umbraco's searcher resolver. It does not select a Document Type. Internally, Umbraco
+resolves searchers by index alias; these query registrations must not register
+additional content-change strategies or automatic exporters. They all query the
+single Relewise index. Duplicate aliases and collisions with existing registrations
+must fail validation.
 
-Enabling search changes query routing only: it neither registers another Relewise
-indexing pipeline nor stops the existing provider's indexing. `Target` applies only
-when Relewise is selected for these queries. Both targets return Umbraco document
-keys through the shared identity association and must honor filtering, access,
-culture, sorting, and pagination semantics. A mixed Content/Product target requires
-an agreed ranking and pagination contract before it can be exposed. Future search
-settings belong on the mutable `Search` options object.
+`DefaultPublishedContentProviderAlias` defaults to unset, preserving the existing
+search provider. When set, it must name a registered provider and routes ordinary
+queries for Umbraco's `Constants.Search.IndexAliases.PublishedContent` through that
+provider. Explicit queries by another alias remain unchanged. Default selection
+neither registers another indexing pipeline nor stops the existing backend's indexing.
+
+| Provider options | Configuration |
+| --- | --- |
+| Content only: `DocumentTypeAliases` | Optional selection among registered Content mappings; omitted means all eligible Content mappings. Reject unknown aliases or aliases mapped to another entity type. |
+| Product | Uses the single Product mapping; exposes no `DocumentTypeAliases`. Reject registration without a Product mapping. Multiple Product providers can configure different queries over it. |
+| Both: `DisplayedAtLocation` | Optional stable label; resolved for every outgoing request as described below. |
+| Both: `ConfigureRequest` | Typed per-request customization: `ContentSearchRequest` for `AddContent`, `ProductSearchRequest` for `AddProduct`. |
+
+Use distinct Content and Product provider options types so `DocumentTypeAliases`
+is available only on Content providers.
+
+A Content provider's Document Type selection becomes a Relewise `ContentDataFilter`
+on the exported source-alias metadata: selected aliases are ORed and combined with
+mandatory and caller filters using AND. Apply it before pagination and facet
+calculation, not by removing returned results. Both provider types must restrict
+results to eligible mapped Umbraco documents and honor access, culture, sorting,
+and pagination. Multiple Content registrations produce separate entities, not
+combined alias metadata.
+
+### Request customization and display location
+
+Create a fresh SDK request per search, then invoke its registered customization.
+The callback is not a shared mutable request configured once at startup. Supply
+read-only runtime context for user, culture, currency resolution, and scoped service
+access; never capture scoped services in singleton configuration. Preserve the
+shared `IRelewiseUserLocator` and mandatory access/publication and mapping filters.
+Customization cannot bypass those restrictions or overwrite caller query/pagination;
+configured sorting defaults must not silently override explicit caller sorting.
+Expose only settings the adapter can represent in Umbraco's document results,
+including a defined Product/Variant collapse policy.
+
+Every outgoing request must have a non-empty `DisplayedAtLocation`. Resolve it in
+this order, ignoring null, empty, or whitespace-only values:
+
+1. The value supplied by per-request customization.
+2. The provider's configured `DisplayedAtLocation`.
+3. The stable fallback `Umbraco search: {providerAlias}`.
+
+Initialize the request with its configured label or fallback before customization,
+and enforce the resolution again before sending. Clearing the value restores the
+configured label or fallback. Use a stable provider alias; do not generate fallback
+labels from users, search terms, URLs, or culture. The `editorial` and `offers`
+examples therefore fall back to `Umbraco search: editorial` and
+`Umbraco search: offers` respectively.
 
 A separate frontend can query Relewise directly regardless of the selected Umbraco
 search provider. Tracking is independently configured. Search-page implementation
@@ -510,8 +603,8 @@ actions (`ProductAdministrativeAction`). Referenced Brands and Categories retain
 their own mappings' policies; disabling actions on a Product mapping does not change
 those independently configured mappings.
 
-With `None()`, publish/update exports only declared fields. Unpublish/removal stops
-further exports but leaves contributed fields in place. Automatic field withdrawal
+With `None()`, publish/update exports declared fields plus mandatory integration
+metadata. Unpublish/removal stops further exports but leaves contributed fields in place. Automatic field withdrawal
 is deferred. Do not send implicit defaults, replace unrelated data or externally
 managed Variants, or use `ClearAndReplace`: that update mode can also re-enable a
 disabled Product. Verify partial-update and collection semantics before implementation.
@@ -537,7 +630,7 @@ Keep the public surface small and preserve the first two bootstrap examples:
 | Relationship methods | Add configuration overloads when picker selection or relationship behavior needs them; do not expose empty options types now. |
 | Identity | Keep `IdFromProperty` and the existing `UseContentKeysAsIds` default. Add a dedicated overload if custom calculation needs configuration; every reference must still use the shared resolver. |
 | Converters and mappers | Preserve existing Data converter/mapper contracts and registrations; add only the narrow typed converter contract needed by `Map`. Prove adapters and scope behavior. |
-| Search | Keep the mutable options object with `UseRelewiseForPublishedContent` and `Target`; add independent settings as needed. Search opt-in never controls indexing. |
+| Search providers | Keep typed Content/Product options with shared request customization and display-location behavior. Content alone supports Document Type selection. Provider registration/default selection never controls indexing. |
 | Export and view tracking | Keep genuine on/off switches; add separate settings or overloads if requirements expand, without repurposing existing booleans. |
 
 Preserve existing method signatures when adding overloads; adding an optional
@@ -555,7 +648,7 @@ dispatch, resolution, transport, and lifecycle machinery remain internal.
    Preserve Content IDs and culture/segment semantics; handle Variant moves and
    affected Product/category/brand aggregates, including indexing-only sites.
 3. Resolve Product/Variant result collapse, mixed Content/Product ranking and
-   paging, unmapped document types, protected/headless access, and partial-update
+   paging, unmapped Document Types, protected/headless access, and partial-update
    guarantees. Prove administrative-action suppression across cleanup and Variants;
    confirm which new entity mappings expose the policy. Keep dispatch and transport
    internal.
@@ -570,7 +663,12 @@ Before accepting the mapping/indexing/search arrangement, verify locally on RC1 
   events through Umbraco's flow while Examine remains current and searchable.
 - Enabling Relewise for Umbraco's search abstraction changes query routing only,
   preserving one Relewise indexing pipeline and the existing provider's indexing.
-  The selected target returns correct totals, paging, access, and culture behavior.
+  Named/default Content and Product providers return correct totals, paging, access,
+  and culture behavior; Content Document Type filters also constrain facets.
+- Duplicate mapping/provider registrations, invalid defaults, and conflicting source
+  identities fail clearly. Source Document Type metadata is exported even without search.
+- Every request has a display location: test configured values, callback overrides,
+  and null/empty/whitespace fallback, plus isolation between concurrent requests.
 - The old notification-driven exporters are not independently registered. Dashboard
   exports, public export/rebuild calls, and core indexing use the shared export engine.
 - Overlapping exports, rebuilds, repeated events, and multiple application instances
