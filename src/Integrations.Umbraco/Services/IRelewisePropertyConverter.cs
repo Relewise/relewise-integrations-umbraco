@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
@@ -9,6 +10,11 @@ namespace Relewise.Integrations.Umbraco.Services;
 /// </summary>
 public interface IRelewisePropertyConverter
 {
+    /// <summary>Convert an element while retaining its owning document and the current service scope.</summary>
+    /// <remarks>The default implementation preserves compatibility with custom aggregate converters implementing only the property-based API.</remarks>
+    IReadOnlyDictionary<string, DataValue?> Convert(IPublishedContent publishedContent, IPublishedElement sourceElement, string[] cultures, IServiceProvider services, System.Threading.CancellationToken cancellationToken = default)
+        => Convert(sourceElement.Properties, cultures);
+
     /// <summary>
     /// Converts the given collection of properties to a read-only dictionary of data values.
     /// The conversion supports multiple cultures.

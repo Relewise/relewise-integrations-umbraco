@@ -1,150 +1,145 @@
 # Umbraco 19 and core search
 
-Version 19 of this package requires **Umbraco 19** and **.NET 11**. It does not support
-earlier Umbraco majors. The initial target is `19.0.0-rc1`; use this prerelease in a
-test environment until Umbraco 19 and this package are released.
+Version 19 targets **Umbraco 19 / .NET 11** exclusively. The initial Umbraco target is
+`19.0.0-rc1`. Back up your database before upgrading and review Umbraco's
+[version-specific upgrade notes](https://docs.umbraco.com/umbraco-cms/fundamentals/setup/upgrading/version-specific).
+The backoffice dashboard uses the session cookie for API requests.
 
-Back up your database before upgrading. Umbraco's database upgrade cannot be undone
-by installing an older package. Resolve obsolete API usage and review Umbraco's
-[19 upgrade notes](https://docs.umbraco.com/umbraco-cms/fundamentals/setup/upgrading/version-specific).
-Backoffice API requests now use the session cookie. The generated dashboard client
-uses `credentials: 'include'` and no longer requests bearer tokens.
+## Registration
 
-## Register the core search provider
-
-The existing `.AddRelewise(...)` content-export API remains available. Core search
-is a separate, opt-in indexing pipeline, driven by Umbraco's own index fields and
-publication lifecycle. It does not depend on `AutoMap()` or custom export mappers.
-
-Configure your Relewise clients as described in the main README, then add:
+Configure the SDK connection as shown in the [README](../README.md), then configure
+mapping and query providers independently:
 
 ```csharp
 builder.CreateUmbracoBuilder()
     .AddBackOffice()
     .AddWebsite()
-    .AddDeliveryApi()
     .AddComposers()
-    .AddRelewise()
-    .AddRelewiseSearchProvider(options =>
+    .AddRelewise(options =>
     {
-        options.Scope = "my-site-production";
-        options.Language = "en";
+        options.MapContent("article", mapping => mapping.AutoMap());
+        options.MapProduct("product", mapping => mapping.IdFromProperty("sku"));
+
+        options.SearchProviders.AddContent("articles", provider =>
+        {
+            provider.DocumentTypeAliases = ["article"]; // Optional Content-only selection.
+            provider.DisplayedAtLocation = "Site search"; // Stable analytics/merchandising label.
+        });
+        options.SearchProviders.AddProduct("catalogue", provider =>
+        {
+            provider.ConfigureRequest((request, context) =>
+            {
+                request.Currency = new Currency("DKK"); // Site-specific request currency.
+            });
+        });
+        options.SearchProviders.DefaultPublishedContentProviderAlias = "articles";
     })
     .Build();
 ```
 
-`Scope` is required and must be unique per site/environment sharing a Dataset.
-Keep it stable: changing it creates a new set of remote entities. Reset/delete
-operations are restricted to the configured scope and Umbraco index alias.
+Use `Relewise.Client.DataTypes.Currency` in this example. Only Content and Product
+query providers are supported. Several named providers may query the same entity
+type with different request settings. Product providers use the single Product
+mapping; `DocumentTypeAliases` is available only on Content providers.
 
-Prefer a **dedicated Dataset** and a separately configured named client. Set
-`options.ClientName` to that named client. Provider entities have scoped IDs and
-contain one document per culture/segment; they are distinct from the ordinary
-content exports used by your own Relewise searches and tracking. Ordinary Relewise
-queries against a shared Dataset must exclude provider entities using the
-`rwUmbracoSearchOwner` Data Key. The dashboard full-export cleanup excludes them.
-
-The Dataset must have an enabled default Search Index, with `options.Language`
-enabled and the Content `DisplayName` field enabled. An entirely empty Dataset may
-not yet have an index. The provider stores its combined searchable text in that
-field. `Language` controls Relewise language processing; Umbraco culture filtering
-is independent. Choose the language appropriate to your site's text. A multilingual
-site needing different linguistic processing per culture should use separate
-configured provider instances/Datasets rather than treating the language setting
-as automatic culture-to-language mapping.
-
-The provider credential needs ContentUpdate, ContentAdministrativeAction, batched
-tracking, and ContentSearchRequest permissions. Automatic page-view tracking also
-needs ContentView permission on its tracker's credential. Store credentials in
-server configuration or a secret store. Never expose the indexing credential in
-browser code.
-
-## Index selection and querying
-
-Published content is replaced by default. Draft content, media, members and Library
-Elements continue to use the built-in provider until explicitly selected:
+Product providers default to `RequirePublishedPage = true`. An advanced search can
+opt out when its caller handles results without a published Umbraco page:
 
 ```csharp
-options.IndexAliases.Add(Umbraco.Cms.Core.Constants.Search.IndexAliases.DraftContent);
-options.IndexAliases.Add(Umbraco.Cms.Core.Constants.Search.IndexAliases.DraftMedia);
-options.IndexAliases.Add(Umbraco.Cms.Core.Constants.Search.IndexAliases.DraftMembers);
-options.IndexAliases.Add(Umbraco.Cms.Core.Constants.Search.IndexAliases.DraftElements);
+options.SearchProviders.AddProduct("commerceCatalogue", provider =>
+{
+    provider.RequirePublishedPage = false; // Include mapped Products whose Umbraco page is unavailable.
+});
 ```
 
-Enable those only when the remote Dataset is appropriate for draft/member data.
-Registration runs after the default index registrations, so composer ordering does
-not silently restore Examine for the selected aliases. Use Umbraco's resolver:
+The integration always maintains source-page availability metadata, including when
+commerce contributes other Product fields. This option only omits that query
+filter; site, mapping, access and culture restrictions remain. Content providers
+always require a published page. Results still contain Umbraco document IDs;
+callers must handle unavailable pages and any commerce destinations themselves.
+`AdministrativeActions` is configured independently; this option does not enable
+a disabled Product.
+
+`AddRelewise` registers **one indexing pipeline**, using Umbraco's published-content
+change and rebuild flow. It exports the configured entities whether or not query
+providers are registered. Notification handlers do not run a second export.
+Named query providers do not add indexing pipelines or create additional Relewise
+indexes. Every provider uses the Dataset's default Relewise index.
+
+Without `DefaultPublishedContentProviderAlias`, ordinary published-content queries
+keep their existing provider. Setting it replaces query resolution for that alias;
+Examine's indexer and change strategy remain registered. Draft content, media,
+members, and elements retain their existing search providers.
+
+## Querying
+
+Inject `Umbraco.Cms.Core.Search.ISearcherResolver`:
 
 ```csharp
-var alias = Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent;
-var searcher = searcherResolver.GetSearcher(alias)
-    ?? throw new InvalidOperationException("Search index is not registered");
-var results = await searcher.SearchAsync(alias, "solar panels", culture: "en-us");
+const string providerAlias = "catalogue";
+var searcher = searcherResolver.GetSearcher(providerAlias)
+    ?? throw new InvalidOperationException("Search provider is not registered.");
+var result = await searcher.SearchAsync(providerAlias, "daypack", culture: "en-US", skip: 0, take: 10);
 ```
 
-`searcherResolver` is an injected `Umbraco.Cms.Core.Search.ISearcherResolver`.
-Results contain Umbraco GUIDs, regardless of the ordinary export's numeric/GUID ID
-setting. Rebuild the selected indexes using Umbraco's Search management screen after
-enabling the provider. Existing Examine entries are not imported automatically.
+For ordinary Umbraco searches, use
+`Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent` instead. Results
+contain the source Umbraco GUIDs, including when Relewise IDs come from a property.
+A Variant match resolves to its Product page rather than creating a second result
+for the same Product.
 
-## User identity and behavioral tracking
+Language comes from the requested culture or Umbraco's default culture; it is not
+a single installation-wide language setting. A null Umbraco culture selects
+invariant documents. Searchable fields and relevance follow the Dataset's Relewise
+configuration; mapping a Data key does not automatically change its search settings.
 
-Core searches and automatic content views both resolve `IRelewiseUserLocator` from
-the current HTTP request's services. Register your site's locator before building
-Umbraco, for example `builder.Services.AddScoped<IRelewiseUserLocator, MyUserLocator>();`.
-Return the same temporary/authenticated identifiers and other User data that your
-behavioral tracking uses. The default locator remains anonymous; the integration
-does not generate a tracking ID or override your locator's consent decisions.
+`ConfigureRequest` receives a fresh, typed SDK request and runtime context with
+`Services`, `User`, and `Culture`. Mandatory site/mapping membership, access control,
+request user, query, paging, and the default Relewise index remain enforced. A blank
+`DisplayedAtLocation` falls back to the configured value, then
+`Umbraco search: {providerAlias}`. Keep this label stable across visitors and queries.
 
-The provider resolves the user once per search and reuses it for the main query
-and its facet requests. Index metadata and searches outside an HTTP request remain
-anonymous. A scoped locator is supported by both search and content-view middleware,
-so one visitor's identity is not captured in a singleton middleware or resolver.
+## Identity, access, and tracking
 
-Umbraco's `AccessContext` remains independent authorization data: it controls access
-to protected content, rather than defining a Relewise user ID. An empty principal
-is anonymous even if group IDs are supplied; only the explicit protection bypass
-can override that rule. Identity alignment does not change the scoped provider
-entity IDs or convert behavioral events for legacy exported content into events for
-those separate provider entities.
+Register your `IRelewiseUserLocator` before building Umbraco, for example:
 
-## Behavior and limits
+```csharp
+builder.Services.AddScoped<IRelewiseUserLocator, MyUserLocator>();
+```
 
-- Culture and segment selection, invariant content, member/group access and explicit
-  protection bypass are applied before pagination and facet counting.
-- Keyword/text filters, integer/decimal/date exact and range filters, sorting,
-  exact facets and range facets are translated. Unsupported custom types throw an
-  exception rather than dropping a constraint.
-- Relewise supplies relevance/NLP, so full-text behavior differs from Lucene. All
-  textual relevance tiers are combined; the provider does not preserve Examine's
-  separate R1/R2/R3 weights. Text filters use Relewise substring conditions.
-- Numeric comparisons use Relewise doubles; very high precision decimal values can
-  lose precision. Dates use UTC Unix milliseconds; sub-millisecond distinctions are
-  not retained. Do not use those fields for requirements needing exact precision
-  beyond that representation.
-- A range includes its lower bound and excludes its upper bound. Numeric collections
-  are stored as Data Objects, ensuring a single value must satisfy both bounds.
-- Facets omit filters on their own field. Range facets make one count request per
-  bucket; exact facets use Relewise string facets. Consider request volume for many
-  facets/buckets. Query suggestions are currently empty (optional in the core API).
-- Relewise indexes asynchronously. A successful indexing request does not imply the
-  updated text is immediately searchable. Index management reports remote searchable
-  variation counts, which can exceed the number of Umbraco documents.
-- Rebuild currently clears the scoped remote index before repopulating it. This
-  provider does not implement Examine's shadow-index/zero-downtime rebuild feature.
-- Writes for the same scope/index are serialized within a process. Avoid multiple
-  independent sites writing the same scope; this is not a distributed transaction.
+Search and automatic views resolve the locator from the HTTP request's service
+scope. Return the same identifiers and consent-aware User values used by the rest
+of your site. The default locator returns an anonymous User; the integration does
+not create visitor cookies. Facet requests reuse the main query's resolved User.
 
-Umbraco's own core indexing handles referenced Library Element changes for the
-provider. The legacy custom content-export pipeline still follows document
-publication notifications; it does not independently synchronize referencing pages
-when only a Library Element is published. Use core search for that scenario or
-explicitly republish/export the affected documents.
+Call `u.TrackEntityViews()` in the Umbraco middleware setup. The mapped entity type
+determines the event; a Variant view includes both Product and Variant IDs.
+`TrackContentViews()` remains an alias for compatibility. Export, references,
+result resolution, lifecycle actions, and tracking share ID mapping.
 
-## Sample configuration
+`AccessContext` describes authorization, not behavioral identity. Protection and
+member/group permissions apply before paging and facet counting. An empty principal
+cannot gain access through supplied group IDs. Explicit protection bypass still
+retains site and mapping restrictions.
 
-The regular sample supports enabling the provider through ignored local settings:
-set `Relewise:Umbraco:Search:Enabled` to `true`, set a unique
-`Relewise:Umbraco:Search:Scope`, and optionally set `Language` (default `en`).
+## Behavior and limitations
 
-For contributor test setup, see the [disposable smoke host](../tests/Umbraco19.Smoke/README.md).
+- Rebuild and explicit export share the same writer as background indexing. A rebuild
+  reconciles known source associations after successful ingestion; it does not clear
+  the Dataset or an independent search index.
+- Relewise ingestion is asynchronous. Publication changes may take time to appear
+  in searches. Repeated exports update canonical entities rather than adding a
+  separate set of search entities.
+- Keyword/text filters, numeric/date exact and range filters, sorting, and facets
+  are translated from core fields. A range includes its lower bound and excludes
+  its upper bound. Facets omit filters on their own field; range buckets require
+  separate count requests. Query suggestions are currently empty.
+- Numeric Data uses doubles and dates use UTC milliseconds. Higher numeric or
+  sub-millisecond precision is not retained in these core filter representations.
+- Segment queries and core filters/sorters/facets on culture-specific numeric
+  fields currently fail explicitly. These fields do not prevent business data
+  export; multilingual entity mapping remains supported.
+- New mappers and field-specific converters execute in an export scope. Existing
+  global converters retain their singleton lifetime. See [entity mapping](entity-mapping.md).
+- Writer coordination covers instances sharing an Umbraco database and Dataset.
+  Separate databases targeting the same canonical IDs require external coordination.

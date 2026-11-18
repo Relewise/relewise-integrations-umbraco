@@ -13,19 +13,16 @@ var umbracoBuilder = builder.CreateUmbracoBuilder()
     .AddBackOffice()
     .AddWebsite()
     .AddComposers()
-    .AddRelewise(options => options
-        .AddContentType("homePage", contentType => contentType.AutoMap())
-        .AddContentType("contentPage", contentType => contentType.AutoMap()));
-
-if (builder.Configuration.GetValue<bool>("Relewise:Umbraco:Search:Enabled"))
-{
-    umbracoBuilder.AddRelewiseSearchProvider(options =>
+    .AddRelewise(options =>
     {
-        options.Scope = builder.Configuration["Relewise:Umbraco:Search:Scope"]
-            ?? throw new InvalidOperationException("Configure Relewise:Umbraco:Search:Scope when enabling core search.");
-        options.Language = builder.Configuration["Relewise:Umbraco:Search:Language"] ?? "en";
+        options.MapContent("homePage", mapping => mapping.AutoMap());
+        options.MapContent("contentPage", mapping => mapping.AutoMap());
+        if (builder.Configuration.GetValue<bool>("Relewise:Umbraco:Search:Enabled"))
+        {
+            options.SearchProviders.AddContent("site");
+            options.SearchProviders.DefaultPublishedContentProviderAlias = "site";
+        }
     });
-}
 
 umbracoBuilder.Build();
 
@@ -40,7 +37,7 @@ app.UseUmbraco()
         u.UseBackOffice();
         u.UseWebsite();
 
-        u.TrackContentViews();
+        u.TrackEntityViews();
     })
     .WithEndpoints(u =>
     {

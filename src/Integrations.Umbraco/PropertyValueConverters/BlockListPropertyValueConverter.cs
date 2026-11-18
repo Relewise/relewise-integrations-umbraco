@@ -23,13 +23,15 @@ internal class BlockListPropertyValueConverter(IServiceProvider serviceProvider)
         if (blockList != null)
         {
             // NOTE: This needs to be resolved manually, since it would cause a circular dependency if injected through constructor
-            var propertyConverter = serviceProvider.GetRequiredService<IRelewisePropertyConverter>();
+            var propertyConverter = (context.Services ?? serviceProvider).GetRequiredService<IRelewisePropertyConverter>();
 
             var properties = new List<DataValue?>();
 
             foreach (BlockListItem blockItem in blockList)
             {
-                IReadOnlyDictionary<string, DataValue?> converted = propertyConverter.Convert(blockItem.Content.Properties, context.Culture);
+                IReadOnlyDictionary<string, DataValue?> converted = context.PublishedContent != null && context.Services != null
+                    ? propertyConverter.Convert(context.PublishedContent, blockItem.Content, [context.Culture], context.Services, context.CancellationToken)
+                    : propertyConverter.Convert(blockItem.Content.Properties, context.Culture);
 
                 properties.AddRange(converted.Values);
             }

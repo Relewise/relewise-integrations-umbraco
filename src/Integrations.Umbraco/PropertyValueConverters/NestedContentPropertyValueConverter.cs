@@ -23,13 +23,15 @@ internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvi
         if (elementItems != null)
         {
             // NOTE: This needs to be resolved manually, since it would cause a circular dependency if injected through constructor
-            var propertyConverter = serviceProvider.GetRequiredService<IRelewisePropertyConverter>();
+            var propertyConverter = (context.Services ?? serviceProvider).GetRequiredService<IRelewisePropertyConverter>();
 
             var properties = new List<DataValue?>();
 
             foreach (IPublishedElement prop in elementItems)
             {
-                IReadOnlyDictionary<string, DataValue?> converted = propertyConverter.Convert(prop.Properties, context.Culture);
+                IReadOnlyDictionary<string, DataValue?> converted = context.PublishedContent != null && context.Services != null
+                    ? propertyConverter.Convert(context.PublishedContent, prop, [context.Culture], context.Services, context.CancellationToken)
+                    : propertyConverter.Convert(prop.Properties, context.Culture);
 
                 properties.AddRange(converted.Values);
             }

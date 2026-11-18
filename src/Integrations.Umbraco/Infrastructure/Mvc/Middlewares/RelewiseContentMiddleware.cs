@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Relewise.Client;
+using Relewise.Client.Extensions;
+using Relewise.Client.Requests;
+using Umbraco.Extensions;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -48,7 +52,16 @@ internal class RelewiseContentMiddleware
 
                         try
                         {
-                            await tracker.TrackAsync(new ContentView(user, _configuration.GetContentId(content)));
+                            Trackable view = CreateView(content, user);
+                            await (view switch
+                            {
+                                ContentView value => tracker.TrackAsync(value, context.RequestAborted),
+                                ProductView value => tracker.TrackAsync(value, context.RequestAborted),
+                                BrandView value => tracker.TrackAsync(value, context.RequestAborted),
+                                ProductCategoryView value => tracker.TrackAsync(value, context.RequestAborted),
+                                ContentCategoryView value => tracker.TrackAsync(value, context.RequestAborted),
+                                _ => throw new InvalidOperationException("Unknown entity view type.")
+                            });
                         }
                         catch (HttpRequestException ex)
                         {
@@ -64,6 +77,31 @@ internal class RelewiseContentMiddleware
 
         await _next.Invoke(context);
     }
+
+    private Trackable CreateView(IPublishedContent content, User user)
+    {
+        string id = _configuration.GetContentId(content);
+        if (!_configuration.Mappings.TryGetValue(content.ContentType.Alias, out MappingDefinition? mapping))
+            return new ContentView(user, id);
+        if (mapping.EntityType == typeof(ProductVariant))
+        {
+            IPublishedContent parent = content.Parent() ?? throw new InvalidOperationException("A Variant view requires its mapped Product parent.");
+            if (!_configuration.Mappings.TryGetValue(parent.ContentType.Alias, out MappingDefinition? parentMapping)
+                || parentMapping.EntityType != typeof(Product) || parentMapping.Variant != mapping)
+                throw new InvalidOperationException("A Variant view requires its configured direct Product parent.");
+            return new ProductView(user, new Product(_configuration.GetContentId(parent)), new ProductVariant(id));
+        }
+        if (mapping.EntityType == typeof(Product)) return new ProductView(user, new Product(id));
+        if (mapping.EntityType == typeof(Brand)) return new BrandView(user, new Brand(id));
+        if (mapping.EntityType == typeof(ProductCategory)) return new ProductCategoryView(user, CategoryPath(content, typeof(ProductCategory)));
+        if (mapping.EntityType == typeof(ContentCategory)) return new ContentCategoryView(user, CategoryPath(content, typeof(ContentCategory)));
+        return new ContentView(user, id);
+    }
+
+    private string[] CategoryPath(IPublishedContent content, Type entityType)
+        => content.Breadcrumbs(andSelf: true)
+            .Where(node => _configuration.Mappings.TryGetValue(node.ContentType.Alias, out MappingDefinition? mapping) && mapping.EntityType == entityType)
+            .Select(_configuration.GetContentId).ToArray();
 
     private static ITracker? SafeGetTracker(HttpContext context)
     {

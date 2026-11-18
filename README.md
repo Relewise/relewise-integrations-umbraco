@@ -12,6 +12,7 @@ Start with [the documentation overview](docs/README.md) to choose between automa
 - [Block List, Block Grid, and nested content](docs/block-editors.md): default support, traversal, rich text, visibility, and referenced content.
 - [Complete mapper example](docs/examples/AdvancedContentMapping/README.md): buildable C# code you can adapt to your content model.
 - [Validation and troubleshooting](docs/validation-and-troubleshooting.md): export checks, missing fields, duplicate keys, and stale data.
+- [Entity mapping](docs/entity-mapping.md): Content, Products, Variants, Categories, Brands, IDs and converters.
 - [Umbraco core search provider](docs/umbraco-19-search.md): registration, queries, access control, and supported features.
 
 

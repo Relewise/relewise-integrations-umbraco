@@ -16,7 +16,11 @@ public static class UmbracoApplicationBuilderContextExtensions
     /// </summary>
     /// <param name="builder"></param>
     /// <exception cref="ArgumentNullException"></exception>
-    public static void TrackContentViews(this IUmbracoApplicationBuilderContext builder)
+    public static void TrackContentViews(this IUmbracoApplicationBuilderContext builder) => builder.TrackEntityViews();
+
+    /// <summary>Tracks views using the entity type and canonical ID configured for the current document.</summary>
+    /// <param name="builder">The Umbraco middleware builder.</param>
+    public static void TrackEntityViews(this IUmbracoApplicationBuilderContext builder)
     {
         if (builder == null) throw new ArgumentNullException(nameof(builder));
 

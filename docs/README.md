@@ -7,6 +7,7 @@ Use this integration to export published Umbraco pages to Relewise and track con
 | I want to… | Read |
 | --- | --- |
 | Choose numeric IDs or stable content keys across environments | [Content IDs across environments](../README.md#content-ids-across-environments) |
+| Map Products, Variants, Categories and Brands | [Entity mapping](entity-mapping.md) |
 | Use Relewise through Umbraco's core search API | [Umbraco 19 and core search](umbraco-19-search.md) |
 | Understand automatic mapping and choose an extension point | [Custom content mapping](custom-content-mapping.md) |
 | Export readable text from Block List, Block Grid, or nested blocks | [Mapping block editors](block-editors.md) |

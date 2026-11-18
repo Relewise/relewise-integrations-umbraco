@@ -209,8 +209,19 @@ public class ContentIdentityTests
             locators.Add(locator);
             return locator.Object;
         });
+        services.AddSingleton(clients.Object);
+        var store = new Mock<global::Umbraco.Cms.Core.Services.IKeyValueService>();
+        store.Setup(value => value.GetValue("Relewise:SiteId")).Returns("identity-test");
+        services.AddSingleton(store.Object);
+        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
+        {
+            options.MapContent("article");
+            options.SearchProviders.AddContent("articles");
+            options.SearchProviders.DefaultPublishedContentProviderAlias = "articles";
+        });
+        services.AddSingleton<RelewiseUmbracoConfiguration>();
         using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
-        var provider = new RelewiseSearchProvider(clients.Object, Options.Create(new RelewiseSearchOptions { Scope = "identity-test" }), accessor);
+        var provider = new MappedEntitySearcher(root.GetRequiredService<RelewiseUmbracoConfiguration>(), root.GetRequiredService<IServiceScopeFactory>(), accessor);
         var middleware = new RelewiseContentMiddleware(_ => Task.CompletedTask, Configuration("true"));
         await Task.WhenAll(Enumerable.Range(0, 12).Select(async visitor =>
         {
@@ -229,12 +240,11 @@ public class ContentIdentityTests
                 string query = $"article-{visitor}";
                 await provider.SearchAsync(global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent, query,
                     facets: [new KeywordFacet("tag"), new IntegerRangeFacet("number", [new("low", 0, 10), new("high", 10, null)])],
-                    accessContext: new AccessContext(Guid.NewGuid(), []));
+                    culture: "en-US", accessContext: new AccessContext(Guid.NewGuid(), []));
                 Assert.Contains(views, view => ReferenceEquals(currentUser, view.User));
                 var visitorSearches = searches.Where(search => search.Term == query).ToArray();
                 Assert.Equal(4, visitorSearches.Length); // Main search, keyword facet, two range buckets.
                 Assert.All(visitorSearches, search => Assert.Same(currentUser, search.User));
-                await provider.GetMetadataAsync(global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent);
             }
             finally { accessor.HttpContext = null; }
         }));

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Relewise.Client.DataTypes;
 
 namespace Relewise.Integrations.Umbraco;
 
@@ -14,18 +15,79 @@ public class RelewiseUmbracoOptionsBuilder
     /// </summary>
     public bool UseContentKeysAsIds { get; set; }
 
-    internal Dictionary<string, ContentTypeBuilder?> ContentBuilders { get; } = new();
+    internal Dictionary<string, ContentTypeBuilder?> ContentBuilders { get; } = new(StringComparer.OrdinalIgnoreCase);
+    internal Dictionary<string, MappingDefinition> EntityMappings { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Named Content and Product query providers; registration does not add indexing pipelines.</summary>
+    public SearchProviderOptions SearchProviders { get; } = new();
+
+    /// <summary>Map a distinct Document Type to Relewise Content.</summary>
+    public RelewiseUmbracoOptionsBuilder MapContent(string documentTypeAlias, Action<ContentTypeBuilder>? configure = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(documentTypeAlias);
+        if (ContentBuilders.ContainsKey(documentTypeAlias) || EntityMappings.ContainsKey(documentTypeAlias))
+            throw new InvalidOperationException($"Document Type '{documentTypeAlias}' is already registered.");
+        var builder = new ContentTypeBuilder();
+        configure?.Invoke(builder);
+        builder.Definition.DocumentTypeAlias = documentTypeAlias;
+        builder.Definition.Validate();
+        ContentBuilders.Add(documentTypeAlias, builder);
+        return this;
+    }
+
+    /// <summary>Register the single Product Document Type.</summary>
+    public RelewiseUmbracoOptionsBuilder MapProduct(string documentTypeAlias, Action<ProductMappingBuilder>? configure = null)
+    {
+        var builder = new ProductMappingBuilder();
+        configure?.Invoke(builder);
+        Register(documentTypeAlias, builder.Definition);
+        return this;
+    }
+
+    /// <summary>Register the single Brand Document Type.</summary>
+    public RelewiseUmbracoOptionsBuilder MapBrand(string documentTypeAlias, Action<EntityMappingBuilder<Brand>>? configure = null)
+        => RegisterEntity(documentTypeAlias, configure);
+
+    /// <summary>Register the single Product Category Document Type.</summary>
+    public RelewiseUmbracoOptionsBuilder MapProductCategory(string documentTypeAlias, Action<EntityMappingBuilder<ProductCategory>>? configure = null)
+        => RegisterEntity(documentTypeAlias, configure);
+
+    /// <summary>Register the single Content Category Document Type.</summary>
+    public RelewiseUmbracoOptionsBuilder MapContentCategory(string documentTypeAlias, Action<EntityMappingBuilder<ContentCategory>>? configure = null)
+        => RegisterEntity(documentTypeAlias, configure);
+
+    private RelewiseUmbracoOptionsBuilder RegisterEntity<TEntity>(string documentTypeAlias, Action<EntityMappingBuilder<TEntity>>? configure) where TEntity : class
+    {
+        var builder = new EntityMappingBuilder<TEntity>();
+        configure?.Invoke(builder);
+        Register(documentTypeAlias, builder.Definition);
+        return this;
+    }
+
+    private void Register(string documentTypeAlias, MappingDefinition mapping)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(documentTypeAlias);
+        if (ContentBuilders.ContainsKey(documentTypeAlias) || EntityMappings.ContainsKey(documentTypeAlias))
+            throw new InvalidOperationException($"Document Type '{documentTypeAlias}' is already registered.");
+        foreach (MappingDefinition existing in EntityMappings.Values)
+            if (existing.EntityType == mapping.EntityType)
+                throw new InvalidOperationException($"{mapping.EntityType.Name} mapping '{existing.DocumentTypeAlias}' is already registered; cannot register '{documentTypeAlias}'.");
+        mapping.DocumentTypeAlias = documentTypeAlias;
+        mapping.Validate();
+        EntityMappings.Add(documentTypeAlias, mapping);
+    }
 
     /// <summary>
-    /// Adds a named client, where you can override options for the different clients, e.g. timeout.
+    /// Registers a Document Type for existing Content mapping and view-tracking configuration.
     /// </summary>
-    /// <param name="contentType">Name of the Content Type Alias.</param>
-    /// <param name="options">The options you'd like to set for this contentType.</param>
-    /// <param name="throwIfExists">Defines whether the method should throw, if a contentType with same name exists.</param>
+    /// <param name="contentType">The Document Type alias.</param>
+    /// <param name="options">Configuration for this Document Type.</param>
+    /// <param name="throwIfExists">Whether repeated registration should throw instead of merging configuration.</param>
     public RelewiseUmbracoOptionsBuilder AddContentType(string contentType, Action<ContentTypeBuilder>? options = null, bool throwIfExists = false)
     {
         if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentException("Value cannot be null or whitespace", nameof(contentType));
 
+        if (EntityMappings.ContainsKey(contentType)) throw new InvalidOperationException($"Document Type '{contentType}' is already registered for another entity type.");
         if (ContentBuilders.ContainsKey(contentType) && throwIfExists)
             throw new ArgumentException("A contentType with that name was already registered", nameof(contentType));
 
@@ -37,20 +99,26 @@ public class RelewiseUmbracoOptionsBuilder
         else
         {
             builder = new ContentTypeBuilder();
+            builder.Definition.Legacy = true;
+            builder.Definition.Export = false;
             ContentBuilders.Add(contentType, builder);
         }
 
         if (builder != null)
+        {
             options?.Invoke(builder);
+            builder.Definition.DocumentTypeAlias = contentType;
+            if (builder.AutoMapContent || builder.Mapper != null) builder.Definition.Export = true;
+        }
 
         return this;
     }
 }
 
 /// <summary>
-/// Represents the root configuration of a ContentType
+/// Configures mapping and tracking for a Document Type exported as Content.
 /// </summary>
-public class ContentTypeBuilder
+public class ContentTypeBuilder : EntityMappingBuilder<Content>
 {
     internal bool AutoMapContent { get; private set; }
     internal IContentTypeMapping? Mapper { get; private set; }
@@ -61,6 +129,7 @@ public class ContentTypeBuilder
     public void AutoMap()
     {
         AutoMapContent = true;
+        Definition.AutomaticData = true;
     }
 
     /// <summary>
@@ -71,5 +140,6 @@ public class ContentTypeBuilder
     public void UseMapper(IContentTypeMapping contentTypeMapping)
     {
         Mapper = contentTypeMapping ?? throw new ArgumentNullException(nameof(contentTypeMapping));
+        Definition.LegacyMapper = Mapper;
     }
 }

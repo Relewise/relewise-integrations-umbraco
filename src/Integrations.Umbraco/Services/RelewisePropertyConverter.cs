@@ -11,12 +11,25 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
     : IRelewisePropertyConverter
 {
     public IReadOnlyDictionary<string, DataValue?> Convert(IEnumerable<IPublishedProperty> properties, string[] cultures)
+        => ConvertProperties(properties, cultures, null, null, null, default, null).Data;
+
+    public IReadOnlyDictionary<string, DataValue?> Convert(IPublishedContent publishedContent, IPublishedElement sourceElement, string[] cultures, IServiceProvider services, System.Threading.CancellationToken cancellationToken = default)
+        => ConvertProperties(sourceElement.Properties, cultures, publishedContent, sourceElement, services, cancellationToken, null).Data;
+
+    internal PropertyConversion ConvertProperty(IPublishedContent publishedContent, IPublishedElement sourceElement,
+        IPublishedProperty property, string[] cultures, MappingOperation operation, IRelewisePropertyValueConverter? selected)
+        => ConvertProperties([property], cultures, publishedContent, sourceElement, operation.Services, operation.CancellationToken, selected);
+
+    private PropertyConversion ConvertProperties(IEnumerable<IPublishedProperty> properties, string[] cultures,
+        IPublishedContent? publishedContent, IPublishedElement? sourceElement, IServiceProvider? services,
+        System.Threading.CancellationToken cancellationToken, IRelewisePropertyValueConverter? selected)
     {
         if (properties == null) throw new ArgumentNullException(nameof(properties));
         if (cultures == null) throw new ArgumentNullException(nameof(cultures));
         if (cultures.Length == 0) throw new ArgumentException("Value cannot be an empty collection.", nameof(cultures));
 
         var dataKeys = new Dictionary<string, DataValue?>();
+        bool handled = false;
 
         foreach (IPublishedProperty property in properties)
         {
@@ -27,7 +40,7 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
                 foreach (string culture in cultures)
                 {
                     var localizedDataKeys = new Dictionary<string, DataValue?>();
-                    Convert(property, culture, localizedDataKeys);
+                    Convert(property, culture, localizedDataKeys, publishedContent, sourceElement, services, cancellationToken, selected, ref handled);
                     localizedProperties.Add(culture, localizedDataKeys);
                 }
 
@@ -69,21 +82,34 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
             }
             else
             {
-                Convert(property, cultures.First(), dataKeys);
+                Convert(property, cultures.First(), dataKeys, publishedContent, sourceElement, services, cancellationToken, selected, ref handled);
             }
         }
 
-        return dataKeys;
+        return new PropertyConversion(dataKeys, handled);
     }
 
-    private void Convert(IPublishedProperty property, string culture, Dictionary<string, DataValue?> dataKeys)
+    private void Convert(IPublishedProperty property, string culture, Dictionary<string, DataValue?> dataKeys,
+        IPublishedContent? publishedContent, IPublishedElement? sourceElement, IServiceProvider? services,
+        System.Threading.CancellationToken cancellationToken, IRelewisePropertyValueConverter? selected, ref bool handled)
     {
-        var context = new RelewisePropertyConverterContext(property, culture, dataKeys);
-
+        cancellationToken.ThrowIfCancellationRequested();
+        var context = new RelewisePropertyConverterContext(property, culture, dataKeys, publishedContent, sourceElement, services, cancellationToken);
+        if (selected != null)
+        {
+            if (!selected.CanHandle(context)) throw new InvalidOperationException($"Selected converter {selected.GetType().Name} cannot handle '{property.Alias}' for culture '{culture}'.");
+            handled = true;
+            selected.Convert(context);
+            return;
+        }
         foreach (IRelewisePropertyValueConverter converter in converters)
         {
             if (converter.CanHandle(context))
+            {
+                handled = true;
                 converter.Convert(context);
+            }
         }
     }
 }
+internal sealed record PropertyConversion(IReadOnlyDictionary<string, DataValue?> Data, bool Handled);
