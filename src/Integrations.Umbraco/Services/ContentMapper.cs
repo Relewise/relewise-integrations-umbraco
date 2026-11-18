@@ -1,4 +1,5 @@
-﻿using System;
+﻿#pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -71,8 +72,8 @@ internal class ContentMapper : IContentMapper
         }
         else
         {
-            contentUpdate.Content.Data = _propertyConverter
-                .Convert(content.PublishedContent.Properties, culturesToPublish.ToArray())
+            contentUpdate.Content.Data = (await _propertyConverter
+                .ConvertAsync(content.PublishedContent, content.PublishedContent, culturesToPublish.ToArray(), _provider, token))
                 .ToDictionary(x => x.Key, x => x.Value);
         }
 

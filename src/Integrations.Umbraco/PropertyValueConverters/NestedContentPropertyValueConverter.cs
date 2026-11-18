@@ -1,4 +1,7 @@
-﻿using System;
+#pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
+using System.Threading;
+using System.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,14 +12,19 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvider) : IRelewisePropertyValueConverter
+internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvider) : IDefaultPropertyValueConverter, IRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
         return context.Property.PropertyType.EditorAlias.Equals("Umbraco.NestedContent");
     }
 
+    /// <inheritdoc/>
+    [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
+        => ConvertAsync(context, context.CancellationToken).GetAwaiter().GetResult();
+
+    public async ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
     {
         var elementItems = context.Property.GetValue<IEnumerable<IPublishedElement>?>(context.Culture)?.ToArray();
 
@@ -29,9 +37,11 @@ internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvi
 
             foreach (IPublishedElement prop in elementItems)
             {
-                IReadOnlyDictionary<string, DataValue?> converted = context.PublishedContent != null && context.Services != null
-                    ? propertyConverter.Convert(context.PublishedContent, prop, [context.Culture], context.Services, context.CancellationToken)
-                    : propertyConverter.Convert(prop.Properties, context.Culture);
+                IReadOnlyDictionary<string, DataValue?> converted = propertyConverter is RelewisePropertyConverter contextual && context.Services != null
+                    ? await contextual.ConvertElementAsync(context.PublishedContent, prop, [context.Culture], context.Services, cancellationToken)
+                    : context.PublishedContent != null && context.Services != null
+                    ? await propertyConverter.ConvertAsync(context.PublishedContent, prop, [context.Culture], context.Services, context.CancellationToken)
+                    : await propertyConverter.ConvertAsync(prop.Properties, [context.Culture], cancellationToken);
 
                 properties.AddRange(converted.Values);
             }

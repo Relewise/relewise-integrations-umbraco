@@ -44,7 +44,7 @@ public class PropertyMappingContext
 public interface IPropertyMappingConverter<TValue>
 {
     /// <summary>Build the complete destination value, including applicable cultures or currencies.</summary>
-    TValue Convert(PropertyMappingContext context);
+    ValueTask<TValue> ConvertAsync(PropertyMappingContext context, CancellationToken cancellationToken);
 }
 
 internal sealed class MappingOperation(IServiceProvider services, CancellationToken cancellationToken) : IAsyncDisposable
@@ -62,6 +62,13 @@ internal sealed class MappingOperation(IServiceProvider services, CancellationTo
         return instance;
     }
     internal T Resolve<T>() where T : class => (T)Resolve(typeof(T));
+    private Task<string>? _defaultCulture;
+    internal async Task<string> DefaultCultureAsync(string[] publishedCultures)
+    {
+        string culture = await (_defaultCulture ??= Services.GetRequiredService<global::Umbraco.Cms.Core.Services.ILanguageService>().GetDefaultIsoCodeAsync());
+        return publishedCultures.FirstOrDefault(value => value.Equals(culture, StringComparison.OrdinalIgnoreCase))
+            ?? publishedCultures.Order(StringComparer.OrdinalIgnoreCase).First();
+    }
     public async ValueTask DisposeAsync()
     {
         List<Exception>? errors = null;

@@ -109,6 +109,11 @@ export class RelewiseDashboardElement extends UmbLitElement {
             ${this.errorMessage ? html`<div class="mt-10 relewise-error">${this.errorMessage}</div>` : ''}
           </uui-box>
 
+          <uui-box headline="Index statistics">
+            <p>Document counts and index health are unavailable for Relewise in Umbraco's indexing dashboard.
+              The displayed count of 0 is a placeholder and does not indicate an empty Relewise Dataset.</p>
+          </uui-box>
+
           <uui-box headline="Settings">
 
             ${this.unhandledError ? html`<div class="relewise-error">Unexpected error occurred. Please check the response on the XHR request or check logs.</div>` : ''}

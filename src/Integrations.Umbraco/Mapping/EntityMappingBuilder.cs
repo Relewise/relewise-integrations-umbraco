@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -24,7 +25,7 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
         get => Definition.AdministrativeActions;
         set => Definition.AdministrativeActions = value ?? throw new ArgumentNullException(nameof(value));
     }
-    /// <summary>Use a scoped mapper for application fields, instead of declarative field mapping.</summary>
+    /// <summary>Run a scoped mapper after declarative fields and configured relationships, allowing final application-field customization.</summary>
     public void UseMapper<TMapper>() where TMapper : class, IEntityMapper<TEntity>
     {
         if (Definition.Mapper != null) throw new InvalidOperationException("An entity mapper is already configured.");
@@ -125,7 +126,7 @@ internal sealed class MappingDefinition(Type entityType)
     }
     internal void Validate()
     {
-        if ((AutomaticData && (DataMappings.Count > 0 || Properties.Count > 0)) || ((LegacyMapper != null || Mapper != null) && (DataMappings.Count > 0 || Properties.Count > 0)) || (Mapper != null && (LegacyMapper != null || AutomaticData)))
+        if ((AutomaticData && (DataMappings.Count > 0 || Properties.Count > 0)) || (LegacyMapper != null && (DataMappings.Count > 0 || Properties.Count > 0 || Mapper != null)))
             throw new InvalidOperationException($"Mapping '{DocumentTypeAlias}' combines automatic/custom and explicit field mappings.");
         foreach (DataMapping data in DataMappings)
             if (data.Options.DataKey is "contentTypeAlias" or "url" or "createdAt" or "UmbracoVersionId" || data.Options.DataKey.StartsWith("rwUmbraco", StringComparison.Ordinal))
@@ -138,19 +139,19 @@ internal interface IPropertyMapping
 {
     string SourcePropertyAlias { get; }
     string DestinationProperty { get; }
-    void Apply(object entity, PropertyMappingContext context);
+    ValueTask ApplyAsync(object entity, PropertyMappingContext context);
 }
 internal sealed class PropertyMapping<TEntity, TValue>(string sourcePropertyAlias, string destinationProperty,
-    Action<TEntity, TValue> assign, Func<PropertyMappingContext, TValue>? converter) : IPropertyMapping where TEntity : class
+    Action<TEntity, TValue> assign, Func<PropertyMappingContext, ValueTask<TValue>>? converter) : IPropertyMapping where TEntity : class
 {
     public string SourcePropertyAlias { get; } = sourcePropertyAlias;
     public string DestinationProperty { get; } = destinationProperty;
-    public void Apply(object entity, PropertyMappingContext context)
+    public async ValueTask ApplyAsync(object entity, PropertyMappingContext context)
     {
         if (entity is not TEntity destination) throw new InvalidOperationException("The mapped entity type does not match its configured property.");
         try
         {
-            TValue value = converter != null ? converter(context) : BuiltInPropertyConversion.Convert<TValue>(context);
+            TValue value = converter != null ? await converter(context) : BuiltInPropertyConversion.Convert<TValue>(context);
             assign(destination, value);
         }
         catch (Exception error) when (error is not OperationCanceledException)

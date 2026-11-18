@@ -66,7 +66,7 @@ public class RichTextEditorPropertyValueConverterTests
     {
         using ServiceProvider services = CreateServices(registerExplicitly: true, registerBeforeDefaults);
 
-        Assert.Single(services.GetServices<IRelewisePropertyValueConverter>().OfType<RichTextEditorPropertyValueConverter>());
+        Assert.Single(services.GetServices<IAsyncRelewisePropertyValueConverter>().OfType<RichTextEditorPropertyValueConverter>());
 
         var property = new PublishedProperty("Umbraco.RichText", new HtmlEncodedString("<p>Description</p>"));
         var result = services.GetRequiredService<IRelewisePropertyConverter>().Convert([property], ["en-US"]);
@@ -77,12 +77,12 @@ public class RichTextEditorPropertyValueConverterTests
     {
         var services = new ServiceCollection();
         if (registerExplicitly && registerBeforeDefaults)
-            services.AddValueConverter<RichTextEditorPropertyValueConverter>();
+            services.AddAsyncValueConverter<RichTextEditorPropertyValueConverter>();
 
         var builder = new TestUmbracoBuilder(services);
         builder.AddRelewise();
         if (registerExplicitly && !registerBeforeDefaults)
-            services.AddValueConverter<RichTextEditorPropertyValueConverter>();
+            services.AddAsyncValueConverter<RichTextEditorPropertyValueConverter>();
 
         return services.BuildServiceProvider();
     }

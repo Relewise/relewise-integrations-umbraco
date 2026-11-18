@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Relewise.DemoStorefront": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "store",
+      "applicationUrl": "http://localhost:5521",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

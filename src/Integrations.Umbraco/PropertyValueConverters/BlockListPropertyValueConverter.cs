@@ -1,4 +1,7 @@
-﻿using System;
+#pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
+using System.Threading;
+using System.Threading.Tasks;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,14 +12,19 @@ using Umbraco.Cms.Core.Models.Blocks;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-internal class BlockListPropertyValueConverter(IServiceProvider serviceProvider) : IRelewisePropertyValueConverter
+internal class BlockListPropertyValueConverter(IServiceProvider serviceProvider) : IDefaultPropertyValueConverter, IRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
         return context.Property.PropertyType.EditorAlias.Equals("Umbraco.BlockList");
     }
 
+    /// <inheritdoc/>
+    [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
+        => ConvertAsync(context, context.CancellationToken).GetAwaiter().GetResult();
+
+    public async ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
     {
         BlockListModel? blockList = context.Property.GetValue<BlockListModel>(context.Culture);
 
@@ -29,9 +37,11 @@ internal class BlockListPropertyValueConverter(IServiceProvider serviceProvider)
 
             foreach (BlockListItem blockItem in blockList)
             {
-                IReadOnlyDictionary<string, DataValue?> converted = context.PublishedContent != null && context.Services != null
-                    ? propertyConverter.Convert(context.PublishedContent, blockItem.Content, [context.Culture], context.Services, context.CancellationToken)
-                    : propertyConverter.Convert(blockItem.Content.Properties, context.Culture);
+                IReadOnlyDictionary<string, DataValue?> converted = propertyConverter is RelewisePropertyConverter contextual && context.Services != null
+                    ? await contextual.ConvertElementAsync(context.PublishedContent, blockItem.Content, [context.Culture], context.Services, cancellationToken)
+                    : context.PublishedContent != null && context.Services != null
+                    ? await propertyConverter.ConvertAsync(context.PublishedContent, blockItem.Content, [context.Culture], context.Services, context.CancellationToken)
+                    : await propertyConverter.ConvertAsync(blockItem.Content.Properties, [context.Culture], cancellationToken);
 
                 properties.AddRange(converted.Values);
             }

@@ -38,6 +38,7 @@ public class MappedEntitySearchTests
         factory.Setup(value => value.GetClient<Relewise.Client.Search.ISearcher>(It.IsAny<string>())).Returns(sdk.Object);
         var store = new Mock<IKeyValueService>(); store.Setup(value => value.GetValue("Relewise:SiteId")).Returns("protected-site");
         var services = new ServiceCollection();
+        services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(settings => settings.Id = "protected-site");
         services.AddSingleton(factory.Object); services.AddSingleton(store.Object);
         services.AddScoped<IRelewiseUserLocator, ScopedVisitor>(); services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
@@ -77,7 +78,8 @@ public class MappedEntitySearchTests
         var clients = new Mock<IRelewiseClientFactory>();
         clients.Setup(factory => factory.GetClient<Relewise.Client.Search.ISearcher>(It.IsAny<string>())).Returns(searcher.Object);
         var store = new Mock<IKeyValueService>(); store.Setup(service => service.GetValue("Relewise:SiteId")).Returns("test-site");
-        var services = new ServiceCollection(); services.AddSingleton(clients.Object); services.AddSingleton(store.Object);
+        var services = new ServiceCollection();
+        services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(settings => settings.Id = "test-site"); services.AddSingleton(clients.Object); services.AddSingleton(store.Object);
         services.AddScoped<IRelewiseUserLocator, ScopedVisitor>(); services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         var configured = new ConcurrentBag<SearchRequest>();
         void Customize(PaginatedSearchRequest request)

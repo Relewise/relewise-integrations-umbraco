@@ -1,0 +1,29 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@using Umbraco.Extensions
+@using Relewise.Integrations.Umbraco
+@inject IServiceProvider Services
+@{
+    var product = Model.ContentType.Alias == "product";
+    var variant = Model.ContentType.Alias == "productVariant";
+    var parent = variant ? Model.Parent() : null;
+    var entityType = Model.ContentType.Alias switch { "product" => "Product", "productVariant" => "Variant", "brand" => "Brand", "productCategory" => "Product Category", _ => "Content" };
+    var html = $"<p style='margin-top:30px'><a href='/store'>← Back to the collection</a></p><section class='detail'><div class='illustration'>{(product || variant ? Storefront.Image(Model.Name) : Storefront.Icon(Model.Name))}</div><div class='details'><p class='eyebrow'>{Model.ContentType.Alias}</p><h1>{Storefront.E(Model.Value<string>("heading") ?? Model.Name)}</h1><p>{Storefront.E(Model.Value<string>("bodyText"))}</p>";
+    if (product) html += $"<h2>DKK {Storefront.E(Model.Value<string>("salesPrice"))}</h2><p>Designed for everyday adventures.</p>";
+    if (product)
+    {
+        var brand = Model.Value<Umbraco.Cms.Core.Models.PublishedContent.IPublishedContent>("brand");
+        var category = Model.Ancestors().FirstOrDefault(node => node.ContentType.Alias == "productCategory");
+        if (brand != null) html += $"<p>Brand: <a href='{brand.Url()}'>{Storefront.E(brand.Name)}</a></p>";
+        if (category != null) html += $"<p>Category: <a href='{category.Url()}'>{Storefront.E(category.Name)}</a></p>";
+    }
+    if (Model.ContentType.Alias is "brand" or "productCategory")
+        foreach (var child in Model.Children().Where(child => child.ContentType.Alias is "productCategory" or "folder" or "product"))
+            html += $"<p><a href='{child.Url()}'>{Storefront.E(child.Name)}</a></p>";
+    html += "<div class='variants'>";
+    foreach (var child in Model.Children().Where(child => child.ContentType.Alias == "productVariant")) html += $"<a href='{child.Url()}'>{Storefront.E(child.Value<string>("color"))}</a>";
+    if (parent != null) html += $"<a href='{parent.Url()}'>View parent Product</a>";
+    html += $"</div><div class='ids'>Umbraco key: {Model.Key}<br>Relewise {entityType} ID: {Storefront.E(DemoConfiguration.EntityId(Model, Services))}";
+    if (parent != null) html += $"<br>Parent Product ID: {Storefront.E(DemoConfiguration.EntityId(parent, Services))}";
+    html += "</div><p><small>This page uses the integration's automatic entity view tracking.</small></p></div></section>";
+}
+@Html.Raw(Storefront.Layout(html, Services.GetService<RelewiseUmbracoConfiguration>() != null))

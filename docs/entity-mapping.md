@@ -62,8 +62,9 @@ configured site URL, Umbraco may resolve absolute URLs against its fallback host
 
 Multiple `MapContent` registrations are allowed for different Document Types.
 `MapProduct`, `MapBrand`, `MapProductCategory`, and `MapContentCategory` each allow one
-registration. A Document Type has one target; different documents cannot claim the
-same canonical entity. Brand identity comparisons follow Relewise's case-insensitive
+registration. A Document Type has one target. Canonical IDs must identify distinct
+entities; duplicate IDs are rejected within an export batch/full rebuild. Delta
+exports do not maintain a cross-batch identity registry. Brand identity comparisons follow Relewise's case-insensitive
 Brand behavior. Product category ancestors skip unmapped folders; Variants must be
 direct children of their Product.
 
@@ -71,14 +72,13 @@ direct children of their Product.
 
 `Map` infers `PropertyMappingOptions<TValue>` from its destination expression.
 `UseConverter<T>()` requires `IPropertyMappingConverter<TValue>`, so a price converter
-must return `MultiCurrency` and a DisplayName converter must return `Multilingual`.
+must asynchronously return `MultiCurrency` and a DisplayName converter must asynchronously return `Multilingual`.
 Built-in conversion accepts compatible published values; it does not guess currency
 or a culture for a localized source mapped to Brand's single-string DisplayName.
-Without an explicit DisplayName mapping, a Brand uses the node name from the first
-effective culture.
+Without an explicit DisplayName mapping, a Brand uses the node name in Umbraco's default language when published, otherwise the first published culture in ordinal order.
 
 `MapData` uses existing built-in and global converters by default. Selecting a
-field-specific `IRelewisePropertyValueConverter` bypasses that automatic selection
+field-specific `IAsyncRelewisePropertyValueConverter` bypasses that automatic selection
 for the field. A custom Data key requires the converter to emit under the source
 property alias; converters that emit several custom keys cannot be arbitrarily renamed.
 
@@ -90,15 +90,25 @@ conversion calls remain valid but cannot reconstruct an owner.
 Constructor injection is supported for field converters and new
 `IEntityMapper<TEntity>` implementations selected through `UseMapper<T>()`. Registered
 instances resolve from the operation scope; unregistered concrete types are activated
-and disposed within that operation. Existing global converters remain singletons.
+and disposed within that operation. `AddAsyncValueConverter<T>()` registers scoped
+global Data converters, which take precedence over built-in defaults regardless of
+registration order; the last matching custom registration wins. Existing synchronous
+global converters remain singletons through the compatibility adapter.
 Do not capture a scoped service in an existing singleton mapper or converter.
-Typed field converters are synchronous; asynchronous lookups can use
-`IEntityMapper<TEntity>.MapAsync`. Data converters retain their existing
+Do not request another export/rebuild from inside a mapper or converter; recursive
+indexing is rejected to prevent deadlocks.
+Typed field converters use `ValueTask<TValue> ConvertAsync(PropertyMappingContext, CancellationToken)`.
+Data converters use `ValueTask ConvertAsync(RelewisePropertyConverterContext, CancellationToken)`. Data converters retain their existing
 culture-dependent scalar, multilingual or culture-suffixed output shapes.
 
-Use one mapping approach per entity: automatic Data mapping, explicit fields, or a
-custom mapper. A custom mapper may populate application fields but must keep the
-resolved ID. Integration metadata is maintained by the package.
+Choose automatic Data mapping or explicit fields. Either may be combined with one
+`IEntityMapper<TEntity>`, which runs after fields, converters, relationships and child
+Variants. It populates the supplied SDK entity and returns `Task`; the integration
+constructs the corresponding update. New mappers must keep the resolved ID; reserved
+metadata is applied afterward. `IContentTypeMapping` and synchronous Data converters
+are obsolete, remain functional through compatibility adapters, and are scheduled
+for removal in the next major version. Legacy Content mappers retain their returned
+update/ID behavior; migrate identity into `IdFromProperty` to align references and tracking.
 
 ## Contributing to an existing catalogue
 
@@ -128,3 +138,19 @@ of those collections with values supplied by another integration. An empty
 existing Relewise Brand relationship.
 
 Search providers are configured separately; see [Umbraco core search](umbraco-19-search.md).
+
+## Publication and rebuilds
+
+Published content supplies exported values. One writer handles background changes,
+explicit exports and rebuilds without integration-owned database records. Relewise
+source metadata identifies earlier exports after unpublication, including property-based
+IDs. Umbraco deletion notifications capture the configured ID and queue removal after
+commit through the same writer; deleted Variants refresh their parent. A draft-only
+ID change can leave its previously exported identity until a full export. A successful full export reconciles missing entities within its
+configured scope and administrative policy; it does not clear the Dataset.
+
+Changed Brand/Category references are not automatically propagated to other entities.
+Re-export the affected Product or rebuild. Changed canonical IDs can leave an earlier
+entity until the next full export. Previously contributed business fields are retained
+unless explicitly updated/cleared. Interrupted background work can require a rebuild;
+coordinate full rebuilds across processes sharing the same source/Dataset scope.

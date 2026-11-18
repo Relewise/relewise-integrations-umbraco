@@ -1,300 +1,251 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions;
 using Relewise.Client.Requests;
+using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
+using Relewise.Client.Requests.Queries;
+using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
-using Umbraco.Cms.Core.Services;
-using Umbraco.Cms.Core.Persistence.Repositories;
 using Umbraco.Cms.Core.Search.Indexing;
+using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
-using Content = Relewise.Client.DataTypes.Content;
-using UmbracoContextReference = global::Umbraco.Cms.Core.UmbracoContextReference;
-using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.Extensions;
+using Relewise.Integrations.Umbraco.NotificationHandlers;
+using Content = Relewise.Client.DataTypes.Content;
 
 namespace Relewise.Integrations.Umbraco;
 
-// All export entry points share a renewable database lease without holding content/database locks across network calls.
-internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, RelewiseUmbracoConfiguration configuration)
+// The writer keeps no integration-owned database records. Rebuilds reconcile source metadata in Relewise.
+internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, RelewiseUmbracoConfiguration configuration, ILogger<EntityIndexingService> logger) : IEntityIndexingOperations
 {
     internal const string IndexAlias = "Relewise_MappedEntities";
-    private const string RecordPrefix = "Relewise:Entity:";
+    private readonly SemaphoreSlim _writer = new(1, 1);
 
-    internal async Task ExportAsync(IEnumerable<Guid> keys, CancellationToken cancellationToken = default, ContentUpdate.UpdateKind? contentUpdateKind = null, long? feedVersion = null)
-        => await RunAsync(keys, false, false, cancellationToken, contentUpdateKind, feedVersion);
-    internal async Task RebuildAsync(bool permanentlyDelete = false, CancellationToken cancellationToken = default)
+    internal static string SiteId(IServiceProvider services)
     {
-        if (!configuration.Mappings.Values.Any(mapping => mapping.Export)) return;
-        await using AsyncServiceScope services = scopeFactory.CreateAsyncScope();
-        var collector = new IndexingKeyCollector();
-        await services.ServiceProvider.GetRequiredService<IPublishedContentChangeStrategy>()
-            .RebuildAsync(new ContentIndexInfo(IndexAlias, [UmbracoObjectTypes.Document], collector), cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
-        await RunAsync(collector.Keys, true, permanentlyDelete, cancellationToken);
+        string? id = services.GetRequiredService<IOptions<GlobalSettings>>().Value.Id;
+        return !string.IsNullOrWhiteSpace(id) ? id
+            : throw new InvalidOperationException("Umbraco's installation ID must be configured before indexing.");
     }
 
-    private async Task RunAsync(IEnumerable<Guid> requestedKeys, bool rebuild, bool permanentlyDelete, CancellationToken cancellationToken, ContentUpdate.UpdateKind? contentUpdateKind = null, long? feedVersion = null)
+    public Task ExportAsync(IEnumerable<Guid> keys, CancellationToken cancellationToken = default,
+        ContentUpdate.UpdateKind? contentUpdateKind = null, long? feedVersion = null)
+        => RunAsync(keys, false, false, cancellationToken, contentUpdateKind, feedVersion);
+
+    public Task RebuildAsync(bool permanentlyDelete = false, CancellationToken cancellationToken = default)
+        => RunAsync([], true, permanentlyDelete, cancellationToken);
+
+    public Task ApplyChangesAsync(ContentChange[] changes, CancellationToken token)
+        => RunAsync([], false, false, token, changes: changes);
+
+    public async Task DeleteAsync(IEnumerable<DeletedEntity> deleted, CancellationToken token)
+    {
+        DeletedEntity[] snapshots = deleted.ToArray();
+        if (snapshots.Length == 0) return;
+        await _writer.WaitAsync(token);
+        try
+        {
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var clients = scope.ServiceProvider.GetRequiredService<IRelewiseClientFactory>();
+            ITracker tracker = clients.GetClient<ITracker>(Constants.NamedClientName);
+            var actions = new List<Trackable>();
+            foreach (DeletedEntity entity in snapshots)
+            {
+                if (entity.Synchronize) actions.Add(DeleteIdentity(entity.EntityType, entity.Id));
+                else if (entity.EntityType == typeof(Content) || entity.EntityType == typeof(Product))
+                {
+                    var filters = new FilterCollection(DataFilter(entity.EntityType, "rwUmbracoNodeKey", new EqualsCondition(entity.NodeKey.ToString("D"))),
+                        DataFilter(entity.EntityType, "rwUmbracoSite", new EqualsCondition(SiteId(scope.ServiceProvider))));
+                    await MarkUnavailableAsync(clients.GetClient<IDataAccessor>(Constants.NamedClientName), tracker, entity.EntityType, filters, token);
+                }
+            }
+            if (actions.Count > 0) await tracker.TrackAsync(actions, token);
+        }
+        finally { _writer.Release(); }
+    }
+
+    private async Task RunAsync(IEnumerable<Guid> keys, bool rebuild, bool permanentlyDelete, CancellationToken token,
+        ContentUpdate.UpdateKind? contentUpdateKind = null, long? feedVersion = null, ContentChange[]? changes = null)
     {
         if (!configuration.Mappings.Values.Any(mapping => mapping.Export)) return;
-        await using AsyncServiceScope services = scopeFactory.CreateAsyncScope();
-        IScopeProvider scopes = services.ServiceProvider.GetRequiredService<IScopeProvider>();
-        IKeyValueService store = services.ServiceProvider.GetRequiredService<IKeyValueService>();
-        // Commit the site identifier only after successful work, together with its identity associations.
-        ITracker tracker = services.ServiceProvider.GetRequiredService<IRelewiseClientFactory>().GetClient<ITracker>(Constants.NamedClientName);
-        await using var lease = await IndexingLease.AcquireAsync(scopeFactory, tracker.DatasetId, cancellationToken);
-        cancellationToken = lease.CancellationToken;
-        string siteId = store.GetValue("Relewise:SiteId") ?? Guid.NewGuid().ToString("N");
-        string prefix = RecordPrefix + tracker.DatasetId.ToString("N") + ":";
-        Dictionary<Guid, IndexedEntity> previous = ReadRecords(store, prefix);
-        foreach (IndexedEntity record in previous.Values)
-            if (configuration.Mappings.TryGetValue(record.DocumentTypeAlias, out MappingDefinition? configured)
-                && configured.EntityType.Name == record.EntityType)
-                record.Synchronize = configured.AdministrativeActions.Enabled;
-        using UmbracoContextReference context = services.ServiceProvider.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
-        IContentService contentService = services.ServiceProvider.GetRequiredService<IContentService>();
-        var affected = new HashSet<Guid>(requestedKeys);
-        if (rebuild)
+        long started = System.Diagnostics.Stopwatch.GetTimestamp();
+        int mappedCount = 0;
+        await _writer.WaitAsync(token);
+        try
         {
-            foreach (Guid key in previous.Keys) affected.Add(key);
+            await using var scope = scopeFactory.CreateAsyncScope();
+            IServiceProvider services = scope.ServiceProvider;
+            string site = SiteId(services);
+            var clients = services.GetRequiredService<IRelewiseClientFactory>();
+            ITracker tracker = clients.GetClient<ITracker>(Constants.NamedClientName);
+            using var context = services.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
+            var strategy = services.GetRequiredService<IPublishedContentChangeStrategy>();
+            var collected = new IndexingKeyCollector();
+            var requested = keys.ToHashSet();
+            var aggregateChildren = new HashSet<Guid>();
+            if (rebuild)
+                await strategy.RebuildAsync(new ContentIndexInfo(IndexAlias, [UmbracoObjectTypes.Document], collected), token);
+            else
+                await strategy.HandleAsync([new ContentIndexInfo(IndexAlias, [UmbracoObjectTypes.Document], collected)],
+                    changes ?? requested.Select(key => ContentChange.Document(key, ChangeImpact.Refresh, ContentState.Published)).ToArray(), token);
+            // Already-unpublished permanent deletions can be reported through the draft flow.
+            if (changes != null)
+                collected.Keys.UnionWith(changes.Where(change => change.ObjectType == UmbracoObjectTypes.Document && change.ChangeImpact == ChangeImpact.Remove).Select(change => change.Id));
+            requested.UnionWith(collected.Keys);
+            // A child Variant contributes to its parent Product, rather than creating an independent entity.
+            foreach (Guid key in requested.ToArray())
+            {
+                IPublishedContent? node = context.UmbracoContext.Content?.GetById(key);
+                IPublishedContent? parent;
+                if (node == null)
+                {
+                    var editable = services.GetRequiredService<IContentService>().GetById(key);
+                    if (editable == null || !configuration.Mappings.TryGetValue(editable.ContentType.Alias, out var removedMapping) || removedMapping.EntityType != typeof(ProductVariant)) continue;
+                    parent = context.UmbracoContext.Content?.GetById(editable.ParentId);
+                }
+                else
+                {
+                    if (!configuration.Mappings.TryGetValue(node.ContentType.Alias, out var mapping) || mapping.EntityType != typeof(ProductVariant)) continue;
+                    parent = node.Parent();
+                }
+                aggregateChildren.Add(key);
+                if (parent != null && !collected.Documents.ContainsKey(parent.Key))
+                    await strategy.HandleAsync([new ContentIndexInfo(IndexAlias, [UmbracoObjectTypes.Document], collected)],
+                        [ContentChange.Document(parent.Key, ChangeImpact.Refresh, ContentState.Published)], token);
+            }
+            string generation = Guid.NewGuid().ToString("N");
+            long version = feedVersion ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            await using var operation = new MappingOperation(services, token);
+            var mapper = new EntityMapper(configuration);
+            string[] siteCultures = (await services.GetRequiredService<ILanguageService>().GetAllAsync()).Select(language => language.IsoCode).ToArray();
+            var desired = new List<MappedEntity>();
+            var claims = new HashSet<string>(StringComparer.Ordinal);
+            var unmapped = new HashSet<Guid>();
+            foreach (var entry in collected.Documents)
+            {
+                token.ThrowIfCancellationRequested();
+                IPublishedContent? source = context.UmbracoContext.Content?.GetById(entry.Key);
+                if (source == null || entry.Value.Variations.Length == 0) continue;
+                if (!configuration.Mappings.TryGetValue(source.ContentType.Alias, out var mapping) || !mapping.Export)
+                {
+                    unmapped.Add(entry.Key);
+                    continue;
+                }
+                if (mapping.EntityType == typeof(ProductVariant)) continue;
+                string[]? cultures = entry.Value.Variations.Any(value => value.Culture == null) ? null
+                    : entry.Value.Variations.Select(value => value.Culture!).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                MappedEntity mapped = await mapper.MapAsync(source, mapping, operation, site, version, contentUpdateKind: contentUpdateKind, publishedCultures: cultures);
+                string claim = mapping.EntityType.Name + ":" + (mapping.EntityType == typeof(Brand) ? mapped.Id.ToLowerInvariant() : mapped.Id);
+                if (!claims.Add(claim)) throw new InvalidOperationException($"Multiple documents export the same {mapping.EntityType.Name} ID '{mapped.Id}'.");
+                if (mapped.Entity is Content or Product) CoreSearchMetadata.Apply(mapped, entry.Value, siteCultures);
+                EntityMapper.Data(mapped.Entity)["rwUmbracoExportGeneration"] = generation;
+                desired.Add(mapped);
+            }
+            mappedCount = desired.Count;
+            var updates = new List<Trackable>();
+            foreach (MappedEntity entity in desired)
+            {
+                updates.Add(entity.Update());
+                if (entity.Synchronize) updates.Add(Administrative(entity.Entity.GetType(), new FilterCollection(DataFilter(entity.Entity.GetType(), "rwUmbracoNodeKey", new EqualsCondition(entity.NodeKey.ToString("D"))), DataFilter(entity.Entity.GetType(), "rwUmbracoSite", new EqualsCondition(site))), false, true));
+            }
+            if (updates.Count > 0) await tracker.TrackAsync(updates, token);
+            token.ThrowIfCancellationRequested();
+
+            // Only a completed full export may reconcile entities missing from its generation.
+            Guid[] unavailable = requested.Except(desired.Select(entity => entity.NodeKey)).Except(unmapped).Except(aggregateChildren).ToArray();
+            if (rebuild || unavailable.Length > 0)
+            {
+                var cleanup = new List<Trackable>();
+                var removals = rebuild ? new[] { (Keys: unavailable, Delete: permanentlyDelete) }
+                    : unavailable.GroupBy(key => services.GetRequiredService<IContentService>().GetById(key) == null)
+                        .Select(group => (Keys: group.ToArray(), Delete: group.Key)).ToArray();
+                foreach (var group in configuration.Mappings.Values.Where(mapping => mapping.Export && mapping.EntityType != typeof(ProductVariant)).GroupBy(mapping => (mapping.EntityType, mapping.AdministrativeActions.Enabled)))
+                {
+                    Type type = group.Key.EntityType;
+                    foreach (var removal in removals)
+                    {
+                        var filters = new FilterCollection(DataFilter(type, "rwUmbracoSite", new EqualsCondition(site)),
+                            new OrFilter(group.Select(mapping => DataFilter(type, "contentTypeAlias", new EqualsCondition(mapping.DocumentTypeAlias))).ToArray()));
+                        filters.Add(rebuild ? DataFilter(type, "rwUmbracoExportGeneration", new EqualsCondition(generation, negated: true), filterOutIfKeyIsNotFound: false)
+                            : new OrFilter(removal.Keys.Select(key => DataFilter(type, "rwUmbracoNodeKey", new EqualsCondition(key.ToString("D")))).ToArray()));
+                        if (type == typeof(Content) || type == typeof(Product))
+                            await MarkUnavailableAsync(clients.GetClient<IDataAccessor>(Constants.NamedClientName), tracker, type, filters, token);
+                        if (group.Key.Enabled) cleanup.Add(Administrative(type, filters, removal.Delete, false));
+                    }
+                }
+                if (cleanup.Count > 0) await tracker.TrackAsync(cleanup, token);
+            }
+        }
+        finally
+        {
+            _writer.Release();
+            logger.LogDebug("Relewise export finished: rebuild={Rebuild}, mapped={Mapped}, elapsedMilliseconds={ElapsedMilliseconds}",
+                rebuild, mappedCount, System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+        }
+    }
+
+    private static async Task MarkUnavailableAsync(IDataAccessor reader, ITracker tracker, Type type, FilterCollection filters, CancellationToken token)
+    {
+        // Only lifecycle/rebuild reconciliation reads remote entities; ordinary publication sends no lookup requests.
+        var updates = new List<Trackable>();
+        if (type == typeof(Product))
+        {
+            var query = new ProductQuery(filters, excludeProductsWithNoVariants: false, pageSize: 500)
+            {
+                IncludeDisabledProducts = true,
+                ResultSettings = new ProductQuery.SelectedPropertiesSettings { SelectedProductDetailsProperties = new() }
+            };
+            do
+            {
+                var response = await reader.QueryAsync(query, token);
+                foreach (var product in response.Products ?? [])
+                    updates.Add(new ProductUpdate(new Product(product.ProductId) { Assortments = null, CategoryPaths = null, Data = new() { ["rwUmbracoPublished"] = false } }, ProductUpdate.UpdateKind.ReplaceProvidedProperties));
+                query.NextPageToken = response.NextPageToken;
+            } while (query.NextPageToken != null);
         }
         else
         {
-            // Expand retained source dependencies, including branches removed from the published cache.
-            bool added;
-            do
+            var query = new ContentQuery(filters, 500) { IncludeDisabledContents = true };
+            while (true)
             {
-                added = false;
-                foreach (IndexedEntity record in previous.Values)
-                    if (!affected.Contains(record.NodeKey) && record.Dependencies.Any(affected.Contains))
-                        added |= affected.Add(record.NodeKey);
+                var response = await reader.QueryAsync(query, token);
+                foreach (var content in response.Contents ?? [])
+                    updates.Add(new ContentUpdate(new Content(content.ContentId) { Assortments = null, CategoryPaths = null, Data = new() { ["rwUmbracoPublished"] = false } }, ContentUpdate.UpdateKind.ReplaceProvidedProperties));
+                if ((response.Contents?.Length ?? 0) < query.NumberOfResults) break;
+                query.SkipNumberOfResults += query.NumberOfResults;
             }
-            while (added);
         }
-        // Collect current core indexing metadata for every desired document, including dependent Products.
-        var searchDocuments = new IndexingKeyCollector();
-        await services.ServiceProvider.GetRequiredService<IPublishedContentChangeStrategy>().HandleAsync(
-            [new ContentIndexInfo(IndexAlias, [UmbracoObjectTypes.Document], searchDocuments)],
-            affected.Select(key => ContentChange.Document(key, ChangeImpact.Refresh, ContentState.Published)), cancellationToken);
-        affected.UnionWith(searchDocuments.Keys);
-        var mapper = new EntityMapper(configuration);
-        await using var operation = new MappingOperation(services.ServiceProvider, cancellationToken);
-        long version = feedVersion ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var desired = new Dictionary<Guid, MappedEntity>();
-        var claims = new Dictionary<string, Guid>(StringComparer.Ordinal);
-        foreach (IndexedEntity record in previous.Values)
-            claims[Claim(record.EntityType, record.Id)] = record.NodeKey;
-        var transferredMetadata = new Dictionary<Guid, string[]>();
-        void ClaimSource(MappedEntity entity, string? parentId = null)
-        {
-            string identity = Claim(entity.Entity.GetType().Name, entity.Id, parentId);
-            if (claims.TryGetValue(identity, out Guid other) && other != entity.NodeKey && previous.ContainsKey(other)
-                && !desired.ContainsKey(other) && contentService.GetById(other) == null)
-            {
-                // A permanently removed source may be replaced by another node addressing the same entity.
-                affected.Add(other);
-                transferredMetadata[entity.NodeKey] = previous[other].SearchDataKeys;
-                claims.Remove(identity);
-            }
-            AddClaim(entity, claims, parentId);
-        }
-        foreach (Guid key in affected.ToArray())
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            IContent? editable = contentService.GetById(key);
-            if (editable == null || !Available(editable, contentService)) continue;
-            IPublishedContent? published = context.UmbracoContext.Content?.GetById(key);
-            if (published == null || !configuration.Mappings.TryGetValue(published.ContentType.Alias, out MappingDefinition? mapping) || !mapping.Export) continue;
-            if (mapping.EntityType == typeof(ProductVariant))
-            {
-                IPublishedContent? parent = published.Parent();
-                if (parent == null || !configuration.Mappings.TryGetValue(parent.ContentType.Alias, out var parentMapping)
-                    || parentMapping.EntityType != typeof(Product) || parentMapping.Variant != mapping)
-                    throw new InvalidOperationException($"Variant '{published.Key}' must be a direct child of the mapped Product Document Type.");
-                continue;
-            }
-            if (!searchDocuments.Documents.TryGetValue(key, out CoreSearchDocument? document) || document.Variations.Length == 0) continue;
-            MappedEntity mapped = await mapper.MapAsync(published, mapping, operation, siteId, version, contentUpdateKind: contentUpdateKind, publishedCultures: EffectiveCultures(document));
-            ClaimSource(mapped);
-            foreach (MappedEntity variant in mapped.Variants) ClaimSource(variant, mapped.Id);
-            desired.Add(key, mapped);
-        }
-        // A first Variant publication must refresh its parent even before an association has been persisted.
-        foreach (Guid key in affected.ToArray())
-        {
-            IPublishedContent? published = context.UmbracoContext.Content?.GetById(key);
-            if (published == null || !configuration.Mappings.TryGetValue(published.ContentType.Alias, out var mapping)
-                || mapping.EntityType != typeof(ProductVariant)) continue;
-            IPublishedContent? parent = published.Parent();
-            if (parent == null || desired.ContainsKey(parent.Key) || !configuration.Mappings.TryGetValue(parent.ContentType.Alias, out var parentMapping) || !parentMapping.Export) continue;
-            if (!searchDocuments.Documents.ContainsKey(parent.Key))
-                await services.ServiceProvider.GetRequiredService<IPublishedContentChangeStrategy>().HandleAsync(
-                    [new ContentIndexInfo(IndexAlias, [UmbracoObjectTypes.Document], searchDocuments)],
-                    [ContentChange.Document(parent.Key, ChangeImpact.Refresh, ContentState.Published)], cancellationToken);
-            if (!searchDocuments.Documents.TryGetValue(parent.Key, out CoreSearchDocument? document) || document.Variations.Length == 0) continue;
-            MappedEntity mapped = await mapper.MapAsync(parent, parentMapping, operation, siteId, version, contentUpdateKind: contentUpdateKind, publishedCultures: EffectiveCultures(document));
-            ClaimSource(mapped);
-            foreach (MappedEntity variant in mapped.Variants) ClaimSource(variant, mapped.Id);
-            desired.Add(parent.Key, mapped);
-        }
-        foreach (MappedEntity entity in desired.Values)
-        {
-            if (!searchDocuments.Documents.TryGetValue(entity.NodeKey, out CoreSearchDocument? document))
-                throw new InvalidOperationException($"Core indexing did not produce a published document for '{entity.NodeKey}'.");
-            if (entity.Entity is Content or Product) CoreSearchMetadata.Apply(entity, document);
-        }
-        var batch = new List<Trackable>();
-        var next = new Dictionary<Guid, IndexedEntity>(previous);
-        var removed = new HashSet<Guid>();
-        var desiredIdentities = desired.Values.Select(entity => Claim(entity.Entity.GetType().Name, entity.Id)).ToHashSet(StringComparer.Ordinal);
-        foreach (var entry in desired)
-        {
-            MappedEntity mapped = entry.Value;
-            IndexedEntity record = IndexedEntity.From(mapped);
-            if (previous.TryGetValue(entry.Key, out IndexedEntity? old))
-            {
-                if (old.Id != record.Id || old.EntityType != record.EntityType) AddAdministrative(batch, old, true, false);
-                foreach (string key in old.SearchDataKeys)
-                    if (!EntityMapper.Data(mapped.Entity).ContainsKey(key)) EntityMapper.Data(mapped.Entity)[key] = null;
-            }
-            if (transferredMetadata.TryGetValue(mapped.NodeKey, out string[]? formerKeys))
-                foreach (string key in formerKeys)
-                    if (!EntityMapper.Data(mapped.Entity).ContainsKey(key)) EntityMapper.Data(mapped.Entity)[key] = null;
-            batch.Add(mapped.Update());
-            AddAdministrative(batch, record, false, true);
-            next[entry.Key] = record;
-        }
-        foreach (var entry in previous)
-        {
-            if (!affected.Contains(entry.Key) || desired.ContainsKey(entry.Key)) continue;
-            IContent? current = contentService.GetById(entry.Key);
-            bool delete = current == null || (rebuild && permanentlyDelete);
-            bool reassigned = current == null && desiredIdentities.Contains(Claim(entry.Value.EntityType, entry.Value.Id));
-            if (!reassigned && entry.Value.Active && entry.Value.EntityType is nameof(Content) or nameof(Product))
-            {
-                // Source-page availability is independent of the externally controlled entity's state.
-                Type type = entry.Value.EntityType == nameof(Content) ? typeof(Content) : typeof(Product);
-                object entity = EntityMapper.Create(type, entry.Value.Id);
-                EntityMapper.Data(entity)["rwUmbracoPublished"] = false;
-                batch.Add(new MappedEntity(entry.Key, entry.Value.DocumentTypeAlias, entry.Value.Id, entity, false).Update());
-            }
-            if (!reassigned) AddAdministrative(batch, entry.Value, delete, false);
-            if (current == null)
-            {
-                next.Remove(entry.Key);
-                removed.Add(entry.Key);
-                continue;
-            }
-            // Retain disabled identities so later deletion/ID changes still address the original entity.
-            entry.Value.Active = false;
-            next[entry.Key] = entry.Value;
-        }
-        lease.EnsureOwned();
-        if (batch.Count > 0) await tracker.TrackAsync(batch, cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
-        lease.EnsureOwned();
-        using IScope scope = scopes.CreateScope();
-        scope.EagerWriteLock(global::Umbraco.Cms.Core.Constants.Locks.KeyValues);
-        var repository = services.ServiceProvider.GetRequiredService<IKeyValueRepository>();
-        foreach (Guid key in removed)
-            if (repository.Get(prefix + key.ToString("N")) is { } value) repository.Delete(value);
-        foreach (var entry in next) store.SetValue(prefix + entry.Key.ToString("N"), JsonSerializer.Serialize(entry.Value));
-        var capabilities = next.Values.Where(record => record.Active).GroupBy(record => record.DocumentTypeAlias)
-            .ToDictionary(group => group.Key, group => group.SelectMany(record => record.UnsupportedCoreFields).Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
-        store.SetValue(CoreSearchMetadata.CapabilitiesKey(tracker.DatasetId), JsonSerializer.Serialize(capabilities));
-        store.SetValue("Relewise:SiteId", siteId);
-        scope.Complete();
+        if (updates.Count > 0) await tracker.TrackAsync(updates, token);
     }
 
-    private static string[]? EffectiveCultures(CoreSearchDocument document)
-        => document.Variations.Any(variation => variation.Culture == null) ? null
-            : document.Variations.Select(variation => variation.Culture!).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+    internal static Filter DataFilter(Type type, string key, ValueCondition condition, bool filterOutIfKeyIsNotFound = true)
+        => type == typeof(Product) ? new ProductDataFilter(key, condition, filterOutIfKeyIsNotFound)
+            : type == typeof(Content) ? new ContentDataFilter(key, condition, filterOutIfKeyIsNotFound)
+            : type == typeof(Brand) ? new BrandDataFilter(key, condition, filterOutIfKeyIsNotFound)
+            : type == typeof(ProductCategory) ? new ProductCategoryDataFilter(key, condition, filterOutIfKeyIsNotFound)
+            : new ContentCategoryDataFilter(key, condition, filterOutIfKeyIsNotFound);
 
-    internal static Dictionary<Guid, IndexedEntity> ReadRecords(IKeyValueService store, string prefix)
-    {
-        var records = new Dictionary<Guid, IndexedEntity>();
-        foreach (string? json in store.FindByKeyPrefix(prefix)?.Values ?? [])
-        {
-            if (json == null) continue;
-            IndexedEntity record = JsonSerializer.Deserialize<IndexedEntity>(json) ?? throw new InvalidOperationException("Invalid persisted Relewise identity association.");
-            records.Add(record.NodeKey, record);
-        }
-        return records;
-    }
-    private static bool Available(IContent content, IContentService service)
-    {
-        if (content.Trashed || !content.Published) return false;
-        int parentId = content.ParentId;
-        while (parentId > 0)
-        {
-            IContent? parent = service.GetById(parentId);
-            if (parent == null || parent.Trashed || !parent.Published) return false;
-            parentId = parent.ParentId;
-        }
-        return true;
-    }
-    private static string Claim(string entityType, string id, string? parentId = null)
-        => entityType + ":" + (parentId?.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "-") + ":" + parentId + ":" + (entityType == nameof(Brand) ? id.ToLowerInvariant() : id);
-    private static void AddClaim(MappedEntity mapped, Dictionary<string, Guid> claims, string? parentId = null)
-    {
-        string claim = Claim(mapped.Entity.GetType().Name, mapped.Id, parentId);
-        if (claims.TryGetValue(claim, out Guid other) && other != mapped.NodeKey)
-            throw new InvalidOperationException($"Documents '{other}' and '{mapped.NodeKey}' claim the same {mapped.Entity.GetType().Name} ID '{mapped.Id}'.");
-        claims[claim] = mapped.NodeKey;
-    }
-    private static void AddAdministrative(List<Trackable> batch, IndexedEntity entity, bool delete, bool enable)
-    {
-        if (!entity.Synchronize) return;
-        switch (entity.EntityType)
-        {
-            case nameof(Content):
-                batch.Add(new ContentAdministrativeAction(null, null, new FilterCollection(new ContentIdFilter(entity.Id)),
-                    enable ? ContentAdministrativeAction.UpdateKind.Enable : delete ? ContentAdministrativeAction.UpdateKind.Delete : ContentAdministrativeAction.UpdateKind.Disable));
-                break;
-            case nameof(Product):
-                batch.Add(new ProductAdministrativeAction(null, null, entity.Id,
-                    enable ? ProductAdministrativeAction.UpdateKind.Enable : delete ? ProductAdministrativeAction.UpdateKind.Delete : ProductAdministrativeAction.UpdateKind.Disable));
-                break;
-            case nameof(Brand):
-                batch.Add(new BrandAdministrativeAction(null, null, new FilterCollection(new BrandIdFilter(entity.Id)),
-                    enable ? BrandAdministrativeAction.UpdateKind.Enable : delete ? BrandAdministrativeAction.UpdateKind.Delete : BrandAdministrativeAction.UpdateKind.Disable));
-                break;
-            case nameof(ProductCategory):
-                batch.Add(new ProductCategoryAdministrativeAction(null, null, entity.Id,
-                    enable ? CategoryAdministrativeAction.UpdateKind.Enable : delete ? CategoryAdministrativeAction.UpdateKind.Delete : CategoryAdministrativeAction.UpdateKind.Disable));
-                break;
-            case nameof(ContentCategory):
-                batch.Add(new ContentCategoryAdministrativeAction(null, null, entity.Id,
-                    enable ? CategoryAdministrativeAction.UpdateKind.Enable : delete ? CategoryAdministrativeAction.UpdateKind.Delete : CategoryAdministrativeAction.UpdateKind.Disable));
-                break;
-        }
-    }
-}
+    private static Trackable DeleteIdentity(Type type, string id)
+        => type == typeof(Product) ? new ProductAdministrativeAction(null, null, id, ProductAdministrativeAction.UpdateKind.Delete)
+            : type == typeof(Content) ? new ContentAdministrativeAction(null, null, new FilterCollection(new ContentIdFilter(id)), ContentAdministrativeAction.UpdateKind.Delete)
+            : type == typeof(Brand) ? new BrandAdministrativeAction(null, null, new FilterCollection(new BrandIdFilter(id)), BrandAdministrativeAction.UpdateKind.Delete)
+            : type == typeof(ProductCategory) ? new ProductCategoryAdministrativeAction(null, null, id, CategoryAdministrativeAction.UpdateKind.Delete)
+            : new ContentCategoryAdministrativeAction(null, null, id, CategoryAdministrativeAction.UpdateKind.Delete);
 
-internal sealed class IndexedEntity
-{
-    public Guid NodeKey { get; set; }
-    public string Id { get; set; } = string.Empty;
-    public string EntityType { get; set; } = string.Empty;
-    public string DocumentTypeAlias { get; set; } = string.Empty;
-    public bool Synchronize { get; set; }
-    public bool Active { get; set; } = true;
-    public List<Guid> Dependencies { get; set; } = new();
-    public string[] SearchDataKeys { get; set; } = [];
-    public string[] UnsupportedCoreFields { get; set; } = [];
-    internal static IndexedEntity From(MappedEntity entity) => new()
-    {
-        NodeKey = entity.NodeKey, Id = entity.Id, EntityType = entity.Entity.GetType().Name,
-        DocumentTypeAlias = entity.DocumentTypeAlias, Synchronize = entity.Synchronize, Dependencies = entity.Dependencies,
-        UnsupportedCoreFields = entity.UnsupportedCoreFields,
-        SearchDataKeys = EntityMapper.Data(entity.Entity).Keys.Where(key => key.StartsWith("rwUmbracoField_", StringComparison.Ordinal)).ToArray()
-    };
+    private static Trackable Administrative(Type type, FilterCollection filters, bool delete, bool enable)
+        => type == typeof(Product) ? new ProductAdministrativeAction(null, null, filters, enable ? ProductAdministrativeAction.UpdateKind.Enable : delete ? ProductAdministrativeAction.UpdateKind.Delete : ProductAdministrativeAction.UpdateKind.Disable)
+            : type == typeof(Content) ? new ContentAdministrativeAction(null, null, filters, enable ? ContentAdministrativeAction.UpdateKind.Enable : delete ? ContentAdministrativeAction.UpdateKind.Delete : ContentAdministrativeAction.UpdateKind.Disable)
+            : type == typeof(Brand) ? new BrandAdministrativeAction(null, null, filters, enable ? BrandAdministrativeAction.UpdateKind.Enable : delete ? BrandAdministrativeAction.UpdateKind.Delete : BrandAdministrativeAction.UpdateKind.Disable)
+            : type == typeof(ProductCategory) ? new ProductCategoryAdministrativeAction(null, null, filters, enable ? CategoryAdministrativeAction.UpdateKind.Enable : delete ? CategoryAdministrativeAction.UpdateKind.Delete : CategoryAdministrativeAction.UpdateKind.Disable)
+            : new ContentCategoryAdministrativeAction(null, null, filters, enable ? CategoryAdministrativeAction.UpdateKind.Enable : delete ? CategoryAdministrativeAction.UpdateKind.Delete : CategoryAdministrativeAction.UpdateKind.Disable);
 }

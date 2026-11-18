@@ -43,38 +43,33 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
         query = string.IsNullOrWhiteSpace(query) ? null : query;
         culture = string.IsNullOrWhiteSpace(culture) ? null : culture;
         segment = string.IsNullOrWhiteSpace(segment) ? null : segment;
-        if (segment != null) throw new NotSupportedException("Segment-specific core queries are not supported by the mapped-entity provider.");
         ArgumentOutOfRangeException.ThrowIfNegative(skip);
         ArgumentOutOfRangeException.ThrowIfNegative(take);
         ArgumentOutOfRangeException.ThrowIfNegative(maxSuggestions);
+        if (maxSuggestions > 0) throw new NotSupportedException("Umbraco suggestions are not supported. Use the Relewise SDK prediction API explicitly.");
         string alias = indexAlias == global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent
             ? configuration.SearchProviders.DefaultPublishedContentProviderAlias ?? indexAlias : indexAlias;
         if (!configuration.SearchProviders.Providers.TryGetValue(alias, out var provider))
             throw new InvalidOperationException($"No Relewise query provider is configured for '{alias}'.");
+        if (segment != null)
+        {
+            UnsupportedSegmentBehavior behavior = provider.Options is ContentSearchProviderOptions content ? content.UnsupportedSegmentBehavior : ((ProductSearchProviderOptions)provider.Options).UnsupportedSegmentBehavior;
+            if (!behavior.IgnoreSegment) throw new NotSupportedException("Segment-specific core queries are not supported. Configure Ignore() to execute without a segment.");
+            segment = null;
+        }
         bool requirePublishedPage = provider.Options is not ProductSearchProviderOptions { RequirePublishedPage: false };
         await using AsyncServiceScope scope = scopes.CreateAsyncScope();
         IServiceProvider services = http.HttpContext?.RequestServices ?? scope.ServiceProvider;
         User user = await services.GetRequiredService<IRelewiseUserLocator>().GetUser();
         string language = culture ?? (await services.GetRequiredService<ILanguageService>().GetDefaultIsoCodeAsync());
         var context = new SearchRequestContext(services, user, language);
-        string site = services.GetRequiredService<IKeyValueService>().GetValue("Relewise:SiteId")
-            ?? throw new InvalidOperationException("Relewise indexing has not completed for this site.");
+        string site = EntityIndexingService.SiteId(services);
         UFilter[] supplied = filters?.ToArray() ?? [];
         UFacet[] selectedFacets = facets?.ToArray() ?? [];
         Sorter[] selectedSorters = sorters?.ToArray() ?? [];
         string[] sourceAliases = provider.ContentOptions?.DocumentTypeAliases ?? configuration.Mappings.Values
             .Where(mapping => mapping.Export && mapping.EntityType == provider.EntityType).Select(mapping => mapping.DocumentTypeAlias).ToArray();
         var client = services.GetRequiredService<IRelewiseClientFactory>().GetClient<global::Relewise.Client.Search.ISearcher>(Constants.NamedClientName);
-        string[] requestedFields = supplied.Select(filter => filter.FieldName).Concat(selectedFacets.Select(facet => facet.FieldName))
-            .Concat(selectedSorters.Where(sorter => sorter is not ScoreSorter).Select(sorter => sorter.FieldName)).Distinct().ToArray();
-        if (requestedFields.Length > 0)
-        {
-            string? json = services.GetRequiredService<IKeyValueService>().GetValue(CoreSearchMetadata.CapabilitiesKey(client.DatasetId));
-            var capabilities = string.IsNullOrEmpty(json) ? null : JsonSerializer.Deserialize<Dictionary<string, string[]>>(json);
-            var unsupported = sourceAliases.SelectMany(alias => capabilities?.GetValueOrDefault(alias) ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            foreach (string field in requestedFields)
-                if (unsupported.Contains(field)) throw new NotSupportedException($"Core field '{field}' has culture-specific numeric values; use an explicitly configured Relewise field/query instead.");
-        }
         ContentSearchRequest Create(IEnumerable<UFilter> selected, int offset, int count)
         {
             var request = new ContentSearchRequest(new Language(language), Currency.Undefined, user, provider.Location(alias), query, offset, count)
@@ -97,7 +92,7 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
                         .Select(id => new ContentDataFilter(AccessKey, new ContainsCondition(id.ToString("D")))));
                 request.Filters!.Add(new OrFilter(allowed.ToArray()));
             }
-            foreach (UFilter filter in selected) request.Filters!.Add(MapFilter(filter));
+            foreach (UFilter filter in selected) request.Filters!.Add(MapFilter(filter, culture));
             return request;
         }
         async Task<ContentSearchResponse> Execute(ContentSearchRequest source)
@@ -157,11 +152,11 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
         }
         Task<ContentSearchResponse> Run(ContentSearchRequest request) => Execute(request);
         ContentSearchRequest request = Create(supplied, skip, take);
-        ApplySorting(request, selectedSorters);
+        ApplySorting(request, selectedSorters, culture);
         ContentSearchResponse result = await Run(request);
         var facetResults = new List<UFacetResult>();
         foreach (UFacet facet in selectedFacets)
-            facetResults.Add(await ComputeFacet(Create(supplied.Where(f => f.FieldName != facet.FieldName), 0, 0), facet, Run));
+            facetResults.Add(await ComputeFacet(Create(supplied.Where(f => f.FieldName != facet.FieldName), 0, 0), facet, Run, culture));
         return new SearchResult(result.Hits, take == 0 ? [] : (result.Results ?? []).Select(r =>
             new Document(Guid.Parse(r.Data["rwUmbracoNodeKey"].ValueAs<string>()), UmbracoObjectTypes.Document)).ToArray(), facetResults, []);
     }
@@ -182,7 +177,7 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
         if (sorting.ThenBy != null) target.ThenBy = ProductSort(sorting.ThenBy);
         return target;
     }
-    private static async Task<UFacetResult> ComputeFacet(ContentSearchRequest request, UFacet facet, Func<ContentSearchRequest, Task<ContentSearchResponse>> execute)
+    private static async Task<UFacetResult> ComputeFacet(ContentSearchRequest request, UFacet facet, Func<ContentSearchRequest, Task<ContentSearchResponse>> execute, string? culture = null)
     {
         var values = new List<FacetValue>();
         switch (facet)
@@ -192,9 +187,9 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
             case DecimalExactFacet:
             case DateTimeOffsetExactFacet:
                 string kind = facet switch { KeywordFacet => "keyword", IntegerExactFacet => "integerExact", DecimalExactFacet => "decimalExact", _ => "dateExact" };
-                request.Facets!.AddDataString(Field(facet.FieldName, kind));
+                request.Facets!.AddDataString(Field(facet.FieldName, kind, culture));
                 var response = await execute(request);
-                foreach (var bucket in response.Facets?.DataString(Field(facet.FieldName, kind))?.Available ?? [])
+                foreach (var bucket in response.Facets?.DataString(Field(facet.FieldName, kind, culture))?.Available ?? [])
                 {
                     values.Add(facet switch
                     {
@@ -207,16 +202,16 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
                 break;
             case IntegerRangeFacet f:
                 foreach (var range in f.Ranges) values.Add(new IntegerRangeFacetValue(range.Key, range.MinValue, range.MaxValue,
-                    await CountRange(request, execute, NumberRange(f.FieldName, "integer", range.MinValue, range.MaxValue))));
+                    await CountRange(request, execute, NumberRange(f.FieldName, "integer", range.MinValue, range.MaxValue, culture))));
                 break;
             case DecimalRangeFacet f:
                 foreach (var range in f.Ranges) values.Add(new DecimalRangeFacetValue(range.Key, range.MinValue, range.MaxValue,
-                    await CountRange(request, execute, NumberRange(f.FieldName, "decimal", (double?)range.MinValue, (double?)range.MaxValue))));
+                    await CountRange(request, execute, NumberRange(f.FieldName, "decimal", (double?)range.MinValue, (double?)range.MaxValue, culture))));
                 break;
             case DateTimeOffsetRangeFacet f:
                 foreach (var range in f.Ranges) values.Add(new DateTimeOffsetRangeFacetValue(range.Key, range.MinValue, range.MaxValue,
                     await CountRange(request, execute, NumberRange(f.FieldName, "date", range.MinValue.HasValue ? DateNumber(range.MinValue.Value) : null,
-                        range.MaxValue.HasValue ? DateNumber(range.MaxValue.Value) : null))));
+                        range.MaxValue.HasValue ? DateNumber(range.MaxValue.Value) : null, culture))));
                 break;
             default: throw new NotSupportedException($"The Relewise provider does not support facet '{facet.GetType().Name}'.");
         }

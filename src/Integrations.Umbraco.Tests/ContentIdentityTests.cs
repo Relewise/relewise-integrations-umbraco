@@ -211,7 +211,7 @@ public class ContentIdentityTests
         });
         services.AddSingleton(clients.Object);
         var store = new Mock<global::Umbraco.Cms.Core.Services.IKeyValueService>();
-        store.Setup(value => value.GetValue("Relewise:SiteId")).Returns("identity-test");
+        services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(settings => settings.Id = "identity-test");
         services.AddSingleton(store.Object);
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
         {

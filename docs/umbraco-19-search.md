@@ -124,8 +124,11 @@ retains site and mapping restrictions.
 
 ## Behavior and limitations
 
+- Background changes combine into batches on Umbraco's existing queue. Terminal
+  deletions, explicit exports and rebuilds preserve their accepted order. Explicit
+  operations await delivery; background failures are logged and may require a rebuild.
 - Rebuild and explicit export share the same writer as background indexing. A rebuild
-  reconciles known source associations after successful ingestion; it does not clear
+  reconciles source metadata in Relewise after successful ingestion; it does not clear
   the Dataset or an independent search index.
 - Relewise ingestion is asynchronous. Publication changes may take time to appear
   in searches. Repeated exports update canonical entities rather than adding a
@@ -133,13 +136,20 @@ retains site and mapping restrictions.
 - Keyword/text filters, numeric/date exact and range filters, sorting, and facets
   are translated from core fields. A range includes its lower bound and excludes
   its upper bound. Facets omit filters on their own field; range buckets require
-  separate count requests. Query suggestions are currently empty.
+  separate count requests. Requests with `maxSuggestions > 0` fail explicitly; use the SDK prediction API directly.
 - Numeric Data uses doubles and dates use UTC milliseconds. Higher numeric or
   sub-millisecond precision is not retained in these core filter representations.
-- Segment queries and core filters/sorters/facets on culture-specific numeric
-  fields currently fail explicitly. These fields do not prevent business data
-  export; multilingual entity mapping remains supported.
-- New mappers and field-specific converters execute in an export scope. Existing
+- Culture-specific numeric/date filters, sorters and facets use internal culture-specific
+  fields. AutoMap's business Data representations remain unchanged. Segment-specific
+  indexing is unsupported. Providers default to `UnsupportedSegmentBehavior.Throw()`;
+  set `provider.UnsupportedSegmentBehavior = UnsupportedSegmentBehavior.Ignore()` to
+  discard a query's segment argument and execute its ordinary form.
+- New mappers and field-specific converters execute in an export scope. New global Data converters are scoped; legacy synchronous
   global converters retain their singleton lifetime. See [entity mapping](entity-mapping.md).
-- Writer coordination covers instances sharing an Umbraco database and Dataset.
-  Separate databases targeting the same canonical IDs require external coordination.
+- Writer coordination is process-local. Coordinate full rebuilds and overlapping
+  canonical identities across application instances externally. The integration stores
+  no identity/dependency records or leases in Umbraco.
+
+Umbraco's indexing dashboard shows a required document-count placeholder of `0`
+and `Unknown` health for Relewise. Counts and health are unavailable; zero does not
+indicate an empty Dataset. The Relewise dashboard includes this explanation.

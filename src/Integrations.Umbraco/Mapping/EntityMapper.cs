@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -26,7 +27,13 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         var data = Data(entity);
         if (synchronize && entity is not Brand)
             entity.GetType().GetProperty("DisplayName")!.SetValue(entity, DisplayName(source, cultures));
-        if (synchronize && entity is Brand brand) brand.DisplayName = source.Name(cultures[0]);
+        if (synchronize && entity is Brand brand) brand.DisplayName = source.Name(await operation.DefaultCultureAsync(cultures));
+
+        if (synchronize)
+        {
+            data["url"] = new Multilingual(cultures.Select(culture => new Multilingual.Value(culture, source.Url(culture, UrlMode.Absolute))).ToList());
+            data["createdAt"] = new DateTimeOffset(source.CreateDate).ToUnixTimeSeconds();
+        }
 
         ContentUpdate.UpdateKind? mappedContentKind = contentUpdateKind;
         if (definition.LegacyMapper != null)
@@ -37,34 +44,34 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                 ?? throw new InvalidOperationException($"Mapper for '{source.ContentType.Alias}' returned null.");
             mappedContentKind = update.Kind;
             entity = update.Content ?? throw new InvalidOperationException($"Mapper for '{source.ContentType.Alias}' returned an empty Content update.");
-            if (((Content)entity).Id != id) throw new InvalidOperationException("A custom mapper must not replace the configured canonical ID.");
+            id = ((Content)entity).Id; // Preserve the legacy mapper's returned update identity.
             data = Data(entity);
-        }
-        else if (definition.Mapper != null)
-        {
-            await definition.Mapper(entity, source, cultures, operation);
-            if (Identity(entity) != id) throw new InvalidOperationException("A custom mapper must not replace the configured canonical ID.");
-            data = Data(entity);
+            if (synchronize)
+            {
+                // Legacy mappers may replace Content/Data; these fields were historically appended afterward.
+                data["url"] = new Multilingual(cultures.Select(culture => new Multilingual.Value(culture, source.Url(culture, UrlMode.Absolute))).ToList());
+                data["createdAt"] = new DateTimeOffset(source.CreateDate).ToUnixTimeSeconds();
+            }
         }
         else
         {
             if (definition.AutomaticData)
             {
-                IReadOnlyDictionary<string, DataValue?> converted = operation.Services.GetRequiredService<IRelewisePropertyConverter>()
-                    .Convert(source, source, cultures, operation.Services, operation.CancellationToken);
+                IReadOnlyDictionary<string, DataValue?> converted = await operation.Services.GetRequiredService<IRelewisePropertyConverter>()
+                    .ConvertAsync(source, source, cultures, operation.Services, operation.CancellationToken);
                 foreach (var field in converted) data.Add(field.Key, field.Value);
             }
             foreach (IPropertyMapping mapping in definition.Properties)
             {
                 IPublishedProperty property = RequiredProperty(source, mapping.SourcePropertyAlias);
-                mapping.Apply(entity, new PropertyMappingContext(source, source, property, cultures, mapping.DestinationProperty, operation));
+                await mapping.ApplyAsync(entity, new PropertyMappingContext(source, source, property, cultures, mapping.DestinationProperty, operation));
             }
             var converter = new RelewisePropertyConverter(operation.Services.GetServices<IRelewisePropertyValueConverter>());
             foreach (DataMapping mapping in definition.DataMappings)
             {
                 IPublishedProperty property = RequiredProperty(source, mapping.SourcePropertyAlias);
-                IRelewisePropertyValueConverter? selected = mapping.Options.ConverterType == null ? null : (IRelewisePropertyValueConverter)operation.Resolve(mapping.Options.ConverterType);
-                PropertyConversion converted = converter.ConvertProperty(source, source, property, cultures, operation, selected);
+                IAsyncRelewisePropertyValueConverter? selected = mapping.Options.ConverterType == null ? null : (IAsyncRelewisePropertyValueConverter)operation.Resolve(mapping.Options.ConverterType);
+                PropertyConversion converted = await converter.ConvertPropertyAsync(source, source, property, cultures, operation, selected);
                 if (converted.Data.Count == 0)
                 {
                     if (!converted.Handled && cultures.Any(culture => property.GetValue(culture) != null))
@@ -81,17 +88,6 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                 }
             }
         }
-        data["contentTypeAlias"] = source.ContentType.Alias;
-        data["rwUmbracoNodeKey"] = source.Key.ToString("D");
-        data["rwUmbracoSite"] = siteId;
-        data["rwUmbracoPublished"] = true;
-        data[Constants.VersionKey] = version;
-        if (synchronize)
-        {
-            data["url"] = new Multilingual(cultures.Select(culture => new Multilingual.Value(culture, source.Url(culture, UrlMode.Absolute))).ToList());
-            data["createdAt"] = new DateTimeOffset(source.CreateDate).ToUnixTimeSeconds();
-        }
-
         List<CategoryPath>? paths = null;
         if (entity is Product || entity is Category || entity is Content)
         {
@@ -125,14 +121,6 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
             VariantsConfigured = definition.Variant?.Export == true,
             ContentUpdateKind = mappedContentKind
         };
-        foreach (IPublishedContent ancestor in source.Breadcrumbs(andSelf: false)) result.Dependencies.Add(ancestor.Key);
-        foreach (string referenceAlias in new[] { definition.BrandPropertyAlias, definition.CategoryPropertyAlias }.OfType<string>())
-        {
-            // Retain raw references while their targets are unpublished, so republishing still refreshes dependants.
-            result.Dependencies.AddRange(ReferenceKeys(source, referenceAlias, cultures[0], operation));
-            foreach (IPublishedContent referenced in Picked(source, referenceAlias, cultures[0], operation))
-                foreach (IPublishedContent ancestor in referenced.Breadcrumbs(andSelf: false)) result.Dependencies.Add(ancestor.Key);
-        }
         if (entity is Product && definition.Variant is { Export: true } variantMapping)
         {
             foreach (IPublishedContent child in source.Children())
@@ -145,10 +133,23 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                 if (effective.Length == 0) continue;
                 MappedEntity variant = await MapAsync(child, variantMapping, operation, siteId, version, synchronize, publishedCultures: effective);
                 variant.Synchronize = synchronize && variant.Synchronize;
+                if (result.Variants.Any(existing => existing.Id == variant.Id)) throw new InvalidOperationException($"Product '{id}' has multiple Variants with ID '{variant.Id}'.");
                 result.Variants.Add(variant);
-                result.Dependencies.Add(child.Key);
             }
         }
+        if (definition.Mapper != null)
+        {
+            await definition.Mapper(entity, source, cultures, operation);
+            if (Identity(entity) != id) throw new InvalidOperationException("A custom mapper must not replace the configured canonical ID.");
+            data = Data(entity);
+        }
+        data["contentTypeAlias"] = source.ContentType.Alias;
+        data["rwUmbracoNodeKey"] = source.Key.ToString("D");
+        data["rwUmbracoSite"] = siteId;
+        data["rwUmbracoPublished"] = true;
+        data[Constants.VersionKey] = version;
+
+
         return result;
     }
 
@@ -252,8 +253,6 @@ internal sealed class MappedEntity(Guid nodeKey, string documentTypeAlias, strin
     internal object Entity { get; } = entity;
     internal bool Synchronize { get; set; } = synchronize;
     internal List<MappedEntity> Variants { get; } = new();
-    internal List<Guid> Dependencies { get; } = new();
-    internal string[] UnsupportedCoreFields { get; set; } = [];
     internal Trackable Update(ContentUpdate.UpdateKind? contentUpdateKind = null)
     {
         contentUpdateKind ??= ContentUpdateKind;

@@ -52,7 +52,8 @@ still produce Content views. Search-provider registration is independent.
 
 Existing `UseMapper(new ExistingMapper())`, `IContentTypeMapping`, global property
 converters, numeric IDs and the `UseContentKeysAsIds` option remain available.
-The old methods are retained; any future obsolescence needs migration guidance.
+The legacy mapper/converter contracts are obsolete with migration guidance; adapters
+preserve them until removal in the next major version. AutoMap retains its existing output.
 Tracking-only mapping uses `mapping.Export = false`; `mapping.TrackViews = false`
 suppresses automatic views for a mapping.
 
@@ -121,8 +122,8 @@ are ordinary customer-defined Data keys; search weighting is configured separate
 
 Use `documentTypeAlias` for a mapping's Document Type, `sourcePropertyAlias` for a
 source field and `providerAlias` for a query registration. Preserve existing public
-parameter names for named-argument compatibility. Use one field-mapping approach
-per entity: automatic Data mapping, explicit fields, or a custom mapper.
+parameter names for named-argument compatibility. Choose automatic Data mapping or
+explicit fields; either can be combined with one final custom entity mapper.
 
 ## 4. Identity, relationships and metadata
 
@@ -138,7 +139,8 @@ per entity: automatic Data mapping, explicit fields, or a custom mapper.
   deduplicated paths. Arbitrary Variant-parent pickers are not supported.
 - `MapContent` permits multiple distinct Document Types. Product, Brand, Product
   Category and Content Category each permit one registration. Duplicate registrations,
-  multiple targets for one Document Type and conflicting canonical IDs fail clearly.
+  multiple targets for one Document Type fail clearly. Full exports also detect
+  conflicting canonical IDs; IDs must be unique during delta updates.
   The existing `AddContentType` merging contract remains supported.
 - Every exported entity has one scalar `contentTypeAlias`, maintained regardless of
   search configuration. Node-key and site metadata support result resolution and
@@ -155,7 +157,7 @@ Built-in property converters are strongly typed:
 ```csharp
 public interface IPropertyMappingConverter<TValue>
 {
-    TValue Convert(PropertyMappingContext context);
+    ValueTask<TValue> ConvertAsync(PropertyMappingContext context, CancellationToken cancellationToken);
 }
 ```
 
@@ -165,17 +167,18 @@ SDK type. A decimal alone supplies no currency. Without a selected converter,
 compatible built-in conversions apply; unsupported inputs fail with source context.
 
 `MapData` uses the built-in/global converter pipeline by default. Register custom
-Data converters with the existing API:
+Data converters with:
 
 ```csharp
-builder.Services.AddValueConverter<MyCustomConverter>(); // Implements IRelewisePropertyValueConverter.
+builder.Services.AddAsyncValueConverter<MyCustomConverter>(); // Implements IAsyncRelewisePropertyValueConverter.
 ```
 
-All globally matching converters run, preserving existing behavior and singleton
-lifetimes. A field-specific `UseConverter<T>()` selects only that converter for the
-field. It does not add it globally. Resolve explicitly registered types in the
-export scope; otherwise activate through DI and dispose within that operation.
-Global singleton converters must not capture scoped dependencies.
+New global Data converters are scoped. The last matching custom registration wins
+and built-ins are fallbacks, regardless of registration before/after `AddRelewise`.
+A field-specific `UseConverter<T>()` selects only that converter for the field and
+does not register it globally. Resolve registered types in the export scope;
+otherwise activate through DI and dispose within that operation. Legacy synchronous
+converters retain their selection behavior and singleton registrations via adapters.
 
 | Context | Information available |
 | --- | --- |
@@ -185,9 +188,26 @@ Global singleton converters must not capture scoped dependencies.
 
 Nested conversion retains the owning document while changing the current element
 and property. Legacy property-only calls remain valid but cannot reconstruct an
-owner. Typed field conversion is synchronous; async mapping work can use an entity
-mapper. Current custom mappers must retain the shared resolver's ID; computed-ID
-extensibility remains a review decision.
+owner. Typed and Data conversion support asynchronous work and cancellation while
+AutoMap preserves existing culture-dependent scalar/multilingual/suffixed output.
+
+```csharp
+mapping.Map(entity => entity.DisplayName, "heading"); // Declarative business fields first.
+mapping.MapData("bodyText");
+mapping.UseMapper<EditorialMapper>(); // IEntityMapper<Content> runs last, independent of registration order.
+```
+
+`IEntityMapper<TEntity>.MapAsync(context, cancellationToken)` populates the supplied
+`context.Entity` and returns `Task`, not an SDK update. Defaults, declared fields,
+converters, relationships and child Variants are prepared first. The mapper may
+inspect/override business fields; identity remains controlled by ID configuration.
+Reserved metadata is applied afterward, and the integration constructs the SDK
+update. The legacy Content adapter retains its returned-update/ID behavior; use
+`IdFromProperty` during migration to keep references and tracking aligned.
+
+Brand.DisplayName follows the SDK's single-string type. Its default uses Umbraco's
+default language, resolved once per operation, or the first available published
+culture in case-insensitive ordinal order.
 
 ## 6. Contribute to a commerce Product
 
@@ -215,12 +235,41 @@ with `None()`; declared collections are not an automatic merge with external val
 ## 7. One indexing pipeline; independent search providers
 
 One shared writer handles core change events, dashboard/explicit exports and
-rebuilds. It resolves IDs, mapping, dependencies and lifecycle actions consistently.
-Removal events for already-unpublished documents also enter that pipeline; draft
-saves do not export draft values. Rebuilds reconcile known source associations and
-leave unrelated Dataset entities intact. Independent notification exporters are
-not registered. Publication and rebuild operations share coordination with short
-database locks; no outer database transaction surrounds mapping or network calls.
+rebuilds. Source values come from published content; draft saves do not export draft
+values. Consecutive background callbacks accumulate native change records and schedule
+one flush on Umbraco's existing background queue. Each flush consumes up to 100
+change records; descendant changes can expand to more documents. Published values
+and core indexing metadata are resolved during the flush, and each affected node
+(and Variant parent Product) is mapped once within that batch. Isolated changes run
+without an intentional debounce delay; separately arriving callbacks may form
+several batches.
+
+Captured terminal deletions, explicit exports and rebuilds separate change batches.
+Operations already accepted by this writer precede the boundary; later operations
+follow it. Explicit operations await their own delivery and can execute from within
+Umbraco's worker without waiting on a second worker. A failed background batch is
+logged without automatic retry; following queued removals remain scheduled.
+Cancellation leaves other callers' accepted work intact. An inline caller finishes
+its current operation's scope before cancelling between batches; shutdown also
+cancels explicit waits. Explicit operations execute inline without scheduling an
+additional flush. Mappers/converters must not recursively request exports or rebuilds; such
+calls fail immediately rather than waiting for the active writer.
+The integration stores no identity/dependency records or leases in Umbraco.
+Relewise source metadata identifies exports after unpublication, including custom IDs.
+A standard Umbraco deletion notification captures the configured entity ID before
+the node disappears and queues removal after commit through the same writer.
+Deleted Variants refresh their parent. If an unpublished draft changed its ID,
+a rebuild reconciles any former identity left behind.
+
+A completed full export reconciles missing entities by its unique export generation,
+source scope and administrative policy; failures do not trigger final cleanup.
+Unrelated Dataset entities remain intact. Delta updates need not refresh other
+Products referencing changed Brands/Categories; re-export those Products or rebuild.
+A changed canonical ID can leave its former entity until rebuilding. Previously
+contributed business fields are not automatically withdrawn. Interrupted background
+work can require a rebuild. Writer coordination is process-local; coordinate full
+rebuilds across instances externally. Full collection remains in memory initially;
+measure it before introducing additional rebuild machinery.
 
 Umbraco can have several indexing pipelines; all Relewise providers query the
 Dataset's **single Relewise index**. Registering providers never adds another writer.
@@ -230,6 +279,7 @@ Examine can continue indexing and serving ordinary queries.
 options.SearchProviders.AddContent("editorial", provider =>
 {
     provider.DocumentTypeAliases = ["article", "guide"]; // Optional selection among Content mappings.
+    provider.UnsupportedSegmentBehavior = UnsupportedSegmentBehavior.Throw(); // Default: reject segment-specific requests.
 });
 options.SearchProviders.AddProduct("catalogue", provider =>
 {
@@ -280,24 +330,47 @@ require a published page. This option neither enables a disabled Product nor add
 unmapped commerce Products. Results remain Umbraco document IDs; callers disabling
 the requirement handle unavailable pages and commerce destinations themselves.
 
-## 8. Review decisions still open
+## 8. Supported boundaries and review follow-up
 
-- Shared computed-ID resolution and compatibility with legacy custom mappers.
-- Removing an existing Brand relationship through an emptied picker.
-- Async converter requirements and stable culture-specific Data/field-withdrawal behavior.
-- Brand DisplayName's default language selection.
-- Query capability boundaries and rebuild/coordination requirements at scale.
+Culture-specific numeric/date queries select internal culture-specific fields for
+filtering, sorting and facets. AutoMap output is unaffected. Segment-specific
+indexing is unsupported: the provider policy offers `Throw()` (default) or
+`Ignore()`, which discards the segment argument and executes an ordinary query.
+Suggestions requested through Umbraco fail explicitly; SDK predictions remain a
+separate capability pending a verified translation preserving membership/access.
+Empty Brand pickers retain the existing relationship under SDK partial updates.
 
-Follow-up work is tracked separately. Current behavior and limitations have concise
-notes in the [mapping guide](../../docs/entity-mapping.md) and
-[search guide](../../docs/umbraco-19-search.md); a full documentation refresh awaits
-stabilization. Preserve existing public method signatures and XML documentation,
-and expose additional options/types only when a concrete capability requires them.
+The maintained [Relewise.DemoStorefront](../../samples/Relewise.DemoStorefront/README.md)
+centralizes runnable mapping, converter, search and tracking examples. F5 installs
+SQLite and seeds content, blocks, languages and bundled images. An ignored
+`local.settings.json` enables a local Dataset; without it, Examine serves the site.
+Opt-in diagnostics support the shared acceptance tests, including publish/edit/
+unpublish with no Relewise query providers registered.
+
+Installed-package testing covers the indexing-only/Examine combination, named
+providers with either query default, publication/draft/edit/removal, child Variants,
+culture membership, ID changes, commerce contributions and shared tracking IDs.
+Scope validation and converter disposal/cancellation have regression coverage.
+
+Local installed-package checks combined 100 publications into 13 write requests
+and 200 publications into 16, with no remote entity reads during publication.
+Batch counts depend on callback arrival timing; these small measurements do not
+establish large-site capacity. Full rebuild collection remains in memory.
+
+Umbraco's core indexing dashboard requires a numeric document count. The provider
+returns its required placeholder `0` and `Unknown` health; Relewise statistics are
+unavailable through this integration. A notice in the existing Relewise dashboard
+explains that zero does not indicate an empty Dataset. No counter, extra SDK queries
+or replacement of Umbraco's standard statistics UI is introduced.
+Preserve existing public signatures/XML documentation.
+Finalize permanent documentation
+once the API is stable; keep only concise supported behavior in the
+[mapping](../../docs/entity-mapping.md) and [search](../../docs/umbraco-19-search.md) guides.
 
 ## 9. Screenshots for review
 
-These are local smoke-test captures from implementation iterations. The local
-storefront and raw execution reports are not included in this branch.
+These are local smoke-test captures from implementation iterations. The maintained
+storefront is included as a sample; raw execution reports and credentials stay local.
 
 | Screenshot | Review focus |
 | --- | --- |
@@ -311,3 +384,9 @@ storefront and raw execution reports are not included in this branch.
 | [Danish search](images/09-multilingual-search.jpg) | Multilingual Content search. |
 | [SDK identity correlation](images/10-storefront-identity-correlation.jpg) | Shared visitor and canonical entity IDs. |
 | [Received view events](images/11-my-relewise-all-view-types.jpg) | Content/Product/Variant/Brand/Category events and Category paths. |
+| [F5 without Relewise credentials](images/12-f5-examine-storefront.jpg) | Seeded storefront and bundled images, with Examine handling searches. |
+| [Installed Product search](images/13-installed-product-search.jpg) | Named Product provider in the maintained storefront. |
+| [Installed Variant page](images/14-installed-variant-view.jpg) | Canonical Variant ID with its parent Product. |
+| [Installed tracking correlation](images/15-installed-identity-correlation.jpg) | One visitor across searches and all supported view events. |
+| [Local My Relewise Product](images/16-local-my-relewise-product.jpg) | Exported display name, image and Brand. |
+| [Local My Relewise Variants](images/17-local-my-relewise-variants.jpg) | Both canonical child Variant IDs. |

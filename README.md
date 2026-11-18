@@ -10,7 +10,7 @@ Start with [the documentation overview](docs/README.md) to choose between automa
 
 - [Custom content mapping](docs/custom-content-mapping.md): the mapping pipeline, `UseMapper(...)`, registration, field ownership, and cultures.
 - [Block List, Block Grid, and nested content](docs/block-editors.md): default support, traversal, rich text, visibility, and referenced content.
-- [Complete mapper example](docs/examples/AdvancedContentMapping/README.md): buildable C# code you can adapt to your content model.
+- [Runnable demo storefront](samples/Relewise.DemoStorefront/README.md): F5 startup, mapping/converter examples, search and tracking.
 - [Validation and troubleshooting](docs/validation-and-troubleshooting.md): export checks, missing fields, duplicate keys, and stale data.
 - [Entity mapping](docs/entity-mapping.md): Content, Products, Variants, Categories, Brands, IDs and converters.
 - [Umbraco core search provider](docs/umbraco-19-search.md): registration, queries, access control, and supported features.
@@ -64,7 +64,7 @@ builder.CreateUmbracoBuilder()
     .Build();
 ```
 
-`BlogMapper` above represents your own `IContentTypeMapping` implementation; it is not included in the package. See [how to write and register a mapper](docs/custom-content-mapping.md#write-a-minimal-mapper), or use the [complete Block List and Block Grid example](docs/examples/AdvancedContentMapping/README.md).
+`BlogMapper` above represents your own `IContentTypeMapping` implementation; it is not included in the package. See [how to write and register a mapper](docs/custom-content-mapping.md#write-a-minimal-mapper), or use the [complete Block List and Block Grid example](samples/Relewise.DemoStorefront/README.md).
 
 If you'd also like these content types to be automatically tracked, you can add our middleware to the UmbracoBuilder (`.UseUmbraco(...)`):
 ```csharp
@@ -95,7 +95,7 @@ builder.Services.AddScoped<IRelewiseUserLocator, MyUserLocator>();
 authenticated IDs used by your other Relewise behavioral tracking, according to your
 site's consent policy. Automatic content views and the core search provider both
 use this locator from the current request's services. See [search user identity and
-access control](docs/umbraco-19-search.md#user-identity-and-behavioral-tracking).
+access control](docs/umbraco-19-search.md#identity-access-and-tracking).
 
 ## Content IDs across environments
 
@@ -163,8 +163,9 @@ Before switching, plan the transition for every writer and consumer, preferably
 validate it in a separate Dataset, and explicitly decide how to re-export content
 and handle the old entities/history. Do not assume that old numeric history will
 move to the GUID entity. The dashboard's **explicit full export** retains its existing
-stale-content cleanup behavior: it disables entities not carrying the current export
-version, or deletes them if permanent deletion is selected. Review that operation
+stale-entity cleanup: within the configured source scope, it disables entities not
+carrying the completed export generation, or deletes them if permanent deletion is
+selected. Review that operation
 before using it on an existing or shared Dataset; it is not a GUID migration tool.
 
 ## Book a Demo

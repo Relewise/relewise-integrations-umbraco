@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // Exercise the legacy converter adapter.
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
@@ -9,6 +10,37 @@ namespace Relewise.Integrations.Umbraco.Tests;
 
 public class MappingContextTests
 {
+    [Fact]
+    public async Task PropertyOnlyNestedConversionSharesOneScopeWithoutInventingAnOwner()
+    {
+        var elements = Enumerable.Range(0, 2).Select(_ =>
+        {
+            var element = new Mock<IPublishedElement>();
+            element.SetupGet(value => value.Properties).Returns([Property("body", "Custom.Context", "Nested text")]);
+            return element.Object;
+        }).ToArray();
+        var blocks = new BlockListModel(elements.Select(element => new BlockListItem(Guid.NewGuid(), element, null, null)).ToList());
+        var observed = new List<RelewisePropertyConverterContext>();
+        var custom = new Mock<IRelewisePropertyValueConverter>();
+        custom.Setup(value => value.CanHandle(It.IsAny<RelewisePropertyConverterContext>())).Returns((RelewisePropertyConverterContext context) => context.Property.Alias == "body");
+        custom.Setup(value => value.Convert(It.IsAny<RelewisePropertyConverterContext>())).Callback((RelewisePropertyConverterContext context) =>
+        {
+            observed.Add(context);
+            context.Add("body", "Nested text");
+        });
+        var services = new ServiceCollection();
+        services.AddValueConverter<BlockListPropertyValueConverter>();
+        services.AddSingleton(custom.Object);
+        services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
+        await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        await root.GetRequiredService<IRelewisePropertyConverter>().ConvertAsync([Property("blocks", "Umbraco.BlockList", blocks)], ["en-US"]);
+        Assert.Equal(2, observed.Count);
+        Assert.All(observed, context => Assert.Null(context.PublishedContent));
+        Assert.Same(elements[0], observed[0].SourceElement);
+        Assert.Same(elements[1], observed[1].SourceElement);
+        Assert.Same(observed[0].Services, observed[1].Services);
+    }
+
     [Fact]
     public async Task NestedBlockConversionRetainsOwnerElementScopeAndCancellation()
     {
@@ -29,7 +61,7 @@ public class MappingContextTests
             context.Add("body", "Nested text");
         });
         var services = new ServiceCollection();
-        services.AddSingleton<IRelewisePropertyValueConverter, BlockListPropertyValueConverter>();
+        services.AddAsyncValueConverter<BlockListPropertyValueConverter>();
         services.AddSingleton(custom.Object);
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
         services.AddScoped<Marker>();

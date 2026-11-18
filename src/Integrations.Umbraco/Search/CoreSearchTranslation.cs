@@ -26,35 +26,35 @@ internal static class CoreSearchTranslation
     internal const string SegmentsKey = "rwUmbracoSearchSegments";
     internal const string AccessKey = "rwUmbracoSearchAccess";
     internal const string ProtectedKey = "rwUmbracoSearchProtected";
-    internal static RFilter MapFilter(UFilter filter)
+    internal static RFilter MapFilter(UFilter filter, string? culture = null)
     {
         RFilter result = filter switch
         {
             KeywordFilter f => Any(f.Values.Select(v => Contains(Field(f.FieldName, "keyword"), v))),
             TextFilter f => Any(f.Values.Select(v => Contains(Field(f.FieldName, "text"), v))),
-            IntegerExactFilter f => NumericExact(f.FieldName, "integer", f.Values.Select(v => (double)v)),
-            DecimalExactFilter f => NumericExact(f.FieldName, "decimal", f.Values.Select(v => (double)v)),
-            DateTimeOffsetExactFilter f => NumericExact(f.FieldName, "date", f.Values.Select(DateNumber)),
-            IntegerRangeFilter f => Any(f.Ranges.Select(r => NumberRange(f.FieldName, "integer", r.MinValue, r.MaxValue))),
-            DecimalRangeFilter f => Any(f.Ranges.Select(r => NumberRange(f.FieldName, "decimal", (double?)r.MinValue, (double?)r.MaxValue))),
-            DateTimeOffsetRangeFilter f => Any(f.Ranges.Select(r => NumberRange(f.FieldName, "date", r.MinValue.HasValue ? DateNumber(r.MinValue.Value) : null, r.MaxValue.HasValue ? DateNumber(r.MaxValue.Value) : null))),
+            IntegerExactFilter f => NumericExact(f.FieldName, "integer", f.Values.Select(v => (double)v), culture),
+            DecimalExactFilter f => NumericExact(f.FieldName, "decimal", f.Values.Select(v => (double)v), culture),
+            DateTimeOffsetExactFilter f => NumericExact(f.FieldName, "date", f.Values.Select(DateNumber), culture),
+            IntegerRangeFilter f => Any(f.Ranges.Select(r => NumberRange(f.FieldName, "integer", r.MinValue, r.MaxValue, culture))),
+            DecimalRangeFilter f => Any(f.Ranges.Select(r => NumberRange(f.FieldName, "decimal", (double?)r.MinValue, (double?)r.MaxValue, culture))),
+            DateTimeOffsetRangeFilter f => Any(f.Ranges.Select(r => NumberRange(f.FieldName, "date", r.MinValue.HasValue ? DateNumber(r.MinValue.Value) : null, r.MaxValue.HasValue ? DateNumber(r.MaxValue.Value) : null, culture))),
             _ => throw new NotSupportedException($"The Relewise provider does not support filter '{filter.GetType().Name}'.")
         };
         return filter.Negate ? Negate(result) : result;
     }
 
-    private static RFilter NumericExact(string field, string kind, IEnumerable<double> values) =>
-        Any(values.Select(v => Contains(Field(field, kind + "Exact"), NumberString(v))));
+    private static RFilter NumericExact(string field, string kind, IEnumerable<double> values, string? culture = null) =>
+        Any(values.Select(v => Contains(Field(field, kind + "Exact", culture), NumberString(v))));
 
-    internal static RFilter NumberRange(string field, string kind, double? min, double? max)
+    internal static RFilter NumberRange(string field, string kind, double? min, double? max, string? culture = null)
     {
-        if (!min.HasValue && !max.HasValue) return new ContentDataFilter(Field(field, kind + "Values"), new HasValueCondition());
+        if (!min.HasValue && !max.HasValue) return new ContentDataFilter(Field(field, kind + "Values", culture), new HasValueCondition());
         // Relewise ranges are inclusive. The previous representable double makes the upper
         // endpoint exclusive without arbitrary epsilons, for integers, decimals and dates alike.
         double lower = min ?? double.MinValue;
         double upper = max.HasValue ? Math.BitDecrement(max.Value) : double.MaxValue;
         if (lower > upper) return Any([]);
-        return new ContentDataFilter(Field(field, kind + "Values"), new ContainsCondition(new DataObjectFilter(new ObjectValueCondition[] {
+        return new ContentDataFilter(Field(field, kind + "Values", culture), new ContainsCondition(new DataObjectFilter(new ObjectValueCondition[] {
             new ObjectValueInRangeCondition("value", new Relewise.Client.DataTypes.Range<double>(lower, upper))
         })));
     }
@@ -66,7 +66,7 @@ internal static class CoreSearchTranslation
         return items.Length == 0 ? new AndFilter([Equal(IdKey, ""), Negate(Equal(IdKey, ""))]) : new OrFilter(items);
     }
 
-    internal static void ApplySorting(ContentSearchRequest request, IEnumerable<Sorter> sorters)
+    internal static void ApplySorting(ContentSearchRequest request, IEnumerable<Sorter> sorters, string? culture = null)
     {
         ContentSorting? previous = null;
         foreach (Sorter sorter in sorters)
@@ -83,7 +83,7 @@ internal static class CoreSearchTranslation
             if (previous is null) request.Sorting!.SortBy(current); else previous.ThenBy = current;
             previous = current;
             ContentSorting NumericSort(string kind) => new ContentDataSorting(Field(sorter.FieldName,
-                kind + (sorter.Direction == Direction.Ascending ? "Min" : "Max")), order);
+                kind + (sorter.Direction == Direction.Ascending ? "Min" : "Max"), culture), order);
         }
     }
 
@@ -108,7 +108,8 @@ internal static class CoreSearchTranslation
         data[Field(field, kind + "Max")] = values.Max();
     }
 
-    internal static string Field(string name, string kind) => $"rwUmbracoField_{Uri.EscapeDataString(name)}_{kind}";
+    internal static string Field(string name, string kind, string? culture = null)
+        => $"rwUmbracoField_{Uri.EscapeDataString(name)}_{kind}" + (culture != null && (kind.StartsWith("integer", StringComparison.Ordinal) || kind.StartsWith("decimal", StringComparison.Ordinal) || kind.StartsWith("date", StringComparison.Ordinal)) ? "_" + Uri.EscapeDataString(culture.ToLowerInvariant()) : string.Empty);
     private static string NumberString(double value) => value.ToString("R", CultureInfo.InvariantCulture);
     internal static double ParseNumber(string value) => double.Parse(value, CultureInfo.InvariantCulture);
     internal static double DateNumber(DateTimeOffset value) => value.ToUnixTimeMilliseconds();

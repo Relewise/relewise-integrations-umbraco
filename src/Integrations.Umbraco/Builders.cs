@@ -1,4 +1,5 @@
-﻿using System;
+﻿#pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+using System;
 using System.Collections.Generic;
 using Relewise.Client.DataTypes;
 
@@ -137,6 +138,7 @@ public class ContentTypeBuilder : EntityMappingBuilder<Content>
     /// </summary>
     /// <param name="contentTypeMapping"></param>
     /// <exception cref="ArgumentNullException"></exception>
+    [Obsolete("Use UseMapper<TMapper>() with IEntityMapper<Content> instead. This overload will be removed in the next major version.")]
     public void UseMapper(IContentTypeMapping contentTypeMapping)
     {
         Mapper = contentTypeMapping ?? throw new ArgumentNullException(nameof(contentTypeMapping));

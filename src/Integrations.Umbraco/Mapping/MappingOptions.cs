@@ -7,12 +7,12 @@ namespace Relewise.Integrations.Umbraco;
 public class PropertyMappingOptions<TValue>
 {
     internal PropertyMappingOptions() { }
-    internal Func<PropertyMappingContext, TValue>? Converter { get; private set; }
+    internal Func<PropertyMappingContext, System.Threading.Tasks.ValueTask<TValue>>? Converter { get; private set; }
     /// <summary>Use this converter only for the configured property, resolving dependencies in the export scope.</summary>
     public void UseConverter<TConverter>() where TConverter : class, IPropertyMappingConverter<TValue>
     {
         if (Converter != null) throw new InvalidOperationException("A converter has already been selected for this property.");
-        Converter = context => context.Resolve<TConverter>().Convert(context);
+        Converter = context => context.Resolve<TConverter>().ConvertAsync(context, context.CancellationToken);
     }
 }
 
@@ -24,7 +24,7 @@ public class DataMappingOptions
     /// <summary>The destination Data key; defaults to the source property alias.</summary>
     public string DataKey { get; set; }
     /// <summary>Select a single Data converter for this field without adding it to global converter selection.</summary>
-    public void UseConverter<TConverter>() where TConverter : class, IRelewisePropertyValueConverter
+    public void UseConverter<TConverter>() where TConverter : class, IAsyncRelewisePropertyValueConverter
     {
         if (ConverterType != null) throw new InvalidOperationException("A converter has already been selected for this Data mapping.");
         ConverterType = typeof(TConverter);

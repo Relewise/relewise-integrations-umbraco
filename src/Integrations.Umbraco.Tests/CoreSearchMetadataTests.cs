@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Search;
 using Umbraco.Cms.Core.Search.Indexing;
@@ -16,7 +17,7 @@ public class CoreSearchMetadataTests
              new("body", new() { Texts = ["Default text"] }, "en-US", null),
              new("body", new() { Texts = ["Private segment"] }, "en-US", "vip")], null));
         Assert.Equal("retained", content.Data["customerField"]!.ValueAs<string>());
-        Assert.Contains("price", mapped.UnsupportedCoreFields);
+        Assert.Equal(12.5d, content.Data[CoreSearchTranslation.Field("price", "decimalMin", "en-US")]!.ValueAs<double>());
         var text = content.Data[CoreSearchTranslation.Field("body", "text")]!.ValueAs<Multilingual>();
         Assert.Equal("Default text", Assert.Single(text.Values!).Text);
     }
@@ -32,9 +33,24 @@ public class CoreSearchMetadataTests
         Assert.Equal(new[] { "", "da-dk" }, product.Data[CoreSearchTranslation.CultureKey]!.ValueAsListOf<string>());
     }
     [Fact]
-    public async Task SegmentQueriesFailBeforeAnySdkRequest()
+    public async Task UnsupportedSuggestionsFailBeforeIssuingSdkRequests()
     {
         var searcher = new MappedEntitySearcher(null!, null!, null!);
-        await Assert.ThrowsAsync<NotSupportedException>(() => searcher.SearchAsync("catalogue", segment: "vip"));
+        await Assert.ThrowsAsync<NotSupportedException>(() => searcher.SearchAsync("articles", maxSuggestions: 1));
+    }
+
+    [Fact]
+    public async Task SegmentQueriesFailBeforeAnySdkRequest()
+    {
+        var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
+        {
+            options.MapContent("article", mapping => mapping.AutoMap());
+            options.SearchProviders.AddContent("articles");
+        });
+        services.AddSingleton<RelewiseUmbracoConfiguration>();
+        using var provider = services.BuildServiceProvider();
+        var searcher = new MappedEntitySearcher(provider.GetRequiredService<RelewiseUmbracoConfiguration>(), null!, null!);
+        await Assert.ThrowsAsync<NotSupportedException>(() => searcher.SearchAsync("articles", segment: "vip"));
     }
 }

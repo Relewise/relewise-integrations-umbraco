@@ -8,7 +8,7 @@ using Relewise.Client.Extensions;
 
 namespace Relewise.Integrations.Umbraco.Services;
 
-internal class ExportContentService(EntityIndexingService indexing, IServiceProvider services) : IExportContentService
+internal class ExportContentService(EntityIndexingQueue indexing, IServiceProvider services) : IExportContentService
 {
     public async Task<ExportContentResult> Export(ExportContent exportContent, CancellationToken token)
     {

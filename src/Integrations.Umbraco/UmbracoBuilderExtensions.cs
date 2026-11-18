@@ -1,4 +1,5 @@
-﻿using System;
+﻿#pragma warning disable CS0618 // Retain legacy converter registration order; the execution pipeline awaits async built-ins.
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Relewise.Client.Extensions.DependencyInjection;
@@ -67,8 +68,11 @@ public static class UmbracoBuilderExtensions
             .AddValueConverter<NestedContentPropertyValueConverter>()
             .AddValueConverter<BlockListPropertyValueConverter>();
 
+        builder.AddNotificationHandler<ContentDeletedNotification, DeletedEntityIndexingHandler>();
         builder.Services.AddHttpContextAccessor();
         builder.Services.TryAddSingleton<EntityIndexingService>();
+        builder.Services.TryAddSingleton<IEntityIndexingOperations>(services => services.GetRequiredService<EntityIndexingService>());
+        builder.Services.TryAddSingleton<EntityIndexingQueue>();
         builder.Services.TryAddTransient<MappedEntityIndexer>();
         builder.Services.TryAddTransient<MappedEntityChangeStrategy>();
         builder.Services.TryAddTransient<MappedEntitySearcher>();

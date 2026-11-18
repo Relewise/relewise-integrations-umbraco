@@ -1,4 +1,7 @@
-﻿using Relewise.Client.DataTypes;
+#pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
+using System.Threading;
+using System.Threading.Tasks;
+using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
@@ -6,7 +9,7 @@ namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 /// <summary>
 /// Handles extracting property values for 'Umbraco.TextArea'
 /// </summary>
-public class TextAreaPropertyValueConverter : IRelewisePropertyValueConverter
+public class TextAreaPropertyValueConverter : IDefaultPropertyValueConverter, IRelewisePropertyValueConverter
 {
     /// <inheritdoc />
     public bool CanHandle(RelewisePropertyConverterContext context)
@@ -15,6 +18,15 @@ public class TextAreaPropertyValueConverter : IRelewisePropertyValueConverter
     }
 
     /// <inheritdoc />
+    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Convert(context);
+        return default;
+    }
+
+    /// <inheritdoc/>
+    [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
         string? value = context.Property.GetValue<string>(context.Culture);

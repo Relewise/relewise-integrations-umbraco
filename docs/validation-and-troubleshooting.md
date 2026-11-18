@@ -10,7 +10,9 @@ Validate the mapped data before diagnosing search results. A successful export r
 2. **Exercise an actual export.** Register the mapper for the page's document type, restart the application, and publish a test page or use the Relewise dashboard's export action with a test dataset. Check the exported page ID, metadata, languages, field types, and text. Exercise both publish-triggered export and a full export.
 3. **Exercise search.** Search for a distinctive phrase appearing only inside a nested block. Confirm the search configuration includes your derived field, the request language matches the exported language, and the intended page appears. Check that deliberately excluded text does not contribute through another exported field.
 
-The complete [example project](examples/AdvancedContentMapping/README.md) builds without starting Umbraco or contacting a Relewise dataset. It verifies code compatibility; you still need application-level export checks against your own document types.
+The [demo storefront](../samples/Relewise.DemoStorefront/README.md) contains the
+buildable examples and local acceptance-test setup. Building requires no Dataset;
+live Relewise checks require local connection settings.
 
 ## Useful test cases
 

@@ -45,6 +45,7 @@
 
 	<ItemGroup>
 		<InternalsVisibleTo Include="Relewise.Integrations.Umbraco.Tests" />
+		<InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
 	</ItemGroup>
 
 	<ItemGroup>
