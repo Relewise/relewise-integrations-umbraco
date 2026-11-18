@@ -19,15 +19,25 @@ public class AsyncConversionTests
     {
         var property = Property("value", "Custom.Demo", culture => text ? culture + " text" : culture == "en-US" ? 10 : 20);
         var services = new ServiceCollection();
-        if (asynchronous) services.AddAsyncValueConverter<AsyncConverter>();
-        else services.AddValueConverter<LegacyConverter>();
+        if (asynchronous)
+        {
+            services.AddAsyncValueConverter<AsyncConverter>();
+        }
+        else
+        {
+            services.AddValueConverter<LegacyConverter>();
+        }
+
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
         await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         var converter = root.GetRequiredService<IRelewisePropertyConverter>();
         var single = await converter.ConvertAsync([property], ["en-US"]);
         Assert.Equal(text ? DataValue.DataValueTypes.String : DataValue.DataValueTypes.Double, single["value"]!.Type);
         var multiple = await converter.ConvertAsync([property], ["en-US", "da-DK"]);
-        if (text) Assert.Equal(2, multiple["value"]!.ValueAs<Multilingual>().Values!.Count);
+        if (text)
+        {
+            Assert.Equal(2, multiple["value"]!.ValueAs<Multilingual>().Values!.Count);
+        }
         else
         {
             Assert.False(multiple.ContainsKey("value"));
@@ -43,9 +53,17 @@ public class AsyncConversionTests
     {
         ScopedConverter? observed = null;
         var services = new ServiceCollection();
-        if (!beforeDefaults) services.AddAsyncValueConverter<TextFieldPropertyValueConverter>();
+        if (!beforeDefaults)
+        {
+            services.AddAsyncValueConverter<TextFieldPropertyValueConverter>();
+        }
+
         services.AddScoped<IAsyncRelewisePropertyValueConverter>(_ => observed = new ScopedConverter());
-        if (beforeDefaults) services.AddAsyncValueConverter<TextFieldPropertyValueConverter>();
+        if (beforeDefaults)
+        {
+            services.AddAsyncValueConverter<TextFieldPropertyValueConverter>();
+        }
+
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
         await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         var result = await root.GetRequiredService<IRelewisePropertyConverter>().ConvertAsync([Property("value", "Umbraco.TextBox", _ => "original")], ["en-US"]);
@@ -65,10 +83,17 @@ public class AsyncConversionTests
             var options = new RelewiseUmbracoOptionsBuilder();
             options.MapContent("article", mapping =>
             {
-                if (mapperFirst) mapping.UseMapper<CustomMapper>();
+                if (mapperFirst)
+                {
+                    mapping.UseMapper<CustomMapper>();
+                }
+
                 mapping.Map(entity => entity.DisplayName, "heading");
                 mapping.MapData("body");
-                if (!mapperFirst) mapping.UseMapper<CustomMapper>();
+                if (!mapperFirst)
+                {
+                    mapping.UseMapper<CustomMapper>();
+                }
             });
         }
         new RelewiseUmbracoOptionsBuilder().MapContent("article", mapping => { mapping.AutoMap(); mapping.UseMapper<CustomMapper>(); });

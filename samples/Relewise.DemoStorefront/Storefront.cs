@@ -1,12 +1,10 @@
-using Umbraco.Cms.Core.Services;
-using Umbraco.Cms.Core.Search.Querying.Filtering;
-using Umbraco.Cms.Core.Extensions;
 using System.Net;
 using System.Text;
-using Relewise.Integrations.Umbraco;
+using Umbraco.Cms.Core.Extensions;
 using Umbraco.Cms.Core.Search;
+using Umbraco.Cms.Core.Search.Querying.Filtering;
+using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
 
 public static class Storefront
 {
@@ -17,35 +15,72 @@ public static class Storefront
             bool connected = searchers.GetSearcher("catalogue") != null;
             string requestedType = request.Query["type"].FirstOrDefault() == "article" ? "article" : "product";
             string alias = request.Query["provider"].FirstOrDefault() ?? (connected ? (requestedType == "article" ? "articles" : "catalogue") : Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent);
-            if (!new[] { "catalogue", "articles", "guides", "allEditorial", "localized", "offers", "commerceCatalogue", Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent }.Contains(alias)) return Results.BadRequest();
+            if (!new[] { "catalogue", "articles", "guides", "allEditorial", "localized", "offers", "commerceCatalogue", Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent }.Contains(alias))
+            {
+                return Results.BadRequest();
+            }
+
             string? query = request.Query["q"];
-            if (searchers.GetSearcher("catalogue") == null && !request.Query.ContainsKey("provider")) alias = Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent;
+            if (searchers.GetSearcher("catalogue") == null && !request.Query.ContainsKey("provider"))
+            {
+                alias = Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent;
+            }
+
             string? culture = request.Query["culture"].FirstOrDefault();
-            if (string.IsNullOrWhiteSpace(culture)) culture = null;
+            if (string.IsNullOrWhiteSpace(culture))
+            {
+                culture = null;
+            }
+
             int page = int.TryParse(request.Query["page"], out var number) ? Math.Max(1, number) : 1;
-            if (!connected) alias = Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent;
+            if (!connected)
+            {
+                alias = Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent;
+            }
+
             var localFilters = !connected ? new[] { new KeywordFilter(Umbraco.Cms.Core.Constants.Search.FieldNames.ContentTypeId, [types.Get(requestedType)!.Key.AsKeyword()], false) } : null;
             var result = await (searchers.GetSearcher(alias) ?? throw new InvalidOperationException("Search provider not registered.")).SearchAsync(alias, query ?? (!connected ? "*" : null), filters: localFilters, culture: culture, skip: (page - 1) * 6, take: 6);
             using var context = contexts.EnsureUmbracoContext();
             var body = new StringBuilder($"<section class='hero'><p class='eyebrow'>UMBRACO 19 · LOCAL STOREFRONT</p><h1>Made for the everyday outdoors.</h1><p>Explore the collection, or find your next adventure in our journal.</p></section><form class='search'><label for='q'>Search the site</label><div><input id='q' name='q' value='{E(query)}' placeholder='Try Trail, flask or camp'><select aria-label='Search provider' name='provider'>");
             foreach (var choice in new[] { ("catalogue", "Products"), ("articles", "Journal"), ("guides", "Guides"), ("allEditorial", "All editorial"), ("localized", "Multilingual journal"), ("offers", "Offers"), ("commerceCatalogue", "Commerce catalogue"), (Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent, "Ordinary Umbraco search") })
-                if (searchers.GetSearcher(choice.Item1) != null) body.Append($"<option value='{choice.Item1}' {(alias == choice.Item1 ? "selected" : "")}>{choice.Item2}</option>");
+            {
+                if (searchers.GetSearcher(choice.Item1) != null)
+                {
+                    body.Append($"<option value='{choice.Item1}' {(alias == choice.Item1 ? "selected" : "")}>{choice.Item2}</option>");
+                }
+            }
+
             body.Append("</select><select aria-label='Language' name='culture'>");
             foreach (var language in new[] { ("", "Invariant"), ("en-US", "English"), ("da-DK", "Dansk") })
+            {
                 body.Append($"<option value='{language.Item1}' {(culture == language.Item1 || culture == null && language.Item1 == "" ? "selected" : "")}>{language.Item2}</option>");
+            }
+
             body.Append($"</select><button>Search</button></div></form><section class='result-heading'><h2>{(alias == "articles" ? "Journal" : alias == "offers" ? "Offers" : alias == "catalogue" ? "The collection" : "Published content")}</h2><span>{result.Total} results · provider: {E(alias)}</span></section><section class='grid'>");
             int rendered = 0;
             foreach (var document in result.Documents)
             {
                 var content = context.UmbracoContext.Content?.GetById(document.Id);
-                if (content == null) continue; // A publication change can precede remote search-index visibility.
+                if (content == null)
+                {
+                    continue; // A publication change can precede remote search-index visibility.
+                }
+
                 rendered++;
                 bool product = content.ContentType.Alias == "product";
                 body.Append($"<article class='card' data-node='{content.Key}' data-entity='{E(DemoConfiguration.EntityId(content, services))}'><a href='{E(content.Url(culture))}'><div class='illustration {E(content.Value<string>("color"))}'>{(product ? Image(content.Name) : Icon("Journal"))}</div><div class='card-body'><small>{(product ? "EQUIPMENT" : "FIELD NOTES")}</small><h3>{E(content.Value<string>("heading", culture: culture) ?? content.Name)}</h3><p>{E(content.Value<string>("bodyText", culture: culture))}</p>{(product ? $"<strong>DKK {E(content.Value<string>("salesPrice"))}</strong>" : "<strong>Read the story →</strong>")}</div></a><footer>Relewise ID: <code>{E(DemoConfiguration.EntityId(content, services))}</code></footer></article>");
             }
             body.Append("</section>");
-            if (rendered < result.Documents.Count()) body.Append("<p class='empty'>Some pages are being updated. Please try again shortly.</p>");
-            if (result.Total == 0) body.Append("<p class='empty'>No matches. Try another search.</p>");
+            if (rendered < result.Documents.Count())
+            {
+                body.Append("<p class='empty'>Some pages are being updated. Please try again shortly.</p>");
+            }
+
+            if (result.Total == 0)
+            {
+                body.Append("<p class='empty'>No matches. Try another search.</p>");
+            }
+
             body.Append($"<nav class='pagination'><a href='?provider={E(alias)}&type={requestedType}&q={Uri.EscapeDataString(query ?? "")}&culture={E(culture)}&page={Math.Max(1, page - 1)}'>← Previous</a><span>Page {page}</span><a href='?provider={E(alias)}&type={requestedType}&q={Uri.EscapeDataString(query ?? "")}&culture={E(culture)}&page={page + 1}'>Next →</a></nav><aside class='evidence'>One indexing pipeline · named Content & Product searches · canonical IDs shared with behavioral tracking</aside>");
             return Results.Content(Layout(body.ToString(), connected), "text/html");
         });

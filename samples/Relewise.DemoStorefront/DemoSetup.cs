@@ -8,9 +8,16 @@ internal static class DemoSetup
         string? id = configuration["Relewise:DatasetId"];
         string? key = configuration["Relewise:ApiKey"];
         string? server = configuration["Relewise:ServerUrl"];
-        if (string.IsNullOrWhiteSpace(id) && string.IsNullOrWhiteSpace(key) && string.IsNullOrWhiteSpace(server)) return false;
+        if (string.IsNullOrWhiteSpace(id) && string.IsNullOrWhiteSpace(key) && string.IsNullOrWhiteSpace(server))
+        {
+            return false;
+        }
+
         if (!Guid.TryParse(id, out _) || string.IsNullOrWhiteSpace(key) || !Uri.TryCreate(server, UriKind.Absolute, out var endpoint) || !endpoint.IsLoopback)
+        {
             throw new InvalidOperationException("Configure DatasetId, ApiKey and a local ServerUrl together in local.settings.json. The demo only supports local Datasets.");
+        }
+
         return true;
     }
 
@@ -22,7 +29,11 @@ internal static class DemoSetup
         string data = Path.Combine(root, "umbraco", "Data");
         Directory.CreateDirectory(data);
         string imagingKeyFile = Path.Combine(data, "demo-imaging.key");
-        if (!File.Exists(imagingKeyFile)) File.WriteAllText(imagingKeyFile, Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)));
+        if (!File.Exists(imagingKeyFile))
+        {
+            File.WriteAllText(imagingKeyFile, Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)));
+        }
+
         var defaults = new Dictionary<string, string?>
         {
             ["Umbraco:CMS:Global:Id"] = id,

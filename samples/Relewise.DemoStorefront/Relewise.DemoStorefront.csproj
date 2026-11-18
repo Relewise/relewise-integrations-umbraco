@@ -9,6 +9,7 @@
     <PackageReference Include="Umbraco.Cms" Version="19.0.0-rc1" />
     <PackageReference Include="HtmlAgilityPack" Version="1.13.1" />
     <ProjectReference Include="../../src/Integrations.Umbraco/Integrations.Umbraco.csproj" />
+    <Compile Include="../../docs/examples/AdvancedContentMapping/EditorialBlockText.cs" Link="EditorialBlockText.cs" />
   </ItemGroup>
   <!-- Project references use the same dashboard asset copy as an installed package. -->
   <Import Project="../../src/Integrations.Umbraco/build/Relewise.Integrations.Umbraco.targets"

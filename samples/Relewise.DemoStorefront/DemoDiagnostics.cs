@@ -1,14 +1,9 @@
 using Relewise.Client.DataTypes;
-using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core;
-using Umbraco.Cms.Core.Models;
-using Umbraco.Cms.Core.Services;
-using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Core.Search;
-using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
+using Umbraco.Cms.Core.Services;
 
 internal static class DemoDiagnostics
 {
@@ -16,40 +11,82 @@ internal static class DemoDiagnostics
     {
         app.MapPost("/smoke/cycle/{key:guid}/{cycle}", (Guid key, string cycle, IContentService content, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes) =>
         {
-            if (cycle is not ("unpublish-publish" or "unpublish-delete" or "unpublish-publish-delete")) return Results.BadRequest();
+            if (cycle is not ("unpublish-publish" or "unpublish-delete" or "unpublish-publish-delete"))
+            {
+                return Results.BadRequest();
+            }
+
             using var scope = scopes.CreateScope();
             scope.EagerWriteLock(Constants.Locks.ContentTree);
             var node = content.GetById(key) ?? throw new InvalidOperationException("Unknown fixture.");
-            if (node.ContentType.Alias != "article" || node.Name?.StartsWith("Ordering fixture ", StringComparison.Ordinal) != true) return Results.BadRequest();
+            if (node.ContentType.Alias != "article" || node.Name?.StartsWith("Ordering fixture ", StringComparison.Ordinal) != true)
+            {
+                return Results.BadRequest();
+            }
+
             content.Unpublish(node);
-            if (node.Published) throw new InvalidOperationException("Fixture unpublication failed.");
+            if (node.Published)
+            {
+                throw new InvalidOperationException("Fixture unpublication failed.");
+            }
+
             if (cycle.Contains("-publish", StringComparison.Ordinal) && !content.Publish(node, ["*"]).Success)
+            {
                 throw new InvalidOperationException("Fixture republication failed.");
-            if (cycle.EndsWith("-delete", StringComparison.Ordinal)) content.Delete(node);
+            }
+
+            if (cycle.EndsWith("-delete", StringComparison.Ordinal))
+            {
+                content.Delete(node);
+            }
+
             scope.Complete();
-            return Results.Ok(new { node.Key, cycle });
+            return Results.Ok(new
+            {
+                node.Key,
+                cycle
+            });
         });
         app.MapPost("/smoke/remove-fixtures", (Guid[] keys, IContentService content, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes) =>
         {
-            if (keys.Length > 200) return Results.BadRequest();
+            if (keys.Length > 200)
+            {
+                return Results.BadRequest();
+            }
+
             using var scope = scopes.CreateScope();
             scope.EagerWriteLock(Constants.Locks.ContentTree);
             foreach (Guid key in keys)
             {
                 var node = content.GetById(key);
-                if (node == null) continue;
-                if (node.Name?.StartsWith("Batch fixture ", StringComparison.Ordinal) != true) throw new InvalidOperationException("Only batch fixtures may be removed here.");
+                if (node == null)
+                {
+                    continue;
+                }
+
+                if (node.Name?.StartsWith("Batch fixture ", StringComparison.Ordinal) != true)
+                {
+                    throw new InvalidOperationException("Only batch fixtures may be removed here.");
+                }
+
                 content.Delete(node);
             }
             scope.Complete();
-            return Results.Ok(new { removed = keys.Length });
+            return Results.Ok(new
+            {
+                removed = keys.Length
+            });
         });
         app.MapPost("/smoke/variant/{parentKey:guid}", (Guid parentKey, IContentService content, IContentTypeService types, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes) =>
         {
             using var scope = scopes.CreateScope();
             scope.EagerWriteLock(Constants.Locks.ContentTree);
             var parent = content.GetById(parentKey) ?? throw new InvalidOperationException("Unknown Product.");
-            if (parent.ContentType.Alias != "product") return Results.BadRequest();
+            if (parent.ContentType.Alias != "product")
+            {
+                return Results.BadRequest();
+            }
+
             string id = "U19-SMOKE-VARIANT-" + Guid.NewGuid().ToString("N");
             var node = content.Create("Variant fixture", parent.Id, "productVariant");
             node.TemplateId = types.Get("productVariant")!.AllowedTemplates!.Single().Id;
@@ -57,13 +94,25 @@ internal static class DemoDiagnostics
             node.SetValue("heading", "Variant fixture");
             node.SetValue("color", "Copper");
             content.Save(node);
-            if (!content.Publish(node, ["*"]).Success) throw new InvalidOperationException("Variant fixture publication failed.");
+            if (!content.Publish(node, ["*"]).Success)
+            {
+                throw new InvalidOperationException("Variant fixture publication failed.");
+            }
+
             scope.Complete();
-            return Results.Ok(new { node.Key, id });
+            return Results.Ok(new
+            {
+                node.Key,
+                id
+            });
         });
         app.MapPost("/smoke/articles/{count:int}", (int count, IContentService content, IContentTypeService types, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes) =>
         {
-            if (count is < 1 or > 200) return Results.BadRequest();
+            if (count is < 1 or > 200)
+            {
+                return Results.BadRequest();
+            }
+
             using var scope = scopes.CreateScope();
             scope.EagerWriteLock(Constants.Locks.ContentTree);
             string batch = Guid.NewGuid().ToString("N");
@@ -75,11 +124,19 @@ internal static class DemoDiagnostics
                 node.SetValue("heading", $"Batch fixture {i}");
                 node.SetValue("bodyText", "Batch publication and rebuild measurement.");
                 content.Save(node);
-                if (!content.Publish(node, ["*"]).Success) throw new InvalidOperationException("Batch fixture publication failed.");
+                if (!content.Publish(node, ["*"]).Success)
+                {
+                    throw new InvalidOperationException("Batch fixture publication failed.");
+                }
+
                 keys.Add(node.Key);
             }
             scope.Complete();
-            return Results.Ok(new { batch, keys });
+            return Results.Ok(new
+            {
+                batch,
+                keys
+            });
         });
         app.MapPost("/smoke/article", (ArticleFixture fixture, IContentService content, IContentTypeService types, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes) =>
         {
@@ -90,9 +147,16 @@ internal static class DemoDiagnostics
             node.SetValue("heading", fixture.Name);
             node.SetValue("bodyText", fixture.Text);
             content.Save(node);
-            if (!content.Publish(node, ["*"]).Success) throw new InvalidOperationException("Fixture publication failed.");
+            if (!content.Publish(node, ["*"]).Success)
+            {
+                throw new InvalidOperationException("Fixture publication failed.");
+            }
+
             scope.Complete();
-            return Results.Ok(new { node.Key });
+            return Results.Ok(new
+            {
+                node.Key
+            });
         });
         app.MapPost("/smoke/edit/{key:guid}", (Guid key, PropertyEdit edit, IContentService content, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes) =>
         {
@@ -101,9 +165,16 @@ internal static class DemoDiagnostics
             var node = content.GetById(key) ?? throw new InvalidOperationException("Unknown fixture.");
             node.SetValue(edit.Alias, edit.Value, edit.Culture);
             content.Save(node);
-            if (edit.Publish && !content.Publish(node, [edit.Culture ?? "*"]).Success) throw new InvalidOperationException("Fixture publication failed.");
+            if (edit.Publish && !content.Publish(node, [edit.Culture ?? "*"]).Success)
+            {
+                throw new InvalidOperationException("Fixture publication failed.");
+            }
+
             scope.Complete();
-            return Results.Ok(new { node.Key });
+            return Results.Ok(new
+            {
+                node.Key
+            });
         });
         app.MapGet("/smoke/relewise-query", async (string? query, Relewise.Client.Extensions.IRelewiseClientFactory clients, IRelewiseUserLocator users,
             Microsoft.Extensions.Options.IOptions<Umbraco.Cms.Core.Configuration.Models.GlobalSettings> settings) =>
@@ -113,13 +184,21 @@ internal static class DemoDiagnostics
             request.Filters = new(new Relewise.Client.Requests.Filters.ContentDataFilter("rwUmbracoSite", new Relewise.Client.Requests.Conditions.EqualsCondition(settings.Value.Id)),
                 new Relewise.Client.Requests.Filters.ContentDataFilter("rwUmbracoPublished", new Relewise.Client.Requests.Conditions.EqualsCondition(true)));
             var result = await clients.GetClient<Relewise.Client.Search.ISearcher>().SearchAsync(request);
-            return Results.Ok(new { result.Hits, ids = result.Results?.Select(content => content.ContentId) });
+            return Results.Ok(new
+            {
+                result.Hits,
+                ids = result.Results?.Select(content => content.ContentId)
+            });
         });
         app.MapGet("/smoke/examine-query", async (string? query, bool? draft, Umbraco.Cms.Search.Provider.Examine.Services.IExamineSearcher searcher) =>
         {
             string alias = draft == true ? Constants.Search.IndexAliases.DraftContent : Constants.Search.IndexAliases.PublishedContent;
             var result = await searcher.SearchAsync(alias, query);
-            return Results.Ok(new { result.Total, documents = result.Documents.Select(document => document.Id) });
+            return Results.Ok(new
+            {
+                result.Total,
+                documents = result.Documents.Select(document => document.Id)
+            });
         });
         app.MapGet("/smoke/runtime", () => Results.Ok(new
         {
@@ -139,41 +218,94 @@ internal static class DemoDiagnostics
         app.MapPost("/smoke/checks", StorefrontChecks.Run);
         app.MapPost("/smoke/probe", (IContentService content, IContentTypeService types, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes) =>
         {
-            using var scope = scopes.CreateScope(); scope.EagerWriteLock(Constants.Locks.ContentTree);
+            using var scope = scopes.CreateScope();
+            scope.EagerWriteLock(Constants.Locks.ContentTree);
             var node = content.Create("Lifecycle probe", -1, "product");
             string id = "U19-SMOKE-LIFECYCLE-" + Guid.NewGuid().ToString("N");
             node.TemplateId = types.Get("product")!.AllowedTemplates!.Single().Id;
-            node.SetValue("heading", "Lifecycle probe"); node.SetValue("sku", id);
-            node.SetValue("listPrice", "100"); node.SetValue("salesPrice", "80"); node.SetValue("stock", 5);
+            node.SetValue("heading", "Lifecycle probe");
+            node.SetValue("sku", id);
+            node.SetValue("listPrice", "100");
+            node.SetValue("salesPrice", "80");
+            node.SetValue("stock", 5);
             node.SetValue("bodyText", "Disposable publication lifecycle fixture without category relationships.");
             content.Save(node);
-            if (!content.Publish(node, ["*"]).Success) throw new InvalidOperationException("Probe publication failed.");
-            scope.Complete(); return Results.Ok(new { node.Key, id });
+            if (!content.Publish(node, ["*"]).Success)
+            {
+                throw new InvalidOperationException("Probe publication failed.");
+            }
+
+            scope.Complete();
+            return Results.Ok(new
+            {
+                node.Key,
+                id
+            });
         });
         app.MapPost("/smoke/id/{key:guid}/{id}", (Guid key, string id, IContentService content, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes) =>
         {
-            if (!id.StartsWith("U19-SMOKE-", StringComparison.Ordinal)) return Results.BadRequest();
-            using var scope = scopes.CreateScope(); scope.EagerWriteLock(Constants.Locks.ContentTree);
+            if (!id.StartsWith("U19-SMOKE-", StringComparison.Ordinal))
+            {
+                return Results.BadRequest();
+            }
+
+            using var scope = scopes.CreateScope();
+            scope.EagerWriteLock(Constants.Locks.ContentTree);
             var node = content.GetById(key) ?? throw new InvalidOperationException("Unknown smoke node.");
-            string property = node.ContentType.Alias switch { "product" or "productVariant" => "sku", "brand" => "brandId", "productCategory" => "categoryId", _ => throw new InvalidOperationException("Unsupported smoke identity.") };
-            if (node.GetValue<string>(property)?.StartsWith("U19-SMOKE-", StringComparison.Ordinal) != true) return Results.BadRequest();
-            node.SetValue(property, id); content.Save(node);
-            if (!content.Publish(node, ["*"]).Success) throw new InvalidOperationException("Smoke identity publication failed.");
-            scope.Complete(); return Results.Ok(new { node.Key, id });
+            string property = node.ContentType.Alias switch
+            {
+                "product" or "productVariant" => "sku",
+                "brand" => "brandId",
+                "productCategory" => "categoryId",
+                _ => throw new InvalidOperationException("Unsupported smoke identity.")
+            };
+            if (node.GetValue<string>(property)?.StartsWith("U19-SMOKE-", StringComparison.Ordinal) != true)
+            {
+                return Results.BadRequest();
+            }
+
+            node.SetValue(property, id);
+            content.Save(node);
+            if (!content.Publish(node, ["*"]).Success)
+            {
+                throw new InvalidOperationException("Smoke identity publication failed.");
+            }
+
+            scope.Complete();
+            return Results.Ok(new
+            {
+                node.Key,
+                id
+            });
         });
         app.MapGet("/smoke/query", async (string provider, string? query, string? culture, string? segment, int? maxSuggestions, ISearcherResolver searchers) =>
         {
             var searcher = searchers.GetSearcher(provider);
-            if (searcher == null) return Results.NotFound();
+            if (searcher == null)
+            {
+                return Results.NotFound();
+            }
+
             var result = await searcher.SearchAsync(provider, query, culture: culture, segment: segment, maxSuggestions: maxSuggestions ?? 0);
-            return Results.Ok(new { result.Total, documents = result.Documents.Select(document => document.Id) });
+            return Results.Ok(new
+            {
+                result.Total,
+                documents = result.Documents.Select(document => document.Id)
+            });
         });
         app.MapGet("/smoke/schema", async (IDataTypeService types) => Results.Ok((await types.GetAllAsync()).Select(type => new { type.Name, type.EditorAlias })));
         app.MapGet("/smoke/product/{id}", async (string id, Relewise.Client.Extensions.IRelewiseClientFactory clients) =>
         {
-            if (!id.StartsWith("U19-SMOKE-", StringComparison.Ordinal)) return Results.BadRequest();
+            if (!id.StartsWith("U19-SMOKE-", StringComparison.Ordinal))
+            {
+                return Results.BadRequest();
+            }
+
             var query = new Relewise.Client.Requests.Queries.ProductQuery(id, new Relewise.Client.DataTypes.Language("en-US"), new Currency("DKK"))
-            { IncludeDisabledProducts = true, IncludeDisabledVariants = true };
+            {
+                IncludeDisabledProducts = true,
+                IncludeDisabledVariants = true
+            };
             var response = await clients.GetClient<Relewise.Client.IDataAccessor>().QueryAsync(query);
             return Results.Text(Newtonsoft.Json.JsonConvert.SerializeObject(response), "application/json");
         });
@@ -190,14 +322,28 @@ internal static class DemoDiagnostics
             var item = content.GetById(key) ?? throw new InvalidOperationException("Unknown node");
             switch (action)
             {
-                case "publish": content.Publish(item, [culture ?? "*"]); break;
-                case "unpublish": content.Unpublish(item, culture ?? "*"); break;
-                case "trash": content.MoveToRecycleBin(item); break;
-                case "delete": content.Delete(item); break;
-                default: throw new InvalidOperationException("Unknown smoke action");
+                case "publish":
+                    content.Publish(item, [culture ?? "*"]);
+                    break;
+                case "unpublish":
+                    content.Unpublish(item, culture ?? "*");
+                    break;
+                case "trash":
+                    content.MoveToRecycleBin(item);
+                    break;
+                case "delete":
+                    content.Delete(item);
+                    break;
+                default:
+                    throw new InvalidOperationException("Unknown smoke action");
             }
             scope.Complete();
-            return Results.Ok(new { item.Key, item.Published, item.Trashed });
+            return Results.Ok(new
+            {
+                item.Key,
+                item.Published,
+                item.Trashed
+            });
         });
         app.MapGet("/smoke/identities", (IContentService content, RelewiseUmbracoConfiguration config) =>
             Results.Ok(content.GetRootContent().SelectMany(root => new[] { root }.Concat(content.GetPagedDescendants(root.Id, 0, 1000, out _)))
@@ -205,6 +351,3 @@ internal static class DemoDiagnostics
                 .Select(item => new { item.Key, item.Id, item.Name, type = item.ContentType.Alias, canonicalId = config.GetContentId(item), item.Published })));
     }
 }
-
-internal sealed record ArticleFixture(string Name, string Text);
-internal sealed record PropertyEdit(string Alias, string? Value, bool Publish = true, string? Culture = null);

@@ -5,7 +5,6 @@ using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Composing;
-using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Logging;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -77,12 +76,16 @@ public class RichTextEditorPropertyValueConverterTests
     {
         var services = new ServiceCollection();
         if (registerExplicitly && registerBeforeDefaults)
+        {
             services.AddAsyncValueConverter<RichTextEditorPropertyValueConverter>();
+        }
 
         var builder = new TestUmbracoBuilder(services);
         builder.AddRelewise();
         if (registerExplicitly && !registerBeforeDefaults)
+        {
             services.AddAsyncValueConverter<RichTextEditorPropertyValueConverter>();
+        }
 
         return services.BuildServiceProvider();
     }
@@ -100,7 +103,9 @@ public class RichTextEditorPropertyValueConverterTests
         public TBuilder WithCollectionBuilder<TBuilder>() where TBuilder : ICollectionBuilder
         {
             if (!_collections.TryGetValue(typeof(TBuilder), out var builder))
+            {
                 _collections.Add(typeof(TBuilder), builder = Activator.CreateInstance<TBuilder>());
+            }
 
             return (TBuilder)builder;
         }

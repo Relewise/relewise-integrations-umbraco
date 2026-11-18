@@ -12,6 +12,3 @@ public interface IAsyncRelewisePropertyValueConverter
     /// <summary>Populate Data values, with access to the owning document and operation services.</summary>
     ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken);
 }
-
-// Built-ins remain fallbacks regardless of whether application converters are registered before or after AddRelewise.
-internal interface IDefaultPropertyValueConverter : IAsyncRelewisePropertyValueConverter { }

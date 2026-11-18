@@ -1,4 +1,3 @@
-using Umbraco.Extensions;
 using Relewise.Integrations.Umbraco;
 
 /// <summary>Globally converts the demo's relative image paths into URLs usable by a separate frontend.</summary>

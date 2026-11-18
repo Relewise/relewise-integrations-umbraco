@@ -1,4 +1,3 @@
-using Umbraco.Extensions;
 using Relewise.Integrations.Umbraco;
 using Relewise.MappingExamples;
 

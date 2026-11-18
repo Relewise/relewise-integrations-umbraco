@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Relewise.Client.DataTypes;
 
 namespace Relewise.Integrations.Umbraco;

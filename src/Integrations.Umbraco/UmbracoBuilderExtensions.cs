@@ -1,17 +1,17 @@
-﻿#pragma warning disable CS0618 // Retain legacy converter registration order; the execution pipeline awaits async built-ins.
+#pragma warning disable CS0618 // Retain legacy converter registration order; the execution pipeline awaits async built-ins.
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
-using Relewise.Integrations.Umbraco.Services;
 using Relewise.Integrations.Umbraco.Search;
+using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core.DependencyInjection;
+using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Search.Configuration;
 using Umbraco.Cms.Core.Search.Indexing;
-using Umbraco.Cms.Core.Models;
 
 namespace Relewise.Integrations.Umbraco;
 
@@ -83,7 +83,10 @@ public static class UmbracoBuilderExtensions
             foreach (string alias in configuration.SearchProviders.Providers.Keys)
             {
                 if (indexes.GetIndexRegistration(alias) != null)
+                {
                     throw new InvalidOperationException($"Search provider alias '{alias}' is already registered by Umbraco.");
+                }
+
                 indexes.RegisterIndex<MappedEntityIndexer, MappedEntitySearcher>(alias);
             }
             if (configuration.SearchProviders.DefaultPublishedContentProviderAlias != null)

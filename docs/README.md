@@ -11,7 +11,8 @@ Use this integration to export published Umbraco pages to Relewise and track con
 | Use Relewise through Umbraco's core search API | [Umbraco 19 and core search](umbraco-19-search.md) |
 | Understand automatic mapping and choose an extension point | [Custom content mapping](custom-content-mapping.md) |
 | Export readable text from Block List, Block Grid, or nested blocks | [Mapping block editors](block-editors.md) |
-| Copy and build a complete mapper | [Runnable demo storefront](../samples/Relewise.DemoStorefront/README.md) |
+| Copy and build a complete mapper | [Advanced content mapping example](examples/AdvancedContentMapping/README.md) |
+| Run mapping, search and tracking together | [Runnable demo storefront](../samples/Relewise.DemoStorefront/README.md) |
 | Verify exported data and diagnose missing or stale fields | [Validation and troubleshooting](validation-and-troubleshooting.md) |
 
 ## Version scope

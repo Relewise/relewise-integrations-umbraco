@@ -1,9 +1,8 @@
 using System.Collections.Concurrent;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -12,19 +11,19 @@ using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Search;
 using Relewise.Client.Responses.Search;
-using Relewise.Integrations.Umbraco.Search;
 using Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
+using Relewise.Integrations.Umbraco.Search;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core;
-using Umbraco.Cms.Core.Web;
-using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Notifications;
+using Umbraco.Cms.Core.Routing;
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
+using Umbraco.Cms.Core.Web;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 
 namespace Relewise.Integrations.Umbraco.Tests;
@@ -160,7 +159,9 @@ public class ContentIdentityTests
 
         Assert.True(nextCalled);
         if (preview)
+        {
             Assert.Null(captured);
+        }
         else
         {
             Assert.NotNull(captured);
@@ -246,7 +247,10 @@ public class ContentIdentityTests
                 Assert.Equal(4, visitorSearches.Length); // Main search, keyword facet, two range buckets.
                 Assert.All(visitorSearches, search => Assert.Same(currentUser, search.User));
             }
-            finally { accessor.HttpContext = null; }
+            finally
+            {
+                accessor.HttpContext = null;
+            }
         }));
         Assert.Equal(12, views.Count);
         Assert.Equal(12, locators.Count);

@@ -20,29 +20,47 @@ internal sealed class DeletedEntityIndexingHandler(RelewiseUmbracoConfiguration 
         var work = new RemovalWork();
         foreach (var deleted in notification.DeletedEntities)
         {
-            if (!configuration.Mappings.TryGetValue(deleted.ContentType.Alias, out var mapping) || !mapping.Export) continue;
+            if (!configuration.Mappings.TryGetValue(deleted.ContentType.Alias, out var mapping) || !mapping.Export)
+            {
+                continue;
+            }
+
             if (mapping.EntityType == typeof(ProductVariant))
             {
                 var parent = content.GetById(deleted.ParentId);
-                if (parent != null) work.Parents.Add(parent.Key);
+                if (parent != null)
+                {
+                    work.Parents.Add(parent.Key);
+                }
+
                 continue;
             }
-            try { work.Entities.Add(new DeletedEntity(mapping.EntityType, configuration.GetContentId(deleted), deleted.Key, mapping.AdministrativeActions.Enabled)); }
+            try
+            {
+                work.Entities.Add(new DeletedEntity(mapping.EntityType, configuration.GetContentId(deleted), deleted.Key, mapping.AdministrativeActions.Enabled));
+            }
             catch (InvalidOperationException error)
             {
                 // Deleting an invalid draft must remain possible; a full export can reconcile its previous identity.
                 logger.LogWarning(error, "Could not resolve the deleted node {NodeKey}; rebuild Relewise exports to reconcile its previous identity.", deleted.Key);
             }
         }
-        if (work.Entities.Count == 0 && work.Parents.Count == 0) return;
+        if (work.Entities.Count == 0 && work.Parents.Count == 0)
+        {
+            return;
+        }
+
         if (scopes.Context is { } context)
         {
             var pending = context.Enlist("Relewise:DeletedSources", () => new RemovalWork(),
-                (completed, items) => { if (completed && items != null) Queue(items); });
+                (completed, items) => { if (completed && items != null) { Queue(items); } });
             pending!.Entities.AddRange(work.Entities);
             pending.Parents.UnionWith(work.Parents);
         }
-        else Queue(work);
+        else
+        {
+            Queue(work);
+        }
     }
 
     private void Queue(RemovalWork work)
@@ -58,5 +76,3 @@ internal sealed class DeletedEntityIndexingHandler(RelewiseUmbracoConfiguration 
         internal HashSet<Guid> Parents { get; } = new();
     }
 }
-
-internal sealed record DeletedEntity(Type EntityType, string Id, Guid NodeKey, bool Synchronize);

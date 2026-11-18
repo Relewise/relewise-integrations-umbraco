@@ -1,6 +1,5 @@
 using Relewise.Client.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
-using Umbraco.Cms.Core.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("local.settings.json", optional: true, reloadOnChange: false);
@@ -10,7 +9,11 @@ builder.Host.UseDefaultServiceProvider(options =>
     options.ValidateScopes = true;
     options.ValidateOnBuild = true;
 });
-if (!builder.Environment.IsDevelopment()) throw new InvalidOperationException("This example must run in Development.");
+if (!builder.Environment.IsDevelopment())
+{
+    throw new InvalidOperationException("This example must run in Development.");
+}
+
 bool connected = DemoSetup.HasRelewiseConfiguration(builder.Configuration);
 DemoSetup.ConfigureLocalInstallation(builder);
 builder.Services.AddScoped<PriceConverter>();
@@ -54,7 +57,10 @@ app.UseUmbraco().WithMiddleware(umbraco =>
 {
     umbraco.UseBackOffice();
     umbraco.UseWebsite();
-    if (connected) umbraco.TrackEntityViews();
+    if (connected)
+    {
+        umbraco.TrackEntityViews();
+    }
 }).WithEndpoints(umbraco =>
 {
     umbraco.UseBackOfficeEndpoints();

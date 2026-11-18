@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco;
@@ -28,12 +27,4 @@ public class EntityMappingContext<TEntity> where TEntity : class
     public IServiceProvider Services { get; }
     /// <summary>Cancellation for the current operation.</summary>
     public CancellationToken CancellationToken { get; }
-}
-
-/// <summary>Maps application fields on a strongly typed destination within an export operation.</summary>
-/// <typeparam name="TEntity">The SDK entity type.</typeparam>
-public interface IEntityMapper<TEntity> where TEntity : class
-{
-    /// <summary>Populate application fields without changing the resolved entity ID.</summary>
-    Task MapAsync(EntityMappingContext<TEntity> context, CancellationToken cancellationToken);
 }

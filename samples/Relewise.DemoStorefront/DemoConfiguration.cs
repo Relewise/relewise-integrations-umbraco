@@ -1,4 +1,3 @@
-using Umbraco.Extensions;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco;
 
@@ -38,7 +37,11 @@ internal static class DemoConfiguration
         options.MapProduct("product", mapping =>
         {
             mapping.IdFromProperty("sku");
-            if (configuration["Demo:ProductPolicy"] == "None") mapping.AdministrativeActions = AdministrativeActionPolicy.None();
+            if (configuration["Demo:ProductPolicy"] == "None")
+            {
+                mapping.AdministrativeActions = AdministrativeActionPolicy.None();
+            }
+
             mapping.Map(product => product.DisplayName, "heading");
             mapping.Map(product => product.ListPrice, "listPrice", property => property.UseConverter<PriceConverter>());
             mapping.Map(product => product.SalesPrice, "salesPrice", property => property.UseConverter<PriceConverter>());
@@ -62,11 +65,14 @@ internal static class DemoConfiguration
             options.SearchProviders.AddContent("allEditorial", provider => provider.UnsupportedSegmentBehavior = UnsupportedSegmentBehavior.Ignore());
             options.SearchProviders.AddProduct("catalogue", provider => provider.ConfigureRequest((request, context) => request.Currency = new Currency("DKK")));
             if (configuration["Demo:ProductPolicy"] == "None")
+            {
                 options.SearchProviders.AddProduct("commerceCatalogue", provider =>
                 {
                     provider.RequirePublishedPage = false; // The application handles Products without a published CMS page.
                     provider.ConfigureRequest((request, context) => request.Currency = new Currency("DKK"));
                 });
+            }
+
             options.SearchProviders.AddProduct("offers", provider => provider.ConfigureRequest((request, context) =>
             {
                 request.Currency = new Currency("DKK");
@@ -75,7 +81,9 @@ internal static class DemoConfiguration
                 request.Filters.Add(new Relewise.Client.Requests.Filters.ProductIdFilter("U19-SMOKE-PACK"));
             }));
             if (configuration.GetValue<bool?>("Demo:DefaultSearch") != false)
+            {
                 options.SearchProviders.DefaultPublishedContentProviderAlias = configuration["Demo:DefaultProvider"] ?? "articles";
+            }
         }
     }
 }

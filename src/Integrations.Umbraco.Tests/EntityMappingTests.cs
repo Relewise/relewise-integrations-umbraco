@@ -11,7 +11,8 @@ public class EntityMappingTests
     public void ContentAllowsDistinctAliasesButOtherEntitiesHaveOneSource()
     {
         var options = new RelewiseUmbracoOptionsBuilder();
-        options.MapContent("article"); options.MapContent("guide");
+        options.MapContent("article");
+        options.MapContent("guide");
         Assert.Throws<InvalidOperationException>(() => options.MapContent("ARTICLE"));
         options.MapProduct("product");
         Assert.Throws<InvalidOperationException>(() => options.MapProduct("otherProduct"));
@@ -28,7 +29,8 @@ public class EntityMappingTests
     {
         using var services = Services(options => { options.AddContentType("article"); options.AddContentType("article", type => type.AutoMap()); options.AddContentType("viewOnly"); });
         var configuration = services.GetRequiredService<RelewiseUmbracoConfiguration>();
-        Assert.True(configuration.CanMap("article")); Assert.False(configuration.CanMap("viewOnly"));
+        Assert.True(configuration.CanMap("article"));
+        Assert.False(configuration.CanMap("viewOnly"));
         Assert.Throws<ArgumentException>(() => new RelewiseUmbracoOptionsBuilder().AddContentType("article").AddContentType("article", throwIfExists: true));
     }
     [Fact]
@@ -66,7 +68,8 @@ public class EntityMappingTests
     [Fact]
     public async Task ActivatedConvertersAndScopedDependenciesAreDisposedByTheirOwners()
     {
-        var services = new ServiceCollection(); services.AddScoped<ScopedDependency>();
+        var services = new ServiceCollection();
+        services.AddScoped<ScopedDependency>();
         await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         ScopedDependency dependency;
         AsyncConverter converter;
@@ -79,7 +82,8 @@ public class EntityMappingTests
                 Assert.Same(converter, operation.Resolve<AsyncConverter>());
                 Assert.Same(dependency, converter.Dependency);
             }
-            Assert.True(converter.Disposed); Assert.False(dependency.Disposed);
+            Assert.True(converter.Disposed);
+            Assert.False(dependency.Disposed);
         }
         Assert.True(dependency.Disposed);
     }
@@ -87,7 +91,9 @@ public class EntityMappingTests
     public void SupplementPreservesUnspecifiedFieldsAndCannotClearAndReplace()
     {
         var product = Assert.IsType<Product>(EntityMapper.Create(typeof(Product), "sku"));
-        Assert.Null(product.Assortments); Assert.Null(product.CategoryPaths); Assert.Null(product.ListPrice);
+        Assert.Null(product.Assortments);
+        Assert.Null(product.CategoryPaths);
+        Assert.Null(product.ListPrice);
         var mapped = new MappedEntity(Guid.NewGuid(), "product", "sku", product, false);
         var update = Assert.IsType<ProductUpdate>(mapped.Update());
         Assert.False(update.ReplaceExistingVariants);
@@ -123,11 +129,19 @@ public class EntityMappingTests
         _ = provider.GetRequiredService<RelewiseUmbracoConfiguration>();
         return provider;
     }
-    public sealed class ScopedDependency : IDisposable { public bool Disposed { get; private set; } public void Dispose() => Disposed = true; }
+    public sealed class ScopedDependency : IDisposable
+    {
+        public bool Disposed { get; private set; }
+        public void Dispose() => Disposed = true;
+    }
     public sealed class AsyncConverter(ScopedDependency dependency) : IAsyncDisposable
     {
         public ScopedDependency Dependency { get; } = dependency;
         public bool Disposed { get; private set; }
-        public ValueTask DisposeAsync() { Disposed = true; return ValueTask.CompletedTask; }
+        public ValueTask DisposeAsync()
+        {
+            Disposed = true;
+            return ValueTask.CompletedTask;
+        }
     }
 }

@@ -10,25 +10,50 @@ internal sealed class StorefrontTraffic : DelegatingHandler
     public StorefrontTraffic() : base(new HttpClientHandler()) { }
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        if (request.RequestUri?.IsLoopback != true) throw new InvalidOperationException("Smoke traffic must stay on a local Dataset host.");
+        if (request.RequestUri?.IsLoopback != true)
+        {
+            throw new InvalidOperationException("Smoke traffic must stay on a local Dataset host.");
+        }
+
         string body = request.Content == null ? "" : await request.Content.ReadAsStringAsync(cancellationToken);
         long started = System.Diagnostics.Stopwatch.GetTimestamp();
         var response = await base.SendAsync(request, cancellationToken);
-        Requests.Enqueue(new { operation = request.RequestUri!.AbsolutePath, status = (int)response.StatusCode,
-            elapsedMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds, requestBytes = System.Text.Encoding.UTF8.GetByteCount(body) });
+        Requests.Enqueue(new
+        {
+            operation = request.RequestUri!.AbsolutePath,
+            status = (int)response.StatusCode,
+            elapsedMilliseconds = System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds,
+            requestBytes = System.Text.Encoding.UTF8.GetByteCount(body)
+        });
         if (!string.IsNullOrWhiteSpace(body))
         {
             JToken root = JToken.Parse(body);
             foreach (JObject value in ((JContainer)root).DescendantsAndSelf().OfType<JObject>())
             {
-                if (value["User"] == null && value["Product"] == null && value["Content"] == null) continue;
-                Entries.Enqueue(new {
-                    time = DateTimeOffset.UtcNow, server = request.RequestUri!.GetLeftPart(UriPartial.Authority), operation = request.RequestUri.AbsolutePath, status = (int)response.StatusCode,
-                    type = value["$type"]?.Value<string>(), user = value["User"] == null ? null : new { AuthenticatedId = value["User"]?["AuthenticatedId"]?.Value<string>(), TemporaryId = value["User"]?["TemporaryId"]?.Value<string>() },
-                    productId = value["Product"]?["Id"]?.Value<string>(), contentId = value["Content"]?["Id"]?.Value<string>(),
+                if (value["User"] == null && value["Product"] == null && value["Content"] == null)
+                {
+                    continue;
+                }
+
+                Entries.Enqueue(new
+                {
+                    time = DateTimeOffset.UtcNow,
+                    server = request.RequestUri!.GetLeftPart(UriPartial.Authority),
+                    operation = request.RequestUri.AbsolutePath,
+                    status = (int)response.StatusCode,
+                    type = value["$type"]?.Value<string>(),
+                    user = value["User"] == null ? null : new
+                    {
+                        AuthenticatedId = value["User"]?["AuthenticatedId"]?.Value<string>(),
+                        TemporaryId = value["User"]?["TemporaryId"]?.Value<string>()
+                    },
+                    productId = value["Product"]?["Id"]?.Value<string>(),
+                    contentId = value["Content"]?["Id"]?.Value<string>(),
                     variantId = value["Variant"]?["Id"]?.Value<string>(),
-                    brandId = value["Brand"]?["Id"]?.Value<string>(), categoryPath = value["IdPath"]?.Values<string>().ToArray(),
-                    location = value["DisplayedAtLocation"]?.Value<string>(), term = value["Term"]?.Value<string>(),
+                    brandId = value["Brand"]?["Id"]?.Value<string>(),
+                    categoryPath = value["IdPath"]?.Values<string>().ToArray(),
+                    location = value["DisplayedAtLocation"]?.Value<string>(),
+                    term = value["Term"]?.Value<string>(),
                     filterKeys = value["Filters"] is JContainer filters ? filters.DescendantsAndSelf().OfType<JObject>()
                         .Where(filter => filter["Key"] != null).Select(filter => filter["Key"]!.Value<string>()).Distinct().ToArray() : [],
                     variantResultsPerProduct = value["Settings"]?["VariantRequestSettings"]?["MaxVariantsPerProduct"]?.Value<int>()
@@ -53,7 +78,9 @@ internal sealed class StorefrontTraffic : DelegatingHandler
         void ConfigureClient(IClient client)
         {
             var sdk = (ClientBase)client;
-            sdk.UseFastBinarySerializer = false; sdk.UseJsonCompression = false; sdk.OverriddenHttpClient = http;
+            sdk.UseFastBinarySerializer = false;
+            sdk.UseJsonCompression = false;
+            sdk.OverriddenHttpClient = http;
         }
         app.MapGet("/smoke/requests", () => Results.Json(traffic.Requests));
         app.MapGet("/smoke/traffic", () => Results.Json(traffic.Entries));

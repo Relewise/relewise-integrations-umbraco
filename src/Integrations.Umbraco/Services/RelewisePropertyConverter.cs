@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+#pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +22,11 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
 
     public async Task<IReadOnlyDictionary<string, DataValue?>> ConvertAsync(IEnumerable<IPublishedProperty> properties, string[] cultures, CancellationToken cancellationToken = default)
     {
-        if (provider == null) return (await ConvertPropertiesAsync(properties, cultures, null, null, null, cancellationToken, null)).Data;
+        if (provider == null)
+        {
+            return (await ConvertPropertiesAsync(properties, cultures, null, null, null, cancellationToken, null)).Data;
+        }
+
         await using var scope = provider.CreateAsyncScope();
         return (await ConvertPropertiesAsync(properties, cultures, null, null, scope.ServiceProvider, cancellationToken, null)).Data;
     }
@@ -41,9 +45,20 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
         IPublishedContent? publishedContent, IPublishedElement? sourceElement, IServiceProvider? services,
         System.Threading.CancellationToken cancellationToken, IAsyncRelewisePropertyValueConverter? selected)
     {
-        if (properties == null) throw new ArgumentNullException(nameof(properties));
-        if (cultures == null) throw new ArgumentNullException(nameof(cultures));
-        if (cultures.Length == 0) throw new ArgumentException("Value cannot be an empty collection.", nameof(cultures));
+        if (properties == null)
+        {
+            throw new ArgumentNullException(nameof(properties));
+        }
+
+        if (cultures == null)
+        {
+            throw new ArgumentNullException(nameof(cultures));
+        }
+
+        if (cultures.Length == 0)
+        {
+            throw new ArgumentException("Value cannot be an empty collection.", nameof(cultures));
+        }
 
         var dataKeys = new Dictionary<string, DataValue?>();
         bool handled = false;
@@ -114,7 +129,11 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
         var context = new RelewisePropertyConverterContext(property, culture, dataKeys, publishedContent, sourceElement, services, cancellationToken);
         if (selected != null)
         {
-            if (!selected.CanHandle(context)) throw new InvalidOperationException($"Selected converter {selected.GetType().Name} cannot handle '{property.Alias}' for culture '{culture}'.");
+            if (!selected.CanHandle(context))
+            {
+                throw new InvalidOperationException($"Selected converter {selected.GetType().Name} cannot handle '{property.Alias}' for culture '{culture}'.");
+            }
+
             await selected.ConvertAsync(context, cancellationToken);
             return true;
         }
@@ -125,16 +144,29 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
             .FirstOrDefault(converter => converter.CanHandle(context));
         foreach (IRelewisePropertyValueConverter converter in converters)
         {
-            if (!converter.CanHandle(context)) continue;
+            if (!converter.CanHandle(context))
+            {
+                continue;
+            }
+
             handled = true;
             if (converter is IDefaultPropertyValueConverter && custom != null)
             {
-                if (!customApplied) await custom.ConvertAsync(context, cancellationToken);
+                if (!customApplied)
+                {
+                    await custom.ConvertAsync(context, cancellationToken);
+                }
+
                 customApplied = true;
             }
             else if (converter is IAsyncRelewisePropertyValueConverter asynchronous)
+            {
                 await asynchronous.ConvertAsync(context, cancellationToken);
-            else converter.Convert(context);
+            }
+            else
+            {
+                converter.Convert(context);
+            }
         }
         if (custom != null && !customApplied)
         {
@@ -145,4 +177,3 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
         return handled;
     }
 }
-internal sealed record PropertyConversion(IReadOnlyDictionary<string, DataValue?> Data, bool Handled);

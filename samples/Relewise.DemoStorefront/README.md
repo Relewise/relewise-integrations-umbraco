@@ -53,7 +53,7 @@ For backoffice editing, set your preferred Umbraco unattended user/password in
 - [ImageUrlConverter.cs](ImageUrlConverter.cs): global asynchronous Data conversion,
   overriding a built-in regardless of registration order.
 - [EditorialBlocksConverter.cs](EditorialBlocksConverter.cs) and
-  [EditorialBlockText.cs](EditorialBlockText.cs): field-specific Block List/Grid text
+  [EditorialBlockText.cs](../../docs/examples/AdvancedContentMapping/EditorialBlockText.cs): field-specific Block List/Grid text
   extraction, including nested elements and explicit editorial field selection.
 - [EditorialMapper.cs](EditorialMapper.cs): final entity-level enrichment using values
   already produced by declarative mappings and their converters.
@@ -77,19 +77,10 @@ Configuration switches exercise the same application:
 - `Demo:DefaultProvider=catalogue`: ordinary queries use Product search.
 - `Demo:ProductPolicy=None`: preserve externally controlled administrative state.
 
-Run [Test-Indexing.ps1](../../tests/Storefront/Test-Indexing.ps1) against the running
-host to verify publish/edit/unpublish/republish/delete behavior in both Examine and
-Relewise. Add `-ExpectNoProfiles` for the indexing-only scenario. Diagnostics and
-raw execution reports should not be enabled or committed as application settings.
-
-[Test-Mapping.ps1](../../tests/Storefront/Test-Mapping.ps1) covers child Variant
-lifecycle, partial culture publication, relationship behavior and ID changes. Use
-`-ExternalCatalogue` with `Demo:ProductPolicy=None` to verify preservation of external
-fields, Variants and administrative state.
-[Test-Rebuild.ps1](../../tests/Storefront/Test-Rebuild.ps1) measures a bounded batch,
-its SDK call counts and a subsequent rebuild, then removes its fixtures.
-[Test-Ordering.ps1](../../tests/Storefront/Test-Ordering.ps1) exercises rapid
-unpublish/republish/delete sequences and rebuild boundaries.
+Use the storefront and Umbraco backoffice to exercise publishing, draft edits,
+unpublication, deletion and rebuilding. Check both destinations when Examine serves
+ordinary queries. Diagnostics are optional local investigation tools; leave them
+disabled in shared settings and keep raw reports outside tracked files.
 
 See [entity mapping](../../docs/entity-mapping.md) and
 [Umbraco search](../../docs/umbraco-19-search.md) for package behavior and limitations.

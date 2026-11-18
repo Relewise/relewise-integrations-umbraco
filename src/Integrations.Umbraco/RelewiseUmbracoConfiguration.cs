@@ -1,13 +1,13 @@
-﻿#pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+#pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Globalization;
-using Umbraco.Extensions;
+using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco;
 
@@ -32,7 +32,9 @@ public class RelewiseUmbracoConfiguration
         };
 
         foreach (Configure configure in provider.GetServices<Configure>())
+        {
             configure(options, provider);
+        }
 
         UseContentKeysAsIds = options.UseContentKeysAsIds;
         var mappings = new Dictionary<string, MappingDefinition>(options.EntityMappings, StringComparer.OrdinalIgnoreCase);
@@ -41,18 +43,31 @@ public class RelewiseUmbracoConfiguration
             MappingDefinition definition = content.Value?.Definition ?? new MappingDefinition(typeof(Relewise.Client.DataTypes.Content)) { AutomaticData = true };
             definition.DocumentTypeAlias = content.Key;
             definition.Validate();
-            if (!mappings.TryAdd(content.Key, definition)) throw new InvalidOperationException($"Document Type '{content.Key}' is registered for multiple entity targets.");
+            if (!mappings.TryAdd(content.Key, definition))
+            {
+                throw new InvalidOperationException($"Document Type '{content.Key}' is registered for multiple entity targets.");
+            }
         }
         var variants = new List<MappingDefinition>();
         foreach (MappingDefinition mapping in mappings.Values)
         {
-            if (mapping.Variant == null) continue;
+            if (mapping.Variant == null)
+            {
+                continue;
+            }
+
             mapping.Variant.Export &= mapping.Export;
             mapping.Variant.TrackViews &= mapping.TrackViews;
             variants.Add(mapping.Variant);
         }
         foreach (MappingDefinition variant in variants)
-            if (!mappings.TryAdd(variant.DocumentTypeAlias, variant)) throw new InvalidOperationException($"Variant Document Type '{variant.DocumentTypeAlias}' is already registered.");
+        {
+            if (!mappings.TryAdd(variant.DocumentTypeAlias, variant))
+            {
+                throw new InvalidOperationException($"Variant Document Type '{variant.DocumentTypeAlias}' is already registered.");
+            }
+        }
+
         Mappings = mappings;
         SearchProviders = options.SearchProviders;
         SearchProviders.Validate(Mappings);
@@ -86,7 +101,11 @@ public class RelewiseUmbracoConfiguration
         if (Mappings.TryGetValue(content.ContentType?.Alias ?? string.Empty, out MappingDefinition? mapping) && mapping.IdPropertyAlias is { } alias)
         {
             var property = content.GetProperty(alias) ?? throw new InvalidOperationException($"ID property '{alias}' does not exist on '{content.Key}'.");
-            if (property.PropertyType.VariesByCulture() || property.PropertyType.VariesBySegment()) throw new InvalidOperationException($"ID property '{alias}' must be culture and segment invariant.");
+            if (property.PropertyType.VariesByCulture() || property.PropertyType.VariesBySegment())
+            {
+                throw new InvalidOperationException($"ID property '{alias}' must be culture and segment invariant.");
+            }
+
             return ResolvePropertyId(property.GetValue(), alias, content.Key);
         }
         return GetContentId(content.Id, content.Key);
@@ -108,9 +127,16 @@ public class RelewiseUmbracoConfiguration
     private static string ResolvePropertyId(object? raw, string sourcePropertyAlias, Guid nodeKey)
     {
         if (raw is not (string or Guid or byte or short or int or long or ushort or uint or ulong or decimal))
+        {
             throw new InvalidOperationException($"ID property '{sourcePropertyAlias}' on '{nodeKey}' must contain a string, GUID, or integer/decimal ID.");
+        }
+
         string? value = Convert.ToString(raw, CultureInfo.InvariantCulture);
-        if (string.IsNullOrWhiteSpace(value)) throw new InvalidOperationException($"ID property '{sourcePropertyAlias}' is empty on '{nodeKey}'.");
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new InvalidOperationException($"ID property '{sourcePropertyAlias}' is empty on '{nodeKey}'.");
+        }
+
         return value;
     }
 
@@ -134,7 +160,10 @@ public class RelewiseUmbracoConfiguration
     /// <exception cref="ArgumentException"></exception>
     public bool CanMap(IContent content)
     {
-        if (content == null) throw new ArgumentNullException(nameof(content));
+        if (content == null)
+        {
+            throw new ArgumentNullException(nameof(content));
+        }
 
         return CanMap(content.ContentType.Alias);
     }
@@ -147,8 +176,11 @@ public class RelewiseUmbracoConfiguration
     /// <exception cref="ArgumentException"></exception>
     public bool CanMap(string contentType)
     {
-        if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentException("Value cannot be null or whitespace", nameof(contentType));
-        
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            throw new ArgumentException("Value cannot be null or whitespace", nameof(contentType));
+        }
+
         return Mappings.TryGetValue(contentType, out MappingDefinition? mapping) && mapping.Export;
     }
 
@@ -160,7 +192,10 @@ public class RelewiseUmbracoConfiguration
     /// <exception cref="ArgumentNullException"></exception>
     public bool IsTrackable(IPublishedElement content)
     {
-        if (content == null) throw new ArgumentNullException(nameof(content));
+        if (content == null)
+        {
+            throw new ArgumentNullException(nameof(content));
+        }
 
         return IsTrackable(content.ContentType.Alias);
     }
@@ -179,8 +214,11 @@ public class RelewiseUmbracoConfiguration
     /// <exception cref="ArgumentException"></exception>
     public bool TryGetMapper(string contentType, out IContentTypeMapping? mapping)
     {
-        if (string.IsNullOrWhiteSpace(contentType)) throw new ArgumentException("Value cannot be null or whitespace", nameof(contentType));
-        
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            throw new ArgumentException("Value cannot be null or whitespace", nameof(contentType));
+        }
+
         return _customMappers.TryGetValue(contentType, out mapping) && mapping != null;
     }
 

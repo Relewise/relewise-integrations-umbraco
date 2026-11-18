@@ -1,9 +1,9 @@
 #pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
-using System.Threading;
-using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
@@ -47,7 +47,9 @@ internal class BlockListPropertyValueConverter(IServiceProvider serviceProvider)
             }
 
             if (properties.Count == 0)
+            {
                 return;
+            }
 
             string[] stringCollection = properties
                 .Select(x => x?.Value?.ToString())

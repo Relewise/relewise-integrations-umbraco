@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Search;
-using Umbraco.Cms.Core.Search.Indexing;
 
 namespace Relewise.Integrations.Umbraco.Tests;
 

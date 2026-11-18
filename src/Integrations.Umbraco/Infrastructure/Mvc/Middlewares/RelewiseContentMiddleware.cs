@@ -1,19 +1,18 @@
-﻿using System;
+using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Relewise.Client;
-using Relewise.Client.Extensions;
-using Relewise.Client.Requests;
-using Umbraco.Extensions;
 using Relewise.Client.DataTypes;
+using Relewise.Client.Requests;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Web;
+using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
 
@@ -66,7 +65,9 @@ internal class RelewiseContentMiddleware
                         catch (HttpRequestException ex)
                         {
                             if (ex.StatusCode == HttpStatusCode.NotFound)
+                            {
                                 throw new InvalidOperationException($"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com", ex);
+                            }
 
                             throw;
                         }
@@ -82,19 +83,41 @@ internal class RelewiseContentMiddleware
     {
         string id = _configuration.GetContentId(content);
         if (!_configuration.Mappings.TryGetValue(content.ContentType.Alias, out MappingDefinition? mapping))
+        {
             return new ContentView(user, id);
+        }
+
         if (mapping.EntityType == typeof(ProductVariant))
         {
             IPublishedContent parent = content.Parent() ?? throw new InvalidOperationException("A Variant view requires its mapped Product parent.");
             if (!_configuration.Mappings.TryGetValue(parent.ContentType.Alias, out MappingDefinition? parentMapping)
                 || parentMapping.EntityType != typeof(Product) || parentMapping.Variant != mapping)
+            {
                 throw new InvalidOperationException("A Variant view requires its configured direct Product parent.");
+            }
+
             return new ProductView(user, new Product(_configuration.GetContentId(parent)), new ProductVariant(id));
         }
-        if (mapping.EntityType == typeof(Product)) return new ProductView(user, new Product(id));
-        if (mapping.EntityType == typeof(Brand)) return new BrandView(user, new Brand(id));
-        if (mapping.EntityType == typeof(ProductCategory)) return new ProductCategoryView(user, CategoryPath(content, typeof(ProductCategory)));
-        if (mapping.EntityType == typeof(ContentCategory)) return new ContentCategoryView(user, CategoryPath(content, typeof(ContentCategory)));
+        if (mapping.EntityType == typeof(Product))
+        {
+            return new ProductView(user, new Product(id));
+        }
+
+        if (mapping.EntityType == typeof(Brand))
+        {
+            return new BrandView(user, new Brand(id));
+        }
+
+        if (mapping.EntityType == typeof(ProductCategory))
+        {
+            return new ProductCategoryView(user, CategoryPath(content, typeof(ProductCategory)));
+        }
+
+        if (mapping.EntityType == typeof(ContentCategory))
+        {
+            return new ContentCategoryView(user, CategoryPath(content, typeof(ContentCategory)));
+        }
+
         return new ContentView(user, id);
     }
 

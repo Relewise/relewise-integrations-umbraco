@@ -50,7 +50,8 @@ public class MappingContextTests
         element.SetupGet(value => value.Properties).Returns([leaf]);
         var blocks = new BlockListModel([new BlockListItem(Guid.NewGuid(), element.Object, null, null)]);
         var blockProperty = Property("blocks", "Umbraco.BlockList", blocks);
-        var source = new Mock<IPublishedElement>(); source.SetupGet(value => value.Properties).Returns([blockProperty]);
+        var source = new Mock<IPublishedElement>();
+        source.SetupGet(value => value.Properties).Returns([blockProperty]);
         using var cancellation = new CancellationTokenSource();
         RelewisePropertyConverterContext? observed = null;
         var custom = new Mock<IRelewisePropertyValueConverter>();
@@ -93,7 +94,8 @@ public class MappingContextTests
 
     private static IPublishedProperty Property(string alias, string editor, object value)
     {
-        var type = new Mock<IPublishedPropertyType>(); type.SetupGet(property => property.EditorAlias).Returns(editor);
+        var type = new Mock<IPublishedPropertyType>();
+        type.SetupGet(property => property.EditorAlias).Returns(editor);
         var property = new Mock<IPublishedProperty>();
         property.SetupGet(property => property.Alias).Returns(alias);
         property.SetupGet(property => property.PropertyType).Returns(type.Object);

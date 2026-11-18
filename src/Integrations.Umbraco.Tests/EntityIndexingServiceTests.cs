@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Newtonsoft.Json;
 using Relewise.Client;
@@ -7,18 +9,16 @@ using Relewise.Client.Extensions;
 using Relewise.Client.Requests;
 using Relewise.Client.Requests.Queries;
 using Relewise.Client.Responses;
+using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core;
+using Umbraco.Cms.Core.Events;
+using Umbraco.Cms.Core.HostedServices;
 using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Notifications;
+using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Search.Indexing;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
-using Relewise.Integrations.Umbraco.NotificationHandlers;
-using Umbraco.Cms.Core.Events;
-using Umbraco.Cms.Core.HostedServices;
-using Umbraco.Cms.Core.Notifications;
-using Umbraco.Cms.Core.Scoping;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Hosting;
 
 namespace Relewise.Integrations.Umbraco.Tests;
 
@@ -97,7 +97,10 @@ public class EntityIndexingServiceTests
             await work(CancellationToken.None);
             Assert.Contains("42", JsonConvert.SerializeObject(Assert.Single(Assert.Single(fixture.Tracked))));
         }
-        else Assert.Null(work);
+        else
+        {
+            Assert.Null(work);
+        }
     }
 
     [Fact]
@@ -197,12 +200,21 @@ public class EntityIndexingServiceTests
             {
                 T value = creator();
                 _items.Add(key, value);
-                if (action != null) _actions.Add(key, completed => action(completed, value));
+                if (action != null)
+                {
+                    _actions.Add(key, completed => action(completed, value));
+                }
             }
             return (T?)_items[key];
         }
         public T? GetEnlisted<T>(string key) => _items.TryGetValue(key, out object? value) ? (T?)value : default;
-        public void ScopeExit(bool completed) { foreach (var action in _actions.Values) action(completed); }
+        public void ScopeExit(bool completed)
+        {
+            foreach (var action in _actions.Values)
+            {
+                action(completed);
+            }
+        }
     }
 
     private sealed class Fixture : IAsyncDisposable

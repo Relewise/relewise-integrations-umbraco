@@ -2,9 +2,8 @@ using Relewise.Client;
 using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Queries;
 using Umbraco.Cms.Core.Search;
-using Umbraco.Cms.Core.Search.Querying;
-using Umbraco.Cms.Core.Search.Querying.Filtering;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
+using Umbraco.Cms.Core.Search.Querying.Filtering;
 using Umbraco.Cms.Core.Search.Querying.Sorting;
 using Umbraco.Cms.Core.Services;
 
@@ -14,7 +13,15 @@ internal static class StorefrontChecks
         Microsoft.Extensions.Options.IOptions<Umbraco.Cms.Core.Search.Configuration.IndexOptions> indexes)
     {
         var checks = new List<string>();
-        void Check(bool condition, string name) { if (!condition) throw new InvalidOperationException("Smoke check failed: " + name); checks.Add(name); }
+        void Check(bool condition, string name)
+        {
+            if (!condition)
+            {
+                throw new InvalidOperationException("Smoke check failed: " + name);
+            }
+
+            checks.Add(name);
+        }
         var products = searchers.GetSearcher("catalogue")!;
         var articles = searchers.GetSearcher("articles")!;
         var all = await products.SearchAsync("catalogue");
@@ -25,9 +32,14 @@ internal static class StorefrontChecks
         string published = global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent;
         var ordinary = await searchers.GetSearcher(published)!.SearchAsync(published, "trail");
         if (configuration.GetValue<bool?>("Demo:DefaultSearch") == false)
+        {
             Check(indexes.Value.GetContentIndexRegistration(published)!.Searcher.Name == "IExamineSearcher" && ordinary.Total > 2, "Examine serves ordinary queries alongside named Relewise providers");
+        }
         else
+        {
             Check(ordinary.Total == (configuration["Demo:DefaultProvider"] == "catalogue" ? 2 : 1), "Ordinary Umbraco query uses the selected Relewise default provider");
+        }
+
         var paged = await products.SearchAsync("catalogue", skip: 1, take: 1);
         Check(paged.Total == 3 && paged.Documents.Count() == 1, "Product pagination retains total hits");
         var count = await products.SearchAsync("catalogue", take: 0);
@@ -54,7 +66,11 @@ internal static class StorefrontChecks
         var localizedSort = await localized.SearchAsync("localized", culture: "da-DK", sorters: [new IntegerSorter("score", global::Umbraco.Cms.Core.Direction.Ascending)]);
         Check(localizedSort.Total == 1, "Culture-specific numeric sorting executes");
         Check((await searchers.GetSearcher("allEditorial")!.SearchAsync("allEditorial", segment: "vip")).Total == 3, "Ignore segment policy executes an ordinary query");
-        try { await articles.SearchAsync("articles", segment: "vip"); throw new InvalidOperationException("Expected unsupported segment rejection."); }
+        try
+        {
+            await articles.SearchAsync("articles", segment: "vip");
+            throw new InvalidOperationException("Expected unsupported segment rejection.");
+        }
         catch (NotSupportedException) { checks.Add("Default segment policy rejects the request explicitly"); }
         var data = clients.GetClient<IDataAccessor>();
         var guideNode = content.GetRootContent().SelectMany(root => content.GetPagedDescendants(root.Id, 0, 1000, out _)).Single(node => node.ContentType.Alias == "guide");
@@ -76,6 +92,10 @@ internal static class StorefrontChecks
         Check(stored.ListPrice?.Values?.Any(value => value.Currency.Value == "DKK" && value.Amount == 899) == true, "Typed async price conversion populates the built-in ListPrice");
         var duplicate = await data.QueryAsync(new ContentQuery("U19-SMOKE-PACK"));
         Check(!duplicate.Contents.Any(), "Product is not also indexed as Content");
-        return Results.Ok(new { passed = checks.Count, checks });
+        return Results.Ok(new
+        {
+            passed = checks.Count,
+            checks
+        });
     }
 }

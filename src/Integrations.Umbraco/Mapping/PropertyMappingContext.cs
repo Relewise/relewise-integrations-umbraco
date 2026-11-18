@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco;
@@ -37,51 +34,4 @@ public class PropertyMappingContext
     /// <summary>Cancellation of the current export operation.</summary>
     public CancellationToken CancellationToken => _operation.CancellationToken;
     internal T Resolve<T>() where T : class => _operation.Resolve<T>();
-}
-
-/// <summary>Converts contextual source data to the selected destination property's type.</summary>
-/// <typeparam name="TValue">The destination value type, including its nullable contract.</typeparam>
-public interface IPropertyMappingConverter<TValue>
-{
-    /// <summary>Build the complete destination value, including applicable cultures or currencies.</summary>
-    ValueTask<TValue> ConvertAsync(PropertyMappingContext context, CancellationToken cancellationToken);
-}
-
-internal sealed class MappingOperation(IServiceProvider services, CancellationToken cancellationToken) : IAsyncDisposable
-{
-    private readonly Dictionary<Type, object> _instances = new();
-    internal IServiceProvider Services { get; } = services;
-    internal CancellationToken CancellationToken { get; } = cancellationToken;
-    internal object Resolve(Type type)
-    {
-        object? registered = Services.GetService(type);
-        if (registered != null) return registered;
-        if (_instances.TryGetValue(type, out object? instance)) return instance;
-        instance = ActivatorUtilities.CreateInstance(Services, type);
-        _instances.Add(type, instance);
-        return instance;
-    }
-    internal T Resolve<T>() where T : class => (T)Resolve(typeof(T));
-    private Task<string>? _defaultCulture;
-    internal async Task<string> DefaultCultureAsync(string[] publishedCultures)
-    {
-        string culture = await (_defaultCulture ??= Services.GetRequiredService<global::Umbraco.Cms.Core.Services.ILanguageService>().GetDefaultIsoCodeAsync());
-        return publishedCultures.FirstOrDefault(value => value.Equals(culture, StringComparison.OrdinalIgnoreCase))
-            ?? publishedCultures.Order(StringComparer.OrdinalIgnoreCase).First();
-    }
-    public async ValueTask DisposeAsync()
-    {
-        List<Exception>? errors = null;
-        foreach (object instance in _instances.Values.Reverse())
-        {
-            try
-            {
-                if (instance is IAsyncDisposable asyncDisposable) await asyncDisposable.DisposeAsync();
-                else if (instance is IDisposable disposable) disposable.Dispose();
-            }
-            catch (Exception error) { (errors ??= new()).Add(error); }
-        }
-        _instances.Clear();
-        if (errors != null) throw new AggregateException("Mapping resources could not all be disposed.", errors);
-    }
 }

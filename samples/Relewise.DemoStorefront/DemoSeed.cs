@@ -1,9 +1,8 @@
-using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
-using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Serialization;
+using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 
 internal static class DemoSeed
@@ -12,7 +11,11 @@ internal static class DemoSeed
     {
         await using var scope = root.CreateAsyncScope();
         IServiceProvider services = scope.ServiceProvider;
-        if (services.GetRequiredService<IContentTypeService>().Get("product") != null) return false;
+        if (services.GetRequiredService<IContentTypeService>().Get("product") != null)
+        {
+            return false;
+        }
+
         await Prepare(services.GetRequiredService<IContentTypeService>(), services.GetRequiredService<IDataTypeService>(),
             services.GetRequiredService<ITemplateService>(), services.GetRequiredService<IContentService>(), services.GetRequiredService<IShortStringHelper>(),
             services.GetRequiredService<IWebHostEnvironment>(), services.GetRequiredService<PropertyEditorCollection>(),
@@ -31,7 +34,10 @@ internal static class DemoSeed
         var picker = available.First(type => type.EditorAlias == "Umbraco.ContentPicker");
         var numeric = available.First(type => type.Name == "Numeric");
         if (await languages.GetAsync("da-DK") == null)
+        {
             await languages.CreateAsync(new Language("da-DK", "Danish"), Constants.Security.SuperUserKey);
+        }
+
         var categories = available.FirstOrDefault(type => type.Name == "RFC category references");
         if (categories == null)
         {
@@ -69,8 +75,12 @@ internal static class DemoSeed
             {
                 type = new ContentType(strings, -1) { Alias = alias, Name = alias, AllowedAsRoot = true };
                 foreach (string property in new[] { "heading", "bodyText", "heroImage", "sku", "categoryId", "brandId", "listPrice", "salesPrice", "color" })
+                {
                     type.AddPropertyType(new PropertyType(strings, text, property) { Name = property });
-                type.AllowedTemplates = [template]; type.SetDefaultTemplate(template);
+                }
+
+                type.AllowedTemplates = [template];
+                type.SetDefaultTemplate(template);
                 await types.CreateAsync(type, Constants.Security.SuperUserKey);
             }
             if (alias == "article" && !type.PropertyTypes.Any(property => property.Alias == "contentRows"))
@@ -80,9 +90,21 @@ internal static class DemoSeed
             }
             if (alias == "product")
             {
-                if (!type.PropertyTypes.Any(property => property.Alias == "brand")) type.AddPropertyType(new PropertyType(strings, picker, "brand") { Name = "Brand" });
-                if (!type.PropertyTypes.Any(property => property.Alias == "extraCategories")) type.AddPropertyType(new PropertyType(strings, categories, "extraCategories") { Name = "Additional categories" });
-                if (!type.PropertyTypes.Any(property => property.Alias == "stock")) type.AddPropertyType(new PropertyType(strings, numeric, "stock") { Name = "Stock" });
+                if (!type.PropertyTypes.Any(property => property.Alias == "brand"))
+                {
+                    type.AddPropertyType(new PropertyType(strings, picker, "brand") { Name = "Brand" });
+                }
+
+                if (!type.PropertyTypes.Any(property => property.Alias == "extraCategories"))
+                {
+                    type.AddPropertyType(new PropertyType(strings, categories, "extraCategories") { Name = "Additional categories" });
+                }
+
+                if (!type.PropertyTypes.Any(property => property.Alias == "stock"))
+                {
+                    type.AddPropertyType(new PropertyType(strings, numeric, "stock") { Name = "Stock" });
+                }
+
                 await types.UpdateAsync(type, Constants.Security.SuperUserKey);
             }
         }
@@ -90,11 +112,18 @@ internal static class DemoSeed
         {
             var localized = new ContentType(strings, -1) { Alias = "localizedArticle", Name = "Localized article", AllowedAsRoot = true, Variations = ContentVariation.Culture };
             foreach (string alias in new[] { "heading", "bodyText", "score" })
+            {
                 localized.AddPropertyType(new PropertyType(strings, alias == "score" ? numeric : text, alias) { Name = alias, Variations = ContentVariation.Culture });
-            localized.AllowedTemplates = [template]; localized.SetDefaultTemplate(template);
+            }
+
+            localized.AllowedTemplates = [template];
+            localized.SetDefaultTemplate(template);
             await types.CreateAsync(localized, Constants.Security.SuperUserKey);
         }
-        return Results.Ok(new { schemaReady = true });
+        return Results.Ok(new
+        {
+            schemaReady = true
+        });
     }
     internal static async Task<IResult> Run(IContentService content, IContentTypeService types, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes, IDomainService domains)
     {
@@ -108,7 +137,11 @@ internal static class DemoSeed
             node.TemplateId = templateId;
             node.SetValue("heading", name);
             node.SetValue("heroImage", "/images/" + (name.Contains("flask") ? "flask" : name.Contains("shelter") ? "shelter" : "daypack") + ".svg");
-            foreach (var field in properties ?? []) node.SetValue(field.Key, field.Value);
+            foreach (var field in properties ?? [])
+            {
+                node.SetValue(field.Key, field.Value);
+            }
+
             if (type == "product")
             {
                 var brand = content.GetRootContent().Single(node => node.ContentType.Alias == "brand");
@@ -125,37 +158,95 @@ internal static class DemoSeed
                         new { editorAlias = "Umbraco.TextBox", alias = "heading", value = "Ready for the outdoors", culture = (string?)null, segment = (string?)null },
                         new { editorAlias = "Umbraco.TextBox", alias = "text", value = "Bring a reusable flask and enjoy the quiet outdoors.", culture = (string?)null, segment = (string?)null }
                     } } },
-                    settingsData = Array.Empty<object>(), expose = new[] { new { contentKey = blockKey, culture = (string?)null, segment = (string?)null } }
+                    settingsData = Array.Empty<object>(),
+                    expose = new[] { new { contentKey = blockKey, culture = (string?)null, segment = (string?)null } }
                 }));
             }
             content.Save(node);
             var published = content.Publish(node, ["*"]);
-            if (!published.Success) throw new InvalidOperationException($"Failed publishing {name}: {published.Result}");
+            if (!published.Success)
+            {
+                throw new InvalidOperationException($"Failed publishing {name}: {published.Result}");
+            }
+
             scope.Complete();
             return node;
         }
         Node("Fieldwork storefront", -1, "home");
-        var brand = Node("Fieldwork", -1, "brand", new() { ["brandId"] = "U19-SMOKE-BRAND" });
-        var adventures = Node("Fieldwork adventures", -1, "productCategory", new() { ["categoryId"] = "U19-SMOKE-ADVENTURES" });
+        var brand = Node("Fieldwork", -1, "brand", new()
+        {
+            ["brandId"] = "U19-SMOKE-BRAND"
+        });
+        var adventures = Node("Fieldwork adventures", -1, "productCategory", new()
+        {
+            ["categoryId"] = "U19-SMOKE-ADVENTURES"
+        });
         var folder = Node("Trail routes", adventures.Id, "folder");
-        var hikes = Node("Day hikes", folder.Id, "productCategory", new() { ["categoryId"] = "U19-SMOKE-DAYHIKES" });
-        var category = Node("Fieldwork equipment", -1, "productCategory", new() { ["categoryId"] = "U19-SMOKE-EQUIPMENT" });
-        var pack = Node("Trail daypack", category.Id, "product", new() { ["sku"] = "U19-SMOKE-PACK", ["listPrice"] = "899", ["salesPrice"] = "699", ["bodyText"] = "A lightweight daypack for trails, city commutes and everything between." });
+        var hikes = Node("Day hikes", folder.Id, "productCategory", new()
+        {
+            ["categoryId"] = "U19-SMOKE-DAYHIKES"
+        });
+        var category = Node("Fieldwork equipment", -1, "productCategory", new()
+        {
+            ["categoryId"] = "U19-SMOKE-EQUIPMENT"
+        });
+        var pack = Node("Trail daypack", category.Id, "product", new()
+        {
+            ["sku"] = "U19-SMOKE-PACK",
+            ["listPrice"] = "899",
+            ["salesPrice"] = "699",
+            ["bodyText"] = "A lightweight daypack for trails, city commutes and everything between."
+        });
         using (var scope = scopes.CreateScope())
         {
             scope.EagerWriteLock(Constants.Locks.ContentTree);
             pack.SetValue("extraCategories", System.Text.Json.JsonSerializer.Serialize(new[] { category.Key, hikes.Key, hikes.Key }));
             content.Save(pack);
-            if (!content.Publish(pack, ["*"]).Success) throw new InvalidOperationException("Failed publishing category references.");
+            if (!content.Publish(pack, ["*"]).Success)
+            {
+                throw new InvalidOperationException("Failed publishing category references.");
+            }
+
             scope.Complete();
         }
-        Node("Trail daypack Forest", pack.Id, "productVariant", new() { ["sku"] = "U19-SMOKE-PACK-FOREST", ["color"] = "Forest", ["bodyText"] = "The forest green edition of our everyday daypack." });
-        Node("Trail daypack Sand", pack.Id, "productVariant", new() { ["sku"] = "U19-SMOKE-PACK-SAND", ["color"] = "Sand", ["bodyText"] = "A warm sand finish, made for all seasons." });
-        Node("Trail flask", category.Id, "product", new() { ["sku"] = "U19-SMOKE-FLASK", ["listPrice"] = "299", ["salesPrice"] = "249", ["bodyText"] = "Keep your coffee warm and your water cool, from first light to late evening." });
-        Node("Camp shelter", category.Id, "product", new() { ["sku"] = "U19-SMOKE-SHELTER", ["listPrice"] = "1999", ["salesPrice"] = "1599", ["bodyText"] = "Simple shelter, thoughtful details. A place to pause on your next adventure." });
-        var article = Node("Finding your trail", -1, "article", new() { ["bodyText"] = "Our field guide to getting outdoors. Choose your route, pack lightly and leave no trace." });
-        Node("A slower kind of weekend", -1, "article", new() { ["bodyText"] = "Good coffee, a quiet campsite and time to explore. The essentials for a weekend outside." });
-        Node("Packing for your first camp", article.Id, "guide", new() { ["bodyText"] = "A practical packing checklist from the Fieldwork team." });
+        Node("Trail daypack Forest", pack.Id, "productVariant", new()
+        {
+            ["sku"] = "U19-SMOKE-PACK-FOREST",
+            ["color"] = "Forest",
+            ["bodyText"] = "The forest green edition of our everyday daypack."
+        });
+        Node("Trail daypack Sand", pack.Id, "productVariant", new()
+        {
+            ["sku"] = "U19-SMOKE-PACK-SAND",
+            ["color"] = "Sand",
+            ["bodyText"] = "A warm sand finish, made for all seasons."
+        });
+        Node("Trail flask", category.Id, "product", new()
+        {
+            ["sku"] = "U19-SMOKE-FLASK",
+            ["listPrice"] = "299",
+            ["salesPrice"] = "249",
+            ["bodyText"] = "Keep your coffee warm and your water cool, from first light to late evening."
+        });
+        Node("Camp shelter", category.Id, "product", new()
+        {
+            ["sku"] = "U19-SMOKE-SHELTER",
+            ["listPrice"] = "1999",
+            ["salesPrice"] = "1599",
+            ["bodyText"] = "Simple shelter, thoughtful details. A place to pause on your next adventure."
+        });
+        var article = Node("Finding your trail", -1, "article", new()
+        {
+            ["bodyText"] = "Our field guide to getting outdoors. Choose your route, pack lightly and leave no trace."
+        });
+        Node("A slower kind of weekend", -1, "article", new()
+        {
+            ["bodyText"] = "Good coffee, a quiet campsite and time to explore. The essentials for a weekend outside."
+        });
+        Node("Packing for your first camp", article.Id, "guide", new()
+        {
+            ["bodyText"] = "A practical packing checklist from the Fieldwork team."
+        });
         using (var scope = scopes.CreateScope())
         {
             scope.EagerWriteLock(Constants.Locks.ContentTree);
@@ -170,7 +261,11 @@ internal static class DemoSeed
             localized.SetValue("score", 10, "en-US");
             localized.SetValue("score", 20, "da-DK");
             content.Save(localized);
-            if (!content.Publish(localized, ["en-US", "da-DK"]).Success) throw new InvalidOperationException("Failed publishing both cultures.");
+            if (!content.Publish(localized, ["en-US", "da-DK"]).Success)
+            {
+                throw new InvalidOperationException("Failed publishing both cultures.");
+            }
+
             scope.Complete();
         }
         var localizedRoot = content.GetRootContent().Single(node => node.ContentType.Alias == "localizedArticle");
@@ -179,7 +274,14 @@ internal static class DemoSeed
             DefaultIsoCode = "en-US",
             Domains = [new() { DomainName = "http://localhost:5521/en", IsoCode = "en-US" }, new() { DomainName = "http://localhost:5521/da", IsoCode = "da-DK" }]
         });
-        if (!domainResult.Success) throw new InvalidOperationException($"Failed configuring localized storefront routes: {domainResult.Status}.");
-        return Results.Ok(new { seeded = true });
+        if (!domainResult.Success)
+        {
+            throw new InvalidOperationException($"Failed configuring localized storefront routes: {domainResult.Status}.");
+        }
+
+        return Results.Ok(new
+        {
+            seeded = true
+        });
     }
 }

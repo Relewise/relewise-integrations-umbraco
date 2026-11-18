@@ -12,18 +12,12 @@ using Umbraco.Cms.Core.Search.Indexing;
 
 namespace Relewise.Integrations.Umbraco;
 
-internal interface IEntityIndexingOperations
-{
-    Task ApplyChangesAsync(ContentChange[] changes, CancellationToken token);
-    Task ExportAsync(IEnumerable<Guid> keys, CancellationToken cancellationToken = default,
-        ContentUpdate.UpdateKind? contentUpdateKind = null, long? feedVersion = null);
-    Task RebuildAsync(bool permanentlyDelete = false, CancellationToken cancellationToken = default);
-    Task DeleteAsync(IEnumerable<DeletedEntity> deleted, CancellationToken token);
-}
-
 // Umbraco owns the worker. Only immutable change records/identities are retained between callbacks.
-internal sealed class EntityIndexingQueue(IEntityIndexingOperations indexing, IBackgroundTaskQueue queue,
-    IHostApplicationLifetime lifetime, ILogger<EntityIndexingQueue> logger)
+internal sealed class EntityIndexingQueue(
+    IEntityIndexingOperations indexing,
+    IBackgroundTaskQueue queue,
+    IHostApplicationLifetime lifetime,
+    ILogger<EntityIndexingQueue> logger)
 {
     internal const int BatchSize = 100;
     private readonly object _sync = new();
@@ -37,7 +31,10 @@ internal sealed class EntityIndexingQueue(IEntityIndexingOperations indexing, IB
         ContentChange[][] batches = changes.Chunk(BatchSize).ToArray();
         lock (_sync)
         {
-            foreach (ContentChange[] batch in batches) _pending.Enqueue(new Changes(batch));
+            foreach (ContentChange[] batch in batches)
+            {
+                _pending.Enqueue(new Changes(batch));
+            }
         }
         ScheduleFlush();
     }
@@ -65,7 +62,10 @@ internal sealed class EntityIndexingQueue(IEntityIndexingOperations indexing, IB
     private async Task ExecuteAsync(Func<CancellationToken, Task> action, CancellationToken token)
     {
         if (_execution.Value is { Active: true })
+        {
             throw new InvalidOperationException("An explicit export or rebuild cannot be started recursively from an indexing mapper or converter.");
+        }
+
         using var waiting = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.ApplicationStopping);
         waiting.Token.ThrowIfCancellationRequested();
         var boundary = new Boundary(action, token);
@@ -86,7 +86,10 @@ internal sealed class EntityIndexingQueue(IEntityIndexingOperations indexing, IB
                     await ProcessAsync(TakeNext() ?? throw new InvalidOperationException("The queued indexing operation is missing."), lifetime.ApplicationStopping);
                 }
             }
-            finally { _processing.Release(); }
+            finally
+            {
+                _processing.Release();
+            }
             await boundary.Completion.Task;
         }
         catch (OperationCanceledException) when (waiting.IsCancellationRequested)
@@ -101,11 +104,26 @@ internal sealed class EntityIndexingQueue(IEntityIndexingOperations indexing, IB
     {
         lock (_sync)
         {
-            if (_flushQueued || _pending.Count == 0) return;
+            if (_flushQueued || _pending.Count == 0)
+            {
+                return;
+            }
+
             _flushQueued = true;
         }
-        try { queue.QueueBackgroundWorkItem(FlushAsync); }
-        catch { lock (_sync) _flushQueued = false; throw; }
+        try
+        {
+            queue.QueueBackgroundWorkItem(FlushAsync);
+        }
+        catch
+        {
+            lock (_sync)
+            {
+                _flushQueued = false;
+            }
+
+            throw;
+        }
     }
 
     private async Task FlushAsync(CancellationToken token)
@@ -118,13 +136,27 @@ internal sealed class EntityIndexingQueue(IEntityIndexingOperations indexing, IB
             await _processing.WaitAsync(token);
             entered = true;
             Work? work = TakeNext();
-            if (work != null) await ProcessAsync(work, token);
+            if (work != null)
+            {
+                await ProcessAsync(work, token);
+            }
         }
         finally
         {
-            if (entered) _processing.Release();
-            lock (_sync) _flushQueued = false;
-            if (!token.IsCancellationRequested) ScheduleFlush();
+            if (entered)
+            {
+                _processing.Release();
+            }
+
+            lock (_sync)
+            {
+                _flushQueued = false;
+            }
+
+            if (!token.IsCancellationRequested)
+            {
+                ScheduleFlush();
+            }
         }
     }
 
@@ -132,8 +164,16 @@ internal sealed class EntityIndexingQueue(IEntityIndexingOperations indexing, IB
     {
         lock (_sync)
         {
-            if (!_pending.TryDequeue(out Work? work)) return null;
-            if (work is not Changes first) return work;
+            if (!_pending.TryDequeue(out Work? work))
+            {
+                return null;
+            }
+
+            if (work is not Changes first)
+            {
+                return work;
+            }
+
             var combined = new List<ContentChange>(first.Items);
             while (_pending.TryPeek(out Work? next) && next is Changes changes && combined.Count + changes.Items.Length <= BatchSize)
             {
@@ -159,10 +199,18 @@ internal sealed class EntityIndexingQueue(IEntityIndexingOperations indexing, IB
                     break;
                 case Deletion deletion:
                     await indexing.DeleteAsync(deletion.Entities, token);
-                    if (deletion.Parents.Length > 0) await indexing.ExportAsync(deletion.Parents, token);
+                    if (deletion.Parents.Length > 0)
+                    {
+                        await indexing.ExportAsync(deletion.Parents, token);
+                    }
+
                     break;
                 case Boundary boundary:
-                    if (boundary.Completion.Task.IsCompleted) break; // A waiting caller may have cancelled.
+                    if (boundary.Completion.Task.IsCompleted)
+                    {
+                        break; // A waiting caller may have cancelled.
+                    }
+
                     using (var linked = CancellationTokenSource.CreateLinkedTokenSource(token, boundary.Token))
                     {
                         linked.Token.ThrowIfCancellationRequested();
@@ -178,7 +226,10 @@ internal sealed class EntityIndexingQueue(IEntityIndexingOperations indexing, IB
                 || work is Boundary requested && requested.Token.IsCancellationRequested);
             if (work is Boundary boundary)
             {
-                if (cancelled) boundary.Completion.TrySetCanceled(boundary.Token.IsCancellationRequested ? boundary.Token : token);
+                if (cancelled)
+                {
+                    boundary.Completion.TrySetCanceled(boundary.Token.IsCancellationRequested ? boundary.Token : token);
+                }
                 else
                 {
                     boundary.Completion.TrySetException(error);
@@ -186,7 +237,9 @@ internal sealed class EntityIndexingQueue(IEntityIndexingOperations indexing, IB
                 }
             }
             if (!cancelled)
+            {
                 logger.LogError(error, "Relewise indexing work failed. A full export may be needed to reconcile published content.");
+            }
         }
         finally
         {

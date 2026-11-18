@@ -48,12 +48,19 @@ internal static class CoreSearchTranslation
 
     internal static RFilter NumberRange(string field, string kind, double? min, double? max, string? culture = null)
     {
-        if (!min.HasValue && !max.HasValue) return new ContentDataFilter(Field(field, kind + "Values", culture), new HasValueCondition());
+        if (!min.HasValue && !max.HasValue)
+        {
+            return new ContentDataFilter(Field(field, kind + "Values", culture), new HasValueCondition());
+        }
         // Relewise ranges are inclusive. The previous representable double makes the upper
         // endpoint exclusive without arbitrary epsilons, for integers, decimals and dates alike.
         double lower = min ?? double.MinValue;
         double upper = max.HasValue ? Math.BitDecrement(max.Value) : double.MaxValue;
-        if (lower > upper) return Any([]);
+        if (lower > upper)
+        {
+            return Any([]);
+        }
+
         return new ContentDataFilter(Field(field, kind + "Values", culture), new ContainsCondition(new DataObjectFilter(new ObjectValueCondition[] {
             new ObjectValueInRangeCondition("value", new Relewise.Client.DataTypes.Range<double>(lower, upper))
         })));
@@ -77,10 +84,20 @@ internal static class CoreSearchTranslation
                 ScoreSorter => new ContentRelevanceSorting(order),
                 KeywordSorter => new ContentDataSorting(Field(sorter.FieldName, "keywordSort"), order),
                 TextSorter => new ContentDataSorting(Field(sorter.FieldName, "textSort"), order),
-                IntegerSorter => NumericSort("integer"), DecimalSorter => NumericSort("decimal"), DateTimeOffsetSorter => NumericSort("date"),
+                IntegerSorter => NumericSort("integer"),
+                DecimalSorter => NumericSort("decimal"),
+                DateTimeOffsetSorter => NumericSort("date"),
                 _ => throw new NotSupportedException($"The Relewise provider does not support sorter '{sorter.GetType().Name}'.")
             };
-            if (previous is null) request.Sorting!.SortBy(current); else previous.ThenBy = current;
+            if (previous is null)
+            {
+                request.Sorting!.SortBy(current);
+            }
+            else
+            {
+                previous.ThenBy = current;
+            }
+
             previous = current;
             ContentSorting NumericSort(string kind) => new ContentDataSorting(Field(sorter.FieldName,
                 kind + (sorter.Direction == Direction.Ascending ? "Min" : "Max"), culture), order);
@@ -93,7 +110,11 @@ internal static class CoreSearchTranslation
     internal static void StoreStrings(Dictionary<string, DataValue?> data, string field, string kind, IEnumerable<string> source)
     {
         string[] values = source.Distinct().ToArray();
-        if (values.Length == 0) return;
+        if (values.Length == 0)
+        {
+            return;
+        }
+
         data[Field(field, kind)] = kind == "text" ? new DataValue(string.Join(" ", values)) : new DataValue(values);
         data[Field(field, kind + "Sort")] = values.Order(StringComparer.Ordinal).First();
     }
@@ -101,7 +122,11 @@ internal static class CoreSearchTranslation
     internal static void StoreNumbers(Dictionary<string, DataValue?> data, string field, string kind, IEnumerable<double> source)
     {
         double[] values = source.Distinct().ToArray();
-        if (values.Length == 0) return;
+        if (values.Length == 0)
+        {
+            return;
+        }
+
         data[Field(field, kind + "Exact")] = new DataValue(values.Select(NumberString));
         data[Field(field, kind + "Values")] = new DataValue(values.Select(v => new DataObject(new Dictionary<string, DataValue?> { ["value"] = v })));
         data[Field(field, kind + "Min")] = values.Min();

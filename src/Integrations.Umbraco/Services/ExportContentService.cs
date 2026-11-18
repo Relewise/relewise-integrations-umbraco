@@ -24,7 +24,10 @@ internal class ExportContentService(EntityIndexingQueue indexing, IServiceProvid
     }
     public ITracker? GetTrackerOrNull()
     {
-        try { return services.GetRequiredService<IRelewiseClientFactory>().GetClient<ITracker>(Constants.NamedClientName); }
+        try
+        {
+            return services.GetRequiredService<IRelewiseClientFactory>().GetClient<ITracker>(Constants.NamedClientName);
+        }
         catch (InvalidOperationException) { return null; }
         catch (ArgumentException) { return null; }
     }

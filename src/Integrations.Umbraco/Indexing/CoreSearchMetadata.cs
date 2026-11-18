@@ -35,21 +35,37 @@ internal static class CoreSearchMetadata
                         {
                             data[field.Key] = field.Value;
                             foreach (string culture in siteCultures ?? document.Variations.Select(value => value.Culture).OfType<string>().ToArray())
+                            {
                                 data[field.Key + "_" + Uri.EscapeDataString(culture.ToLowerInvariant())] = field.Value;
+                            }
                         }
-                        else data[field.Key + "_" + Uri.EscapeDataString(cultureGroup.Key.ToLowerInvariant())] = field.Value;
+                        else
+                        {
+                            data[field.Key + "_" + Uri.EscapeDataString(cultureGroup.Key.ToLowerInvariant())] = field.Value;
+                        }
                     }
-                    else if (cultureGroup.Key == null) data[field.Key] = field.Value;
+                    else if (cultureGroup.Key == null)
+                    {
+                        data[field.Key] = field.Value;
+                    }
                     else
                     {
                         if (field.Value?.Type == DataValue.DataValueTypes.String)
                         {
-                            if (!data.TryGetValue(field.Key, out DataValue? existing)) data[field.Key] = existing = new Multilingual();
+                            if (!data.TryGetValue(field.Key, out DataValue? existing))
+                            {
+                                data[field.Key] = existing = new Multilingual();
+                            }
+
                             existing!.ValueAs<Multilingual>().Add(new Multilingual.Value(cultureGroup.Key, field.Value));
                         }
                         else if (field.Value?.Type == DataValue.DataValueTypes.StringList)
                         {
-                            if (!data.TryGetValue(field.Key, out DataValue? existing)) data[field.Key] = existing = new MultilingualCollection();
+                            if (!data.TryGetValue(field.Key, out DataValue? existing))
+                            {
+                                data[field.Key] = existing = new MultilingualCollection();
+                            }
+
                             existing!.ValueAs<MultilingualCollection>().Add(new MultilingualCollection.Value(cultureGroup.Key, field.Value));
                         }
                     }

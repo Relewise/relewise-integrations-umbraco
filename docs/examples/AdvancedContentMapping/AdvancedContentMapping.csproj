@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../../../src/Integrations.Umbraco/Integrations.Umbraco.csproj" />
+    <PackageReference Include="Umbraco.Cms" Version="19.0.0-rc1" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.13.1" />
+  </ItemGroup>
+</Project>

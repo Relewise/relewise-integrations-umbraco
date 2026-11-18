@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions;
@@ -13,6 +13,7 @@ using Relewise.Client.Requests;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
 using Relewise.Client.Requests.Queries;
+using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -20,7 +21,6 @@ using Umbraco.Cms.Core.Search.Indexing;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
-using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Content = Relewise.Client.DataTypes.Content;
 
 namespace Relewise.Integrations.Umbraco;
@@ -51,7 +51,11 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
     public async Task DeleteAsync(IEnumerable<DeletedEntity> deleted, CancellationToken token)
     {
         DeletedEntity[] snapshots = deleted.ToArray();
-        if (snapshots.Length == 0) return;
+        if (snapshots.Length == 0)
+        {
+            return;
+        }
+
         await _writer.WaitAsync(token);
         try
         {
@@ -61,7 +65,10 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
             var actions = new List<Trackable>();
             foreach (DeletedEntity entity in snapshots)
             {
-                if (entity.Synchronize) actions.Add(DeleteIdentity(entity.EntityType, entity.Id));
+                if (entity.Synchronize)
+                {
+                    actions.Add(DeleteIdentity(entity.EntityType, entity.Id));
+                }
                 else if (entity.EntityType == typeof(Content) || entity.EntityType == typeof(Product))
                 {
                     var filters = new FilterCollection(DataFilter(entity.EntityType, "rwUmbracoNodeKey", new EqualsCondition(entity.NodeKey.ToString("D"))),
@@ -69,15 +76,25 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
                     await MarkUnavailableAsync(clients.GetClient<IDataAccessor>(Constants.NamedClientName), tracker, entity.EntityType, filters, token);
                 }
             }
-            if (actions.Count > 0) await tracker.TrackAsync(actions, token);
+            if (actions.Count > 0)
+            {
+                await tracker.TrackAsync(actions, token);
+            }
         }
-        finally { _writer.Release(); }
+        finally
+        {
+            _writer.Release();
+        }
     }
 
     private async Task RunAsync(IEnumerable<Guid> keys, bool rebuild, bool permanentlyDelete, CancellationToken token,
         ContentUpdate.UpdateKind? contentUpdateKind = null, long? feedVersion = null, ContentChange[]? changes = null)
     {
-        if (!configuration.Mappings.Values.Any(mapping => mapping.Export)) return;
+        if (!configuration.Mappings.Values.Any(mapping => mapping.Export))
+        {
+            return;
+        }
+
         long started = System.Diagnostics.Stopwatch.GetTimestamp();
         int mappedCount = 0;
         await _writer.WaitAsync(token);
@@ -94,13 +111,20 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
             var requested = keys.ToHashSet();
             var aggregateChildren = new HashSet<Guid>();
             if (rebuild)
+            {
                 await strategy.RebuildAsync(new ContentIndexInfo(IndexAlias, [UmbracoObjectTypes.Document], collected), token);
+            }
             else
+            {
                 await strategy.HandleAsync([new ContentIndexInfo(IndexAlias, [UmbracoObjectTypes.Document], collected)],
                     changes ?? requested.Select(key => ContentChange.Document(key, ChangeImpact.Refresh, ContentState.Published)).ToArray(), token);
+            }
             // Already-unpublished permanent deletions can be reported through the draft flow.
             if (changes != null)
+            {
                 collected.Keys.UnionWith(changes.Where(change => change.ObjectType == UmbracoObjectTypes.Document && change.ChangeImpact == ChangeImpact.Remove).Select(change => change.Id));
+            }
+
             requested.UnionWith(collected.Keys);
             // A child Variant contributes to its parent Product, rather than creating an independent entity.
             foreach (Guid key in requested.ToArray())
@@ -110,18 +134,28 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
                 if (node == null)
                 {
                     var editable = services.GetRequiredService<IContentService>().GetById(key);
-                    if (editable == null || !configuration.Mappings.TryGetValue(editable.ContentType.Alias, out var removedMapping) || removedMapping.EntityType != typeof(ProductVariant)) continue;
+                    if (editable == null || !configuration.Mappings.TryGetValue(editable.ContentType.Alias, out var removedMapping) || removedMapping.EntityType != typeof(ProductVariant))
+                    {
+                        continue;
+                    }
+
                     parent = context.UmbracoContext.Content?.GetById(editable.ParentId);
                 }
                 else
                 {
-                    if (!configuration.Mappings.TryGetValue(node.ContentType.Alias, out var mapping) || mapping.EntityType != typeof(ProductVariant)) continue;
+                    if (!configuration.Mappings.TryGetValue(node.ContentType.Alias, out var mapping) || mapping.EntityType != typeof(ProductVariant))
+                    {
+                        continue;
+                    }
+
                     parent = node.Parent();
                 }
                 aggregateChildren.Add(key);
                 if (parent != null && !collected.Documents.ContainsKey(parent.Key))
+                {
                     await strategy.HandleAsync([new ContentIndexInfo(IndexAlias, [UmbracoObjectTypes.Document], collected)],
                         [ContentChange.Document(parent.Key, ChangeImpact.Refresh, ContentState.Published)], token);
+                }
             }
             string generation = Guid.NewGuid().ToString("N");
             long version = feedVersion ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -135,19 +169,35 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
             {
                 token.ThrowIfCancellationRequested();
                 IPublishedContent? source = context.UmbracoContext.Content?.GetById(entry.Key);
-                if (source == null || entry.Value.Variations.Length == 0) continue;
+                if (source == null || entry.Value.Variations.Length == 0)
+                {
+                    continue;
+                }
+
                 if (!configuration.Mappings.TryGetValue(source.ContentType.Alias, out var mapping) || !mapping.Export)
                 {
                     unmapped.Add(entry.Key);
                     continue;
                 }
-                if (mapping.EntityType == typeof(ProductVariant)) continue;
+                if (mapping.EntityType == typeof(ProductVariant))
+                {
+                    continue;
+                }
+
                 string[]? cultures = entry.Value.Variations.Any(value => value.Culture == null) ? null
                     : entry.Value.Variations.Select(value => value.Culture!).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
                 MappedEntity mapped = await mapper.MapAsync(source, mapping, operation, site, version, contentUpdateKind: contentUpdateKind, publishedCultures: cultures);
                 string claim = mapping.EntityType.Name + ":" + (mapping.EntityType == typeof(Brand) ? mapped.Id.ToLowerInvariant() : mapped.Id);
-                if (!claims.Add(claim)) throw new InvalidOperationException($"Multiple documents export the same {mapping.EntityType.Name} ID '{mapped.Id}'.");
-                if (mapped.Entity is Content or Product) CoreSearchMetadata.Apply(mapped, entry.Value, siteCultures);
+                if (!claims.Add(claim))
+                {
+                    throw new InvalidOperationException($"Multiple documents export the same {mapping.EntityType.Name} ID '{mapped.Id}'.");
+                }
+
+                if (mapped.Entity is Content or Product)
+                {
+                    CoreSearchMetadata.Apply(mapped, entry.Value, siteCultures);
+                }
+
                 EntityMapper.Data(mapped.Entity)["rwUmbracoExportGeneration"] = generation;
                 desired.Add(mapped);
             }
@@ -156,9 +206,16 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
             foreach (MappedEntity entity in desired)
             {
                 updates.Add(entity.Update());
-                if (entity.Synchronize) updates.Add(Administrative(entity.Entity.GetType(), new FilterCollection(DataFilter(entity.Entity.GetType(), "rwUmbracoNodeKey", new EqualsCondition(entity.NodeKey.ToString("D"))), DataFilter(entity.Entity.GetType(), "rwUmbracoSite", new EqualsCondition(site))), false, true));
+                if (entity.Synchronize)
+                {
+                    updates.Add(Administrative(entity.Entity.GetType(), new FilterCollection(DataFilter(entity.Entity.GetType(), "rwUmbracoNodeKey", new EqualsCondition(entity.NodeKey.ToString("D"))), DataFilter(entity.Entity.GetType(), "rwUmbracoSite", new EqualsCondition(site))), false, true));
+                }
             }
-            if (updates.Count > 0) await tracker.TrackAsync(updates, token);
+            if (updates.Count > 0)
+            {
+                await tracker.TrackAsync(updates, token);
+            }
+
             token.ThrowIfCancellationRequested();
 
             // Only a completed full export may reconcile entities missing from its generation.
@@ -179,11 +236,20 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
                         filters.Add(rebuild ? DataFilter(type, "rwUmbracoExportGeneration", new EqualsCondition(generation, negated: true), filterOutIfKeyIsNotFound: false)
                             : new OrFilter(removal.Keys.Select(key => DataFilter(type, "rwUmbracoNodeKey", new EqualsCondition(key.ToString("D")))).ToArray()));
                         if (type == typeof(Content) || type == typeof(Product))
+                        {
                             await MarkUnavailableAsync(clients.GetClient<IDataAccessor>(Constants.NamedClientName), tracker, type, filters, token);
-                        if (group.Key.Enabled) cleanup.Add(Administrative(type, filters, removal.Delete, false));
+                        }
+
+                        if (group.Key.Enabled)
+                        {
+                            cleanup.Add(Administrative(type, filters, removal.Delete, false));
+                        }
                     }
                 }
-                if (cleanup.Count > 0) await tracker.TrackAsync(cleanup, token);
+                if (cleanup.Count > 0)
+                {
+                    await tracker.TrackAsync(cleanup, token);
+                }
             }
         }
         finally
@@ -209,7 +275,10 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
             {
                 var response = await reader.QueryAsync(query, token);
                 foreach (var product in response.Products ?? [])
+                {
                     updates.Add(new ProductUpdate(new Product(product.ProductId) { Assortments = null, CategoryPaths = null, Data = new() { ["rwUmbracoPublished"] = false } }, ProductUpdate.UpdateKind.ReplaceProvidedProperties));
+                }
+
                 query.NextPageToken = response.NextPageToken;
             } while (query.NextPageToken != null);
         }
@@ -220,12 +289,22 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
             {
                 var response = await reader.QueryAsync(query, token);
                 foreach (var content in response.Contents ?? [])
+                {
                     updates.Add(new ContentUpdate(new Content(content.ContentId) { Assortments = null, CategoryPaths = null, Data = new() { ["rwUmbracoPublished"] = false } }, ContentUpdate.UpdateKind.ReplaceProvidedProperties));
-                if ((response.Contents?.Length ?? 0) < query.NumberOfResults) break;
+                }
+
+                if ((response.Contents?.Length ?? 0) < query.NumberOfResults)
+                {
+                    break;
+                }
+
                 query.SkipNumberOfResults += query.NumberOfResults;
             }
         }
-        if (updates.Count > 0) await tracker.TrackAsync(updates, token);
+        if (updates.Count > 0)
+        {
+            await tracker.TrackAsync(updates, token);
+        }
     }
 
     internal static Filter DataFilter(Type type, string key, ValueCondition condition, bool filterOutIfKeyIsNotFound = true)

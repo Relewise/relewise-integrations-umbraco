@@ -16,7 +16,11 @@ public class EntityIndexingQueueTests
         var fixture = new Fixture();
         static IEnumerable<ContentChange> BrokenChanges()
         {
-            for (int i = 0; i < 101; i++) yield return Refresh(Guid.NewGuid());
+            for (int i = 0; i < 101; i++)
+            {
+                yield return Refresh(Guid.NewGuid());
+            }
+
             throw new InvalidOperationException("Failed enumeration");
         }
         Assert.Throws<InvalidOperationException>(() => fixture.Writer.EnqueueChanges(BrokenChanges()));
@@ -108,7 +112,10 @@ public class EntityIndexingQueueTests
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rebuild).WaitAsync(TimeSpan.FromSeconds(3));
             Assert.False(earlier.IsCompleted);
         }
-        finally { release.SetResult(); await earlier; }
+        finally
+        {
+            release.SetResult(); await earlier;
+        }
         fixture.Operations.Verify(value => value.RebuildAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -181,7 +188,11 @@ public class EntityIndexingQueueTests
     public async Task ConsecutiveCallbacksBecomeOneExportWithoutAnAdditionalWorker()
     {
         var fixture = new Fixture();
-        for (int i = 0; i < 100; i++) fixture.Writer.EnqueueChanges([Refresh(Guid.NewGuid())]);
+        for (int i = 0; i < 100; i++)
+        {
+            fixture.Writer.EnqueueChanges([Refresh(Guid.NewGuid())]);
+        }
+
         Assert.Empty(fixture.Batches);
         Assert.Single(fixture.Scheduled);
         await fixture.DrainAsync();

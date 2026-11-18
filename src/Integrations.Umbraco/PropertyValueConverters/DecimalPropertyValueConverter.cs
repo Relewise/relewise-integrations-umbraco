@@ -1,7 +1,7 @@
 #pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Globalization;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 

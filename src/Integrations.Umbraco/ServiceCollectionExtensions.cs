@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+#pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

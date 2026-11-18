@@ -41,13 +41,15 @@ public class ImageCropperValueConverter : IDefaultPropertyValueConverter, IRelew
         ImageCropperValue? value = context.Property.GetValue<ImageCropperValue>(context.Culture);
 
         if (value == null)
+        {
             return;
+        }
 
         if (value.Crops != null)
         {
             foreach (ImageCropperValue.ImageCropperCrop crop in value.Crops)
             {
-                context.Add($"{context.Property.Alias}_{crop.Alias}", value.Src+value.GetCropUrl(crop.Width, crop.Height, _imageUrlGenerator));
+                context.Add($"{context.Property.Alias}_{crop.Alias}", value.Src + value.GetCropUrl(crop.Width, crop.Height, _imageUrlGenerator));
             }
         }
         else
