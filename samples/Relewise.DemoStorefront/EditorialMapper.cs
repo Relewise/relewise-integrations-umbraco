@@ -1,9 +1,10 @@
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco;
+using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Extensions;
 
 /// <summary>Runs after declarative mappings and demonstrates application-level enrichment.</summary>
-internal sealed class EditorialMapper : IEntityMapper<Content>
+internal sealed class EditorialMapper(IVariationContextAccessor variations) : IEntityMapper<Content>
 {
     private static readonly string[] BlockFields = ["contentRows", "pageGrid"];
 
@@ -37,9 +38,10 @@ internal sealed class EditorialMapper : IEntityMapper<Content>
                 ((!property.PropertyType.VariesByCulture() && context.CulturesToPublish.Count > 1) ||
                  !context.Entity.Data.ContainsKey(alias)))
             {
-                return EditorialBlockText.Extract(
-                    property.GetValue(property.PropertyType.VariesByCulture() ? culture : null),
+                return EditorialBlockText.ExtractProperty(
+                    property,
                     culture,
+                    variations,
                     cancellationToken);
             }
 

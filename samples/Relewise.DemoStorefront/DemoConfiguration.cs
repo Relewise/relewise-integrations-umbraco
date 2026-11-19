@@ -21,6 +21,7 @@ internal static class DemoConfiguration
             mapping.MapData("bodyText");
             mapping.MapData("heroImage");
             mapping.MapData("contentRows", data => data.UseConverter<EditorialBlocksConverter>());
+            mapping.MapData("pageGrid", data => data.UseConverter<EditorialBlocksConverter>());
             mapping.UseMapper<EditorialMapper>(); // Runs last, after declarative fields.
         });
         options.MapContent("localizedArticle", mapping =>
@@ -28,6 +29,8 @@ internal static class DemoConfiguration
             mapping.Map(entity => entity.DisplayName, "heading");
             mapping.MapData("bodyText");
             mapping.MapData("score");
+            mapping.MapData("contentRows", data => data.UseConverter<EditorialBlocksConverter>());
+            mapping.MapData("pageGrid", data => data.UseConverter<EditorialBlocksConverter>());
             mapping.UseMapper<EditorialMapper>(); // Aggregate only the published cultures in this export.
         });
 #pragma warning disable CS0618 // Deliberate example of the legacy compatibility adapter.
@@ -60,23 +63,39 @@ internal static class DemoConfiguration
         });
         if (connected && configuration.GetValue<bool?>("Demo:Search") != false)
         {
-            options.SearchProviders.AddContent("articles", provider => provider.DocumentTypeAliases = ["article"]);
-            options.SearchProviders.AddContent("guides", provider => provider.DocumentTypeAliases = ["guide"]);
-            options.SearchProviders.AddContent("localized", provider => provider.DocumentTypeAliases = ["localizedArticle"]);
-            options.SearchProviders.AddContent("allEditorial", provider => provider.UnsupportedSegmentBehavior = UnsupportedSegmentBehavior.Ignore());
-            options.SearchProviders.AddProduct("catalogue", provider => provider.ConfigureRequest((request, context) => request.Currency = new Currency("DKK")));
+            options.SearchProviders.AddContent("articles", provider =>
+            {
+                provider.DocumentTypeAliases = ["article"];
+                provider.ConfigureRequest((request, context) => request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency));
+            });
+            options.SearchProviders.AddContent("guides", provider =>
+            {
+                provider.DocumentTypeAliases = ["guide"];
+                provider.ConfigureRequest((request, context) => request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency));
+            });
+            options.SearchProviders.AddContent("localized", provider =>
+            {
+                provider.DocumentTypeAliases = ["localizedArticle"];
+                provider.ConfigureRequest((request, context) => request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency));
+            });
+            options.SearchProviders.AddContent("allEditorial", provider =>
+            {
+                provider.UnsupportedSegmentBehavior = UnsupportedSegmentBehavior.Ignore();
+                provider.ConfigureRequest((request, context) => request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency));
+            });
+            options.SearchProviders.AddProduct("catalogue", provider => provider.ConfigureRequest((request, context) => request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency)));
             if (configuration["Demo:ProductPolicy"] == "None")
             {
                 options.SearchProviders.AddProduct("commerceCatalogue", provider =>
                 {
                     provider.RequirePublishedPage = false; // The application handles Products without a published CMS page.
-                    provider.ConfigureRequest((request, context) => request.Currency = new Currency("DKK"));
+                    provider.ConfigureRequest((request, context) => request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency));
                 });
             }
 
             options.SearchProviders.AddProduct("offers", provider => provider.ConfigureRequest((request, context) =>
             {
-                request.Currency = new Currency("DKK");
+                request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency);
                 request.DisplayedAtLocation = "Local storefront offers";
                 request.Filters ??= new Relewise.Client.Requests.Filters.FilterCollection();
                 request.Filters.Add(new Relewise.Client.Requests.Filters.ProductIdFilter("U19-SMOKE-PACK"));

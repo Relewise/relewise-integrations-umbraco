@@ -2,16 +2,18 @@
 @using Umbraco.Extensions
 @using Relewise.Integrations.Umbraco
 @inject IServiceProvider Services
+@inject Umbraco.Cms.Core.Models.PublishedContent.IVariationContextAccessor Variations
 @{
     var product = Model.ContentType.Alias == "product";
     var variant = Model.ContentType.Alias == "productVariant";
     var parent = variant ? Model.Parent() : null;
     bool connected = Services.GetService<RelewiseUmbracoConfiguration>() != null;
+    string culture = Variations.VariationContext?.Culture ?? "";
     var entityType = Model.ContentType.Alias switch { "product" => "Product", "productVariant" => "Variant", "brand" => "Brand", "productCategory" => "Product Category", _ => "Content" };
     var html = $"<p style='margin-top:30px'><a href='/store'>← Back to the collection</a></p><section class='detail'><div class='illustration'>{(product || variant ? Storefront.Image(Model.Name) : Storefront.Icon(Model.Name))}</div><div class='details'><p class='eyebrow'>{Model.ContentType.Alias}</p><h1>{Storefront.E(Model.Value<string>("heading") ?? Model.Name)}</h1><p>{Storefront.E(Model.Value<string>("bodyText"))}</p>";
     if (product)
     {
-        html += $"<h2>DKK {Storefront.E(Model.Value<string>("salesPrice"))}</h2><p>Designed for everyday adventures.</p>";
+        html += $"<h2>Sales price: {Storefront.Prices(Model.GetProperty("salesPrice")?.GetValue(), Context)}</h2><p>List price: {Storefront.Prices(Model.GetProperty("listPrice")?.GetValue(), Context)}</p>";
     }
     if (product)
     {
@@ -55,5 +57,14 @@
         html += "<p><small>This page uses the integration's automatic entity view tracking.</small></p>";
     }
     html += "</div></section>";
+    foreach (var field in new[] { ("contentRows", "Block List editorial text"), ("pageGrid", "Block Grid editorial text") })
+    {
+        object? blocks = Model.GetProperty(field.Item1)?.GetValue();
+        if (blocks != null)
+        {
+            string text = EditorialBlockText.Extract(blocks, culture);
+            html += $"<section class='evidence'><h2>{field.Item2}</h2><p>{Storefront.E(text).Replace("\n", "<br>")}</p></section>";
+        }
+    }
 }
-@Html.Raw(Storefront.Layout(html, connected))
+@Html.Raw(Storefront.Layout(html, connected, Context))

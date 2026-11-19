@@ -4,12 +4,29 @@ using HtmlAgilityPack;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Strings;
+using Umbraco.Extensions;
 
 internal static class EditorialBlockText
 {
     // Only these example properties contribute text. Add your own aliases intentionally.
     private static readonly string[] TextFields = ["heading", "text", "caption"];
     private static readonly string[] NestedFields = ["items", "contentRows", "pageGrid"];
+
+    public static string ExtractProperty(IPublishedProperty property, string culture, IVariationContextAccessor variations, CancellationToken token = default)
+    {
+        token.ThrowIfCancellationRequested();
+        // Umbraco uses the ambient culture when deciding which localized blocks are exposed.
+        var previous = variations.VariationContext;
+        try
+        {
+            variations.VariationContext = new VariationContext(culture);
+            return Extract(property.GetValue(property.PropertyType.VariesByCulture() ? culture : null), culture, token);
+        }
+        finally
+        {
+            variations.VariationContext = previous;
+        }
+    }
 
     public static string Extract(object? value, string culture, CancellationToken token = default)
     {

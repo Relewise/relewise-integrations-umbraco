@@ -17,6 +17,7 @@ if (!builder.Environment.IsDevelopment())
 bool connected = DemoSetup.HasRelewiseConfiguration(builder.Configuration);
 DemoSetup.ConfigureLocalInstallation(builder);
 builder.Services.AddScoped<PriceConverter>();
+builder.Services.AddScoped(services => DemoMarket.Current(services.GetRequiredService<IHttpContextAccessor>().HttpContext));
 builder.Services.AddScoped<IRelewiseUserLocator, StorefrontUserLocator>();
 var umbraco = builder.CreateUmbracoBuilder().AddBackOffice().AddWebsite().AddDeliveryApi().AddComposers();
 if (connected)
@@ -45,6 +46,15 @@ if (connected && !seeded)
 }
 app.Use(async (context, next) =>
 {
+    var market = DemoMarket.Current(context);
+    string path = context.Request.Path.Value?.TrimEnd('/') ?? "";
+    if (path is "/en" or "/da" && path != market.EditorialUrl.TrimEnd('/'))
+    {
+        string target = market.EditorialUrl + context.Request.QueryString;
+        context.Response.Redirect(target);
+        return;
+    }
+
     if (!context.Request.Cookies.ContainsKey("storefront-visitor"))
     {
         string id = Guid.NewGuid().ToString("N");

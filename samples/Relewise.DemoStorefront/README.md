@@ -7,7 +7,7 @@ A runnable Umbraco 19 example for entity mapping, search and behavioral tracking
 Install the .NET 11 SDK, Node 24.13+ and npm 11+. Open the repository solution,
 select **Relewise.DemoStorefront** as the startup project, and press F5. First startup
 installs Umbraco into a local SQLite database and seeds document types, languages,
-Block List content, templates and published pages. Images are bundled under
+Block List and Block Grid content, templates and published pages. Images are bundled under
 `wwwroot/images`; nothing is downloaded from an image service.
 
 The browser opens `/store`. With no Relewise configuration, Examine serves the
@@ -50,7 +50,8 @@ For backoffice editing, set your preferred Umbraco unattended user/password in
 - [DemoConfiguration.cs](DemoConfiguration.cs): the registration for all examples:
   Content/Product/Brand/Category mapping, child Variants, canonical IDs, field
   converters, final entity mappers, named profiles and default query routing.
-- [PriceConverter.cs](PriceConverter.cs): strongly typed asynchronous built-in conversion.
+- [PriceConverter.cs](PriceConverter.cs): strongly typed asynchronous conversion of
+  editable currency/amount blocks into the SDK's `MultiCurrency` built-in property.
 - [ImageUrlConverter.cs](ImageUrlConverter.cs): global asynchronous Data conversion,
   overriding a built-in regardless of registration order.
 - [EditorialBlocksConverter.cs](EditorialBlocksConverter.cs) and
@@ -70,11 +71,57 @@ extractor uses HtmlAgilityPack only in this example application.
 
 The extractor visits only selected fields, nested blocks and Block Grid areas,
 removes HTML markup and script/style/template text, and respects the example's
-`hide` setting. `contentRows` is seeded as Block List content; `pageGrid` is an
-optional alias supported by the mapper/extractor when adapting the demo to a Grid.
-An invariant outer block property can contain localized elements: the mapper reads
-those elements separately for each published culture instead of reusing the first
-culture's converted text. The multilingual article uses the same mapper.
+`hide` setting. Open **Finding your trail** for nested `contentRows` Block List
+content, rich text and `pageGrid` areas. Hidden blocks and a hidden Grid container
+remain editable in Umbraco but contribute no text, including the container's children.
+The detail page shows the extracted text, with HTML removed and entities decoded,
+so it is easy to compare the editorial source with the text used for export.
+
+Open **Localized blocks** and switch market between Denmark and Europe/United States.
+The **Across the seasons** article's invariant
+outer Block List contains a nested element with localized headings and rich text.
+The containing group also varies by culture, so Umbraco preserves its children's
+localized values. The mapper reads those elements separately for each published
+culture instead of reusing the first culture's converted text. The mapper and
+converter receive Umbraco's variation context through DI, set the culture while
+reading blocks, and restore it even when conversion fails. This also works during
+background exports, where there is no frontend request setting the culture.
+See [DemoEditorialSchema.cs](DemoEditorialSchema.cs)
+for the editor setup and [DemoBlockValues.cs](DemoBlockValues.cs) for native seed values.
+
+### Multiple currencies
+
+Each Product has separate **List prices** and **Sales prices** Block Lists. Add one
+entry per currency, choosing a currency and entering a decimal amount. The demo
+offers DKK, EUR and USD; edit the **Demo currencies** data type in Umbraco to change
+those choices. The converter reads the selected codes from the published blocks;
+it does not assign a fixed currency or calculate exchange rates. For example, the
+daypack's list prices are DKK 899.00, EUR 119.95 and USD 129.95.
+
+The converter rejects duplicate currency codes and incomplete entries. An absent
+price field produces no price value, rather than inventing a zero price. The
+storefront displays the selected market's currency. A missing price is shown as
+unavailable; the storefront does not substitute another currency.
+
+### Market selection
+
+The header's **Market** dropdown selects language and currency together:
+
+| Market | Content language | Currency |
+| --- | --- | --- |
+| Denmark (default) | Danish (`da-DK`) | DKK |
+| Europe | English (`en-US`) | EUR |
+| United States | English (`en-US`) | USD |
+
+The selection is remembered for 30 days in a local preference cookie and follows
+navigation, searches and pagination. Switching market on the localized article
+opens its corresponding language version. Other seeded pages are invariant and
+retain their English text; the demo interface itself is also English.
+
+[DemoMarket.cs](DemoMarket.cs) defines these example markets. The search callbacks
+in [DemoConfiguration.cs](DemoConfiguration.cs) read the request-scoped market to
+set currency; storefront queries supply its language. Indexing always exports all
+entered currencies and published languages, independently of the visitor's market.
 
 Build all examples with:
 

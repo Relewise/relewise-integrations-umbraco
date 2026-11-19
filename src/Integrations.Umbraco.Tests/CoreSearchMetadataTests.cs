@@ -7,6 +7,25 @@ namespace Relewise.Integrations.Umbraco.Tests;
 public class CoreSearchMetadataTests
 {
     [Fact]
+    public void MixedInvariantAndLocalizedBlockFieldsRetainSharedTextWithoutLeakingLanguages()
+    {
+        var content = new Content("article");
+        var mapped = new MappedEntity(Guid.NewGuid(), "article", "article", content, true);
+        CoreSearchMetadata.Apply(mapped, new CoreSearchDocument([new("en-US", null), new("da-DK", null)],
+            [new("blocks", new() { Texts = ["Shared text"], Keywords = ["shared"] }, null, null),
+             new("blocks", new() { Texts = ["English text"], Keywords = ["english"] }, "en-US", null),
+             new("blocks", new() { Texts = ["Dansk tekst"], Keywords = ["dansk"] }, "da-DK", null)], null),
+            ["en-US", "da-DK", "de-DE"]);
+
+        var text = content.Data![CoreSearchTranslation.Field("blocks", "text")]!.ValueAs<Multilingual>();
+        Assert.Equal("Shared text English text", text.Values!.Single(value => value.Language.Value == "en-us").Text);
+        Assert.Equal("Shared text Dansk tekst", text.Values!.Single(value => value.Language.Value == "da-dk").Text);
+        Assert.Equal("Shared text", text.Values!.Single(value => value.Language.Value == "de-de").Text);
+        var keywords = content.Data[CoreSearchTranslation.Field("blocks", "keyword")]!.ValueAs<MultilingualCollection>();
+        Assert.Equal(new[] { "shared", "dansk" }, keywords.Values!.Single(value => value.Language.Value == "da-dk").Values);
+    }
+
+    [Fact]
     public void LocalizedNumericAndSegmentFieldsDoNotBlockMappedBusinessData()
     {
         var content = new Content("article") { Data = new() { ["customerField"] = "retained" } };

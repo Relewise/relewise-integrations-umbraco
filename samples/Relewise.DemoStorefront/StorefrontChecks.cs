@@ -1,4 +1,5 @@
 using Relewise.Client;
+using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Queries;
 using Umbraco.Cms.Core.Search;
@@ -28,16 +29,16 @@ internal static class StorefrontChecks
         Check(all.Total == 3 && all.Documents.Count() == 3, "Three Products, one result per Product");
         Check((await products.SearchAsync("catalogue", "forest")).Total == 1, "Variant search resolves its Product page");
         Check((await searchers.GetSearcher("offers")!.SearchAsync("offers")).Total == 1, "Independent Product profile applies its pre-request filter");
-        Check((await articles.SearchAsync("articles", "trail")).Total == 1, "Content provider searches articles");
+        Check((await articles.SearchAsync("articles", "finding")).Total == 1, "Content provider searches articles");
         string published = global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent;
-        var ordinary = await searchers.GetSearcher(published)!.SearchAsync(published, "trail");
+        var ordinary = await searchers.GetSearcher(published)!.SearchAsync(published, "finding");
         if (configuration.GetValue<bool?>("Demo:DefaultSearch") == false)
         {
-            Check(indexes.Value.GetContentIndexRegistration(published)!.Searcher.Name == "IExamineSearcher" && ordinary.Total > 2, "Examine serves ordinary queries alongside named Relewise providers");
+            Check(indexes.Value.GetContentIndexRegistration(published)!.Searcher.Name == "IExamineSearcher" && ordinary.Total == 1, "Examine serves ordinary queries alongside named Relewise providers");
         }
         else
         {
-            Check(ordinary.Total == (configuration["Demo:DefaultProvider"] == "catalogue" ? 2 : 1), "Ordinary Umbraco query uses the selected Relewise default provider");
+            Check(ordinary.Total == (configuration["Demo:DefaultProvider"] == "catalogue" ? 0 : 1), "Ordinary Umbraco query uses the selected Relewise default provider");
         }
 
         var paged = await products.SearchAsync("catalogue", skip: 1, take: 1);
@@ -88,8 +89,23 @@ internal static class StorefrontChecks
         var storedArticle = (await data.QueryAsync(new ContentQuery(articleNode.Key.ToString("D")))).Contents.Single();
         Check(storedArticle.Data["editorialSource"].ValueAs<string>() == "Umbraco demo storefront", "Custom entity mapper runs with declarative mapping");
         Check(storedArticle.Data["searchText"].ValueAs<string>().Contains("reusable flask"), "Field-specific block converter feeds the final entity mapper");
-        Check(storedArticle.Data["heroImage"].ValueAs<string>().StartsWith("http://localhost:5521/images/"), "Global Data converter emits an absolute image URL");
+        Check(storedArticle.Data["heroImage"].ValueAs<string>().StartsWith(configuration["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!.TrimEnd('/') + "/images/"), "Global Data converter emits an absolute image URL");
         Check(stored.ListPrice?.Values?.Any(value => value.Currency.Value == "DKK" && value.Amount == 899) == true, "Typed async price conversion populates the built-in ListPrice");
+        Check(stored.ListPrice?.Values?.Any(value => value.Currency.Value == "EUR" && value.Amount == 119.95m) == true
+            && stored.SalesPrice?.Values?.Any(value => value.Currency.Value == "USD" && value.Amount == 99.95m) == true,
+            "Typed price conversion reads independently entered currencies and amounts");
+        string articleText = storedArticle.Data["searchText"].ValueAs<string>();
+        Check(articleText.Contains("Inside the Grid area") && articleText.Contains("Nested trail advice")
+            && !articleText.Contains("secret-list-note") && !articleText.Contains("secret-grid-note"),
+            "Published nested blocks and Grid areas exclude hidden blocks and hidden subtrees");
+        var localizedNode = content.GetRootContent().Single(node => node.ContentType.Alias == "localizedArticle");
+        var localizedContent = (await data.QueryAsync(new ContentQuery(localizedNode.Key.ToString("D")))).Contents.Single();
+        var localizedText = localizedContent.Data["searchText"].ValueAs<Multilingual>().Values!;
+        string english = localizedText.Single(value => string.Equals(value.Language.Value, "en-US", StringComparison.OrdinalIgnoreCase)).Text ?? string.Empty;
+        string danish = localizedText.Single(value => string.Equals(value.Language.Value, "da-DK", StringComparison.OrdinalIgnoreCase)).Text ?? string.Empty;
+        Check(english.Contains("English nested heading") && !english.Contains("Dansk indlejret")
+            && danish.Contains("Dansk indlejret overskrift") && !danish.Contains("English nested"),
+            "Invariant outer blocks retain the language of their localized nested elements");
         var duplicate = await data.QueryAsync(new ContentQuery("U19-SMOKE-PACK"));
         Check(!duplicate.Contents.Any(), "Product is not also indexed as Content");
         return Results.Ok(new

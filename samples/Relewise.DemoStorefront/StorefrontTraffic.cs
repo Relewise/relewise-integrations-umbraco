@@ -53,6 +53,8 @@ internal sealed class StorefrontTraffic : DelegatingHandler
                     brandId = value["Brand"]?["Id"]?.Value<string>(),
                     categoryPath = value["IdPath"]?.Values<string>().ToArray(),
                     location = value["DisplayedAtLocation"]?.Value<string>(),
+                    language = value["Language"] is JObject language ? language["Value"]?.Value<string>() : value["Language"]?.Value<string>(),
+                    currency = value["Currency"] is JObject currency ? currency["Value"]?.Value<string>() : value["Currency"]?.Value<string>(),
                     term = value["Term"]?.Value<string>(),
                     filterKeys = value["Filters"] is JContainer filters ? filters.DescendantsAndSelf().OfType<JObject>()
                         .Where(filter => filter["Key"] != null).Select(filter => filter["Key"]!.Value<string>()).Distinct().ToArray() : [],

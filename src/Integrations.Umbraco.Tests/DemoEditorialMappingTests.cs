@@ -11,6 +11,33 @@ namespace Relewise.Integrations.Umbraco.Tests;
 
 public class DemoEditorialMappingTests
 {
+    [Fact]
+    public void ReadingInvariantBlocksSetsTheAmbientCultureAndRestoresIt()
+    {
+        var variations = Variations();
+        var previous = new VariationContext("en-US");
+        variations.VariationContext = previous;
+        var property = Property("contentRows", _ =>
+            variations.VariationContext?.Culture == "da-DK"
+                ? Blocks(Property("text", _ => "Dansk blok"))
+                : throw new InvalidOperationException("Localized blocks require an ambient culture."));
+
+        Assert.Equal("Dansk blok", EditorialBlockText.ExtractProperty(property, "da-DK", variations));
+        Assert.Same(previous, variations.VariationContext);
+    }
+
+    [Fact]
+    public void AFailedBlockReadRestoresTheAmbientCulture()
+    {
+        var variations = Variations();
+        var previous = new VariationContext("en-US");
+        variations.VariationContext = previous;
+        var property = Property("contentRows", _ => throw new InvalidOperationException("Conversion failed."));
+
+        Assert.Throws<InvalidOperationException>(() => EditorialBlockText.ExtractProperty(property, "da-DK", variations));
+        Assert.Same(previous, variations.VariationContext);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -23,7 +50,7 @@ public class DemoEditorialMappingTests
         await using var operation = new MappingOperation(Mock.Of<IServiceProvider>(), default);
         var converter = new RelewisePropertyConverter([]);
         var converted = await converter.ConvertPropertyAsync(
-            source, source, property, cultures, operation, new EditorialBlocksConverter());
+            source, source, property, cultures, operation, new EditorialBlocksConverter(Variations()));
         var entity = new Content("article")
         {
             DisplayName = new Multilingual(new Multilingual.Value("en-US", "Title")),
@@ -41,7 +68,7 @@ public class DemoEditorialMappingTests
         }
 
         var displayName = entity.DisplayName;
-        await new EditorialMapper().MapAsync(new EntityMappingContext<Content>(source, entity, cultures, operation), default);
+        await new EditorialMapper(Variations()).MapAsync(new EntityMappingContext<Content>(source, entity, cultures, operation), default);
 
         var values = entity.Data["searchText"]!.ValueAs<Multilingual>().Values!;
         Assert.Equal("English body\nEnglish block", values.Single(value => string.Equals(value.Language.Value, "en-US", StringComparison.OrdinalIgnoreCase)).Text);
@@ -60,7 +87,7 @@ public class DemoEditorialMappingTests
         var entity = new Content("article") { Data = new() { ["bodyText"] = "Dansk brødtekst" } };
         await using var operation = new MappingOperation(Mock.Of<IServiceProvider>(), default);
 
-        await new EditorialMapper().MapAsync(new EntityMappingContext<Content>(source, entity, ["da-DK"], operation), default);
+        await new EditorialMapper(Variations()).MapAsync(new EntityMappingContext<Content>(source, entity, ["da-DK"], operation), default);
 
         Assert.Equal("Dansk brødtekst\nDansk blok", entity.Data["searchText"]!.ValueAs<string>());
     }
@@ -72,7 +99,7 @@ public class DemoEditorialMappingTests
         var entity = new Content("article") { Data = new() { ["bodyText"] = "", ["contentRows"] = "", ["searchText"] = "Old text" } };
         await using var operation = new MappingOperation(Mock.Of<IServiceProvider>(), default);
 
-        await new EditorialMapper().MapAsync(new EntityMappingContext<Content>(source, entity, ["en-US", "da-DK"], operation), default);
+        await new EditorialMapper(Variations()).MapAsync(new EntityMappingContext<Content>(source, entity, ["en-US", "da-DK"], operation), default);
 
         Assert.All(entity.Data["searchText"]!.ValueAs<Multilingual>().Values!, value => Assert.Equal("", value.Text));
     }
@@ -103,7 +130,7 @@ public class DemoEditorialMappingTests
         var entity = new Content("article") { Data = new() { ["bodyText"] = "Body" } };
         await using var operation = new MappingOperation(Mock.Of<IServiceProvider>(), default);
 
-        await new EditorialMapper().MapAsync(new EntityMappingContext<Content>(source, entity, ["en-US"], operation), default);
+        await new EditorialMapper(Variations()).MapAsync(new EntityMappingContext<Content>(source, entity, ["en-US"], operation), default);
 
         Assert.Equal("Body\nGrid heading\nArea child", entity.Data["searchText"]!.ValueAs<string>());
     }
@@ -116,10 +143,17 @@ public class DemoEditorialMappingTests
         var property = Property("contentRows", _ => null, editor: "Umbraco.BlockList");
         var context = new RelewisePropertyConverterContext(property, "en-US", new());
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-            await new EditorialBlocksConverter().ConvertAsync(context, cancellation.Token));
+            await new EditorialBlocksConverter(Variations()).ConvertAsync(context, cancellation.Token));
         await using var operation = new MappingOperation(Mock.Of<IServiceProvider>(), cancellation.Token);
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new EditorialMapper().MapAsync(
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => new EditorialMapper(Variations()).MapAsync(
             new EntityMappingContext<Content>(Source(property), new Content("article"), ["en-US"], operation), cancellation.Token));
+    }
+
+    private static IVariationContextAccessor Variations()
+    {
+        var accessor = new Mock<IVariationContextAccessor>();
+        accessor.SetupProperty(value => value.VariationContext);
+        return accessor.Object;
     }
 
     private static BlockListModel Blocks(params IPublishedProperty[] properties)

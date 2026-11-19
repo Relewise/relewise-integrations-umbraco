@@ -25,6 +25,8 @@
 		<Compile Include="../../samples/Relewise.DemoStorefront/EditorialMapper.cs" Link="Examples/EditorialMapper.cs" />
 		<Compile Include="../../samples/Relewise.DemoStorefront/EditorialBlocksConverter.cs" Link="Examples/EditorialBlocksConverter.cs" />
 		<Compile Include="../../samples/Relewise.DemoStorefront/EditorialBlockText.cs" Link="Examples/EditorialBlockText.cs" />
+		<Compile Include="../../samples/Relewise.DemoStorefront/PriceConverter.cs" Link="Examples/PriceConverter.cs" />
+		<Compile Include="../../samples/Relewise.DemoStorefront/DemoMarket.cs" Link="Examples/DemoMarket.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

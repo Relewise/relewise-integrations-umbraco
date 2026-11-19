@@ -392,3 +392,8 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | [Installed tracking correlation](images/15-installed-identity-correlation.jpg) | One visitor across searches and all supported view events. |
 | [Local My Relewise Product](images/16-local-my-relewise-product.jpg) | Exported display name, image and Brand. |
 | [Local My Relewise Variants](images/17-local-my-relewise-variants.jpg) | Both canonical child Variant IDs. |
+| [English nested blocks](images/18-localized-nested-blocks-en.png) | Published nested editorial text in English. |
+| [Danish nested blocks](images/19-localized-nested-blocks-da.png) | The same nested elements resolve their Danish values. |
+| [Multiple currencies](images/20-multi-currency-product.png) | Independently entered list and sales prices in DKK, EUR and USD. |
+| [Europe market](images/21-europe-market-product.png) | Header market selection drives the Product's displayed EUR prices. |
+| [Denmark market](images/22-denmark-market-article.png) | Switching market opens the corresponding Danish article and nested blocks. |

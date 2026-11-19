@@ -150,17 +150,28 @@ custom references and guidance on switching an existing installation.
 
 ## Documentation and examples
 
-Start with the [documentation overview](docs/README.md), or go directly to:
+### Try the DemoStorefront
+
+Explore the integration in a running Umbraco site. The demo includes seeded Content,
+Products, Variants, Brands and Categories, plus examples of custom mapping,
+converters, multilingual search and behavioral tracking.
+
+Set **Relewise.DemoStorefront** as the startup project and press **F5**. It runs with
+Examine out of the box; connect a local Relewise Dataset to exercise Relewise search,
+export and tracking.
+
+[Run the demo and explore the examples →](samples/Relewise.DemoStorefront/README.md)
+
+### Guides
+
+For implementation details, start with the [documentation overview](docs/README.md)
+or go directly to:
 
 - [Entity mapping](docs/entity-mapping.md): fields, IDs, Products, Variants, Brands, Categories and converters.
 - [Block List, Block Grid and nested content](docs/block-editors.md): text extraction, visibility and cultures.
 - [Umbraco search](docs/umbraco-19-search.md): providers, queries, filtering, facets and access control.
 - [Validation and troubleshooting](docs/validation-and-troubleshooting.md): checking exports and diagnosing missing or stale data.
 - [Legacy Content mapping](docs/custom-content-mapping.md): existing `IContentTypeMapping` and converter implementations.
-
-The [Relewise.DemoStorefront](samples/Relewise.DemoStorefront/README.md) is a runnable
-example with seeded content, catalogue data, custom mappers/converters, search and
-tracking. See its README for F5 startup and optional local Relewise configuration.
 
 ## Compatibility and migration
 

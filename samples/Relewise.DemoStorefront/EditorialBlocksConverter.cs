@@ -1,7 +1,8 @@
 using Relewise.Integrations.Umbraco;
+using Umbraco.Cms.Core.Models.PublishedContent;
 
 /// <summary>Extracts selected editorial text from Block List/Grid values, including nested elements.</summary>
-internal sealed class EditorialBlocksConverter : IAsyncRelewisePropertyValueConverter
+internal sealed class EditorialBlocksConverter(IVariationContextAccessor variations) : IAsyncRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
         => context.Property.PropertyType.EditorAlias is "Umbraco.BlockList" or "Umbraco.BlockGrid";
@@ -9,8 +10,7 @@ internal sealed class EditorialBlocksConverter : IAsyncRelewisePropertyValueConv
     public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        object? value = context.Property.GetValue(context.Property.PropertyType.VariesByCulture() ? context.Culture : null);
-        context.Add(context.Property.Alias, EditorialBlockText.Extract(value, context.Culture, cancellationToken));
+        context.Add(context.Property.Alias, EditorialBlockText.ExtractProperty(context.Property, context.Culture, variations, cancellationToken));
         return default;
     }
 }

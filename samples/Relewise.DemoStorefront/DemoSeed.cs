@@ -11,8 +11,13 @@ internal static class DemoSeed
     {
         await using var scope = root.CreateAsyncScope();
         IServiceProvider services = scope.ServiceProvider;
-        if (services.GetRequiredService<IContentTypeService>().Get("product") != null)
+        var contentTypes = services.GetRequiredService<IContentTypeService>();
+        if (contentTypes.Get("product") != null)
         {
+            if (contentTypes.Get("currencyPrice") == null)
+            {
+                throw new InvalidOperationException("This demo database uses an earlier schema. Stop the site and move its ignored umbraco/Data directory aside to seed the updated examples.");
+            }
             return false;
         }
 
@@ -21,7 +26,8 @@ internal static class DemoSeed
             services.GetRequiredService<IWebHostEnvironment>(), services.GetRequiredService<PropertyEditorCollection>(),
             services.GetRequiredService<IConfigurationEditorJsonSerializer>(), services.GetRequiredService<ILanguageService>());
         await Run(services.GetRequiredService<IContentService>(), services.GetRequiredService<IContentTypeService>(),
-            services.GetRequiredService<Umbraco.Cms.Infrastructure.Scoping.IScopeProvider>(), services.GetRequiredService<IDomainService>());
+            services.GetRequiredService<Umbraco.Cms.Infrastructure.Scoping.IScopeProvider>(), services.GetRequiredService<IDomainService>(),
+            services.GetRequiredService<IConfiguration>());
         return true;
     }
 
@@ -44,24 +50,7 @@ internal static class DemoSeed
             categories = new DataType(editors.Single(editor => editor.Alias == "Umbraco.DocumentPicker.Multiple"), serializer) { Name = "RFC category references" };
             await dataTypes.CreateAsync(categories, Constants.Security.SuperUserKey);
         }
-        var elementType = types.Get("editorialText");
-        if (elementType == null)
-        {
-            elementType = new ContentType(strings, -1) { Alias = "editorialText", Name = "Editorial text", IsElement = true };
-            elementType.AddPropertyType(new PropertyType(strings, text, "heading") { Name = "Heading" });
-            elementType.AddPropertyType(new PropertyType(strings, text, "text") { Name = "Text" });
-            await types.CreateAsync(elementType, Constants.Security.SuperUserKey);
-        }
-        var blocks = available.FirstOrDefault(type => type.Name == "Demo editorial blocks");
-        if (blocks == null)
-        {
-            blocks = new DataType(editors.Single(editor => editor.Alias == "Umbraco.BlockList"), serializer)
-            {
-                Name = "Demo editorial blocks",
-                ConfigurationData = new Dictionary<string, object> { ["blocks"] = new[] { new { contentElementTypeKey = elementType.Key } } }
-            };
-            await dataTypes.CreateAsync(blocks, Constants.Security.SuperUserKey);
-        }
+        var schema = await DemoEditorialSchema.Create(types, dataTypes, strings, editors, serializer);
         var template = await templates.GetAsync("storefront");
         if (template == null)
         {
@@ -74,7 +63,7 @@ internal static class DemoSeed
             if (type == null)
             {
                 type = new ContentType(strings, -1) { Alias = alias, Name = alias, AllowedAsRoot = true };
-                foreach (string property in new[] { "heading", "bodyText", "heroImage", "sku", "categoryId", "brandId", "listPrice", "salesPrice", "color" })
+                foreach (string property in new[] { "heading", "bodyText", "heroImage", "sku", "categoryId", "brandId", "color" })
                 {
                     type.AddPropertyType(new PropertyType(strings, text, property) { Name = property });
                 }
@@ -85,11 +74,17 @@ internal static class DemoSeed
             }
             if (alias == "article" && !type.PropertyTypes.Any(property => property.Alias == "contentRows"))
             {
-                type.AddPropertyType(new PropertyType(strings, blocks, "contentRows") { Name = "Editorial blocks" });
+                type.AddPropertyType(new PropertyType(strings, schema.Blocks, "contentRows") { Name = "Editorial blocks" });
+                type.AddPropertyType(new PropertyType(strings, schema.Grid, "pageGrid") { Name = "Editorial Grid" });
                 await types.UpdateAsync(type, Constants.Security.SuperUserKey);
             }
             if (alias == "product")
             {
+                if (!type.PropertyTypes.Any(property => property.Alias == "listPrice"))
+                {
+                    type.AddPropertyType(new PropertyType(strings, schema.Prices, "listPrice") { Name = "List prices" });
+                    type.AddPropertyType(new PropertyType(strings, schema.Prices, "salesPrice") { Name = "Sales prices" });
+                }
                 if (!type.PropertyTypes.Any(property => property.Alias == "brand"))
                 {
                     type.AddPropertyType(new PropertyType(strings, picker, "brand") { Name = "Brand" });
@@ -115,6 +110,9 @@ internal static class DemoSeed
             {
                 localized.AddPropertyType(new PropertyType(strings, alias == "score" ? numeric : text, alias) { Name = alias, Variations = ContentVariation.Culture });
             }
+            // The outer editors are invariant; localized values live in nested block elements.
+            localized.AddPropertyType(new PropertyType(strings, schema.Blocks, "contentRows") { Name = "Localized nested blocks" });
+            localized.AddPropertyType(new PropertyType(strings, schema.Grid, "pageGrid") { Name = "Editorial Grid" });
 
             localized.AllowedTemplates = [template];
             localized.SetDefaultTemplate(template);
@@ -125,9 +123,10 @@ internal static class DemoSeed
             schemaReady = true
         });
     }
-    internal static async Task<IResult> Run(IContentService content, IContentTypeService types, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes, IDomainService domains)
+    internal static async Task<IResult> Run(IContentService content, IContentTypeService types, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes, IDomainService domains, IConfiguration configuration)
     {
         int templateId = types.Get("article")!.AllowedTemplates!.Single().Id;
+        Guid priceType = types.Get("currencyPrice")!.Key;
         IContent Node(string name, int parent, string type, Dictionary<string, string>? properties = null)
         {
             using var scope = scopes.CreateScope();
@@ -150,17 +149,8 @@ internal static class DemoSeed
             }
             if (type == "article")
             {
-                Guid blockKey = Guid.NewGuid();
-                node.SetValue("contentRows", System.Text.Json.JsonSerializer.Serialize(new
-                {
-                    layout = new Dictionary<string, object> { ["Umbraco.BlockList"] = new[] { new { contentKey = blockKey } } },
-                    contentData = new[] { new { key = blockKey, contentTypeKey = types.Get("editorialText")!.Key, values = new[] {
-                        new { editorAlias = "Umbraco.TextBox", alias = "heading", value = "Ready for the outdoors", culture = (string?)null, segment = (string?)null },
-                        new { editorAlias = "Umbraco.TextBox", alias = "text", value = "Bring a reusable flask and enjoy the quiet outdoors.", culture = (string?)null, segment = (string?)null }
-                    } } },
-                    settingsData = Array.Empty<object>(),
-                    expose = new[] { new { contentKey = blockKey, culture = (string?)null, segment = (string?)null } }
-                }));
+                node.SetValue("contentRows", DemoBlockValues.EditorialList(types, false));
+                node.SetValue("pageGrid", DemoBlockValues.Grid(types));
             }
             content.Save(node);
             var published = content.Publish(node, ["*"]);
@@ -193,8 +183,8 @@ internal static class DemoSeed
         var pack = Node("Trail daypack", category.Id, "product", new()
         {
             ["sku"] = "U19-SMOKE-PACK",
-            ["listPrice"] = "899",
-            ["salesPrice"] = "699",
+            ["listPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 899m), ("EUR", 119.95m), ("USD", 129.95m)),
+            ["salesPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 699m), ("EUR", 94.95m), ("USD", 99.95m)),
             ["bodyText"] = "A lightweight daypack for trails, city commutes and everything between."
         });
         using (var scope = scopes.CreateScope())
@@ -224,15 +214,15 @@ internal static class DemoSeed
         Node("Trail flask", category.Id, "product", new()
         {
             ["sku"] = "U19-SMOKE-FLASK",
-            ["listPrice"] = "299",
-            ["salesPrice"] = "249",
+            ["listPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 299m), ("EUR", 39.95m), ("USD", 44.95m)),
+            ["salesPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 249m), ("EUR", 34.95m), ("USD", 36.95m)),
             ["bodyText"] = "Keep your coffee warm and your water cool, from first light to late evening."
         });
         Node("Camp shelter", category.Id, "product", new()
         {
             ["sku"] = "U19-SMOKE-SHELTER",
-            ["listPrice"] = "1999",
-            ["salesPrice"] = "1599",
+            ["listPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 1999m), ("EUR", 269.95m), ("USD", 289.95m)),
+            ["salesPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 1599m), ("EUR", 214.95m), ("USD", 229.95m)),
             ["bodyText"] = "Simple shelter, thoughtful details. A place to pause on your next adventure."
         });
         var article = Node("Finding your trail", -1, "article", new()
@@ -260,6 +250,8 @@ internal static class DemoSeed
             localized.SetValue("bodyText", "Find dit næste eventyr.", "da-DK");
             localized.SetValue("score", 10, "en-US");
             localized.SetValue("score", 20, "da-DK");
+            localized.SetValue("contentRows", DemoBlockValues.EditorialList(types, true));
+            localized.SetValue("pageGrid", DemoBlockValues.Grid(types));
             content.Save(localized);
             if (!content.Publish(localized, ["en-US", "da-DK"]).Success)
             {
@@ -272,7 +264,7 @@ internal static class DemoSeed
         var domainResult = await domains.UpdateDomainsAsync(localizedRoot.Key, new Umbraco.Cms.Core.Models.ContentEditing.DomainsUpdateModel
         {
             DefaultIsoCode = "en-US",
-            Domains = [new() { DomainName = "http://localhost:5521/en", IsoCode = "en-US" }, new() { DomainName = "http://localhost:5521/da", IsoCode = "da-DK" }]
+            Domains = [new() { DomainName = configuration["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!.TrimEnd('/') + "/en", IsoCode = "en-US" }, new() { DomainName = configuration["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!.TrimEnd('/') + "/da", IsoCode = "da-DK" }]
         });
         if (!domainResult.Success)
         {
