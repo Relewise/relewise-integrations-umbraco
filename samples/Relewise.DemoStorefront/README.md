@@ -47,22 +47,44 @@ For backoffice editing, set your preferred Umbraco unattended user/password in
 
 ## Mapping examples
 
-- [DemoConfiguration.cs](DemoConfiguration.cs): Content/Product/Brand/Category mapping,
-  child Variants, canonical IDs, named profiles and default query routing.
+- [DemoConfiguration.cs](DemoConfiguration.cs): the registration for all examples:
+  Content/Product/Brand/Category mapping, child Variants, canonical IDs, field
+  converters, final entity mappers, named profiles and default query routing.
 - [PriceConverter.cs](PriceConverter.cs): strongly typed asynchronous built-in conversion.
 - [ImageUrlConverter.cs](ImageUrlConverter.cs): global asynchronous Data conversion,
   overriding a built-in regardless of registration order.
 - [EditorialBlocksConverter.cs](EditorialBlocksConverter.cs) and
-  [EditorialBlockText.cs](../../docs/examples/AdvancedContentMapping/EditorialBlockText.cs): field-specific Block List/Grid text
+  [EditorialBlockText.cs](EditorialBlockText.cs): field-specific Block List/Grid text
   extraction, including nested elements and explicit editorial field selection.
-- [EditorialMapper.cs](EditorialMapper.cs): final entity-level enrichment using values
-  already produced by declarative mappings and their converters.
+- [EditorialMapper.cs](EditorialMapper.cs): runs after declarative mapping, combines
+  converted body/block text into `Data["searchText"]`, and adds `editorialSource`.
+  Keeps DisplayName, IDs and other mapped fields intact. A single published culture
+  uses a scalar value; multiple cultures use the SDK's `Multilingual` value. Empty
+  source text overwrites an earlier search-text value.
 - [StorefrontUserLocator.cs](StorefrontUserLocator.cs): one visitor identity for search and views.
 - [LegacyGuideMapper.cs](LegacyGuideMapper.cs): compatibility with the obsolete
   `IContentTypeMapping` contract.
 
 Adapt aliases, extraction rules and currencies to your site's model. The block
 extractor uses HtmlAgilityPack only in this example application.
+
+The extractor visits only selected fields, nested blocks and Block Grid areas,
+removes HTML markup and script/style/template text, and respects the example's
+`hide` setting. `contentRows` is seeded as Block List content; `pageGrid` is an
+optional alias supported by the mapper/extractor when adapting the demo to a Grid.
+An invariant outer block property can contain localized elements: the mapper reads
+those elements separately for each published culture instead of reusing the first
+culture's converted text. The multilingual article uses the same mapper.
+
+Build all examples with:
+
+```sh
+dotnet build samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj
+```
+
+No Relewise credentials are required to compile or run the Examine-backed demo.
+The converters implement asynchronous contracts but perform local conversions;
+they do not make external network requests.
 
 ## Acceptance testing
 

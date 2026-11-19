@@ -5,9 +5,7 @@ using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Strings;
 
-namespace Relewise.MappingExamples;
-
-public static class EditorialBlockText
+internal static class EditorialBlockText
 {
     // Only these example properties contribute text. Add your own aliases intentionally.
     private static readonly string[] TextFields = ["heading", "text", "caption"];

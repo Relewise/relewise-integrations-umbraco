@@ -6,7 +6,7 @@ description: Upgrade NuGet, npm, and Umbraco dependencies in relewise-integratio
 # Upgrade Dependencies
 
 ## Goal
-Upgrade repository dependencies for `Relewise.Integrations.Umbraco.sln`, including:
+Upgrade repository dependencies for `Relewise.Integrations.Umbraco.slnx`, including:
 
 - NuGet packages in `src/Integrations.Umbraco/Integrations.Umbraco.csproj`.
 - NuGet packages in `samples/Umbraco/Umbraco.csproj`.
@@ -118,7 +118,7 @@ If the user asks for a major Umbraco upgrade, confirm the target major and adjus
 ## NuGet Upgrade Workflow
 1. Generate an outdated report:
 ```powershell
-dotnet list Relewise.Integrations.Umbraco.sln package --outdated --format json > .\outdated-dotnet-packages.json
+dotnet list Relewise.Integrations.Umbraco.slnx package --outdated --format json > .\outdated-dotnet-packages.json
 ```
 
 2. Inspect current package declarations before changing them. Use an XML-aware approach when possible, or carefully read the relevant `.csproj` files.
@@ -131,7 +131,7 @@ dotnet list Relewise.Integrations.Umbraco.sln package --outdated --format json >
 
 4. Verify remaining outdated packages:
 ```powershell
-dotnet list Relewise.Integrations.Umbraco.sln package --outdated
+dotnet list Relewise.Integrations.Umbraco.slnx package --outdated
 ```
 
 Explain any remaining outdated packages as intentional range-bound skips, exclusions, or blocked updates.
@@ -178,8 +178,8 @@ Pause and request a collaborative plan if fixes become broad refactors, business
 ## Validation
 Run all required validations:
 ```powershell
-dotnet restore Relewise.Integrations.Umbraco.sln
-dotnet build Relewise.Integrations.Umbraco.sln
+dotnet restore Relewise.Integrations.Umbraco.slnx
+dotnet build Relewise.Integrations.Umbraco.slnx
 Push-Location .\src\Integrations.Umbraco\Client
 npm ci
 npm run build
@@ -209,8 +209,8 @@ __TRELLO_CARD_URL__
 - <ranged dependencies preserved or skipped, if any>
 
 ## Validation
-- `dotnet restore Relewise.Integrations.Umbraco.sln`: <result>
-- `dotnet build Relewise.Integrations.Umbraco.sln`: <result>
+- `dotnet restore Relewise.Integrations.Umbraco.slnx`: <result>
+- `dotnet build Relewise.Integrations.Umbraco.slnx`: <result>
 - `npm ci` in `src/Integrations.Umbraco/Client`: <result>
 - `npm run build` in `src/Integrations.Umbraco/Client`: <result>
 

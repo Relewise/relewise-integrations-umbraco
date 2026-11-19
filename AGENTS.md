@@ -13,7 +13,7 @@
 
 ## Examples, tests and local material
 
-- `samples/Relewise.DemoStorefront` is the maintained runnable site. Keep the buildable mapping example in `docs/examples/AdvancedContentMapping` current and share example code rather than duplicating it.
+- Keep runnable examples and their mapping/converter implementations centralized in `samples/Relewise.DemoStorefront`. Link guides to those source files rather than adding separate example projects or duplicate implementations. Preserve culture-aware mapping, nested block extraction and legacy compatibility examples when updating the demo.
 - Keep credentials, generated Umbraco databases, ad hoc smoke-test tooling and raw execution reports in ignored local files. Do not publish them with the package.
 - Keep permanent tests focused on observable behavior, regressions and compatibility. Build affected projects and run relevant tests after code changes.
 - Build the dashboard with `npm run build` in `src/Integrations.Umbraco/Client` when changing frontend code.

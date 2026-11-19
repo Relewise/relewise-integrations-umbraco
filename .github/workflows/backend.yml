@@ -22,4 +22,4 @@ jobs:
           dotnet-version: ${{ matrix.dotnet-version }}
 
       - name: Test with dotnet
-        run: dotnet test Relewise.Integrations.Umbraco.sln --configuration Debug
+        run: dotnet test Relewise.Integrations.Umbraco.slnx --configuration Debug

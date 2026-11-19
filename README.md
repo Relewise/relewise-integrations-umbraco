@@ -11,7 +11,6 @@ Start with [the documentation overview](docs/README.md) to choose between automa
 - [Custom content mapping](docs/custom-content-mapping.md): the mapping pipeline, `UseMapper(...)`, registration, field ownership, and cultures.
 - [Block List, Block Grid, and nested content](docs/block-editors.md): default support, traversal, rich text, visibility, and referenced content.
 - [Runnable demo storefront](samples/Relewise.DemoStorefront/README.md): F5 startup, mapping/converter examples, search and tracking.
-- [Advanced content mapping example](docs/examples/AdvancedContentMapping/README.md): buildable entity-mapper and Block List/Grid extraction example.
 - [Validation and troubleshooting](docs/validation-and-troubleshooting.md): export checks, missing fields, duplicate keys, and stale data.
 - [Entity mapping](docs/entity-mapping.md): Content, Products, Variants, Categories, Brands, IDs and converters.
 - [Umbraco core search provider](docs/umbraco-19-search.md): registration, queries, access control, and supported features.
@@ -65,7 +64,7 @@ builder.CreateUmbracoBuilder()
     .Build();
 ```
 
-`BlogMapper` above represents your own `IContentTypeMapping` implementation; it is not included in the package. See [how to write and register a legacy mapper](docs/custom-content-mapping.md#write-a-minimal-mapper), or use the [Block List and Block Grid example with the new mapper API](docs/examples/AdvancedContentMapping/README.md).
+`BlogMapper` above represents your own `IContentTypeMapping` implementation; it is not included in the package. See [how to write and register a legacy mapper](docs/custom-content-mapping.md#write-a-minimal-mapper), or use the [mapping and converter examples in the demo storefront](samples/Relewise.DemoStorefront/README.md#mapping-examples).
 
 If you'd also like these content types to be automatically tracked, you can add our middleware to the UmbracoBuilder (`.UseUmbraco(...)`):
 ```csharp

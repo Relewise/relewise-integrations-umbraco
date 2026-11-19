@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/.git/">
+    <File Path=".gitignore" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Artifacts/">
+    <File Path="umbraco-marketplace.json" />
+  </Folder>
+  <Folder Name="/Samples/">
+    <Project Path="samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj" />
+  </Folder>
+  <Project Path="src/Integrations.Umbraco/Integrations.Umbraco.csproj" />
+</Solution>

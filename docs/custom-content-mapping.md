@@ -108,27 +108,26 @@ For a stateless mapper with no constructor dependencies, register an instance in
     .AddContentType("simplePage", type => type.AutoMap()))
 ```
 
-Use the overload that supplies `IServiceProvider` when your mapper is registered with dependency injection. The complete block example uses this pattern:
+Existing instance-based mappers can use the overload that supplies `IServiceProvider` when registered with dependency injection:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
-using Relewise.MappingExamples;
 
 // Before building the application:
-builder.Services.AddSingleton<EditorialContentMapper>();
+builder.Services.AddSingleton<SummaryMapper>();
 
 // Within your existing builder.CreateUmbracoBuilder() chain:
 .AddRelewise((options, services) =>
 {
-    var mapper = services.GetRequiredService<EditorialContentMapper>();
+    var mapper = services.GetRequiredService<SummaryMapper>();
     options.AddContentType("article", type => type.UseMapper(mapper));
     options.AddContentType("landingPage", type => type.UseMapper(mapper));
     options.AddContentType("simplePage", type => type.AutoMap());
 })
 ```
 
-The second snippet shows two insertion points, not a standalone `Program.cs`. Keep your existing Relewise client configuration, backoffice, website, and application startup. See the [complete registration instructions](examples/AdvancedContentMapping/README.md#register-in-your-application).
+The second snippet shows two insertion points, not a standalone `Program.cs`. Keep your existing Relewise client configuration, backoffice, website, and application startup. New implementations can use the scoped `IEntityMapper<Content>` API shown in the [demo's mapping examples](../samples/Relewise.DemoStorefront/README.md#mapping-examples).
 
 Mapper instances are retained by the integration configuration. Treat them as shared services: keep per-page state in local variables, avoid capturing scoped services, and make dependencies safe to share. Do not store the current page or culture in an instance field. If extraction requires I/O, make it asynchronous and pass the cancellation token through.
 
@@ -217,4 +216,4 @@ Choose a stable, intentional schema before writing a recursive walker:
 
 A mapper does not configure search weights, filters, or which fields your search setup searches. Verify those separately in your Relewise setup. Exporting a field and making it influence search are separate steps.
 
-Next: [map Block List and Block Grid](block-editors.md), or open the [complete example](examples/AdvancedContentMapping/README.md).
+Next: [map Block List and Block Grid](block-editors.md), or open the [demo's mapping examples](../samples/Relewise.DemoStorefront/README.md#mapping-examples).

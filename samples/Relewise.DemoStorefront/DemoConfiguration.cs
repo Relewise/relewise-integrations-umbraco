@@ -28,6 +28,7 @@ internal static class DemoConfiguration
             mapping.Map(entity => entity.DisplayName, "heading");
             mapping.MapData("bodyText");
             mapping.MapData("score");
+            mapping.UseMapper<EditorialMapper>(); // Aggregate only the published cultures in this export.
         });
 #pragma warning disable CS0618 // Deliberate example of the legacy compatibility adapter.
         options.AddContentType("guide", mapping => mapping.UseMapper(new LegacyGuideMapper()));
