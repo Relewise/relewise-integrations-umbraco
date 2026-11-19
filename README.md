@@ -1,72 +1,109 @@
 # Relewise.Integrations.Umbraco [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE) [![NuGet version](https://img.shields.io/nuget/v/Relewise.Integrations.Umbraco)](https://www.nuget.org/packages/Relewise.Integrations.Umbraco) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Relewise/relewise-integrations-umbraco/pulls)
 
-## Documentation
+Connect Umbraco to Relewise for search, recommendations and personalization. Export
+published content, map your catalogue entities, and track page views using the same
+entity and visitor identifiers throughout your integration.
 
-Version 19 targets **Umbraco 19 / .NET 11** exclusively. See the
-[upgrade and core search provider guide](docs/umbraco-19-search.md) for setup,
-supported query features, and behavioral user identity.
+## Features
 
-Start with [the documentation overview](docs/README.md) to choose between automatic mapping, a custom content mapper, and a property converter.
+- Export published content automatically and run full exports from the backoffice dashboard.
+- Map Umbraco Document Types to Content, Products, Variants, Brands and Categories.
+- Use automatic property conversion or customize fields with converters and entity mappers, including multilingual and block-based content.
+- Track views automatically for mapped entities, with your site's visitor identity.
+- Use Relewise through Umbraco's search abstraction, or consume the exported data directly with a Relewise SDK from your application or a separate frontend.
 
-- [Custom content mapping](docs/custom-content-mapping.md): the mapping pipeline, `UseMapper(...)`, registration, field ownership, and cultures.
-- [Block List, Block Grid, and nested content](docs/block-editors.md): default support, traversal, rich text, visibility, and referenced content.
-- [Runnable demo storefront](samples/Relewise.DemoStorefront/README.md): F5 startup, mapping/converter examples, search and tracking.
-- [Validation and troubleshooting](docs/validation-and-troubleshooting.md): export checks, missing fields, duplicate keys, and stale data.
-- [Entity mapping](docs/entity-mapping.md): Content, Products, Variants, Categories, Brands, IDs and converters.
-- [Umbraco core search provider](docs/umbraco-19-search.md): registration, queries, access control, and supported features.
+## Installation
 
+Install the package in your Umbraco application:
 
-### Installing Relewise.Integrations.Umbraco 
-
-First make sure to have [Umbraco installed](https://docs.umbraco.com/umbraco-cms/fundamentals/setup/install/install-umbraco-with-templates#install-the-template):
-> dotnet new umbraco
-
-Then you can install the `Relewise.Integrations.Umbraco` Package through the .NET CLI by running this command:
-> dotnet add package Relewise.Integrations.Umbraco
-
-... or from the NuGet Package Manager Console by running this command:
-> Install-Package Relewise.Integrations.Umbraco
-
-### Using Relewise.Integrations.Umbraco
-
-Open `Program.cs` and add Relewise to the `IServiceCollection`-instance: 
-
-```csharp
-builder.Services.AddRelewise(options => options.ReadFromConfiguration(builder.Configuration));
+```sh
+dotnet add package Relewise.Integrations.Umbraco
 ```
 
-... where the above configuration, requires Relewise configuration in `appsettings.json`:
+Or use the NuGet Package Manager Console:
+
+```powershell
+Install-Package Relewise.Integrations.Umbraco
+```
+
+If you are starting a new site, create it using the
+[Umbraco templates](https://docs.umbraco.com/umbraco-cms/fundamentals/setup/install/install-umbraco-with-templates#install-the-template).
+See [compatibility and migration](#compatibility-and-migration) when choosing a package version.
+
+## Getting started
+
+Provide your Relewise connection settings through your application's configuration:
 
 ```json
-"Relewise": {
-  "DatasetId": "insert-dataset-id-here",
-  "ApiKey": "insert-api-key-here",
-  "ServerUrl": "insert-server-url-here"
+{
+  "Relewise": {
+    "DatasetId": "insert-dataset-id-here",
+    "ApiKey": "insert-api-key-here",
+    "ServerUrl": "insert-server-url-here"
+  }
 }
 ```
 
-Find more details about this here: https://github.com/Relewise/relewise-sdk-csharp-extensions
+Use your application's secret/configuration mechanism for the actual credentials.
+See the [Relewise SDK configuration](https://github.com/Relewise/relewise-sdk-csharp-extensions)
+for further connection options.
 
-To integrate with Umbraco, call `.AddRelewise(...)` on the Umbraco builder and specify which Document Types to export for search and recommendations.
+In `Program.cs`, register the SDK connection and choose the Document Types to export.
+Merge this into your existing Umbraco builder chain, replacing the aliases with those
+used by your site:
 
-In the example below we are exporting four content types into Relewise:
 ```csharp
+using Relewise.Client.Extensions.DependencyInjection;
+using Relewise.Integrations.Umbraco;
+
+builder.Services.AddRelewise(options => options.ReadFromConfiguration(builder.Configuration));
+
 builder.CreateUmbracoBuilder()
     .AddBackOffice()
     .AddWebsite()
     .AddDeliveryApi()
     .AddComposers()
     .AddRelewise(options => options
-        .MapContent("landingPage", mapping => mapping.AutoMap())
-        .MapContent("blogList", mapping => mapping.UseMapper<BlogMapper>())
         .MapContent("contentPage", mapping => mapping.AutoMap())
         .MapContent("blogEntry", mapping => mapping.AutoMap()))
     .Build();
 ```
 
-`BlogMapper` represents your own `IEntityMapper<Content>` implementation; it is not included in the package. See [entity mapping](docs/entity-mapping.md) and the [runnable mapping/converter examples](samples/Relewise.DemoStorefront/README.md#mapping-examples). Existing `AddContentType(...)`, `IContentTypeMapping` and synchronous converter registrations remain supported through the [legacy mapping API](docs/custom-content-mapping.md).
+`AutoMap()` converts supported published properties into Relewise Data fields.
+Use explicit field mappings, custom converters or an entity mapper when you need
+control over the exported values. The [entity mapping guide](docs/entity-mapping.md)
+also covers Products, child Variants, Brands, Categories and contributing fields to
+an existing commerce catalogue.
 
-If you'd also like these content types to be automatically tracked, you can add our middleware to the UmbracoBuilder (`.UseUmbraco(...)`):
+Publication changes keep mapped entities synchronized. The Relewise backoffice
+dashboard provides a full export when you need to ingest existing content or
+refresh your mappings. See [validation and troubleshooting](docs/validation-and-troubleshooting.md)
+for update semantics and removal behavior.
+
+## Search and recommendations
+
+Exported entities can be used through the Relewise SDKs for search and recommendations,
+including from a separate frontend. Mapping a field does not automatically configure
+its search relevance; use your Dataset's Relewise search configuration for that.
+
+To use Relewise through Umbraco's search abstraction, add a provider inside the
+`.AddRelewise(...)` callback:
+
+```csharp
+options.SearchProviders.AddContent("site");
+options.SearchProviders.DefaultPublishedContentProviderAlias = "site";
+```
+
+You can register Content and Product search providers with different request settings.
+Indexing works independently of these providers, and you can keep your existing
+Umbraco search provider while exporting data to Relewise. See the
+[Umbraco search guide](docs/umbraco-19-search.md) for registration, querying, access
+control and supported operations.
+
+## Automatic view tracking
+
+Enable view tracking in your existing Umbraco middleware setup:
+
 ```csharp
 app.UseUmbraco()
     .WithMiddleware(u =>
@@ -82,113 +119,73 @@ app.UseUmbraco()
     });
 ```
 
-### Behavioral user identity
-
-The mapped entity type determines the view event. `TrackContentViews()` remains
-an alias for existing applications.
-
-The default `IRelewiseUserLocator` returns `User.Anonymous()`. To identify visitors,
-register your own locator before building Umbraco:
+The mapped entity type determines the view event. For personalized searches and
+recommendations, register your own `IRelewiseUserLocator` before building the application:
 
 ```csharp
 builder.Services.AddScoped<IRelewiseUserLocator, MyUserLocator>();
 ```
 
-`MyUserLocator` is your implementation of `GetUser()`. Return the same temporary and
-authenticated IDs used by your other Relewise behavioral tracking, according to your
-site's consent policy. Automatic content views and the core search provider both
-use this locator from the current request's services. See [search user identity and
-access control](docs/umbraco-19-search.md#identity-access-and-tracking).
+`MyUserLocator` implements `GetUser()`. Return the same temporary or authenticated
+identifiers used by your other Relewise behavioral tracking, according to your site's
+consent policy. The default locator returns `User.Anonymous()` and creates no visitor
+cookies. Search and automatic views share the request-scoped locator. See
+[identity and tracking](docs/umbraco-19-search.md#identity-access-and-tracking).
 
 ## Content IDs across environments
 
-Numeric Umbraco node IDs remain the default. To export stable Umbraco content keys
-(GUIDs) instead, add this environment setting alongside your Relewise client settings:
+Numeric Umbraco node IDs are the default Relewise IDs. Set
+`options.UseContentKeysAsIds = true` in the integration callback to use stable Umbraco
+content keys instead, or configure `Relewise:Umbraco:UseContentKeysAsIds` through your
+application settings. Use `IdFromProperty(...)` when an entity should use an existing
+business identifier, such as a Product SKU.
 
-```json
-"Relewise": {
-  "DatasetId": "insert-dataset-id-here",
-  "ApiKey": "insert-api-key-here",
-  "ServerUrl": "insert-server-url-here",
-  "Umbraco": {
-    "UseContentKeysAsIds": true
-  }
-}
-```
+Export, relationships and automatic tracking use the same ID resolution. Changing
+an ID strategy on an existing installation requires a migration plan; it does not
+merge existing entities or their behavioral history. Matching GUIDs also do not
+isolate environments that share a Dataset.
 
-Use `appsettings.Development.json` for a local override, or the environment variable
-`Relewise__Umbraco__UseContentKeysAsIds=true`. Restart the application after changing
-this setting. Configuration is read when the integration is initialized; it is not
-an editor or per-document setting. Omitting it (or setting it to `false`) preserves
-existing numeric IDs. An explicit `options.UseContentKeysAsIds = ...` in the Umbraco
-`.AddRelewise(...)` callback overrides the environment setting.
+See [content identity and migration](docs/content-identity.md) for configuration,
+custom references and guidance on switching an existing installation.
 
-With this enabled, exported content, ancestor IDs in category paths, automatic
-content-view tracking, and unpublish/recycle/delete actions use the content key in
-lowercase, hyphenated GUID format (for example, `1a234567-89ab-4cde-8f01-23456789abcd`).
-Umbraco's internal database and published-cache lookups still use local identities.
-Custom mappers receive an update initialized with the selected ID and should preserve
-that ID. For references
-that you export yourself, resolve `RelewiseUmbracoConfiguration` from the mapping
-context and call `GetContentId(referencedContent)`; use the same convention in
-custom tracking, searches, filters, and code that resolves Relewise results back to
-Umbraco. For example, inside a custom mapper:
+## Documentation and examples
 
-```csharp
-var configuration = context.GetRequiredService<RelewiseUmbracoConfiguration>();
-var referenceId = configuration.GetContentId(referencedContent);
-```
+Start with the [documentation overview](docs/README.md), or go directly to:
 
-Here `referencedContent` is a resolved `IPublishedContent`; add
-`using Microsoft.Extensions.DependencyInjection;` for `GetRequiredService`. The setting does not rewrite arbitrary IDs inside property data, rich text,
-URLs, media IDs, or application-owned integrations. Existing property converters
-and custom mappers still determine which referenced values are exported.
+- [Entity mapping](docs/entity-mapping.md): fields, IDs, Products, Variants, Brands, Categories and converters.
+- [Block List, Block Grid and nested content](docs/block-editors.md): text extraction, visibility and cultures.
+- [Umbraco search](docs/umbraco-19-search.md): providers, queries, filtering, facets and access control.
+- [Validation and troubleshooting](docs/validation-and-troubleshooting.md): checking exports and diagnosing missing or stale data.
+- [Legacy Content mapping](docs/custom-content-mapping.md): existing `IContentTypeMapping` and converter implementations.
 
-Matching content keys let two environments update the same Relewise entity even
-when their numeric node IDs differ. The content must actually share a key (for
-example, preserved by your content deployment process); independently authored
-copies with different GUIDs remain different entities. All writers sharing a
-Dataset must agree on the ID convention. GUID identity does **not** isolate the
-environments: publishing locally can overwrite shared fields, including absolute
-URLs, display names, and content data. Unpublishing or deleting locally can also
-disable or delete the shared entity. Use a separate development Dataset when those
-side effects are undesirable.
+The [Relewise.DemoStorefront](samples/Relewise.DemoStorefront/README.md) is a runnable
+example with seeded content, catalogue data, custom mappers/converters, search and
+tracking. See its README for F5 startup and optional local Relewise configuration.
 
-### Switching an existing installation
+## Compatibility and migration
 
-Changing the setting is an identity change, not a migration. The integration does
-not rename, merge, or delete existing entities when this setting changes. Subsequent
-publishes create GUID-based entities while existing numeric entities and their
-history remain separate; changing back has the corresponding effect. Category IDs,
-custom references, saved filters, and tracking/history can also be affected.
+The current package major, 19, requires **Umbraco 19 and .NET 11**. For earlier
+Umbraco versions, use a compatible integration release and its matching documentation.
+Review [the upgrade requirements](docs/umbraco-19-search.md) before upgrading an existing site.
 
-Before switching, plan the transition for every writer and consumer, preferably
-validate it in a separate Dataset, and explicitly decide how to re-export content
-and handle the old entities/history. Do not assume that old numeric history will
-move to the GUID entity. The dashboard's **explicit full export** retains its existing
-stale-entity cleanup: within the configured source scope, it disables entities not
-carrying the completed export generation, or deletes them if permanent deletion is
-selected. Review that operation
-before using it on an existing or shared Dataset; it is not a GUID migration tool.
-
-## Book a Demo
-
-You can click here to [Book a Relewise demo](https://www.relewise.com/book-a-demo).
+Existing `AddContentType(...)`, `TrackContentViews()`, `IContentTypeMapping` and
+synchronous converter registrations remain supported. The legacy mapper/converter
+contracts are obsolete with migration guidance; use the entity mapping and asynchronous
+converter APIs for new code. Existing `AutoMap()` behavior and numeric ID defaults
+are preserved. See [entity mapping](docs/entity-mapping.md) for the corresponding APIs.
 
 ## Resources
 
-Find more information on the [Umbraco Marketplace](https://marketplace.umbraco.com/package/relewise.integrations.umbraco).
+- [Relewise documentation](https://docs.relewise.com)
+- [Umbraco Marketplace](https://marketplace.umbraco.com/package/relewise.integrations.umbraco)
+- [Book a Relewise demo](https://www.relewise.com/book-a-demo)
 
-Documentation can be found at https://docs.relewise.com.
-
-**Please don't hesitate to reach out to us - www.relewise.com - if you'd like to know more, including how to gain access to our API.**
+Contact [Relewise](https://www.relewise.com) to learn more or get access to the API.
 
 ## Contributing
 
-Pull requests are always welcome.  
-Please fork this repository and make a PR when you are ready with your contribution.  
-
-Otherwise you are welcome to open an Issue in our [issue tracker](https://github.com/Relewise/relewise-integrations-umbraco/issues).
+Pull requests are welcome. Fork the repository and open a PR with your changes,
+or report a problem in the [issue tracker](https://github.com/Relewise/relewise-integrations-umbraco/issues).
 
 ## License
 

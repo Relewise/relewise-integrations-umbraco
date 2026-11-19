@@ -1,12 +1,12 @@
 # Integration documentation
 
-Use this integration to export published Umbraco pages to Relewise and track content views. Start with the [installation and connection setup](../README.md#installing-relewiseintegrationsumbraco), then choose how to map your site's content.
+Use this integration to export published Umbraco content and catalogue entities to Relewise for search, recommendations and behavioral tracking. Start with [installation](../README.md#installation) and [connection setup](../README.md#getting-started), then choose how to map your site's content.
 
 ## Guides
 
 | I want to… | Read |
 | --- | --- |
-| Choose numeric IDs or stable content keys across environments | [Content IDs across environments](../README.md#content-ids-across-environments) |
+| Choose numeric IDs, stable content keys or plan an ID migration | [Content identity across environments](content-identity.md) |
 | Map Products, Variants, Categories and Brands | [Entity mapping](entity-mapping.md) |
 | Use Relewise through Umbraco's core search API | [Umbraco 19 and core search](umbraco-19-search.md) |
 | Understand automatic mapping and choose an extension point | [Custom content mapping](custom-content-mapping.md) |
