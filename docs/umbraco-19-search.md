@@ -111,6 +111,8 @@ Search and automatic views resolve the locator from the HTTP request's service
 scope. Return the same identifiers and consent-aware User values used by the rest
 of your site. The default locator returns an anonymous User; the integration does
 not create visitor cookies. Facet requests reuse the main query's resolved User.
+Automatic views use the same integration client configuration as exports and search,
+even when the application's default SDK client points to a different Dataset.
 
 Call `u.TrackEntityViews()` in the Umbraco middleware setup. The mapped entity type
 determines the event; a Variant view includes both Product and Variant IDs.

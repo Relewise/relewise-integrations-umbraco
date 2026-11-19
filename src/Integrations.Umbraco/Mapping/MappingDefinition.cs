@@ -41,8 +41,15 @@ internal sealed class MappingDefinition(Type entityType)
             throw new InvalidOperationException($"Mapping '{DocumentTypeAlias}' combines automatic/custom and explicit field mappings.");
         }
 
+        var dataKeys = new HashSet<string>(StringComparer.Ordinal);
         foreach (DataMapping data in DataMappings)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(data.Options.DataKey);
+            if (!dataKeys.Add(data.Options.DataKey))
+            {
+                throw new InvalidOperationException($"Data key '{data.Options.DataKey}' is already mapped.");
+            }
+
             if (data.Options.DataKey is "contentTypeAlias" or "url" or "createdAt" or "UmbracoVersionId" || data.Options.DataKey.StartsWith("rwUmbraco", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException($"Data key '{data.Options.DataKey}' is reserved for integration metadata.");

@@ -51,6 +51,7 @@ public class RelewiseUmbracoConfiguration
         var variants = new List<MappingDefinition>();
         foreach (MappingDefinition mapping in mappings.Values)
         {
+            mapping.Validate();
             if (mapping.Variant == null)
             {
                 continue;

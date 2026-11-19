@@ -44,6 +44,17 @@ public class SearchProviderOptions
 
         foreach (var registration in Providers)
         {
+            UnsupportedSegmentBehavior? behavior = registration.Value.Options switch
+            {
+                ContentSearchProviderOptions content => content.UnsupportedSegmentBehavior,
+                ProductSearchProviderOptions product => product.UnsupportedSegmentBehavior,
+                _ => null
+            };
+            if (behavior == null)
+            {
+                throw new InvalidOperationException($"Search provider '{registration.Key}' requires an UnsupportedSegmentBehavior policy.");
+            }
+
             bool found = false;
             foreach (MappingDefinition mapping in mappings.Values)
             {

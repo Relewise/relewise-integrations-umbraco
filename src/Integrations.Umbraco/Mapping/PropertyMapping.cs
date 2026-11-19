@@ -18,7 +18,16 @@ internal sealed class PropertyMapping<TEntity, TValue>(string sourcePropertyAlia
 
         try
         {
-            TValue value = converter != null ? await converter(context) : BuiltInPropertyConversion.Convert<TValue>(context);
+            TValue value;
+            if (converter != null)
+            {
+                value = await converter(context);
+            }
+            else
+            {
+                value = await BuiltInPropertyConversion.ConvertAsync<TValue>(context);
+            }
+
             assign(destination, value);
         }
         catch (Exception error) when (error is not OperationCanceledException)

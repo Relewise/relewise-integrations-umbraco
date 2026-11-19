@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco;
@@ -34,4 +36,5 @@ public class PropertyMappingContext
     /// <summary>Cancellation of the current export operation.</summary>
     public CancellationToken CancellationToken => _operation.CancellationToken;
     internal T Resolve<T>() where T : class => _operation.Resolve<T>();
+    internal Task<string> DefaultCultureAsync() => _operation.DefaultCultureAsync(CulturesToPublish.ToArray());
 }

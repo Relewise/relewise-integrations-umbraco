@@ -2,11 +2,114 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.Services;
 
 namespace Relewise.Integrations.Umbraco.Tests;
 
 public class EntityMappingTests
 {
+    [Theory]
+    [InlineData("en-US", "en-US")]
+    [InlineData("DA-dk", "da-DK")]
+    [InlineData("fr-FR", "da-DK")]
+    public async Task LocalizedBrandNameUsesTheDefaultPublishedLanguageDeterministically(string defaultCulture, string expected)
+    {
+        var languages = new Mock<ILanguageService>();
+        languages.Setup(value => value.GetDefaultIsoCodeAsync()).ReturnsAsync(defaultCulture);
+        var services = new ServiceCollection();
+        services.AddSingleton(languages.Object);
+        await using var root = services.BuildServiceProvider();
+        await using var operation = new MappingOperation(root, default);
+        var type = new Mock<IPublishedPropertyType>();
+        type.SetupGet(value => value.Variations).Returns(global::Umbraco.Cms.Core.Models.ContentVariation.Culture);
+        var property = new Mock<IPublishedProperty>();
+        property.SetupGet(value => value.PropertyType).Returns(type.Object);
+        property.Setup(value => value.GetValue(It.IsAny<string?>(), It.IsAny<string?>()))
+            .Returns((string? culture, string? _) => "Name: " + culture);
+        var source = Mock.Of<IPublishedContent>();
+        var context = new PropertyMappingContext(source, source, property.Object, ["en-US", "da-DK"], nameof(Brand.DisplayName), operation);
+
+        Assert.Equal("Name: " + expected, await BuiltInPropertyConversion.ConvertAsync<string>(context));
+        Assert.Equal("Name: " + expected, await BuiltInPropertyConversion.ConvertAsync<string>(context));
+        languages.Verify(value => value.GetDefaultIsoCodeAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task CancellingDuringLanguageResolutionDoesNotReadTheSourceValue()
+    {
+        var language = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var languages = new Mock<ILanguageService>();
+        languages.Setup(value => value.GetDefaultIsoCodeAsync()).Returns(language.Task);
+        var services = new ServiceCollection();
+        services.AddSingleton(languages.Object);
+        await using var root = services.BuildServiceProvider();
+        using var cancellation = new CancellationTokenSource();
+        await using var operation = new MappingOperation(root, cancellation.Token);
+        var type = new Mock<IPublishedPropertyType>();
+        type.SetupGet(value => value.Variations).Returns(global::Umbraco.Cms.Core.Models.ContentVariation.Culture);
+        var property = new Mock<IPublishedProperty>();
+        property.SetupGet(value => value.PropertyType).Returns(type.Object);
+        var source = Mock.Of<IPublishedContent>();
+        var context = new PropertyMappingContext(source, source, property.Object, ["en-US"], nameof(Brand.DisplayName), operation);
+
+        Task<string> conversion = BuiltInPropertyConversion.ConvertAsync<string>(context).AsTask();
+        cancellation.Cancel();
+        language.SetResult("en-US");
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => conversion);
+        property.Verify(value => value.GetValue(It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
+    [Fact]
+    public void FinalConfigurationRejectsConflictingOrReservedDataKeysAfterRegistration()
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            using var _ = Services(options =>
+            {
+                DataMappingOptions? retained = null;
+                options.MapProduct("product", mapping => mapping.MapData("field", data => retained = data));
+                retained!.DataKey = "rwUmbracoSite";
+            });
+        });
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            using var _ = Services(options =>
+            {
+                DataMappingOptions? retained = null;
+                options.MapBrand("brand", mapping =>
+                {
+                    mapping.MapData("first");
+                    mapping.MapData("second", data => retained = data);
+                });
+                retained!.DataKey = "first";
+            });
+        });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AProviderMustHaveAnExplicitUnsupportedSegmentPolicy(bool product)
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            using var _ = Services(options =>
+            {
+                if (product)
+                {
+                    options.MapProduct("product");
+                    options.SearchProviders.AddProduct("search", provider => provider.UnsupportedSegmentBehavior = null!);
+                }
+                else
+                {
+                    options.MapContent("article");
+                    options.SearchProviders.AddContent("search", provider => provider.UnsupportedSegmentBehavior = null!);
+                }
+            });
+        });
+    }
+
     [Fact]
     public void ContentAllowsDistinctAliasesButOtherEntitiesHaveOneSource()
     {

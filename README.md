@@ -47,7 +47,7 @@ builder.Services.AddRelewise(options => options.ReadFromConfiguration(builder.Co
 
 Find more details about this here: https://github.com/Relewise/relewise-sdk-csharp-extensions
 
-To integrate with Umbraco, you need to add Relewise to the UmbracoBuilder (`.AddUmbraco(...)`), and optionally specify which ContentTypes, that you would like exported into Relewise for content search and recommendations. 
+To integrate with Umbraco, call `.AddRelewise(...)` on the Umbraco builder and specify which Document Types to export for search and recommendations.
 
 In the example below we are exporting four content types into Relewise:
 ```csharp
@@ -57,14 +57,14 @@ builder.CreateUmbracoBuilder()
     .AddDeliveryApi()
     .AddComposers()
     .AddRelewise(options => options
-        .AddContentType("landingPage", contentType => contentType.AutoMap())
-        .AddContentType("blogList", contentType => contentType.UseMapper(new BlogMapper()))
-        .AddContentType("contentPage", contentType => contentType.AutoMap())
-        .AddContentType("blogEntry", contentType => contentType.AutoMap()))
+        .MapContent("landingPage", mapping => mapping.AutoMap())
+        .MapContent("blogList", mapping => mapping.UseMapper<BlogMapper>())
+        .MapContent("contentPage", mapping => mapping.AutoMap())
+        .MapContent("blogEntry", mapping => mapping.AutoMap()))
     .Build();
 ```
 
-`BlogMapper` above represents your own `IContentTypeMapping` implementation; it is not included in the package. See [how to write and register a legacy mapper](docs/custom-content-mapping.md#write-a-minimal-mapper), or use the [mapping and converter examples in the demo storefront](samples/Relewise.DemoStorefront/README.md#mapping-examples).
+`BlogMapper` represents your own `IEntityMapper<Content>` implementation; it is not included in the package. See [entity mapping](docs/entity-mapping.md) and the [runnable mapping/converter examples](samples/Relewise.DemoStorefront/README.md#mapping-examples). Existing `AddContentType(...)`, `IContentTypeMapping` and synchronous converter registrations remain supported through the [legacy mapping API](docs/custom-content-mapping.md).
 
 If you'd also like these content types to be automatically tracked, you can add our middleware to the UmbracoBuilder (`.UseUmbraco(...)`):
 ```csharp
@@ -73,7 +73,7 @@ app.UseUmbraco()
     {
         u.UseBackOffice();
         u.UseWebsite();
-        u.TrackContentViews();
+        u.TrackEntityViews();
     })
     .WithEndpoints(u =>
     {
@@ -83,6 +83,9 @@ app.UseUmbraco()
 ```
 
 ### Behavioral user identity
+
+The mapped entity type determines the view event. `TrackContentViews()` remains
+an alias for existing applications.
 
 The default `IRelewiseUserLocator` returns `User.Anonymous()`. To identify visitors,
 register your own locator before building Umbraco:

@@ -2,6 +2,10 @@
 
 [Documentation home](README.md) · [Block editors](block-editors.md) · [Validation](validation-and-troubleshooting.md)
 
+This guide documents the existing Content mapper/converter API, retained for
+compatibility. For new code, start with [entity mapping](entity-mapping.md) and
+the [demo storefront](../samples/Relewise.DemoStorefront/README.md#mapping-examples).
+
 A content mapper decides which values from one published Umbraco page become Relewise content data. Use it when your export needs editorial rules: extracting text from blocks, combining properties, excluding configuration, or producing a field such as `searchText`.
 
 ## Contents

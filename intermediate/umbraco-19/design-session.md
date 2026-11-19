@@ -208,6 +208,8 @@ update. The legacy Content adapter retains its returned-update/ID behavior; use
 Brand.DisplayName follows the SDK's single-string type. Its default uses Umbraco's
 default language, resolved once per operation, or the first available published
 culture in case-insensitive ordinal order.
+The same selection applies to a localized property mapped to its DisplayName;
+an explicit typed converter can override it.
 
 ## 6. Contribute to a commerce Product
 

@@ -6,7 +6,7 @@ Validate the mapped data before diagnosing search results. A successful export r
 
 ## Validate in three stages
 
-1. **Build and inspect locally.** Compile the mapper against the integration and Umbraco versions used by your application. Test the extraction helper with representative published models. Inspect the resulting `ContentUpdate.Content.Data` before transport; do not construct the internal `ContentMappingContext` via reflection in application code.
+1. **Build and inspect locally.** Compile the mapper against the integration and Umbraco versions used by your application. Test the extraction helper with representative published models. Inspect `context.Entity.Data` in a new mapper, or `ContentUpdate.Content.Data` in a legacy mapper. Let the integration supply mapping contexts; do not construct them via reflection in application code.
 2. **Exercise an actual export.** Register the mapper for the page's document type, restart the application, and publish a test page or use the Relewise dashboard's export action with a test dataset. Check the exported page ID, metadata, languages, field types, and text. Exercise both publish-triggered export and a full export.
 3. **Exercise search.** Search for a distinctive phrase appearing only inside a nested block. Confirm the search configuration includes your derived field, the request language matches the exported language, and the intended page appears. Check that deliberately excluded text does not contribute through another exported field.
 
@@ -42,24 +42,29 @@ Publishing uses `ContentUpdate.UpdateKind.ReplaceProvidedProperties`. A regular 
 
 The example always supplies `searchText`, including an empty string when all relevant text disappears, so removal does not merely omit that field. Verify the resulting stored value and search behavior in your dataset.
 
-When changing field names or data types, plan an explicit migration. The current full-export implementation's **permanently delete** option does two things:
+When changing field names or data types, plan an explicit migration. A full export
+continues to replace only provided properties; **permanently delete** does not
+clear omitted fields from retained entities. After successful ingestion, it deletes
+missing entities managed by this source scope and administrative policy, identified
+by their export generation. An ordinary full export disables those entities instead.
+Mappings with `AdministrativeActionPolicy.None()` retain their entities and business
+fields. Content/Product page-availability metadata is still updated.
 
-- Exports retained content with `ClearAndReplace`.
-- Deletes content outside that export's feed version; the ordinary option disables it instead.
-
-Do not select this option merely as a harmless refresh. Review the dataset's contents and the export scope first, especially if the dataset is shared. Use a test dataset for schema experiments. See [export service](../src/Integrations.Umbraco/Services/ExportContentService.cs) and [publish handler](../src/Integrations.Umbraco/NotificationHandlers/RelewiseContentPublishedNotificationHandler.cs).
+Review the source scope before permanent deletion, especially in a shared Dataset.
+Use a test Dataset for schema experiments. See the [export service](../src/Integrations.Umbraco/Services/ExportContentService.cs)
+and [shared indexing writer](../src/Integrations.Umbraco/Indexing/EntityIndexingService.cs).
 
 ## Diagnose common symptoms
 
 | Symptom | Check |
 | --- | --- |
 | Mapper never runs | The published page's document type alias is registered with `UseMapper(...)`; the running app has restarted; export is actually occurring. |
-| Ordinary fields disappear | A mapper replaces automatic property mapping. Call `IRelewisePropertyConverter` for the fields you want to retain. |
+| Ordinary fields disappear | New entity mappers run after declarative/automatic mapping; preserve or extend the supplied Data. Legacy `IContentTypeMapping` replaces field mapping and must explicitly convert fields it wants to retain. |
 | Text Area or rich text is absent under AutoMap | Inspect the actual editor alias and registered converters. Not every converter class in the package is registered automatically. |
 | Block Grid body is empty | There is no default Block Grid converter. Check the selected property alias, published value type, and traversal of areas. |
 | Nested values show type names or unusable strings | Avoid generic `ToString()` on collections or editor objects; extract supported models explicitly. |
 | Hidden content is exported | Default Block List conversion does not implement your settings policy. Check your mapper's own visibility rule. |
-| Duplicate-key exception | Two matching converters write the same key, two custom fields collide, or a mapped alias matches an integration-owned metadata key. |
+| Duplicate-key exception | A converter emits a key twice, explicit Data destinations collide, or a mapped alias uses an integration-owned metadata key. |
 | Only one language is present | Inspect `CulturesToPublish`, publication status, variant settings, and whether the mapper always reads the first culture. |
 | Old text remains after deploying a mapper | Deployment does not rewrite stored content. Export it again and check omitted-field/update semantics. |
 | Data looks correct but search misses it | Check searchable field configuration, request language, filters, and the specific dataset/server used by the request. |

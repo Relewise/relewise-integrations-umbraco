@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
+using Relewise.Client.Extensions;
 using Relewise.Client.Requests;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -130,7 +131,7 @@ internal class RelewiseContentMiddleware
     {
         try
         {
-            return context.RequestServices.GetRequiredService<ITracker>();
+            return context.RequestServices.GetRequiredService<IRelewiseClientFactory>().GetClient<ITracker>(Constants.NamedClientName);
         }
         catch (Exception ex)
         {

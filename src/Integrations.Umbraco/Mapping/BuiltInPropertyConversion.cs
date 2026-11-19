@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading.Tasks;
 using Relewise.Client.DataTypes;
 using Umbraco.Extensions;
 
@@ -8,7 +9,7 @@ namespace Relewise.Integrations.Umbraco;
 
 internal static class BuiltInPropertyConversion
 {
-    internal static TValue Convert<TValue>(PropertyMappingContext context)
+    internal static async ValueTask<TValue> ConvertAsync<TValue>(PropertyMappingContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
         string culture = context.CulturesToPublish.Count > 0 ? context.CulturesToPublish[0] : throw new InvalidOperationException("A published culture is required.");
@@ -27,7 +28,8 @@ internal static class BuiltInPropertyConversion
         }
         if (typeof(TValue) == typeof(string) && context.Property.PropertyType.VariesByCulture())
         {
-            throw new InvalidOperationException($"'{context.DestinationProperty}' is a single string. Configure a typed converter to select the source culture explicitly.");
+            culture = await context.DefaultCultureAsync();
+            context.CancellationToken.ThrowIfCancellationRequested();
         }
 
         object? value = context.Property.GetValue(culture);

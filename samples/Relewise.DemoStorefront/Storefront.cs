@@ -33,13 +33,23 @@ public static class Storefront
             }
 
             int page = int.TryParse(request.Query["page"], out var number) ? Math.Max(1, number) : 1;
+            if (page > int.MaxValue / 6)
+            {
+                return Results.BadRequest("Page is outside the supported range.");
+            }
             if (!connected)
             {
                 alias = Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent;
             }
 
+            var searcher = searchers.GetSearcher(alias);
+            if (searcher == null)
+            {
+                return Results.BadRequest("Search provider is not registered in this demo configuration.");
+            }
+
             var localFilters = !connected ? new[] { new KeywordFilter(Umbraco.Cms.Core.Constants.Search.FieldNames.ContentTypeId, [types.Get(requestedType)!.Key.AsKeyword()], false) } : null;
-            var result = await (searchers.GetSearcher(alias) ?? throw new InvalidOperationException("Search provider not registered.")).SearchAsync(alias, query ?? (!connected ? "*" : null), filters: localFilters, culture: culture, skip: (page - 1) * 6, take: 6);
+            var result = await searcher.SearchAsync(alias, query ?? (!connected ? "*" : null), filters: localFilters, culture: culture, skip: (page - 1) * 6, take: 6);
             using var context = contexts.EnsureUmbracoContext();
             var body = new StringBuilder($"<section class='hero'><p class='eyebrow'>UMBRACO 19 · LOCAL STOREFRONT</p><h1>Made for the everyday outdoors.</h1><p>Explore the collection, or find your next adventure in our journal.</p></section><form class='search'><label for='q'>Search the site</label><div><input id='q' name='q' value='{E(query)}' placeholder='Try Trail, flask or camp'><select aria-label='Search provider' name='provider'>");
             foreach (var choice in new[] { ("catalogue", "Products"), ("articles", "Journal"), ("guides", "Guides"), ("allEditorial", "All editorial"), ("localized", "Multilingual journal"), ("offers", "Offers"), ("commerceCatalogue", "Commerce catalogue"), (Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent, "Ordinary Umbraco search") })

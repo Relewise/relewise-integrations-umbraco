@@ -73,9 +73,12 @@ direct children of their Product.
 `Map` infers `PropertyMappingOptions<TValue>` from its destination expression.
 `UseConverter<T>()` requires `IPropertyMappingConverter<TValue>`, so a price converter
 must asynchronously return `MultiCurrency` and a DisplayName converter must asynchronously return `Multilingual`.
-Built-in conversion accepts compatible published values; it does not guess currency
-or a culture for a localized source mapped to Brand's single-string DisplayName.
-Without an explicit DisplayName mapping, a Brand uses the node name in Umbraco's default language when published, otherwise the first published culture in ordinal order.
+Built-in conversion accepts compatible published values; it does not guess currency.
+For a localized source mapped to a single-string destination such as Brand.DisplayName,
+it selects Umbraco's default language when published, otherwise the first published
+culture in case-insensitive ordinal order. A typed converter can override that selection.
+Without an explicit DisplayName mapping, a Brand uses its node name with the same
+language selection.
 
 `MapData` uses existing built-in and global converters by default. Selecting a
 field-specific `IAsyncRelewisePropertyValueConverter` bypasses that automatic selection

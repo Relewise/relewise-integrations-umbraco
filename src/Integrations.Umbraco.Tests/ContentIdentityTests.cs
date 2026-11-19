@@ -147,7 +147,10 @@ public class ContentIdentityTests
             .Callback<ContentView, CancellationToken>((view, _) => captured = view).Returns(Task.CompletedTask);
         var services = new ServiceCollection();
         services.AddSingleton(factory.Object);
-        services.AddSingleton(tracker.Object);
+        var clients = new Mock<IRelewiseClientFactory>();
+        clients.Setup(value => value.GetClient<ITracker>(Constants.NamedClientName)).Returns(tracker.Object);
+        services.AddSingleton(clients.Object);
+        services.AddSingleton(new Mock<ITracker>(MockBehavior.Strict).Object); // An unrelated default client must not receive views.
         var userLocator = new Mock<IRelewiseUserLocator>();
         userLocator.Setup(x => x.GetUser()).ReturnsAsync(User.Anonymous());
         services.AddSingleton(userLocator.Object);
@@ -158,6 +161,7 @@ public class ContentIdentityTests
         await middleware.InvokeAsync(new DefaultHttpContext { RequestServices = provider });
 
         Assert.True(nextCalled);
+        clients.Verify(value => value.GetClient<ITracker>(Constants.NamedClientName), preview ? Times.Never : Times.Once);
         if (preview)
         {
             Assert.Null(captured);
@@ -195,7 +199,8 @@ public class ContentIdentityTests
             .Callback<ContentSearchRequest, CancellationToken>((search, _) => searches.Add(search))
             .ReturnsAsync(new ContentSearchResponse { Hits = 0, Results = [], Facets = new() });
         var clients = new Mock<IRelewiseClientFactory>();
-        clients.Setup(x => x.GetClient<Relewise.Client.Search.ISearcher>(It.IsAny<string>())).Returns(searcher.Object);
+        clients.Setup(x => x.GetClient<Relewise.Client.Search.ISearcher>(Constants.NamedClientName)).Returns(searcher.Object);
+        clients.Setup(x => x.GetClient<ITracker>(Constants.NamedClientName)).Returns(tracker.Object);
         var accessor = new HttpContextAccessor();
         var locators = new ConcurrentBag<Mock<IRelewiseUserLocator>>();
         var services = new ServiceCollection();

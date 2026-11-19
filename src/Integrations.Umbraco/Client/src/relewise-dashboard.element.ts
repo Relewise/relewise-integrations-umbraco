@@ -37,7 +37,7 @@ export class RelewiseDashboardElement extends UmbLitElement {
             await RelewiseDashboard.contentExport({ throwOnError: true, query: { permanentlyDelete } });
 
             this.exportLoading = false;
-            this.success = "Content was successfully exported to Relewise";
+            this.success = "Mapped entities were successfully exported to Relewise";
             this.errorMessage = "";
         }
         catch (error) {
@@ -48,7 +48,7 @@ export class RelewiseDashboardElement extends UmbLitElement {
     }
 
     async exportContentPermanentlyDelete() {
-        const confirmed = confirm("Are you sure, you want to perform an full export and remove deleted content items?");
+        const confirmed = confirm("Export all mapped entities and permanently delete missing entities managed by this integration? Mappings without administrative actions retain their entities.");
         if (!confirmed) {
             return;
         }
@@ -83,27 +83,27 @@ export class RelewiseDashboardElement extends UmbLitElement {
       <section id="relewise-dashboard">
           <uui-box headline="Welcome to the Relewise dashboard">
              <span>
-                You can perform various operations, e.g. Export all your content to Relewise.<br />
+                Export your mapped Content, Products, Brands and Categories to Relewise.<br />
                 It's also possible to see the settings configured for Relewise directly here.
             </span>
             <div class="button-box">
                 <uui-button 
                     type="button" 
-                    label="Export content" 
+                    label="Export mapped entities"
                     look="primary" 
                     @click=${() => this.exportContent()} 
                     ?disabled=${this.exportLoading || this.unhandledError || this.relewiseNotAddedToUmbracoBuilder || (this.configuration && 'factoryFailed' in this.configuration && this.configuration.factoryFailed)}>
-                    Export content
+                    Export mapped entities
                 </uui-button>
 
                 <uui-button 
                     type="button" 
-                    label=" Export content and remove old data" 
+                    label="Export and remove missing entities"
                     look="primary" color="danger" 
                     @click=${() => this.exportContentPermanentlyDelete()} 
                     ?disabled=${this.exportLoading || this.unhandledError || this.relewiseNotAddedToUmbracoBuilder || (this.configuration && 'factoryFailed' in this.configuration && this.configuration.factoryFailed)}>
-                    Export content and remove old data
-                </button>
+                    Export and remove missing entities
+                </uui-button>
             </div>
             ${this.success ? html`<div class="mt-10" style="color: var(--uui-palette-forest-green);">${this.success}</div>` : ''}
             ${this.errorMessage ? html`<div class="mt-10 relewise-error">${this.errorMessage}</div>` : ''}
