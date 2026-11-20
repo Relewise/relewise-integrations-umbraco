@@ -177,7 +177,7 @@ or go directly to:
 
 ## Compatibility and migration
 
-Integration major 19 requires **Umbraco 19 and .NET 11**. For earlier
+`Relewise.Integrations.Umbraco` 19.x requires **Umbraco 19 and .NET 11**. For earlier
 Umbraco versions, use a compatible integration release and its matching documentation.
 Review [the migration guide](docs/migration.md) before upgrading an existing site.
 

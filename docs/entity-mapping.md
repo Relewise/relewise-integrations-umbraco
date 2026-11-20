@@ -119,7 +119,7 @@ Variants. It populates the supplied SDK entity and returns `Task`; the integrati
 constructs the corresponding update. New mappers must keep the resolved ID; reserved
 metadata is applied afterward. `IContentTypeMapping` and synchronous Data converters
 are obsolete, remain functional through compatibility adapters, and are scheduled
-for removal in the next major version. Legacy Content mappers retain their returned
+for removal in the next major release of `Relewise.Integrations.Umbraco`. Legacy Content mappers retain their returned
 update/ID behavior; migrate identity into `IdFromProperty` to align references and tracking.
 
 ## Contributing to an existing catalogue

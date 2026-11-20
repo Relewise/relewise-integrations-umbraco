@@ -143,8 +143,8 @@ application requires the Development environment and local Relewise endpoints.
 Configuration switches exercise the same application:
 
 - `Demo:Search=false`: no named Relewise providers; indexing and tracking still work.
-- `Demo:DefaultSearch=false`: named Relewise providers exist; Examine handles ordinary queries.
-- `Demo:DefaultProvider=catalogue`: ordinary queries use Product search.
+- `Demo:DefaultSearch=false`: named Relewise providers exist; Examine handles default published-content searches.
+- `Demo:DefaultProvider=catalogue`: default published-content searches use Product search.
 - `Demo:ProductPolicy=None`: preserve externally controlled Product state and register
   `commerceCatalogue`, which omits the published-page requirement. Other providers
   keep that requirement.
@@ -153,7 +153,7 @@ These switches require a local Relewise connection and a site restart.
 
 Use the storefront and Umbraco backoffice to exercise publishing, draft edits,
 unpublication, deletion and rebuilding. Check both destinations when Examine serves
-ordinary queries. Diagnostics are optional local investigation tools; leave them
+default published-content searches. Diagnostics are optional local investigation tools; leave them
 disabled in shared settings and keep raw reports outside tracked files.
 
 See [entity mapping](../../docs/entity-mapping.md) and

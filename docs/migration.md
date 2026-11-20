@@ -2,10 +2,10 @@
 
 [Documentation home](README.md) · [Entity mapping](entity-mapping.md) · [Umbraco search](search.md)
 
-## Upgrading to integration major 19
+## Upgrading to Umbraco 19
 
-Integration major 19 requires **Umbraco 19 and .NET 11**. The package accepts
-Umbraco versions in `[19.0.0-rc1,20)`; the demo and smoke tests use `19.0.0-rc1`.
+`Relewise.Integrations.Umbraco` 19.x requires **Umbraco 19 and .NET 11**.
+The package accepts Umbraco versions in `[19.0.0-rc1,20)`; the demo and smoke tests use `19.0.0-rc1`.
 Earlier Umbraco versions require a compatible integration release and its matching
 documentation.
 
@@ -26,10 +26,10 @@ warnings during the transition. Use `IEntityMapper<TEntity>` and asynchronous
 converters for new implementations; see [entity mapping](entity-mapping.md) and
 [legacy Content mapping](custom-content-mapping.md).
 
-When replacing `AddContentType(...)` with `MapContent(...)`, check export intent:
-a bare legacy registration is tracking-only, while a bare `MapContent(...)`
-registration enables export. Set `mapping.Export = false` to retain tracking-only
-behavior. New entity mappers run after automatic or explicit fields and
+When replacing `AddContentType(...)` with `MapContent(...)`, check whether the
+mapping should export data. `AddContentType(...)` without `AutoMap()` or a legacy
+mapper enables tracking only. `MapContent(...)` without explicit fields also enables
+export. Set `mapping.Export = false` to retain tracking-only behavior. New entity mappers run after automatic or explicit fields and
 relationships; legacy mapper instances replace application-field mapping.
 
 Keep the existing ID strategy during the upgrade unless an identity migration is
@@ -40,6 +40,6 @@ planned. Changing IDs does not merge entities or transfer behavioral history; se
 
 The integration uses one shared indexing pipeline for publication changes,
 rebuilds and explicit exports. Relewise search-provider registration is optional.
-Ordinary Umbraco searches retain their existing provider unless
-`DefaultPublishedContentProviderAlias` is configured. See the
+Queries through Umbraco's default published-content provider retain their existing
+search implementation unless `DefaultPublishedContentProviderAlias` is configured. See the
 [search guide](search.md) for provider registration and query behavior.

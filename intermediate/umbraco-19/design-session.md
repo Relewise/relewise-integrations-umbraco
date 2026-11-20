@@ -36,7 +36,7 @@ app.UseUmbraco()
 await app.RunAsync();
 ```
 
-## 2. The same capability with the new API
+## 2. Equivalent Content configuration with the new API
 
 Replace the integration callback above with:
 
@@ -53,7 +53,7 @@ still produce Content views. Search-provider registration is independent.
 Existing `UseMapper(new ExistingMapper())`, `IContentTypeMapping`, global property
 converters, numeric IDs and the `UseContentKeysAsIds` option remain available.
 The legacy mapper/converter contracts are obsolete with migration guidance; adapters
-preserve them until removal in the next major version. AutoMap retains its existing output.
+preserve them until removal in the next major release of `Relewise.Integrations.Umbraco`. AutoMap retains its existing output.
 Tracking-only mapping uses `mapping.Export = false`; `mapping.TrackViews = false`
 suppresses automatic views for a mapping.
 
@@ -281,7 +281,7 @@ measure it before introducing additional rebuild machinery.
 
 Umbraco can have several indexing pipelines; all Relewise providers query the
 Dataset's **single Relewise index**. Registering providers never adds another writer.
-Examine can continue indexing and serving ordinary queries.
+Examine can continue indexing and serving default published-content searches.
 
 ```csharp
 options.SearchProviders.AddContent("editorial", provider =>
@@ -304,7 +304,7 @@ options.SearchProviders.AddProduct("offers", provider =>
         request.Filters!.Add(new ProductDataFilter("isOnSale", new EqualsCondition(true))); // Add an exported-Data condition.
     });
 });
-options.SearchProviders.DefaultPublishedContentProviderAlias = "editorial"; // Handles ordinary Umbraco published-content queries.
+options.SearchProviders.DefaultPublishedContentProviderAlias = "editorial"; // Handles queries through Umbraco's default published-content provider.
 ```
 
 Omitting `DefaultPublishedContentProviderAlias` preserves the existing provider.
@@ -339,14 +339,14 @@ require a published page. This option neither enables a disabled Product nor add
 unmapped commerce Products. Results remain Umbraco document IDs; callers disabling
 the requirement handle unavailable pages and commerce destinations themselves.
 
-## 8. Supported boundaries and review follow-up
+## 8. Supported operations, limitations and testing
 
 Culture-specific numeric/date queries select internal culture-specific fields for
 filtering, sorting and facets. AutoMap output is unaffected. Segment-specific
 indexing is unsupported: the provider policy offers `Throw()` (default) or
-`Ignore()`, which discards the segment argument and executes an ordinary query.
-Suggestions requested through Umbraco fail explicitly; SDK predictions remain a
-separate capability pending a verified translation preserving membership/access.
+`Ignore()`, which executes the query without its segment argument.
+Suggestions requested through Umbraco fail explicitly. Use SDK predictions directly
+when needed; the application must apply its own result-membership and access rules.
 Empty Brand pickers retain the existing relationship under SDK partial updates.
 
 The maintained [Relewise.DemoStorefront](../../samples/Relewise.DemoStorefront/README.md)

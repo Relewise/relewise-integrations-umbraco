@@ -93,7 +93,7 @@ npm rules:
 - Do not rewrite wildcard/range declarations such as `^*`; keep them unchanged unless the user explicitly asks for a different policy.
 - When updating pinned npm versions, keep them pinned. When updating caret versions, keep caret versions.
 - Treat the TypeScript compiler and frontend bundler as part of the Umbraco compatibility surface. Before upgrading `typescript` or `vite`, inspect the frontend `package.json` at the exact target Umbraco release tag.
-- Do not upgrade `typescript` or `vite` to a major version newer than the version used by the target Umbraco release. Prefer the same major and baseline version as Umbraco while preserving this repository's existing range prefix.
+- Do not upgrade `typescript` or `vite` to a major version newer than the version used by the target Umbraco release. Use the TypeScript and Vite major/baseline versions used by that Umbraco release, preserving this repository's existing range prefixes.
 - A successful local compile does not by itself justify moving ahead of Umbraco's toolchain. Only exceed Umbraco's TypeScript or Vite major when the user explicitly accepts that compatibility risk.
 - Regenerate the lockfile so `@umbraco-cms/backoffice` resolves to the same Umbraco version being validated, while preserving its existing declaration style in `package.json`.
 - Check the `node` and `npm` engine requirements published by the target `@umbraco-cms/backoffice` package. Report validation as incomplete when the build environment does not satisfy them.

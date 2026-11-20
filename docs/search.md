@@ -72,9 +72,9 @@ providers are registered. Notification handlers do not run a second export.
 Named query providers do not add indexing pipelines or create additional Relewise
 indexes. Every provider uses the Dataset's default Relewise index.
 
-Without `DefaultPublishedContentProviderAlias`, ordinary published-content queries
-keep their existing provider. Setting it replaces query resolution for that alias;
-Examine's indexer and change strategy remain registered. Draft content, media,
+Without `DefaultPublishedContentProviderAlias`, queries through Umbraco's default
+published-content provider keep their existing search implementation. Setting it
+replaces query resolution for that alias; Examine's indexer and change strategy remain registered. Draft content, media,
 members, and elements retain their existing search providers.
 
 ## Querying
@@ -88,7 +88,7 @@ var searcher = searcherResolver.GetSearcher(providerAlias)
 var result = await searcher.SearchAsync(providerAlias, "daypack", culture: "en-US", skip: 0, take: 10);
 ```
 
-For ordinary Umbraco searches, use
+To query Umbraco's default published-content provider, use
 `Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent` instead. Results
 contain the source Umbraco GUIDs, including when Relewise IDs come from a property.
 A Variant match resolves to its Product page rather than creating a second result
@@ -159,7 +159,7 @@ retains site and mapping restrictions.
   fields. AutoMap's business Data representations remain unchanged. Segment-specific
   indexing is unsupported. Providers default to `UnsupportedSegmentBehavior.Throw()`;
   set `provider.UnsupportedSegmentBehavior = UnsupportedSegmentBehavior.Ignore()` to
-  discard a query's segment argument and execute its ordinary form.
+  execute the query without its segment argument.
 - New mappers and field-specific converters execute in an export scope. New global Data converters are scoped; legacy synchronous
   global converters retain their singleton lifetime. See [entity mapping](entity-mapping.md).
 - Writer coordination is process-local. Coordinate full rebuilds and overlapping

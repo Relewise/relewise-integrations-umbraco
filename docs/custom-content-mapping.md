@@ -16,7 +16,7 @@ A content mapper decides which values from one published Umbraco page become Rel
 - [Understand the mapping pipeline](#understand-the-mapping-pipeline)
 - [Write a minimal mapper](#write-a-minimal-mapper)
 - [Register a mapper](#register-a-mapper)
-- [Preserve ordinary property mapping](#preserve-ordinary-property-mapping)
+- [Preserve automatic property mapping](#preserve-automatic-property-mapping)
 - [Handle cultures](#handle-cultures)
 - [When a property converter is appropriate](#when-a-property-converter-is-appropriate)
 - [Design the exported data](#design-the-exported-data)
@@ -34,7 +34,7 @@ field such as `contentRows`; a **property editor alias** identifies its editor.
 Global converters decide whether to handle a field in `CanHandle`, commonly using
 the editor alias or property alias. These names have different roles.
 
-The legacy `UseMapper(IContentTypeMapping)` overload takes over property mapping; it does not run after `AutoMap()`. Calling both selects the legacy mapper instead of automatic property conversion. The new `UseMapper<TMapper>()` API is different: it runs after automatic or explicit fields and relationships. Reuse the property converter service inside your mapper if you want ordinary fields converted automatically.
+The legacy `UseMapper(IContentTypeMapping)` overload takes over property mapping; it does not run after `AutoMap()`. Calling both selects the legacy mapper instead of automatic property conversion. The new `UseMapper<TMapper>()` API is different: it runs after automatic or explicit fields and relationships. Reuse the property converter service inside your mapper if you want supported properties converted automatically.
 
 With the legacy `AddContentType(...)` API, registration without `AutoMap()` or a legacy mapper enables tracking without export. In contrast, `MapContent(...)` enables export and tracking by default, even without explicit fields. Set `mapping.Export = false` for a tracking-only mapping in the new API. Register the containing page type for blocks; block element types do not become separate exported pages simply because they occur inside it.
 
@@ -142,7 +142,7 @@ The second snippet shows two insertion points, not a standalone `Program.cs`. Ke
 
 Mapper instances are retained by the integration configuration. Treat them as shared services: keep per-page state in local variables, avoid capturing scoped services, and make dependencies safe to share. Do not store the current page or culture in an instance field. If extraction requires I/O, make it asynchronous and pass the cancellation token through.
 
-## Preserve ordinary property mapping
+## Preserve automatic property mapping
 
 Resolve `IRelewisePropertyConverter` from the mapping context and give it the properties you want to preserve:
 
@@ -182,7 +182,7 @@ var values = context.CulturesToPublish
 data["searchText"] = new DataValue(new Multilingual(values));
 ```
 
-The ordinary converter service applies its own rules: invariant properties use the first culture; variant strings with several values become `Multilingual`; string lists become `MultilingualCollection`; other variant types can get culture-suffixed keys. See [the implementation](../src/Integrations.Umbraco/Services/RelewisePropertyConverter.cs).
+The property converter service applies its own rules: invariant properties use the first culture; variant strings with several values become `Multilingual`; string lists become `MultilingualCollection`; other variant types can get culture-suffixed keys. See [the implementation](../src/Integrations.Umbraco/Services/RelewisePropertyConverter.cs).
 
 For derived block text, consider the whole composition. An invariant container can contain culture-dependent values or references. The demo's final entity mapper extracts invariant outer blocks separately for each published page culture. Decide your fallback rules explicitly, and test a missing translation. It reads published property values directly and does not add a custom fallback policy.
 
