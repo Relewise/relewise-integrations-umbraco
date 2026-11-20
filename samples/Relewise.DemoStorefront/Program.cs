@@ -72,8 +72,4 @@ app.UseUmbraco().WithMiddleware(umbraco =>
 });
 app.MapGet("/", () => Results.Redirect("/store"));
 app.MapStorefront();
-if (connected && builder.Configuration.GetValue<bool>("Demo:EnableDiagnostics"))
-{
-    app.MapPost("/smoke/checks", StorefrontChecks.Run);
-}
 await app.RunAsync();

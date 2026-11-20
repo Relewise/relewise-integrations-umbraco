@@ -10,7 +10,7 @@
     bool connected = Services.GetService<RelewiseUmbracoConfiguration>() != null;
     string culture = Variations.VariationContext?.Culture ?? "";
     var entityType = Model.ContentType.Alias switch { "product" => "Product", "productVariant" => "Variant", "brand" => "Brand", "productCategory" => "Product Category", _ => "Content" };
-    var html = $"<p style='margin-top:30px'><a href='/store'>← Back to the collection</a></p><section class='detail'><div class='illustration'>{(product || variant ? Storefront.Image(Model.Name) : Storefront.Icon(Model.Name))}</div><div class='details'><p class='eyebrow'>{Model.ContentType.Alias}</p><h1>{Storefront.E(Model.Value<string>("heading") ?? Model.Name)}</h1><p>{Storefront.E(Model.Value<string>("bodyText"))}</p>";
+    var html = $"<p style='margin-top:30px'><a href='/store'>← Back to the collection</a></p><section class='detail'><div class='illustration'>{(product || variant ? Storefront.Image(Model.Name) : Storefront.Icon())}</div><div class='details'><p class='eyebrow'>{Model.ContentType.Alias}</p><h1>{Storefront.E(Model.Value<string>("heading") ?? Model.Name)}</h1><p>{Storefront.E(Model.Value<string>("bodyText"))}</p>";
     if (product)
     {
         html += $"<h2>Sales price: {Storefront.Prices(Model.GetProperty("salesPrice")?.GetValue(), Context)}</h2><p>List price: {Storefront.Prices(Model.GetProperty("listPrice")?.GetValue(), Context)}</p>";

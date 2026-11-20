@@ -136,11 +136,6 @@ they do not make external network requests.
 
 ## Acceptance testing
 
-Opt into `Demo:EnableDiagnostics=true` locally to enable `POST /smoke/checks`, which
-verifies search, mapping and exported data against the seeded fixtures. It is
-disabled by default and requires a local Relewise connection with the default
-demo configuration. Run it after the initial export has completed.
-
 Configuration switches exercise the same application:
 
 - `Demo:Search=false`: no named Relewise providers; indexing and tracking still work.

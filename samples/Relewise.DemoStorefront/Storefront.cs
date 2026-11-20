@@ -90,7 +90,7 @@ public static class Storefront
                 rendered++;
                 bool product = content.ContentType.Alias == "product";
                 string? urlCulture = content.ContentType.VariesByCulture() ? culture : null;
-                body.Append($"<article class='card' data-node='{content.Key}' data-entity='{E(DemoConfiguration.EntityId(content, services))}'><a href='{E(content.Url(urlCulture))}'><div class='illustration {E(content.Value<string>("color"))}'>{(product ? Image(content.Name) : Icon("Journal"))}</div><div class='card-body'><small>{(product ? "EQUIPMENT" : "FIELD NOTES")}</small><h3>{E(content.Value<string>("heading", culture: culture) ?? content.Name)}</h3><p>{E(content.Value<string>("bodyText", culture: culture))}</p>{(product ? $"<strong>{Prices(content.GetProperty("salesPrice")?.GetValue(), request.HttpContext)}</strong>" : "<strong>Read the story →</strong>")}</div></a><footer>Relewise ID: <code>{E(DemoConfiguration.EntityId(content, services))}</code></footer></article>");
+                body.Append($"<article class='card' data-node='{content.Key}' data-entity='{E(DemoConfiguration.EntityId(content, services))}'><a href='{E(content.Url(urlCulture))}'><div class='illustration {E(content.Value<string>("color"))}'>{(product ? Image(content.Name) : Icon())}</div><div class='card-body'><small>{(product ? "EQUIPMENT" : "FIELD NOTES")}</small><h3>{E(content.Value<string>("heading", culture: culture) ?? content.Name)}</h3><p>{E(content.Value<string>("bodyText", culture: culture))}</p>{(product ? $"<strong>{Prices(content.GetProperty("salesPrice")?.GetValue(), request.HttpContext)}</strong>" : "<strong>Read the story →</strong>")}</div></a><footer>Relewise ID: <code>{E(DemoConfiguration.EntityId(content, services))}</code></footer></article>");
             }
             body.Append("</section>");
             if (rendered < result.Documents.Count())
@@ -118,11 +118,7 @@ public static class Storefront
     }
 
     public static string Image(string name) => "<img alt='' width='190' height='190' src='/images/" + (name.Contains("flask", StringComparison.OrdinalIgnoreCase) ? "flask" : name.Contains("shelter", StringComparison.OrdinalIgnoreCase) ? "shelter" : "daypack") + ".svg'>";
-    public static string Icon(string name) => name.Contains("flask", StringComparison.OrdinalIgnoreCase)
-        ? "<svg viewBox='0 0 200 180' aria-hidden='true'><rect x='77' y='25' width='46' height='18' rx='5'/><rect x='66' y='40' width='68' height='116' rx='20'/><path d='M82 60v70' stroke='white' opacity='.25' stroke-width='6'/></svg>"
-        : name.Contains("pack", StringComparison.OrdinalIgnoreCase)
-        ? "<svg viewBox='0 0 200 180' aria-hidden='true'><path d='M78 30q22-26 44 0' fill='none' stroke='currentColor' stroke-width='9'/><rect x='50' y='28' width='100' height='130' rx='27'/><rect x='66' y='90' width='68' height='50' rx='12' fill='white' opacity='.2'/><path d='M64 62h72' stroke='white' opacity='.4' stroke-width='4'/></svg>"
-        : "<svg viewBox='0 0 200 180' aria-hidden='true'><path d='M20 150 100 30 180 150z'/><path d='M100 30v120h60z' fill='white' opacity='.2'/><path d='m70 150 30-60 30 60' fill='#edf1e9'/></svg>";
+    public static string Icon() => "<svg viewBox='0 0 200 180' aria-hidden='true'><path d='M20 150 100 30 180 150z'/><path d='M100 30v120h60z' fill='white' opacity='.2'/><path d='m70 150 30-60 30 60' fill='#edf1e9'/></svg>";
     public static string Layout(string body, bool connected = true, HttpContext? http = null)
     {
         var market = DemoMarket.Current(http);
