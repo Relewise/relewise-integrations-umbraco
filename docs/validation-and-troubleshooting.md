@@ -48,7 +48,7 @@ For pure extraction tests, construct Block List / Block Grid items with fake `IP
 
 ## Removed fields and update semantics
 
-Publishing uses `ContentUpdate.UpdateKind.ReplaceProvidedProperties`. A regular full export also uses this update kind. A field that your new mapper no longer provides can therefore remain on previously exported content. Assigning a new dictionary locally does not itself clear every old remote field.
+Publishing uses `ContentUpdate.UpdateKind.ReplaceProvidedProperties`. A regular full export also uses this update kind. A field that your mapper no longer provides can therefore remain on previously exported Content. Assigning a new dictionary locally does not itself clear every old remote field.
 
 The example always supplies `searchText`, including an empty string when all relevant text disappears, so removal does not merely omit that field. Verify the resulting stored value and search behavior in your dataset.
 
@@ -78,7 +78,7 @@ and [shared indexing writer](../src/Integrations.Umbraco/Indexing/EntityIndexing
 | Only one language is present | Inspect `CulturesToPublish`, publication status, variant settings, and whether the mapper always reads the first culture. |
 | Old text remains after deploying a mapper | Deployment does not rewrite stored content. Export it again and check omitted-field/update semantics. |
 | Data looks correct but search misses it | Check searchable field configuration, request language, filters, and the specific dataset/server used by the request. |
-| Export appears to do nothing | Check Relewise client configuration and logs. The current export service returns without tracking when it cannot obtain a tracker. |
+| Export fails or data does not appear | Check the integration's effective Tracker connection, mapped Document Type aliases, published state and application logs. Missing client configuration fails the export; background failures are logged. A dashboard completion message confirms export processing, not that the expected field values or search relevance are correct. |
 | Referenced text becomes stale | Export the containing page after reference changes; do not assume dependent pages refresh automatically. |
 
 ## When asking for help

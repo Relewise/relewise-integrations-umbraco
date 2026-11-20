@@ -2,7 +2,7 @@
 
 Version 19 targets **Umbraco 19 / .NET 11** exclusively. The initial Umbraco target is
 `19.0.0-rc1`. Back up your database before upgrading and review Umbraco's
-[version-specific upgrade notes](https://docs.umbraco.com/umbraco-cms/fundamentals/setup/upgrading/version-specific).
+[version-specific upgrade notes](https://docs.umbraco.com/umbraco-cms/get-started/upgrading-and-migrating/version-specific).
 The backoffice dashboard uses the session cookie for API requests.
 
 ## Registration
@@ -38,8 +38,12 @@ builder.CreateUmbracoBuilder()
 ```
 
 Use `Relewise.Client.DataTypes.Currency` in this example. Only Content and Product
-query providers are supported. Several named providers may query the same entity
-type with different request settings. Product providers use the single Product
+query providers are supported. Each provider requires an exported mapping for its
+entity type. For Content, omit `DocumentTypeAliases` (leave it `null`) to include all
+exported Content types, or provide a nonempty list of exported Content aliases.
+An empty array, unknown alias or non-exported mapping is rejected.
+Several named providers may query the same entity type with different request
+settings. Product providers use the single Product
 mapping; `DocumentTypeAliases` is available only on Content providers.
 
 Product providers default to `RequirePublishedPage = true`. An advanced search can
@@ -52,7 +56,9 @@ options.SearchProviders.AddProduct("commerceCatalogue", provider =>
 });
 ```
 
-The integration always maintains source-page availability metadata, including when
+`rwUmbracoPublished` records whether the mapped source page is published, separately
+from whether the Relewise Product is enabled. The integration maintains this
+metadata regardless of whether a provider filters on it, including when
 commerce contributes other Product fields. This option only omits that query
 filter; site, mapping, access and culture restrictions remain. Content providers
 always require a published page. Results still contain Umbraco document IDs;
@@ -88,14 +94,16 @@ contain the source Umbraco GUIDs, including when Relewise IDs come from a proper
 A Variant match resolves to its Product page rather than creating a second result
 for the same Product.
 
-Language comes from the requested culture or Umbraco's default culture; it is not
-a single installation-wide language setting. A null Umbraco culture selects
-invariant documents. Searchable fields and relevance follow the Dataset's Relewise
-configuration; mapping a Data key does not automatically change its search settings.
+The SDK request language comes from the requested culture, falling back to Umbraco's
+default language when the culture is null or blank. Result membership is separate:
+a null culture selects invariant documents only; a specified culture includes
+invariant documents and documents published in that culture. There is no
+installation-wide language setting in the integration. Searchable fields and
+relevance follow the Dataset's Relewise configuration; mapping a Data key does not automatically change its search settings.
 
 `ConfigureRequest` receives a fresh, typed SDK request and runtime context with
 `Services`, `User`, and `Culture`. Mandatory site/mapping membership, access control,
-request user, query, paging, and the default Relewise index remain enforced. A blank
+request user, language, query, paging, and the default Relewise index remain enforced. A blank
 `DisplayedAtLocation` falls back to the configured value, then
 `Umbraco search: {providerAlias}`. Keep this label stable across visitors and queries.
 
@@ -111,8 +119,12 @@ Search and automatic views resolve the locator from the HTTP request's service
 scope. Return the same identifiers and consent-aware User values used by the rest
 of your site. The default locator returns an anonymous User; the integration does
 not create visitor cookies. Facet requests reuse the main query's resolved User.
-Automatic views use the same integration client configuration as exports and search,
-even when the application's default SDK client points to a different Dataset.
+Automatic views and exports use the integration's Tracker. Search uses its Searcher;
+entity reconciliation uses its Data accessor. They resolve through the integration's
+reserved named SDK registration, inheriting default connection settings unless
+overridden. The integration configures a two-minute Tracker timeout for exports.
+They do not select an arbitrary application-named connection. Review the effective
+values in the dashboard's **Connection details** section.
 
 Call `u.TrackEntityViews()` in the Umbraco middleware setup. The mapped entity type
 determines the event; a Variant view includes both Product and Variant IDs.
@@ -157,7 +169,7 @@ and `Unknown` health for Relewise. Counts and health are unavailable; zero does 
 indicate an empty Dataset. The Relewise dashboard includes this explanation.
 
 In **Settings → Relewise Dashboard → Search providers**, open **Details** beside a
-provider to review its source Document Types, published-page requirement, analytics
+provider to review its source Document Type aliases, published-page requirement, analytics
 location and segment behavior. The overview identifies the default published-content
 provider. Custom request callbacks are reported as registered but are not executed
 to inspect their settings.

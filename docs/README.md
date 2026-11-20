@@ -16,7 +16,7 @@ Use this integration to export published Umbraco content and catalogue entities 
 
 ## Version scope
 
-These guides describe the public APIs and implementation in this repository. The current source and complete example target .NET 11 and Umbraco 19.0.0-rc1 exclusively. For older Umbraco versions, use an earlier integration major and the documentation on its corresponding branch or tag. See [Umbraco 19 and core search](umbraco-19-search.md) for the new provider and upgrade requirements.
+These guides describe the public APIs and implementation in this repository. The package targets .NET 11 and accepts Umbraco versions in `[19.0.0-rc1,20)`. The demo is pinned to `19.0.0-rc1`, which is the version used for the implementation's smoke tests. For older Umbraco versions, use an earlier integration major and the documentation on its corresponding branch or tag. See [Umbraco 19 and core search](umbraco-19-search.md) for the new provider and upgrade requirements.
 
 “Grid” in these guides means **Block Grid**, unless explicitly described as the legacy Grid Layout editor. They have different data models.
 

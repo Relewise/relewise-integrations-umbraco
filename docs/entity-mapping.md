@@ -13,8 +13,9 @@ Its equivalent in the new API is:
 ```
 
 Existing `IContentTypeMapping` instances and global `AddValueConverter<T>()`
-registrations remain usable. See the existing [custom Content mapping](custom-content-mapping.md)
-and [block editor](block-editors.md) guides for those contracts.
+registrations remain usable through obsolete compatibility contracts. Use
+[custom Content mapping](custom-content-mapping.md) for the legacy API, and
+[block editors](block-editors.md) for extraction behavior and current examples.
 
 ## Fields and IDs
 
@@ -47,7 +48,9 @@ and [block editor](block-editors.md) guides for those contracts.
 })
 ```
 
-`PriceConverter` and `MediaUrlConverter` represent application code. A decimal alone
+`MediaUrlConverter` is an illustrative application type. The demo provides a working
+[PriceConverter](../samples/Relewise.DemoStorefront/PriceConverter.cs) for a Block List
+containing `currency` and `amount` properties. A decimal alone
 does not identify a currency; conversion must supply currency codes explicitly.
 
 Without an override, IDs use the numeric node ID. The existing
@@ -65,24 +68,29 @@ Multiple `MapContent` registrations are allowed for different Document Types.
 registration. A Document Type has one target. Canonical IDs must identify distinct
 entities; duplicate IDs are rejected within an export batch/full rebuild. Delta
 exports do not maintain a cross-batch identity registry. Brand identity comparisons follow Relewise's case-insensitive
-Brand behavior. Product category ancestors skip unmapped folders; Variants must be
+Brand behavior. Brand and additional-Category picker properties must be culture and segment
+invariant. Product category ancestors skip unmapped folders; Variants must be
 direct children of their Product.
 
 ## Conversion and custom mapping
 
 `Map` infers `PropertyMappingOptions<TValue>` from its destination expression.
 `UseConverter<T>()` requires `IPropertyMappingConverter<TValue>`, so a price converter
-must asynchronously return `MultiCurrency` and a DisplayName converter must asynchronously return `Multilingual`.
+must asynchronously return the SDK property's `MultiCurrency?` type. A converter for
+Content/Product/Category DisplayName returns `Multilingual`; Brand.DisplayName uses
+`string`.
 Built-in conversion accepts compatible published values; it does not guess currency.
 For a localized source mapped to a single-string destination such as Brand.DisplayName,
 it selects Umbraco's default language when published, otherwise the first published
 culture in case-insensitive ordinal order. A typed converter can override that selection.
-Without an explicit DisplayName mapping, a Brand uses its node name with the same
-language selection.
+With the default `Synchronize()` policy and no explicit DisplayName mapping, a
+Brand uses its node name with the same language selection. `None()` omits these
+default business fields so they can remain under external control.
 
 `MapData` uses existing built-in and global converters by default. Selecting a
 field-specific `IAsyncRelewisePropertyValueConverter` bypasses that automatic selection
-for the field. A custom Data key requires the converter to emit under the source
+for the field. Omitting an alias from the Umbraco schema fails an explicit `Map` or
+`MapData` mapping; it is not treated as an empty value. A custom Data key requires the converter to emit under the source
 property alias; converters that emit several custom keys cannot be arbitrarily renamed.
 
 Contexts expose the owning `PublishedContent`, current `SourceElement`, source
@@ -95,8 +103,9 @@ Constructor injection is supported for field converters and new
 instances resolve from the operation scope; unregistered concrete types are activated
 and disposed within that operation. `AddAsyncValueConverter<T>()` registers scoped
 global Data converters, which take precedence over built-in defaults regardless of
-registration order; the last matching custom registration wins. Existing synchronous
-global converters remain singletons through the compatibility adapter.
+registration order; the last matching custom registration wins. Separately registered
+legacy custom converters still run and can collide if they write the same Data key.
+Existing synchronous global converters remain singletons through the compatibility adapter.
 Do not capture a scoped service in an existing singleton mapper or converter.
 Do not request another export/rebuild from inside a mapper or converter; recursive
 indexing is rejected to prevent deadlocks.
@@ -146,8 +155,9 @@ Search providers are configured separately; see [Umbraco core search](umbraco-19
 
 In **Settings → Relewise Dashboard**, review the configured entity targets, ID sources,
 automatic indexing and view tracking, and named search providers. Open **Details** beside
-a mapping to inspect its fields, relationships, custom mapping and lifecycle policy; custom mapper and request callbacks
-are not executed for this overview. Connection settings do not constitute a connectivity
+a mapping to inspect its fields, relationships, custom mapper type, and publication
+and removal behavior. The overview does not execute custom mappers, converters or
+request callbacks. Connection settings do not constitute a connectivity
 or credentials check.
 
 Use **Export all mapped entities** to export published data and reconcile missing

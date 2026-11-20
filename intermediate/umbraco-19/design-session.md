@@ -1,6 +1,6 @@
 # Umbraco 19 configuration — review draft
 
-**Intermediate review document, updated 2026-11-18.** These examples describe the
+**Intermediate review document, updated 2026-11-20.** These examples describe the
 API implemented on this branch, targeting Umbraco 19 / .NET 11. Review the API and
 remaining decisions before treating it as a stable contract. Permanent documentation
 will be finalized after that review. This folder contains the design and screenshots
@@ -136,16 +136,18 @@ explicit fields; either can be combined with one final custom entity mapper.
   The same resolution applies to Category paths, additional Categories and Variants.
 - Variants are direct children of their Product. Category ancestors form paths;
   unmapped folders are skipped. Additional picked Categories contribute complete,
-  deduplicated paths. Arbitrary Variant-parent pickers are not supported.
+  deduplicated paths. Arbitrary Variant-parent pickers are not supported. Brand and
+  additional-Category picker properties must be culture and segment invariant.
 - `MapContent` permits multiple distinct Document Types. Product, Brand, Product
-  Category and Content Category each permit one registration. Duplicate registrations,
+  Category and Content Category each permit one registration. Duplicate registrations and
   multiple targets for one Document Type fail clearly. Full exports also detect
   conflicting canonical IDs; IDs must be unique during delta updates.
-  The existing `AddContentType` merging contract remains supported.
+  The existing `AddContentType` merging contract remains supported. Its bare
+  registration is tracking-only; bare `MapContent` enables export by default.
 - Every exported entity has one scalar `contentTypeAlias`, maintained regardless of
   search configuration. Node-key and site metadata support result resolution and
   membership. `rwUmbracoPublished` records source-page availability, independently
-  of the Relewise Product's enabled state; it is maintained in both ownership models.
+  of the Relewise Product's enabled state; it is maintained under both administrative-action policies.
 - Automatic views derive their SDK event from the mapping target. A Variant view
   includes its parent Product ID; Category views use mapped Category ancestors.
   Search and views resolve the same request-scoped `IRelewiseUserLocator`.
@@ -163,7 +165,8 @@ public interface IPropertyMappingConverter<TValue>
 
 `Map(entity => entity.ListPrice, ...)` therefore requires a converter producing
 `MultiCurrency` with the SDK's nullable contract; DisplayName requires its actual
-SDK type. A decimal alone supplies no currency. Without a selected converter,
+SDK type (`Multilingual` for Content/Product/Category names and `string` for Brand).
+A decimal alone supplies no currency. Without a selected converter,
 compatible built-in conversions apply; unsupported inputs fail with source context.
 
 `MapData` uses the built-in/global converter pipeline by default. Register custom
@@ -205,8 +208,11 @@ Reserved metadata is applied afterward, and the integration constructs the SDK
 update. The legacy Content adapter retains its returned-update/ID behavior; use
 `IdFromProperty` during migration to keep references and tracking aligned.
 
-Brand.DisplayName follows the SDK's single-string type. Its default uses Umbraco's
-default language, resolved once per operation, or the first available published
+Separately registered legacy custom Data converters still run, even when an async
+custom converter overrides a built-in. Avoid overlapping Data keys.
+
+Brand.DisplayName follows the SDK's single-string type. With `Synchronize()` and
+no explicit mapping, its node-name default uses Umbraco's default language, resolved once per operation, or the first available published
 culture in case-insensitive ordinal order.
 The same selection applies to a localized property mapped to its DisplayName;
 an explicit typed converter can override it.
@@ -309,9 +315,10 @@ and facets; Product providers use the one Product mapping.
 
 Each execution, including facet queries, creates a fresh typed SDK request. The
 callback gets `Services`, `User` and `Culture`; mandatory site/mapping/access,
-caller query, paging and the default Relewise index remain enforced. Language
+request user, language, caller query, paging and the default Relewise index remain enforced. Language
 follows the query culture with the site's default as the SDK-language fallback;
-there is no installation-wide language or configurable Relewise index ID.
+a null query culture selects invariant documents only. There is no installation-wide
+language or configurable Relewise index ID.
 Variant matches resolve to one Product page before paging.
 
 `DisplayedAtLocation` is always nonempty: use the callback value, then the configured
@@ -343,9 +350,11 @@ separate capability pending a verified translation preserving membership/access.
 Empty Brand pickers retain the existing relationship under SDK partial updates.
 
 The maintained [Relewise.DemoStorefront](../../samples/Relewise.DemoStorefront/README.md)
-centralizes runnable mapping, converter, search and tracking examples. F5 installs
-SQLite and seeds content, blocks, languages and bundled images. An ignored
-`local.settings.json` enables a local Dataset; without it, Examine serves the site.
+centralizes runnable mapping, converter, search and tracking examples. F5 creates a local
+SQLite database and seeds content, blocks, languages and bundled images. Valid
+local Relewise settings in an ignored
+`local.settings.json` connect the demo to an existing local Dataset; without those
+settings, Examine serves the site.
 Opt-in diagnostics support the shared acceptance tests, including publish/edit/
 unpublish with no Relewise query providers registered.
 
@@ -364,14 +373,15 @@ returns its required placeholder `0` and `Unknown` health; Relewise statistics a
 unavailable through this integration. A notice in the existing Relewise dashboard
 explains that zero does not indicate an empty Dataset. No counter, extra SDK queries
 or replacement of Umbraco's standard statistics UI is introduced.
-Preserve existing public signatures/XML documentation.
-Finalize permanent documentation
-once the API is stable; keep only concise supported behavior in the
-[mapping](../../docs/entity-mapping.md) and [search](../../docs/umbraco-19-search.md) guides.
+The maintained [mapping](../../docs/entity-mapping.md) and
+[search](../../docs/umbraco-19-search.md) guides describe supported behavior. This
+intermediate document retains implementation-review context and smoke-test evidence.
 
 ## 9. Screenshots for review
 
-These are local smoke-test captures from implementation iterations. The maintained
+These are local smoke-test captures from implementation iterations, rather than
+a guarantee that every capture shows the current layout. The latest dashboard
+provider and connection layouts are linked below. The maintained
 storefront is included as a sample; raw execution reports and credentials stay local.
 
 | Screenshot | Review focus |
@@ -397,3 +407,9 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | [Multiple currencies](images/20-multi-currency-product.png) | Independently entered list and sales prices in DKK, EUR and USD. |
 | [Europe market](images/21-europe-market-product.png) | Header market selection drives the Product's displayed EUR prices. |
 | [Denmark market](images/22-denmark-market-article.png) | Switching market opens the corresponding Danish article and nested blocks. |
+| [Dashboard overview](images/23-dashboard-overview.png) | Integration branding and configuration overview. |
+| [Product mapping details](images/25-dashboard-product-mapping-details.png) | Field converters, relationships and canonical IDs. |
+| [Custom mapper details](images/26-dashboard-mapper-names-and-publication.png) | Mapper type names and publication/removal behavior. |
+| [Export and Maintenance](images/29-dashboard-export-and-maintenance.png) | Full export and scoped permanent-deletion controls. |
+| [Connection details](images/30-dashboard-connection-details.png) | Current separate default/named tables and usage explanations. |
+| [Final dashboard provider review](images/32-dashboard-final-review.png) | Current Content/Product provider details and index-statistics notice. |

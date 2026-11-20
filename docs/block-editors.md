@@ -32,16 +32,16 @@ The current `AddRelewise` registration includes converters for:
 
 Source: [default registrations](../src/Integrations.Umbraco/UmbracoBuilderExtensions.cs).
 
-The repository also includes public `TextAreaPropertyValueConverter`, `MediaPickerValueConverter`, and `ImageCropperValueConverter` classes, but they are **not registered by default**. If their supported aliases and value types match your site, register the converters you need:
+The repository also includes public `TextAreaPropertyValueConverter`, `MediaPickerValueConverter`, and `ImageCropperValueConverter` classes, but they are **not registered by default**. If their supported aliases and value types match your site, register the converters you need through their asynchronous contracts:
 
 ```csharp
 using Relewise.Integrations.Umbraco;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-builder.Services.AddValueConverter<TextAreaPropertyValueConverter>();
+builder.Services.AddAsyncValueConverter<TextAreaPropertyValueConverter>();
 ```
 
-The default rich-text converter supports the `Umbraco.RichText` editor alias used by Tiptap and the legacy `Umbraco.TinyMCE` alias. It exports the published `IHtmlEncodedString` as HTML under the property alias, respecting the property's culture. Embedded-block rendering is delegated to Umbraco's published-value converter; the integration does not traverse raw rich-text JSON or extract plain text. The complete example reads its chosen block fields itself and does not depend on this converter.
+The default rich-text converter supports the `Umbraco.RichText` editor alias used by Tiptap and the legacy `Umbraco.TinyMCE` alias. It exports the published `IHtmlEncodedString` as HTML under the property alias, respecting the property's culture. Embedded-block rendering is delegated to Umbraco's published-value converter; the integration does not traverse raw rich-text JSON or extract plain text. The demo's field-specific block extractor reads its chosen rich-text fields directly; it does not call this global rich-text converter.
 
 There is **no default Block Grid converter** in these registrations. Block Grid and the older Grid Layout editor are also different editors; neither gains support merely because Block List is supported.
 
@@ -89,7 +89,7 @@ foreach (var area in item.Areas)
 
 The complete method checks visibility before both the parent's text and its children. It preserves model order: selected parent fields first, then configured nested properties, then area children. This is deterministic but not necessarily the exact visual reading order of your Razor views. If layout-specific reading order matters, add rules per element type or area alias.
 
-Row spans, column spans, area aliases, and layout settings should usually stay out of the searchable prose. See [Umbraco's Block Grid documentation](https://docs.umbraco.com/umbraco-cms/fundamentals/backoffice/property-editors/built-in-umbraco-property-editors/block-editor/block-grid-editor) for the editing and rendering model.
+Row spans, column spans, area aliases, and layout settings should usually stay out of the searchable prose. See [Umbraco's Block Grid documentation](https://docs.umbraco.com/umbraco-cms/model-your-content/property-editors/built-in-umbraco-property-editors/block-editor/block-grid-editor) for the editing and rendering model.
 
 ## Select text intentionally
 
@@ -142,7 +142,7 @@ Use the same approach for custom editors: first establish their published return
 
 For an English page with:
 
-- `title`: “Installation guide”
+- `heading` mapped to DisplayName: “Installation guide”
 - a visible list block with heading “Before you start” and text `<p>Check your connection.</p>`
 - a hidden list block with text “Internal draft”
 - a grid area containing heading “Next steps”
@@ -151,11 +151,13 @@ For an English page with:
 
 ```json
 {
-  "title": "Installation guide",
-  "searchText": "Before you start\nCheck your connection.\nNext steps"
+  "DisplayName": "Installation guide",
+  "Data": {
+    "searchText": "Before you start\nCheck your connection.\nNext steps"
+  }
 }
 ```
 
-This is a readable representation of the field values, not a literal Relewise API request. The actual update uses typed `DataValue` objects and includes integration metadata. Multi-language pages use a multilingual value for `searchText`.
+This is a simplified representation of the entity and its fields, not a literal Relewise API request or the complete demo export. The actual update uses typed `DataValue` objects and includes integration metadata. Multi-language pages use a multilingual value for `searchText`.
 
 Next: [run and adapt the demo's mapping examples](../samples/Relewise.DemoStorefront/README.md#mapping-examples), then [validate the export](validation-and-troubleshooting.md).

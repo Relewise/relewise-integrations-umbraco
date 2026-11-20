@@ -63,10 +63,11 @@ side effects are undesirable.
 
 ## Switching an existing installation
 
-Changing the setting is an identity change, not a migration. The integration does
-not rename, merge, or delete existing entities when this setting changes. Subsequent
+Changing the setting is an identity change, not a migration. Configuration alone
+does not rename or merge entities, transfer history or perform cleanup. Subsequent
 publishes create GUID-based entities while existing numeric entities and their
-history remain separate; changing back has the corresponding effect. Category IDs,
+history remain separate until a lifecycle or reconciliation action affects them.
+Changing back has the corresponding effect. Category IDs,
 custom references, saved filters, and tracking/history can also be affected.
 
 Before switching, plan the transition for every writer and consumer, preferably

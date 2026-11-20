@@ -27,8 +27,10 @@ Install-Package Relewise.Integrations.Umbraco
 ```
 
 If you are starting a new site, create it using the
-[Umbraco templates](https://docs.umbraco.com/umbraco-cms/fundamentals/setup/install/install-umbraco-with-templates#install-the-template).
+[Umbraco templates](https://docs.umbraco.com/umbraco-cms/get-started/installation#install-the-template).
 See [compatibility and migration](#compatibility-and-migration) when choosing a package version.
+The commands above select the latest stable package. For a prerelease,
+specify its published version explicitly (`--version <version>` or `-Version <version>`).
 
 ## Getting started
 
@@ -175,15 +177,16 @@ or go directly to:
 
 ## Compatibility and migration
 
-The current package major, 19, requires **Umbraco 19 and .NET 11**. For earlier
+Integration major 19 requires **Umbraco 19 and .NET 11**. For earlier
 Umbraco versions, use a compatible integration release and its matching documentation.
 Review [the upgrade requirements](docs/umbraco-19-search.md) before upgrading an existing site.
 
 Existing `AddContentType(...)`, `TrackContentViews()`, `IContentTypeMapping` and
 synchronous converter registrations remain supported. The legacy mapper/converter
 contracts are obsolete with migration guidance; use the entity mapping and asynchronous
-converter APIs for new code. Existing `AutoMap()` behavior and numeric ID defaults
-are preserved. See [entity mapping](docs/entity-mapping.md) for the corresponding APIs.
+converter APIs for new code. Obsolete APIs produce compiler warnings; projects that
+treat warnings as errors must address or explicitly suppress them during migration.
+Existing `AutoMap()` behavior and numeric ID defaults are preserved. See [entity mapping](docs/entity-mapping.md) for the corresponding APIs.
 
 ## Resources
 

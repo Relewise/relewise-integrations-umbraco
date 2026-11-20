@@ -49,7 +49,7 @@ For backoffice editing, set your preferred Umbraco unattended user/password in
 
 - [DemoConfiguration.cs](DemoConfiguration.cs): the registration for all examples:
   Content/Product/Brand/Category mapping, child Variants, canonical IDs, field
-  converters, final entity mappers, named profiles and default query routing.
+  converters, final entity mappers, named search providers and default query routing.
 - [PriceConverter.cs](PriceConverter.cs): strongly typed asynchronous conversion of
   editable currency/amount blocks into the SDK's `MultiCurrency` built-in property.
 - [ImageUrlConverter.cs](ImageUrlConverter.cs): global asynchronous Data conversion,
@@ -74,7 +74,7 @@ removes HTML markup and script/style/template text, and respects the example's
 `hide` setting. Open **Finding your trail** for nested `contentRows` Block List
 content, rich text and `pageGrid` areas. Hidden blocks and a hidden Grid container
 remain editable in Umbraco but contribute no text, including the container's children.
-The detail page shows the extracted text, with HTML removed and entities decoded,
+The detail page shows the extracted block text, with HTML removed and entities decoded,
 so it is easy to compare the editorial source with the text used for export.
 
 Open **Localized blocks** and switch market between Denmark and Europe/United States.
@@ -98,9 +98,10 @@ those choices. The converter reads the selected codes from the published blocks;
 it does not assign a fixed currency or calculate exchange rates. For example, the
 daypack's list prices are DKK 899.00, EUR 119.95 and USD 129.95.
 
-The converter rejects duplicate currency codes and incomplete entries. An absent
-price field produces no price value, rather than inventing a zero price. The
-storefront displays the selected market's currency. A missing price is shown as
+The converter rejects duplicate currency codes and incomplete entries. A null
+published value produces no price value; an empty Block List produces an empty
+`MultiCurrency`. Neither invents a zero price. A missing source property is a
+mapping error. The storefront displays the selected market's currency. A missing price is shown as
 unavailable; the storefront does not substitute another currency.
 
 ### Market selection
@@ -142,9 +143,13 @@ application requires the Development environment and local Relewise endpoints.
 Configuration switches exercise the same application:
 
 - `Demo:Search=false`: no named Relewise providers; indexing and tracking still work.
-- `Demo:DefaultSearch=false`: named profiles exist; Examine handles ordinary queries.
+- `Demo:DefaultSearch=false`: named Relewise providers exist; Examine handles ordinary queries.
 - `Demo:DefaultProvider=catalogue`: ordinary queries use Product search.
-- `Demo:ProductPolicy=None`: preserve externally controlled administrative state.
+- `Demo:ProductPolicy=None`: preserve externally controlled Product state and register
+  `commerceCatalogue`, which omits the published-page requirement. Other providers
+  keep that requirement.
+
+These switches require a local Relewise connection and a site restart.
 
 Use the storefront and Umbraco backoffice to exercise publishing, draft edits,
 unpublication, deletion and rebuilding. Check both destinations when Examine serves
