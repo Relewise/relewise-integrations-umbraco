@@ -318,7 +318,7 @@ export class RelewiseDashboardElement extends UmbLitElement {
                 })}</tbody>
             </table></div>` : html`<p>No Relewise search providers are configured. Indexing and tracking can still be used.</p>`}
             ${!configuration.defaultPublishedContentProviderAlias ? html`<p>Ordinary published-content queries retain the site's existing search provider.</p>` : ''}
-            <p><a href=${this.docs + 'umbraco-19-search.md'} target="_blank" rel="noopener noreferrer" aria-label="Search provider guide (opens in a new tab)">Search provider guide <span aria-hidden="true">↗</span></a></p>
+            <p><a href=${this.docs + 'search.md'} target="_blank" rel="noopener noreferrer" aria-label="Search provider guide (opens in a new tab)">Search provider guide <span aria-hidden="true">↗</span></a></p>
             <aside class="index-statistics-note" role="note" aria-label="Index statistics in Umbraco">
                 <uui-icon name="icon-info" aria-hidden="true"></uui-icon>
                 <div>

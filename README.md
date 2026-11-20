@@ -99,7 +99,7 @@ options.SearchProviders.DefaultPublishedContentProviderAlias = "site";
 You can register Content and Product search providers with different request settings.
 Indexing works independently of these providers, and you can keep your existing
 Umbraco search provider while exporting data to Relewise. See the
-[Umbraco search guide](docs/umbraco-19-search.md) for registration, querying, access
+[Umbraco search guide](docs/search.md) for registration, querying, access
 control and supported operations.
 
 ## Automatic view tracking
@@ -132,7 +132,7 @@ builder.Services.AddScoped<IRelewiseUserLocator, MyUserLocator>();
 identifiers used by your other Relewise behavioral tracking, according to your site's
 consent policy. The default locator returns `User.Anonymous()` and creates no visitor
 cookies. Search and automatic views share the request-scoped locator. See
-[identity and tracking](docs/umbraco-19-search.md#identity-access-and-tracking).
+[identity and tracking](docs/search.md#identity-access-and-tracking).
 
 ## Content IDs across environments
 
@@ -171,7 +171,7 @@ or go directly to:
 
 - [Entity mapping](docs/entity-mapping.md): fields, IDs, Products, Variants, Brands, Categories and converters.
 - [Block List, Block Grid and nested content](docs/block-editors.md): text extraction, visibility and cultures.
-- [Umbraco search](docs/umbraco-19-search.md): providers, queries, filtering, facets and access control.
+- [Umbraco search](docs/search.md): providers, queries, filtering, facets and access control.
 - [Validation and troubleshooting](docs/validation-and-troubleshooting.md): checking exports and diagnosing missing or stale data.
 - [Legacy Content mapping](docs/custom-content-mapping.md): existing `IContentTypeMapping` and converter implementations.
 
@@ -179,7 +179,7 @@ or go directly to:
 
 Integration major 19 requires **Umbraco 19 and .NET 11**. For earlier
 Umbraco versions, use a compatible integration release and its matching documentation.
-Review [the upgrade requirements](docs/umbraco-19-search.md) before upgrading an existing site.
+Review [the migration guide](docs/migration.md) before upgrading an existing site.
 
 Existing `AddContentType(...)`, `TrackContentViews()`, `IContentTypeMapping` and
 synchronous converter registrations remain supported. The legacy mapper/converter

@@ -149,7 +149,7 @@ of those collections with values supplied by another integration. An empty
 `BrandFrom` picker currently omits Brand from the partial update, retaining an
 existing Relewise Brand relationship.
 
-Search providers are configured separately; see [Umbraco core search](umbraco-19-search.md).
+Search providers are configured separately; see [Umbraco core search](search.md).
 
 ## Publication and rebuilds
 

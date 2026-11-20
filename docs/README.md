@@ -6,9 +6,10 @@ Use this integration to export published Umbraco content and catalogue entities 
 
 | I want to… | Read |
 | --- | --- |
+| Upgrade an existing integration | [Migration](migration.md) |
 | Choose numeric IDs, stable content keys or plan an ID migration | [Content identity across environments](content-identity.md) |
 | Map Products, Variants, Categories and Brands | [Entity mapping](entity-mapping.md) |
-| Use Relewise through Umbraco's core search API | [Umbraco 19 and core search](umbraco-19-search.md) |
+| Use Relewise through Umbraco's core search API | [Umbraco search](search.md) |
 | Understand automatic mapping and choose an extension point | [Custom content mapping](custom-content-mapping.md) |
 | Export readable text from Block List, Block Grid, or nested blocks | [Mapping block editors](block-editors.md) |
 | Run mapping, converters, search and tracking together | [Demo storefront and mapping examples](../samples/Relewise.DemoStorefront/README.md) |
@@ -16,7 +17,7 @@ Use this integration to export published Umbraco content and catalogue entities 
 
 ## Version scope
 
-These guides describe the public APIs and implementation in this repository. The package targets .NET 11 and accepts Umbraco versions in `[19.0.0-rc1,20)`. The demo is pinned to `19.0.0-rc1`, which is the version used for the implementation's smoke tests. For older Umbraco versions, use an earlier integration major and the documentation on its corresponding branch or tag. See [Umbraco 19 and core search](umbraco-19-search.md) for the new provider and upgrade requirements.
+These guides describe the public APIs and implementation in this repository. The package targets .NET 11 and accepts Umbraco versions in `[19.0.0-rc1,20)`. The demo is pinned to `19.0.0-rc1`, which is the version used for the implementation's smoke tests. For older Umbraco versions, use an earlier integration major and the documentation on its corresponding branch or tag. See [migration](migration.md) for upgrade requirements and [Umbraco search](search.md) for provider configuration.
 
 “Grid” in these guides means **Block Grid**, unless explicitly described as the legacy Grid Layout editor. They have different data models.
 

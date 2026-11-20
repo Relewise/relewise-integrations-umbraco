@@ -1,9 +1,9 @@
-# Umbraco 19 and core search
+# Umbraco search
 
-Version 19 targets **Umbraco 19 / .NET 11** exclusively. The initial Umbraco target is
-`19.0.0-rc1`. Back up your database before upgrading and review Umbraco's
-[version-specific upgrade notes](https://docs.umbraco.com/umbraco-cms/get-started/upgrading-and-migrating/version-specific).
-The backoffice dashboard uses the session cookie for API requests.
+[Documentation home](README.md) · [Entity mapping](entity-mapping.md) · [Migration](migration.md)
+
+Use Relewise through Umbraco's core search abstraction with Content and Product
+providers. Configure search independently of entity mapping and indexing.
 
 ## Registration
 
@@ -108,6 +108,8 @@ request user, language, query, paging, and the default Relewise index remain enf
 `Umbraco search: {providerAlias}`. Keep this label stable across visitors and queries.
 
 ## Identity, access, and tracking
+
+The backoffice dashboard uses the Umbraco session cookie for its API requests.
 
 Register your `IRelewiseUserLocator` before building Umbraco, for example:
 

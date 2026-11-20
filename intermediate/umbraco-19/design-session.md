@@ -374,7 +374,7 @@ unavailable through this integration. A notice in the existing Relewise dashboar
 explains that zero does not indicate an empty Dataset. No counter, extra SDK queries
 or replacement of Umbraco's standard statistics UI is introduced.
 The maintained [mapping](../../docs/entity-mapping.md) and
-[search](../../docs/umbraco-19-search.md) guides describe supported behavior. This
+[search](../../docs/search.md) guides describe supported behavior. This
 intermediate document retains implementation-review context and smoke-test evidence.
 
 ## 9. Screenshots for review

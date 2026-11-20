@@ -157,4 +157,4 @@ ordinary queries. Diagnostics are optional local investigation tools; leave them
 disabled in shared settings and keep raw reports outside tracked files.
 
 See [entity mapping](../../docs/entity-mapping.md) and
-[Umbraco search](../../docs/umbraco-19-search.md) for package behavior and limitations.
+[Umbraco search](../../docs/search.md) for package behavior and limitations.
