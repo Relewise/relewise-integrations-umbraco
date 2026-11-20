@@ -16,16 +16,8 @@ export const onInit: UmbEntryPointOnInit = (_host) => {
 		var config = _auth.getOpenApiConfiguration();
 
 		client.setConfig({
-			auth: config.token,
 			baseUrl: config.base,
-			credentials: config.credentials,
-		});
-
-		client.interceptors.request.use(async (request, _options) => {
-
-			const token = await _auth.getLatestToken();
-			request.headers.set('Authorization', `Bearer ${token}`);
-			return request;
+			credentials: 'include',
 		});
 	});
 };

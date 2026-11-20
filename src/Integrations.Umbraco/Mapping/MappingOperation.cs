@@ -1,0 +1,64 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Relewise.Integrations.Umbraco;
+
+internal sealed class MappingOperation(IServiceProvider services, CancellationToken cancellationToken) : IAsyncDisposable
+{
+    private readonly Dictionary<Type, object> _instances = new();
+    internal IServiceProvider Services { get; } = services;
+    internal CancellationToken CancellationToken { get; } = cancellationToken;
+    internal object Resolve(Type type)
+    {
+        object? registered = Services.GetService(type);
+        if (registered != null)
+        {
+            return registered;
+        }
+
+        if (_instances.TryGetValue(type, out object? instance))
+        {
+            return instance;
+        }
+
+        instance = ActivatorUtilities.CreateInstance(Services, type);
+        _instances.Add(type, instance);
+        return instance;
+    }
+    internal T Resolve<T>() where T : class => (T)Resolve(typeof(T));
+    private Task<string>? _defaultCulture;
+    internal async Task<string> DefaultCultureAsync(string[] publishedCultures)
+    {
+        string culture = await (_defaultCulture ??= Services.GetRequiredService<global::Umbraco.Cms.Core.Services.ILanguageService>().GetDefaultIsoCodeAsync());
+        return publishedCultures.FirstOrDefault(value => value.Equals(culture, StringComparison.OrdinalIgnoreCase))
+            ?? publishedCultures.Order(StringComparer.OrdinalIgnoreCase).First();
+    }
+    public async ValueTask DisposeAsync()
+    {
+        List<Exception>? errors = null;
+        foreach (object instance in _instances.Values.Reverse())
+        {
+            try
+            {
+                if (instance is IAsyncDisposable asyncDisposable)
+                {
+                    await asyncDisposable.DisposeAsync();
+                }
+                else if (instance is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+            catch (Exception error) { (errors ??= new()).Add(error); }
+        }
+        _instances.Clear();
+        if (errors != null)
+        {
+            throw new AggregateException("Mapping resources could not all be disposed.", errors);
+        }
+    }
+}

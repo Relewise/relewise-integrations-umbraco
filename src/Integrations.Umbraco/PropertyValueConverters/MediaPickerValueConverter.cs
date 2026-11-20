@@ -1,28 +1,39 @@
-﻿using System;
+#pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
+using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 using Umbraco.Cms.Core.Models.PublishedContent;
-using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
 /// <summary>
-/// Handles extracting property values for 'Umbraco.MediaPicker3'
+/// Extracts media URLs from Umbraco 19's single and multiple media pickers.
 /// </summary>
-public class MediaPickerValueConverter : IRelewisePropertyValueConverter
+public class MediaPickerValueConverter : IDefaultPropertyValueConverter, IRelewisePropertyValueConverter
 {
     /// <inheritdoc />
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
-        return context.Property.PropertyType.EditorAlias.Equals("Umbraco.MediaPicker3");
+        return context.Property.PropertyType.EditorAlias is "Umbraco.MediaPicker3" or "Umbraco.MediaPicker.Single" or "Umbraco.MultipleMediaPicker";
     }
 
     /// <inheritdoc />
+    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Convert(context);
+        return default;
+    }
+
+    /// <inheritdoc/>
+    [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        bool isMultiple = context.Property.PropertyType.DataType.ConfigurationAs<MediaPicker3Configuration>()?.Multiple ?? false;
+        bool isMultiple = context.Property.PropertyType.EditorAlias != "Umbraco.MediaPicker.Single";
 
         if (isMultiple)
         {

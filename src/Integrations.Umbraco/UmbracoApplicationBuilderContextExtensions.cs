@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
@@ -16,12 +16,22 @@ public static class UmbracoApplicationBuilderContextExtensions
     /// </summary>
     /// <param name="builder"></param>
     /// <exception cref="ArgumentNullException"></exception>
-    public static void TrackContentViews(this IUmbracoApplicationBuilderContext builder)
-    {
-        if (builder == null) throw new ArgumentNullException(nameof(builder));
+    public static void TrackContentViews(this IUmbracoApplicationBuilderContext builder) => builder.TrackEntityViews();
 
-        if (builder.ApplicationServices.GetService<IRelewiseUserLocator>() == null)
+    /// <summary>Tracks views using the entity type and canonical ID configured for the current document.</summary>
+    /// <param name="builder">The Umbraco middleware builder.</param>
+    public static void TrackEntityViews(this IUmbracoApplicationBuilderContext builder)
+    {
+        if (builder == null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        // Check the registration without resolving a request-scoped locator at startup.
+        if (builder.ApplicationServices.GetService<IServiceProviderIsService>()?.IsService(typeof(IRelewiseUserLocator)) is false)
+        {
             throw new InvalidOperationException($"Could not find {nameof(IRelewiseUserLocator)} registered in the DI. Did you remember to add it to the servicecollection? It is required to automatically track page views.");
+        }
 
         builder.AppBuilder.UseMiddleware<RelewiseContentMiddleware>();
     }

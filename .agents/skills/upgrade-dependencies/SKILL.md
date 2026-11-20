@@ -6,10 +6,10 @@ description: Upgrade NuGet, npm, and Umbraco dependencies in relewise-integratio
 # Upgrade Dependencies
 
 ## Goal
-Upgrade repository dependencies for `Relewise.Integrations.Umbraco.sln`, including:
+Upgrade repository dependencies for `Relewise.Integrations.Umbraco.slnx`, including:
 
 - NuGet packages in `src/Integrations.Umbraco/Integrations.Umbraco.csproj`.
-- NuGet packages in `samples/Umbraco/Umbraco.csproj`.
+- NuGet packages in `samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj`.
 - npm packages in `src/Integrations.Umbraco/Client`.
 - Umbraco packages across the package project, sample project, and client backoffice package.
 
@@ -93,7 +93,7 @@ npm rules:
 - Do not rewrite wildcard/range declarations such as `^*`; keep them unchanged unless the user explicitly asks for a different policy.
 - When updating pinned npm versions, keep them pinned. When updating caret versions, keep caret versions.
 - Treat the TypeScript compiler and frontend bundler as part of the Umbraco compatibility surface. Before upgrading `typescript` or `vite`, inspect the frontend `package.json` at the exact target Umbraco release tag.
-- Do not upgrade `typescript` or `vite` to a major version newer than the version used by the target Umbraco release. Prefer the same major and baseline version as Umbraco while preserving this repository's existing range prefix.
+- Do not upgrade `typescript` or `vite` to a major version newer than the version used by the target Umbraco release. Use the TypeScript and Vite major/baseline versions used by that Umbraco release, preserving this repository's existing range prefixes.
 - A successful local compile does not by itself justify moving ahead of Umbraco's toolchain. Only exceed Umbraco's TypeScript or Vite major when the user explicitly accepts that compatibility risk.
 - Regenerate the lockfile so `@umbraco-cms/backoffice` resolves to the same Umbraco version being validated, while preserving its existing declaration style in `package.json`.
 - Check the `node` and `npm` engine requirements published by the target `@umbraco-cms/backoffice` package. Report validation as incomplete when the build environment does not satisfy them.
@@ -105,7 +105,7 @@ Upgrade Umbraco deliberately as one compatible set.
 
 - Treat all `Umbraco.Cms*` NuGet packages as a coordinated group.
 - In `src/Integrations.Umbraco/Integrations.Umbraco.csproj`, preserve the package project's compatibility range and do not raise the lower bound just because the sample or validation target is upgraded. For example, keep `[17.0.0,18)` as `[17.0.0,18)` unless package code needs a newer minimum; do not change it to `17.x.y`, `[17.x.y,18)`, or `[17.x.y,19)` without a concrete compatibility reason.
-- In `samples/Umbraco/Umbraco.csproj`, keep exact Umbraco package versions exact and align all sample Umbraco packages to the same target version. The sample project is only a validation/sample host and must not drive the package project's minimum supported Umbraco version.
+- In `samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj`, keep exact Umbraco package versions exact and align all sample Umbraco packages to the same target version. The sample project is only a validation/sample host and must not drive the package project's minimum supported Umbraco version.
 - Keep `@umbraco-cms/backoffice` in `src/Integrations.Umbraco/Client/package.json` in its existing declaration style. If it is `^*`, do not change it.
 - After an Umbraco upgrade, inspect compile errors for breaking API changes and fix compatibility issues that are direct consequences of the upgrade.
 - Keep package metadata aligned when relevant, including `PackageTags` and `umbraco-marketplace.json`, but do not change supported-major claims unless the dependency upgrade actually changes the supported Umbraco major.
@@ -113,25 +113,26 @@ Upgrade Umbraco deliberately as one compatible set.
 - When expanding supported Umbraco majors, update NuGet `PackageTags` with the new `Umbraco-vN` tag and update `umbraco-marketplace.json` tags or version metadata when present so marketplace support signals match the package dependency range.
 - Record whether the new major was validated only through the sample project or also required package-code fixes. If fixes were required, summarize them and keep the widened range only when the fixed package builds successfully against the new major.
 
-If the user asks for a major Umbraco upgrade, confirm the target major and adjust ranges consistently before proceeding.
+For a major Umbraco upgrade, use the target major explicitly requested by the user and adjust ranges consistently. Ask for the target only when it is unspecified or ambiguous.
 
 ## NuGet Upgrade Workflow
 1. Generate an outdated report:
 ```powershell
-dotnet list Relewise.Integrations.Umbraco.sln package --outdated --format json > .\outdated-dotnet-packages.json
+New-Item -ItemType Directory -Path .\artifacts\upgrade-dependencies -Force | Out-Null
+dotnet list Relewise.Integrations.Umbraco.slnx package --outdated --format json > .\artifacts\upgrade-dependencies\outdated-dotnet-packages.json
 ```
 
 2. Inspect current package declarations before changing them. Use an XML-aware approach when possible, or carefully read the relevant `.csproj` files.
 
 3. Upgrade eligible packages while preserving range style:
 
-- For ranged NuGet references, update the minimum version inside the range and keep the upper bound.
+- For ranged NuGet references, preserve the minimum unless the code or an explicitly agreed compatibility/security requirement needs a newer version. Keep the upper bound unless a major-version change has been requested and validated.
 - For exact NuGet references, use `dotnet add <project> package <id> --version <latestVersion>` or edit only the version attribute if `dotnet add` would rewrite surrounding XML undesirably.
 - Skip packages when the latest available version would violate the current range's upper bound, unless the user explicitly requested a major upgrade.
 
 4. Verify remaining outdated packages:
 ```powershell
-dotnet list Relewise.Integrations.Umbraco.sln package --outdated
+dotnet list Relewise.Integrations.Umbraco.slnx package --outdated
 ```
 
 Explain any remaining outdated packages as intentional range-bound skips, exclusions, or blocked updates.
@@ -178,8 +179,8 @@ Pause and request a collaborative plan if fixes become broad refactors, business
 ## Validation
 Run all required validations:
 ```powershell
-dotnet restore Relewise.Integrations.Umbraco.sln
-dotnet build Relewise.Integrations.Umbraco.sln
+dotnet restore Relewise.Integrations.Umbraco.slnx
+dotnet build Relewise.Integrations.Umbraco.slnx
 Push-Location .\src\Integrations.Umbraco\Client
 npm ci
 npm run build
@@ -198,7 +199,7 @@ git push -u origin $branchName
 
 Create a PR. Prefer GitHub CLI when available:
 ```powershell
-$prBodyPath = ".\upgrade-dependencies-pr-body.md"
+$prBodyPath = Join-Path $env:TEMP "umbraco-upgrade-dependencies-pr-body.md"
 $prBodyTemplate = @'
 __TRELLO_CARD_URL__
 
@@ -209,8 +210,8 @@ __TRELLO_CARD_URL__
 - <ranged dependencies preserved or skipped, if any>
 
 ## Validation
-- `dotnet restore Relewise.Integrations.Umbraco.sln`: <result>
-- `dotnet build Relewise.Integrations.Umbraco.sln`: <result>
+- `dotnet restore Relewise.Integrations.Umbraco.slnx`: <result>
+- `dotnet build Relewise.Integrations.Umbraco.slnx`: <result>
 - `npm ci` in `src/Integrations.Umbraco/Client`: <result>
 - `npm run build` in `src/Integrations.Umbraco/Client`: <result>
 

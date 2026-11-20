@@ -1,4 +1,4 @@
-﻿namespace Relewise.Integrations.Umbraco.Controllers.Messages;
+namespace Relewise.Integrations.Umbraco.Controllers.Messages;
 
 /// <summary>
 /// Represents a named set of Relewise client options
@@ -30,6 +30,9 @@ public class NamedOptionsViewObject
     /// Unique name for this set of Relewise client options
     /// </summary>
     public string Name { get; }
+
+    /// <summary>Whether this represents SDK defaults instead of a named registration.</summary>
+    public bool IsDefault { get; internal set; }
     /// <summary>
     /// Represents the options for the Relewise Tracker client
     /// </summary>
