@@ -5,10 +5,11 @@ using System.Threading.Tasks;
 namespace Relewise.Integrations.Umbraco;
 
 internal sealed class PropertyMapping<TEntity, TValue>(string sourcePropertyAlias, string destinationProperty,
-    Action<TEntity, TValue> assign, Func<PropertyMappingContext, ValueTask<TValue>>? converter) : IPropertyMapping where TEntity : class
+    Action<TEntity, TValue> assign, Func<PropertyMappingContext, ValueTask<TValue>>? converter, Type? converterType) : IPropertyMapping where TEntity : class
 {
     public string SourcePropertyAlias { get; } = sourcePropertyAlias;
     public string DestinationProperty { get; } = destinationProperty;
+    public Type? ConverterType { get; } = converterType;
     public async ValueTask ApplyAsync(object entity, PropertyMappingContext context)
     {
         if (entity is not TEntity destination)

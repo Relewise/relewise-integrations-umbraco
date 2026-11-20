@@ -144,6 +144,19 @@ Search providers are configured separately; see [Umbraco core search](umbraco-19
 
 ## Publication and rebuilds
 
+In **Settings → Relewise Dashboard**, review the configured entity targets, ID sources,
+automatic indexing and view tracking, and named search providers. Open **Details** beside
+a mapping to inspect its fields, relationships, custom mapping and lifecycle policy; custom mapper and request callbacks
+are not executed for this overview. Connection settings do not constitute a connectivity
+or credentials check.
+
+Use **Export all mapped entities** to export published data and reconcile missing
+entities according to the configured lifecycle policies. **Maintenance → Export and
+permanently delete missing entities** additionally permits permanent deletion for synchronized
+mappings within this site's scope. Mappings using `None()` retain their entities.
+Child Variants are updated with their parent Product. Completion messages describe
+the current dashboard visit; no export history is persisted by the integration.
+
 Published content supplies exported values. One writer handles background changes,
 explicit exports and rebuilds without integration-owned database records. Relewise
 source metadata identifies earlier exports after unpublication, including property-based

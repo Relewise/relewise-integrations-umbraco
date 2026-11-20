@@ -47,7 +47,11 @@ internal static class DemoSeed
         var categories = available.FirstOrDefault(type => type.Name == "RFC category references");
         if (categories == null)
         {
-            categories = new DataType(editors.Single(editor => editor.Alias == "Umbraco.DocumentPicker.Multiple"), serializer) { Name = "RFC category references" };
+            categories = new DataType(editors.Single(editor => editor.Alias == "Umbraco.DocumentPicker.Multiple"), serializer)
+            {
+                Name = "RFC category references",
+                EditorUiAlias = "Umb.PropertyEditorUi.DocumentPicker.Multiple"
+            };
             await dataTypes.CreateAsync(categories, Constants.Security.SuperUserKey);
         }
         var schema = await DemoEditorialSchema.Create(types, dataTypes, strings, editors, serializer);

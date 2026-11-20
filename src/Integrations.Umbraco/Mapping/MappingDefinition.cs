@@ -16,6 +16,7 @@ internal sealed class MappingDefinition(Type entityType)
     internal bool Legacy { get; set; }
     internal IContentTypeMapping? LegacyMapper { get; set; }
     internal Func<object, IPublishedContent, string[], MappingOperation, Task>? Mapper { get; set; }
+    internal Type? MapperType { get; set; }
     internal string? IdPropertyAlias { get; set; }
     internal string? BrandPropertyAlias { get; set; }
     internal string? CategoryPropertyAlias { get; set; }

@@ -37,6 +37,7 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
             throw new InvalidOperationException("An entity mapper is already configured.");
         }
 
+        Definition.MapperType = typeof(TMapper);
         Definition.Mapper = (entity, source, cultures, operation) =>
         {
             if (entity is not TEntity destination)
@@ -75,7 +76,7 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
         var value = Expression.Parameter(typeof(TValue), "value");
         Action<TEntity, TValue> assign = Expression.Lambda<Action<TEntity, TValue>>(
             Expression.Assign(destinationProperty.Body, value), destinationProperty.Parameters[0], value).Compile();
-        Definition.AddProperty(property.Name, new PropertyMapping<TEntity, TValue>(sourcePropertyAlias, property.Name, assign, options.Converter));
+        Definition.AddProperty(property.Name, new PropertyMapping<TEntity, TValue>(sourcePropertyAlias, property.Name, assign, options.Converter, options.ConverterType));
     }
     /// <summary>Map an Umbraco property to Data, defaulting the destination key to its source alias.</summary>
     public void MapData(string sourcePropertyAlias, Action<DataMappingOptions>? configure = null)

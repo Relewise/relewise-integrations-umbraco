@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Relewise.Integrations.Umbraco.Controllers.Messages;
 
@@ -26,6 +26,21 @@ public class ConfigurationViewModel
     /// Indicates whether the Relewise content middleware is enabled
     /// </summary>
     public bool ContentMiddlewareEnabled { get; }
+
+    /// <summary>Configured entity mappings, including child Variants.</summary>
+    public IReadOnlyCollection<DashboardMappingViewModel> Mappings { get; internal set; } = [];
+
+    /// <summary>Named Content and Product search providers.</summary>
+    public IReadOnlyCollection<DashboardSearchProviderViewModel> SearchProviders { get; internal set; } = [];
+
+    /// <summary>Relewise provider selected for ordinary published-content queries, if configured.</summary>
+    public string? DefaultPublishedContentProviderAlias { get; internal set; }
+
+    /// <summary>Connection used by the integration's export and view tracking client.</summary>
+    public ClientOptionsViewObject? Connection { get; internal set; }
+
+    /// <summary>Effective connections for the integration's tracking/export, search and entity-read clients.</summary>
+    public IReadOnlyCollection<DashboardClientViewModel> IntegrationClients { get; internal set; } = [];
 
     /// <summary>
     /// Relewise Package configuration model

@@ -14,6 +14,16 @@ The [demo storefront](../samples/Relewise.DemoStorefront/README.md) contains the
 buildable examples and local acceptance-test setup. Building requires no Dataset;
 live Relewise checks require local connection settings.
 
+## Connection settings
+
+The Relewise dashboard's **Connection details** section lists default and named
+connections in separate tables, with one client per row. Named connections inherit
+default settings unless overridden.
+The default connection is used when application code requests a client without a name.
+Expand **Connections used by the Umbraco integration** to see its resolved clients,
+including integration-specific overrides. Credentials are omitted.
+Connection names do not select Umbraco's default published-content search provider.
+
 ## Useful test cases
 
 | Fixture | Expected result |

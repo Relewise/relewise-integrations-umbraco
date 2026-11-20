@@ -155,3 +155,9 @@ retains site and mapping restrictions.
 Umbraco's indexing dashboard shows a required document-count placeholder of `0`
 and `Unknown` health for Relewise. Counts and health are unavailable; zero does not
 indicate an empty Dataset. The Relewise dashboard includes this explanation.
+
+In **Settings → Relewise Dashboard → Search providers**, open **Details** beside a
+provider to review its source Document Types, published-page requirement, analytics
+location and segment behavior. The overview identifies the default published-content
+provider. Custom request callbacks are reported as registered but are not executed
+to inspect their settings.

@@ -15,10 +15,55 @@ export type ConfigurationViewModel = {
     exportedContentTypes: Array<string>;
     named: Array<NamedOptionsViewObject>;
     contentMiddlewareEnabled: boolean;
+    mappings: Array<DashboardMappingViewModel>;
+    searchProviders: Array<DashboardSearchProviderViewModel>;
+    defaultPublishedContentProviderAlias?: null | string;
+    connection?: null | ClientOptionsViewObject;
+    integrationClients: Array<DashboardClientViewModel>;
+};
+
+export type DashboardClientViewModel = {
+    name: string;
+    options: ClientOptionsViewObject;
+};
+
+export type DashboardFieldMappingViewModel = {
+    sourcePropertyAlias: string;
+    destination: string;
+    conversion: string;
+};
+
+export type DashboardMappingViewModel = {
+    documentTypeAlias: string;
+    entityType: string;
+    parentDocumentTypeAlias?: null | string;
+    idSource: string;
+    export: boolean;
+    trackViews: boolean;
+    synchronizeLifecycle: boolean;
+    autoMap: boolean;
+    customMapper: boolean;
+    customMapperTypeName?: null | string;
+    legacyMapper: boolean;
+    fields: Array<DashboardFieldMappingViewModel>;
+    relationships: Array<string>;
+};
+
+export type DashboardSearchProviderViewModel = {
+    alias: string;
+    entityType: string;
+    documentTypeAliases: Array<string>;
+    resolvedDocumentTypeAliases: Array<string>;
+    displayedAtLocation: string;
+    usesFallbackLocation: boolean;
+    requirePublishedPage: boolean;
+    customRequest: boolean;
+    ignoreSegments: boolean;
 };
 
 export type NamedOptionsViewObject = {
     name: string;
+    isDefault: boolean;
     tracker: ClientOptionsViewObject;
     recommender: ClientOptionsViewObject;
     searcher: ClientOptionsViewObject;
