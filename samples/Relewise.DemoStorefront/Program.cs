@@ -27,12 +27,6 @@ if (connected)
     umbraco.AddRelewise(options => DemoConfiguration.Configure(options, builder.Configuration, true));
 }
 
-bool diagnostics = builder.Configuration.GetValue<bool>("Demo:EnableDiagnostics");
-if (connected && diagnostics)
-{
-    builder.Services.AddSingleton<StorefrontTraffic>();
-    builder.Services.AddSingleton(services => new HttpClient(services.GetRequiredService<StorefrontTraffic>()) { Timeout = TimeSpan.FromMinutes(3) });
-}
 umbraco.Build();
 var app = builder.Build();
 await app.BootUmbracoAsync();
@@ -78,9 +72,8 @@ app.UseUmbraco().WithMiddleware(umbraco =>
 });
 app.MapGet("/", () => Results.Redirect("/store"));
 app.MapStorefront();
-if (connected && diagnostics)
+if (connected && builder.Configuration.GetValue<bool>("Demo:EnableDiagnostics"))
 {
-    StorefrontTraffic.Configure(app);
-    app.MapDiagnostics();
+    app.MapPost("/smoke/checks", StorefrontChecks.Run);
 }
 await app.RunAsync();

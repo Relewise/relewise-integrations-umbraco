@@ -31,7 +31,7 @@ internal static class DemoSeed
         return true;
     }
 
-    internal static async Task<IResult> Prepare(IContentTypeService types, IDataTypeService dataTypes, ITemplateService templates,
+    private static async Task Prepare(IContentTypeService types, IDataTypeService dataTypes, ITemplateService templates,
         IContentService content, IShortStringHelper strings, IWebHostEnvironment environment,
         PropertyEditorCollection editors, IConfigurationEditorJsonSerializer serializer, ILanguageService languages)
     {
@@ -122,12 +122,9 @@ internal static class DemoSeed
             localized.SetDefaultTemplate(template);
             await types.CreateAsync(localized, Constants.Security.SuperUserKey);
         }
-        return Results.Ok(new
-        {
-            schemaReady = true
-        });
     }
-    internal static async Task<IResult> Run(IContentService content, IContentTypeService types, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes, IDomainService domains, IConfiguration configuration)
+
+    private static async Task Run(IContentService content, IContentTypeService types, Umbraco.Cms.Infrastructure.Scoping.IScopeProvider scopes, IDomainService domains, IConfiguration configuration)
     {
         int templateId = types.Get("article")!.AllowedTemplates!.Single().Id;
         Guid priceType = types.Get("currencyPrice")!.Key;
@@ -274,10 +271,5 @@ internal static class DemoSeed
         {
             throw new InvalidOperationException($"Failed configuring localized storefront routes: {domainResult.Status}.");
         }
-
-        return Results.Ok(new
-        {
-            seeded = true
-        });
     }
 }

@@ -136,9 +136,10 @@ they do not make external network requests.
 
 ## Acceptance testing
 
-Opt into `Demo:EnableDiagnostics=true` locally to expose `/smoke/*` fixture mutation,
-query and sanitized SDK evidence endpoints. They are disabled by default. The
-application requires the Development environment and local Relewise endpoints.
+Opt into `Demo:EnableDiagnostics=true` locally to enable `POST /smoke/checks`, which
+verifies search, mapping and exported data against the seeded fixtures. It is
+disabled by default and requires a local Relewise connection with the default
+demo configuration. Run it after the initial export has completed.
 
 Configuration switches exercise the same application:
 
@@ -153,8 +154,7 @@ These switches require a local Relewise connection and a site restart.
 
 Use the storefront and Umbraco backoffice to exercise publishing, draft edits,
 unpublication, deletion and rebuilding. Check both destinations when Examine serves
-default published-content searches. Diagnostics are optional local investigation tools; leave them
-disabled in shared settings and keep raw reports outside tracked files.
+default published-content searches. Keep raw reports outside tracked files.
 
 See [entity mapping](../../docs/entity-mapping.md) and
 [Umbraco search](../../docs/search.md) for package behavior and limitations.
