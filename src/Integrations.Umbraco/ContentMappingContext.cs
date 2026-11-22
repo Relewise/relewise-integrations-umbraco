@@ -48,5 +48,3 @@ public class ContentMappingContext : IServiceProvider
         return _serviceProvider.GetService(serviceType);
     }
 }
-
-
