@@ -84,6 +84,10 @@ Search and facets use Umbraco's search abstraction with three named Relewise pro
 [query code](Features/Browsing/StorefrontSearch.cs) shows Category/Brand filters, stock, currency-specific
 sale flags, price ranges, sorting and facets.
 
+To search text extracted from editorial blocks, include the Content Data key
+`searchText` in the Dataset's search configuration. Exporting custom Data does not
+change that configuration.
+
 The shared search field uses real Relewise predictions, with keyboard navigation,
 editable suggestions and a dedicated results page. Category and Brand landing pages
 keep their fixed scope when shoppers apply other filters. The footer links to all

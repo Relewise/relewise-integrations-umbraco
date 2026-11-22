@@ -1,6 +1,6 @@
 # Mapping block editors
 
-[Documentation home](README.md) · [Custom mappers](custom-content-mapping.md) · [Runnable examples](../samples/Relewise.DemoStorefront/README.md#mapping-examples)
+[Documentation home](README.md) · [Custom mappers](custom-content-mapping.md) · [Runnable examples](../samples/Relewise.DemoStorefront/README.md#mapping-and-converter-examples)
 
 A page builder stores an editorial composition: text, links, images, nested blocks, layout, and settings. Search normally needs a deliberate subset of that composition. Export the content a reader should find, with a stable field structure, instead of serializing the editor's storage model.
 
@@ -160,4 +160,4 @@ For an English page with:
 
 This is a simplified representation of the entity and its fields, not a literal Relewise API request or the complete demo export. The actual update uses typed `DataValue` objects and includes integration metadata. Multi-language pages use a multilingual value for `searchText`.
 
-Next: [run and adapt the demo's mapping examples](../samples/Relewise.DemoStorefront/README.md#mapping-examples), then [validate the export](validation-and-troubleshooting.md).
+Next: [run and adapt the demo's mapping examples](../samples/Relewise.DemoStorefront/README.md#mapping-and-converter-examples), then [validate the export](validation-and-troubleshooting.md).

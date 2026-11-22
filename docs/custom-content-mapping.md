@@ -8,7 +8,7 @@ compatibility. `IContentTypeMapping`, `IRelewisePropertyValueConverter` and the 
 Legacy converters register through obsolete `AddLegacyValueConverter<T>()`;
 `AddValueConverter<T>()` now requires `IAsyncRelewisePropertyValueConverter`.
 For new code, start with [entity mapping](entity-mapping.md) and
-the [demo storefront](../samples/Relewise.DemoStorefront/README.md#mapping-examples).
+the [demo storefront](../samples/Relewise.DemoStorefront/README.md#mapping-and-converter-examples).
 
 A content mapper decides which values from one published Umbraco page become Relewise content data. Use it when your export needs editorial rules: extracting text from blocks, combining properties, excluding configuration, or producing a field such as `searchText`.
 
@@ -140,7 +140,7 @@ builder.Services.AddSingleton<SummaryMapper>();
 })
 ```
 
-The second snippet shows two insertion points, not a standalone `Program.cs`. Keep your existing Relewise client configuration, backoffice, website, and application startup. New implementations can use the scoped `IEntityMapper<Content>` API shown in the [demo's mapping examples](../samples/Relewise.DemoStorefront/README.md#mapping-examples).
+The second snippet shows two insertion points, not a standalone `Program.cs`. Keep your existing Relewise client configuration, backoffice, website, and application startup. New implementations can use the scoped `IEntityMapper<Content>` API shown in the [demo's mapping examples](../samples/Relewise.DemoStorefront/README.md#mapping-and-converter-examples).
 
 Mapper instances are retained by the integration configuration. Treat them as shared services: keep per-page state in local variables, avoid capturing scoped services, and make dependencies safe to share. Do not store the current page or culture in an instance field. If extraction requires I/O, make it asynchronous and pass the cancellation token through.
 
@@ -242,4 +242,4 @@ Choose a stable, intentional schema before writing a recursive walker:
 
 A mapper does not configure search weights, filters, or which fields your search setup searches. Verify those separately in your Relewise setup. Exporting a field and making it influence search are separate steps.
 
-Next: [map Block List and Block Grid](block-editors.md), or open the [demo's mapping examples](../samples/Relewise.DemoStorefront/README.md#mapping-examples).
+Next: [map Block List and Block Grid](block-editors.md), or open the [demo's mapping examples](../samples/Relewise.DemoStorefront/README.md#mapping-and-converter-examples).
