@@ -1,14 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using JetBrains.Annotations;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco.Mapping;
 
 /// <summary>Context for a scoped custom entity mapper.</summary>
 /// <typeparam name="TEntity">The destination SDK entity.</typeparam>
-[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 public class EntityMappingContext<TEntity> where TEntity : class
 {
     internal EntityMappingContext(

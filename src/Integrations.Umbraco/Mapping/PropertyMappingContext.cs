@@ -2,13 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco.Mapping;
 
 /// <summary>Read-only source information for conversion of a built-in destination property.</summary>
-[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 public class PropertyMappingContext
 {
     private readonly MappingOperation _operation;

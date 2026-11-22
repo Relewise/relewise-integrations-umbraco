@@ -1,11 +1,9 @@
 using System;
-using JetBrains.Annotations;
 using Relewise.Client.DataTypes;
 
 namespace Relewise.Integrations.Umbraco.Search;
 
 /// <summary>Runtime information for request customization; services belong to the current operation.</summary>
-[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 public class SearchRequestContext
 {
     internal SearchRequestContext(IServiceProvider services, User user, string culture)

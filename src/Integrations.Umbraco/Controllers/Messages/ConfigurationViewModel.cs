@@ -1,12 +1,10 @@
 using System.Collections.Generic;
-using JetBrains.Annotations;
 
 namespace Relewise.Integrations.Umbraco.Controllers.Messages;
 
 /// <summary>
 /// Relewise Package configuration model
 /// </summary>
-[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 public class ConfigurationViewModel
 {
     /// <summary>

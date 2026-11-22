@@ -1,11 +1,8 @@
-using JetBrains.Annotations;
-
 namespace Relewise.Integrations.Umbraco.Controllers.Messages;
 
 /// <summary>
 /// Represents a named set of Relewise client options
 /// </summary>
-[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 public class NamedOptionsViewObject
 {
     /// <summary>

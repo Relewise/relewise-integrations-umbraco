@@ -1,10 +1,8 @@
 using System.Collections.Generic;
-using JetBrains.Annotations;
 
 namespace Relewise.Integrations.Umbraco.Controllers.Messages;
 
 /// <summary>Read-only description of a named search provider.</summary>
-[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 public class DashboardSearchProviderViewModel
 {
     /// <summary>Registered provider alias.</summary>

@@ -18,7 +18,7 @@ dotnet_style_namespace_match_folder = true:error
 dotnet_diagnostic.IDE0065.severity = error
 dotnet_diagnostic.IDE0130.severity = error
 resharper_check_namespace_highlighting = error
-# Enforce the same type and collection style in the IDE and InspectCode.
+# Enforce shared type and collection style in ReSharper.
 resharper_suggest_var_or_type_built_in_types_highlighting = warning
 resharper_suggest_var_or_type_elsewhere_highlighting = warning
 resharper_suggest_var_or_type_simple_types_highlighting = warning
@@ -57,3 +57,27 @@ dotnet_code_quality.CA1068.api_surface = all
 
 [*.sh]
 end_of_line = lf
+
+# Presentation contracts are read by Razor/JSON/Vue, not necessarily by C# callers.
+# Only non-private property-read checks are relaxed; unused types/methods, private
+# members, locals, nullability and code-style inspections remain enabled.
+[samples/Relewise.DemoStorefront/Features/**/*{Model,Card,Chip,Choice,Facet,Result}.cs]
+resharper_unused_auto_property_accessor_global_highlighting = none
+resharper_not_accessed_positional_property_global_highlighting = none
+
+[samples/Relewise.DemoStorefront/Site/Storefront{*Model,*Link,*Option}.cs]
+resharper_unused_auto_property_accessor_global_highlighting = none
+resharper_not_accessed_positional_property_global_highlighting = none
+
+# The backoffice reads these response contracts through JSON.
+[src/Integrations.Umbraco/Controllers/Messages/*.cs]
+resharper_unused_auto_property_accessor_global_highlighting = none
+resharper_not_accessed_positional_property_global_highlighting = none
+
+# Consuming applications read these public mapper/converter/search callback contexts.
+# Internal mapping definitions and execution services retain normal inspections.
+[src/Integrations.Umbraco/Mapping/*MappingContext.cs]
+resharper_unused_auto_property_accessor_global_highlighting = none
+
+[src/Integrations.Umbraco/Search/*RequestContext.cs]
+resharper_unused_auto_property_accessor_global_highlighting = none

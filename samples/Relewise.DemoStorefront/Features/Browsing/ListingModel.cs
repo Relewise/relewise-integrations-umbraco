@@ -1,9 +1,6 @@
-using JetBrains.Annotations;
-
 namespace Relewise.DemoStorefront.Features.Browsing;
 
 /// <summary>Search results, facets and labels shared with the listing component.</summary>
-[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 public sealed class ListingModel
 {
     public string View { get; init; } = "store";

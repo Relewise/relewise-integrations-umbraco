@@ -1,6 +1,6 @@
 ---
 name: upgrade-dependencies
-description: Upgrade NuGet, npm, and Umbraco dependencies in relewise-integrations-umbraco with a safe git workflow and PR delivery flow. Use when asked to refresh dependencies, upgrade Umbraco, maintain package versions, or prepare dependency-upgrade PRs. Require a Trello card link, require a clean worktree on main before doing any upgrade work, preserve existing NuGet and npm version-range styles, validate with .NET and npm builds, then push a branch and create a PR whose description starts with the Trello card.
+description: Upgrade NuGet, npm, and Umbraco dependencies across the integration, dashboard, DemoStorefront and tests. Use when asked to refresh dependencies, upgrade Umbraco, maintain package versions, or prepare dependency-upgrade PRs. Preserve version-range policies, validate both frontends and local storefront behavior, and deliver through the Trello-linked branch and PR workflow.
 ---
 
 # Upgrade Dependencies
@@ -10,8 +10,15 @@ Upgrade repository dependencies for `Relewise.Integrations.Umbraco.slnx`, includ
 
 - NuGet packages in `src/Integrations.Umbraco/Integrations.Umbraco.csproj`.
 - NuGet packages in `samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj`.
-- npm packages in `src/Integrations.Umbraco/Client`.
-- Umbraco packages across the package project, sample project, and client backoffice package.
+- Test dependencies in `src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj`.
+- Dashboard npm dependencies and lockfile in `src/Integrations.Umbraco/Client`.
+- Storefront npm dependencies and lockfile in `samples/Relewise.DemoStorefront/Client`.
+- Umbraco packages across the integration, storefront, tests and dashboard backoffice package.
+- Framework/compiler settings, Node/npm engines and workflow SDK versions when required by the upgrade.
+
+Inspect the solution and dependency manifests at execution time so newly added projects
+are not missed. Include test SDKs, runners and assertion/mocking libraries in the review;
+do not restrict upgrades to production dependencies.
 
 Deliver a pushed branch and GitHub PR linked to the required Trello card.
 
@@ -83,7 +90,7 @@ NuGet rules:
 - If a package uses NuGet range syntax with brackets or parentheses, keep it as a range.
 - For lower-bound ranges such as `[17.0.0,18)`, keep the existing lower bound unless the package project genuinely requires a newer minimum version because of direct API usage, compatibility fixes, security policy, or another explicit reason. If a lower bound must be raised, keep the existing upper bound and bracket/parenthesis style.
 - Do not convert ranged package references to pinned versions.
-- For exact versions in sample projects, update to exact versions unless the existing declaration is already a range.
+- For exact versions in sample and test projects, update to exact versions unless the existing declaration is already a range.
 - For `Relewise.Client` and `Relewise.Client.Extensions` in the package project, prefer the minimum needed supported version over the latest available version. Only raise the lower bound when the integration code requires newer client APIs or fixes, and document that reason in the PR body.
 
 npm rules:
@@ -92,18 +99,19 @@ npm rules:
 - Do not rewrite comparator ranges such as `>=1.1.6 <2.0.0` to caret, tilde, or exact versions.
 - Do not rewrite wildcard/range declarations such as `^*`; keep them unchanged unless the user explicitly asks for a different policy.
 - When updating pinned npm versions, keep them pinned. When updating caret versions, keep caret versions.
-- Treat the TypeScript compiler and frontend bundler as part of the Umbraco compatibility surface. Before upgrading `typescript` or `vite`, inspect the frontend `package.json` at the exact target Umbraco release tag.
-- Do not upgrade `typescript` or `vite` to a major version newer than the version used by the target Umbraco release. Use the TypeScript and Vite major/baseline versions used by that Umbraco release, preserving this repository's existing range prefixes.
-- A successful local compile does not by itself justify moving ahead of Umbraco's toolchain. Only exceed Umbraco's TypeScript or Vite major when the user explicitly accepts that compatibility risk.
+- For the dashboard, treat the TypeScript compiler and frontend bundler as part of the Umbraco backoffice compatibility surface. Before upgrading its `typescript` or `vite`, inspect the frontend `package.json` at the exact target Umbraco release tag.
+- Do not upgrade the dashboard's `typescript` or `vite` to a major version newer than the version used by the target Umbraco release. Use that release's major/baseline versions, preserving this repository's existing range prefixes.
+- A successful local dashboard compile does not by itself justify moving ahead of Umbraco's toolchain. Only exceed Umbraco's TypeScript or Vite major when the user explicitly accepts that compatibility risk.
+- DemoStorefront's frontend is independent of the backoffice toolchain. Upgrade Vue, `@vitejs/plugin-vue` and Vite as a compatible set using their peer/engine requirements. Do not force it onto the dashboard's Vite version.
 - Regenerate the lockfile so `@umbraco-cms/backoffice` resolves to the same Umbraco version being validated, while preserving its existing declaration style in `package.json`.
-- Check the `node` and `npm` engine requirements published by the target `@umbraco-cms/backoffice` package. Report validation as incomplete when the build environment does not satisfy them.
+- Check Node/npm requirements in both frontend manifests and their target toolchains, including `@umbraco-cms/backoffice`. Use a build environment satisfying both; align workflow versions and documented prerequisites when necessary. Report validation as incomplete if those requirements are not met.
 
 Record skipped or preserved ranged dependencies in both the PR body and final output.
 
 ## Umbraco Upgrade Rules
 Upgrade Umbraco deliberately as one compatible set.
 
-- Treat all `Umbraco.Cms*` NuGet packages as a coordinated group.
+- Treat all `Umbraco.Cms*` NuGet packages as a coordinated group. Align pinned versions in DemoStorefront and the test project to the same validation target; check the resolved dashboard backoffice version against that target.
 - In `src/Integrations.Umbraco/Integrations.Umbraco.csproj`, preserve the package project's compatibility range and do not raise the lower bound just because the sample or validation target is upgraded. For example, keep `[17.0.0,18)` as `[17.0.0,18)` unless package code needs a newer minimum; do not change it to `17.x.y`, `[17.x.y,18)`, or `[17.x.y,19)` without a concrete compatibility reason.
 - In `samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj`, keep exact Umbraco package versions exact and align all sample Umbraco packages to the same target version. The sample project is only a validation/sample host and must not drive the package project's minimum supported Umbraco version.
 - Keep `@umbraco-cms/backoffice` in `src/Integrations.Umbraco/Client/package.json` in its existing declaration style. If it is `^*`, do not change it.
@@ -138,33 +146,48 @@ dotnet list Relewise.Integrations.Umbraco.slnx package --outdated
 Explain any remaining outdated packages as intentional range-bound skips, exclusions, or blocked updates.
 
 ## npm Upgrade Workflow
-Upgrade direct npm dependencies in `src/Integrations.Umbraco/Client`.
+Apply this workflow separately to both clients:
+
+- `src/Integrations.Umbraco/Client` (dashboard).
+- `samples/Relewise.DemoStorefront/Client` (storefront).
+
+Review `dependencies` and `devDependencies` in each manifest, including Vue and its
+Vite plugin in the storefront. Inspect peer dependencies and engines before choosing
+versions, and apply the distinct toolchain policies above.
+
+- Preserve comparator/wildcard declarations that must remain unchanged.
+- Install caret dependencies as `<package>@^<targetVersion>`, tilde dependencies as
+  `<package>@~<targetVersion>` and pinned dependencies as `<package>@<targetVersion>`.
+- Update each existing lockfile with `npm install`; do not delete lockfiles by default.
+  Regenerate one from scratch only when necessary and explain the resulting changes.
+- Run `npm ci` to prove a clean, reproducible install from each resulting lockfile,
+  followed by an explicit production build. Do not rely on MSBuild's incremental
+  targets, which can skip frontend compilation when generated output already exists.
+
+For each client, check the command exit code and restore the working directory:
 
 ```powershell
-Push-Location .\src\Integrations.Umbraco\Client
-npm install
-if ($LASTEXITCODE -ne 0) { throw 'npm install failed.' }
+$clientProjects = @(
+    'src/Integrations.Umbraco/Client',
+    'samples/Relewise.DemoStorefront/Client'
+)
+foreach ($clientProject in $clientProjects) {
+    Push-Location $clientProject
+    try {
+        npm install
+        if ($LASTEXITCODE -ne 0) { throw "npm install failed: $clientProject" }
+        npm ci
+        if ($LASTEXITCODE -ne 0) { throw "npm ci failed: $clientProject" }
+        npm run build
+        if ($LASTEXITCODE -ne 0) { throw "npm build failed: $clientProject" }
+    }
+    finally { Pop-Location }
+}
 ```
 
-Before installing each update, inspect the current value in `dependencies` and `devDependencies`:
-
-- Skip comparator or wildcard declarations that must remain unchanged.
-- Install caret dependencies as `<package>@^<latestVersion>` when the current declaration starts with `^` and is not `^*`.
-- Install tilde dependencies as `<package>@~<latestVersion>` when the current declaration starts with `~`.
-- Install pinned dependencies as `<package>@<latestVersion>` when the current declaration is pinned.
-
-After package updates, regenerate and prove the lockfile from a clean install state:
-```powershell
-Remove-Item -LiteralPath .\node_modules -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item -LiteralPath .\package-lock.json -Force -ErrorAction SilentlyContinue
-npm install
-if ($LASTEXITCODE -ne 0) { throw 'npm install failed while regenerating package-lock.json.' }
-npm ci
-if ($LASTEXITCODE -ne 0) { throw 'npm ci failed after regenerating package-lock.json.' }
-Pop-Location
-```
-
-Record whether `package-lock.json` changed and whether it was regenerated from a clean install state.
+Record dependency changes, intentional skips and lockfile changes separately for
+the dashboard and storefront. Distinguish a clean `npm ci` install from deleting
+and regenerating a lockfile.
 
 ## Resolve Upgrade Fallout
 Fix compatibility issues directly caused by upgraded packages, including:
@@ -172,22 +195,81 @@ Fix compatibility issues directly caused by upgraded packages, including:
 - Obsolete methods and APIs.
 - Signature or behavior changes.
 - Package-version conflicts and downgrade warnings.
-- Compile-time errors in the package project, sample project, or generated client build.
+- Compile-time errors in the integration, storefront, tests or either frontend build.
+- Changes to Razor rendering, Vue interactions, converters, seeding or SDK behavior caused by the upgraded dependencies.
 
 Pause and request a collaborative plan if fixes become broad refactors, business-logic redesigns, or unclear functional decisions.
 
 ## Validation
-Run all required validations:
+Complete both client installs/builds above, then restore, build and test the whole
+solution. Run Debug and Release sequentially; Umbraco build targets can write shared
+schema files even when output directories differ.
+
 ```powershell
 dotnet restore Relewise.Integrations.Umbraco.slnx
-dotnet build Relewise.Integrations.Umbraco.slnx
-Push-Location .\src\Integrations.Umbraco\Client
-npm ci
-npm run build
-Pop-Location
+if ($LASTEXITCODE -ne 0) { throw 'Solution restore failed.' }
+dotnet format Relewise.Integrations.Umbraco.slnx --verify-no-changes --diagnostics IDE0005 IDE0065 IDE0130 --severity info --no-restore
+if ($LASTEXITCODE -ne 0) { throw 'Namespace/using checks failed.' }
+foreach ($configuration in @('Debug', 'Release')) {
+    dotnet build Relewise.Integrations.Umbraco.slnx --configuration $configuration --no-restore -warnaserror
+    if ($LASTEXITCODE -ne 0) { throw "Solution build failed: $configuration" }
+    dotnet test Relewise.Integrations.Umbraco.slnx --configuration $configuration --no-build --no-restore
+    if ($LASTEXITCODE -ne 0) { throw "Solution tests failed: $configuration" }
+}
 ```
 
-If the repository has tests at the time of execution, run them as well. Treat any failed validation as blocking unless the user explicitly accepts the failure.
+ReSharper checks belong in the developer's IDE; do not install JetBrains CLI tooling
+or add ReSharper steps to CI/CD.
+
+### Local DemoStorefront smoke test
+Read [the storefront setup and behavior guide](../../../samples/Relewise.DemoStorefront/README.md)
+before running the host. Use local Relewise API/Datasets only, with credentials in
+ignored `local.settings.json` or environment variables. Never substitute a production
+Dataset or Examine when Relewise is unavailable. Missing local API access blocks
+completion of the connected smoke test; report that gap rather than claiming success.
+
+Preserve existing developer databases/settings. Use an isolated local copy or a
+fresh temporary SQLite database for clean-install testing; stop the sample before
+switching database or connection state. Run sample hosts sequentially and keep their
+application URL/seeded domains aligned with the listening address. Do not stop a
+shared local API or reset someone else's Dataset; use a dedicated disposable local
+Dataset for ingestion, tracking and lifecycle tests.
+
+Verify these observable behaviors in desktop and mobile layouts:
+
+1. **Clean installation without credentials:** startup installs/seeds Umbraco; bundled
+   images, English/Danish content, nested blocks and market-specific prices render.
+   The preview notice is visible; search, Offers, recommendations and shopping remain
+   unavailable rather than falling back to another provider.
+2. **Connected ingestion and indexing:** a fresh local Dataset receives the seeded
+   entities, built-in/custom fields, converter output and canonical reference IDs.
+   Check the Relewise dashboard and default/named provider configuration. Edit/publish,
+   unpublish and delete disposable content, then rebuild; verify the expected lifecycle
+   actions without duplicate export paths and preserve legacy AutoMap output.
+3. **Search and markets:** exercise predictions/keyboard selection, Content and Product
+   search, Category/Brand landing-page scope, facets, price/sale filters, sorting and
+   pagination. Switch markets and check language, currency, prices and sale flags.
+4. **Recommendations:** check Similar Products, Recently Viewed and Popular
+   Products/Categories after genuine local activity. Also check the fresh Dataset with
+   no activity: empty sections and empty-cart fallbacks must behave correctly; do not
+   fabricate popularity or history to make the UI appear populated.
+5. **Cart, checkout and tracking:** add Product/Variant items, change quantities, remove
+   items and complete a simulated order. Check empty-cart presentation, retry handling
+   and shared user/canonical entity IDs across export, views, searches, recommendations,
+   Cart and Order events. Confirm Variant IDs where applicable.
+6. **Connection failure:** use an invalid local credential to check the connection
+   notice and relevant HTML/JSON error responses. Optional recommendation/prediction
+   failures must leave the rest of the page usable. Restore the original configuration
+   afterward and verify the configured storefront works again.
+
+Use the browser and local API/Dataset inspection to verify behavior, not just HTTP 200
+responses. Keep raw reports, credentials and generated databases ignored; capture a few
+useful sanitized screenshots when they help review UI changes. Follow repository
+instructions for evidence placement. Record which scenarios ran, results and any
+limitations. A build alone is not a storefront smoke test.
+
+Treat failed validation or missing required smoke coverage as blocking unless the
+user explicitly accepts the limitation.
 
 ## Commit, Push, and Pull Request
 Commit dependency and direct compatibility fixes on the upgrade branch.
@@ -206,14 +288,15 @@ __TRELLO_CARD_URL__
 ## Summary
 - <short summary of dependency upgrades>
 - <Umbraco upgrade summary, if applicable>
-- <npm lockfile regenerated from a clean install state, if npm changed>
+- <dashboard and storefront dependency/lockfile changes, if npm changed>
 - <ranged dependencies preserved or skipped, if any>
 
 ## Validation
 - `dotnet restore Relewise.Integrations.Umbraco.slnx`: <result>
-- `dotnet build Relewise.Integrations.Umbraco.slnx`: <result>
-- `npm ci` in `src/Integrations.Umbraco/Client`: <result>
-- `npm run build` in `src/Integrations.Umbraco/Client`: <result>
+- Solution builds/tests in Debug and Release; namespace/using checks: <results>
+- Dashboard `npm ci` and `npm run build`: <results>
+- Storefront `npm ci` and `npm run build`: <results>
+- Local DemoStorefront smoke test, including fresh installation/Dataset and desktop/mobile: <results and gaps>
 
 ## Notes
 - <known issues, intentional skips, or major-version constraints>
@@ -240,11 +323,13 @@ Provide a concise final summary with:
 - Trello link used.
 - Created branch name.
 - Updated NuGet packages grouped by project.
-- Updated npm packages.
+- Updated npm packages grouped by dashboard and storefront.
 - Umbraco target version and range-preservation decisions.
 - Skipped or preserved dependencies and reasons.
 - Compatibility fixes applied.
-- Validation results.
-- Whether the npm lockfile was regenerated from a clean install state.
+- Debug/Release build and test results, test counts and formatting checks.
+- Both frontend clean-install/build results and Node/npm versions used.
+- Local smoke scenarios, including fresh installation, preview, connected behavior, failure states and desktop/mobile coverage; disclose gaps and link sanitized evidence when available.
+- Lockfile changes for each frontend, distinguishing clean installs from full lockfile regeneration.
 - Pushed branch URL.
 - Created GitHub PR URL, or manual PR fallback instructions if automated PR creation was unavailable.
