@@ -67,6 +67,26 @@ do not register the same converter through both methods.
 
 Existing field-specific `UseConverter<T>()` configuration is unchanged.
 
+### Asynchronous service method names
+
+Use `IExportContentService.ExportAsync(...)`, `ExportAllAsync(...)` and
+`IRelewiseUserLocator.GetUserAsync()`. The old `Export(...)`, `ExportAll(...)` and
+`GetUser()` methods remain asynchronous but are obsolete; they will be removed in
+the next major version. Awaiting and cancellation behavior are unchanged.
+
+For a new user locator, implement only `GetUserAsync()`. New export services
+implement `ExportAsync(...)` and `ExportAllAsync(...)`, alongside the unchanged
+`GetTrackerOrNull()`. No obsolete forwarding methods or base class are required.
+The [storefront user locator](../samples/Relewise.DemoStorefront/Integration/Tracking/StorefrontUserLocator.cs)
+shows an async-only implementation.
+
+Existing custom implementations using the old names continue to work through the
+interfaces' default methods. Legacy interface calls also reach async-only
+implementations. Each requested operation must implement either its async or its
+legacy member; otherwise its first invocation throws an `InvalidOperationException`
+identifying the implementation type and the missing operation. Partial export
+implementations are checked per operation. HTTP routes are unchanged.
+
 ### Indexing and search
 
 The integration uses one shared indexing pipeline for publication changes,

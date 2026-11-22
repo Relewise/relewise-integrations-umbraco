@@ -193,7 +193,7 @@ public class MappedEntitySearchTests
 
         accessor.HttpContext = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
 
-        User expected = await scope.ServiceProvider.GetRequiredService<IRelewiseUserLocator>().GetUser();
+        User expected = await scope.ServiceProvider.GetRequiredService<IRelewiseUserLocator>().GetUserAsync();
         string alias = product ? "catalogue" : UmbracoConstants.Search.IndexAliases.PublishedContent;
 
         try

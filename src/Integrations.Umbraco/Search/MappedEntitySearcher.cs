@@ -94,7 +94,7 @@ internal sealed class MappedEntitySearcher(
         await using AsyncServiceScope scope = scopes.CreateAsyncScope();
         IServiceProvider services = http.HttpContext?.RequestServices ?? scope.ServiceProvider;
 
-        User user = await services.GetRequiredService<IRelewiseUserLocator>().GetUser();
+        User user = await services.GetRequiredService<IRelewiseUserLocator>().GetUserAsync();
         string language = culture ?? await services.GetRequiredService<ILanguageService>().GetDefaultIsoCodeAsync();
         var context = new SearchRequestContext(services, user, language);
         string site = EntityIndexingService.SiteId(services);

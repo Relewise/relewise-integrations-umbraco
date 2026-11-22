@@ -90,7 +90,7 @@ internal static class Program
                 .GetRequiredService<IBackgroundTaskQueue>()
                 .QueueBackgroundWorkItem(async token => await app.Services
                     .GetRequiredService<Relewise.Integrations.Umbraco.Services.IExportContentService>()
-                    .ExportAll(new Relewise.Integrations.Umbraco.Services.ExportAllContent(false), token)));
+                    .ExportAllAsync(new Relewise.Integrations.Umbraco.Services.ExportAllContent(false), token)));
         }
 
         app.UseSession();

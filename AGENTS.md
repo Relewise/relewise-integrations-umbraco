@@ -15,6 +15,7 @@
 - ReSharper inspections are local IDE checks and must not run in CI/CD. Keep local inspections free of warnings and errors. Fix real findings rather than disabling inspections. For genuine indirect property usage in presentation contracts and public callback contexts, use the narrow shared `.editorconfig` scopes; do not add per-model JetBrains annotations or dependencies just to silence usage warnings. Keep private-member and application-code inspections enabled. Preserve the shared ReSharper code-style settings.
 - Keep the public surface small. Document public contracts with useful XML comments matching the existing package, and preserve compatibility unless a breaking change is explicitly agreed.
 - Do not rename existing public members as part of formatting or file organization.
+- Use the `Async` suffix for new Task/ValueTask operations. Preserve framework-required names and obsolete compatibility entry points; synchronous configuration and registration methods do not take the suffix.
 - Keep integration metadata in `RelewiseDataKeys` and internal runtime names in `Constants`; keep sample schema/business names in `DemoConstants`. Separate source property aliases from exported Data keys, centralize dynamic key construction, and prefer constants owned by the supplying framework when available. Keep single-owner keys near their owner and preserve literal contract expectations in relevant tests.
 
 ## Examples, tests and local material

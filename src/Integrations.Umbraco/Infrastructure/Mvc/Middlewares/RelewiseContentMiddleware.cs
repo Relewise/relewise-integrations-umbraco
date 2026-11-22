@@ -50,7 +50,8 @@ internal class RelewiseContentMiddleware
 
                     if (tracker != null)
                     {
-                        User user = await context.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser();
+                        User user = await context.RequestServices.GetRequiredService<IRelewiseUserLocator>()
+                            .GetUserAsync();
 
                         try
                         {

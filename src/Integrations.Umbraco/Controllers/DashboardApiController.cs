@@ -71,7 +71,7 @@ public class DashboardApiController : RelewiseApiControllerBase
                 statusCode: StatusCodes.Status409Conflict);
         }
 
-        await exporter.ExportAll(new ExportAllContent(permanentlyDelete), token);
+        await exporter.ExportAllAsync(new ExportAllContent(permanentlyDelete), token);
 
         return Ok();
     }

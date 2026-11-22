@@ -128,7 +128,7 @@ recommendations, register your own `IRelewiseUserLocator` before building the ap
 builder.Services.AddScoped<IRelewiseUserLocator, MyUserLocator>();
 ```
 
-`MyUserLocator` implements `GetUser()`. Return the same temporary or authenticated
+`MyUserLocator` implements `GetUserAsync()`. Return the same temporary or authenticated
 identifiers used by your other Relewise behavioral tracking, according to your site's
 consent policy. The default locator returns `User.Anonymous()` and creates no visitor
 cookies. Search and automatic views share the request-scoped locator. See

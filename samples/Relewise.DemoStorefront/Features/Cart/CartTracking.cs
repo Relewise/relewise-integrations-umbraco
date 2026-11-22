@@ -14,7 +14,7 @@ internal static class CartTracking
     internal static async Task TrackCart(PricedCartLine[] lines, HttpContext http)
     {
         ITracker tracker = RequiredTracker(http);
-        User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser();
+        User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUserAsync();
 
         await tracker.TrackAsync(
             new RelewiseCart(
@@ -49,7 +49,7 @@ internal static class CartTracking
     internal static async Task TrackOrderAsync(PricedCartLine[] lines, string orderNumber, HttpContext http)
     {
         ITracker tracker = RequiredTracker(http);
-        User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser();
+        User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUserAsync();
         string currency = DemoMarket.Current(http).Currency;
         decimal total = lines.Sum(line => line.Amount * line.Line.Quantity);
         Trackable[] events =

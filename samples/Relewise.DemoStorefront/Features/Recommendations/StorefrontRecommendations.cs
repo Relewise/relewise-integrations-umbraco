@@ -78,7 +78,7 @@ internal static class StorefrontRecommendations
             return DemoConfiguration.EntityId(content, http.RequestServices);
         }
 
-        User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser();
+        User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUserAsync();
         string site = http.RequestServices.GetRequiredService<IOptions<GlobalSettings>>().Value.Id;
 
         var productType = product.Value<string>(PropertyAliases.ProductType);

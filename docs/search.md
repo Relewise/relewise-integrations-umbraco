@@ -148,8 +148,8 @@ Register your `IRelewiseUserLocator` before building Umbraco, for example:
 builder.Services.AddScoped<IRelewiseUserLocator, MyUserLocator>();
 ```
 
-Search and automatic views resolve the locator from the HTTP request's service
-scope. Return the same identifiers and consent-aware User values used by the rest
+Search and automatic views call `GetUserAsync()` on the locator resolved from the
+HTTP request's service scope. Return the same identifiers and consent-aware User values used by the rest
 of your site. The default locator returns an anonymous User; the integration does
 not create visitor cookies. Facet requests reuse the main query's resolved User.
 Automatic views and exports use the integration's Tracker. Search uses its Searcher;

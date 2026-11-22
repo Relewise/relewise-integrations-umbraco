@@ -81,7 +81,7 @@ public class ContentTrackingTests
 
         var userLocator = new Mock<IRelewiseUserLocator>();
 
-        userLocator.Setup(x => x.GetUser()).ReturnsAsync(User.Anonymous());
+        userLocator.Setup(x => x.GetUserAsync()).ReturnsAsync(User.Anonymous());
         services.AddSingleton(userLocator.Object);
 
         using ServiceProvider provider = services.BuildServiceProvider();
@@ -170,7 +170,7 @@ public class ContentTrackingTests
             var user = (User)accessor.HttpContext!.Items["User"]!;
 
             locator.As<IDisposable>();
-            locator.Setup(x => x.GetUser())
+            locator.Setup(x => x.GetUserAsync())
                 .Returns(async () =>
                 {
                     await Task.Delay(5);
@@ -256,7 +256,8 @@ public class ContentTrackingTests
 
         foreach (Mock<IRelewiseUserLocator> locator in locators)
         {
-            locator.Verify(x => x.GetUser(), Times.Exactly(2)); // View + search; metadata must not identify a visitor.
+            // View + search; metadata must not identify a visitor.
+            locator.Verify(x => x.GetUserAsync(), Times.Exactly(2));
             locator.As<IDisposable>().Verify(x => x.Dispose(), Times.Once);
         }
     }

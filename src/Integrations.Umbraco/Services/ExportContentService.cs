@@ -13,24 +13,26 @@ internal class ExportContentService(
     EntityIndexingQueue indexing,
     IServiceProvider services) : IExportContentService
 {
-    public async Task<ExportContentResult> Export(
+    public async Task<ExportContentResult> ExportAsync(
         ExportContent exportContent,
-        CancellationToken token)
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(exportContent);
         await indexing.ExportAsync(
             exportContent.Contents.Select(content => content.Key),
             exportContent.UpdateKind,
             exportContent.Version,
-            token);
+            cancellationToken);
 
         return new ExportContentResult();
     }
 
-    public async Task<ExportAllContentResult> ExportAll(ExportAllContent exportAllContent, CancellationToken token)
+    public async Task<ExportAllContentResult> ExportAllAsync(
+        ExportAllContent exportAllContent,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(exportAllContent);
-        await indexing.RebuildAsync(exportAllContent.PermanentlyDelete, token);
+        await indexing.RebuildAsync(exportAllContent.PermanentlyDelete, cancellationToken);
 
         return new ExportAllContentResult();
     }
