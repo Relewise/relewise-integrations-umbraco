@@ -3,8 +3,10 @@
 [Documentation home](README.md) · [Block editors](block-editors.md) · [Validation](validation-and-troubleshooting.md)
 
 This guide documents the existing Content mapper/converter API, retained for
-compatibility. `IContentTypeMapping`, `IRelewisePropertyValueConverter`, the instance-based
-`UseMapper(...)` overload and `AddValueConverter<T>()` are obsolete and produce warnings.
+compatibility. `IContentTypeMapping`, `IRelewisePropertyValueConverter` and the instance-based
+`UseMapper(...)` overload are obsolete and produce warnings.
+Legacy converters register through obsolete `AddLegacyValueConverter<T>()`;
+`AddValueConverter<T>()` now requires `IAsyncRelewisePropertyValueConverter`.
 For new code, start with [entity mapping](entity-mapping.md) and
 the [demo storefront](../samples/Relewise.DemoStorefront/README.md#mapping-examples).
 
@@ -27,7 +29,7 @@ A content mapper decides which values from one published Umbraco page become Rel
 | --- | --- | --- |
 | Export supported properties without special rules | `contentType.AutoMap()` | A registered document type |
 | Decide what a page contributes, combine fields, or apply site-specific block rules | `contentType.UseMapper(...)` with `IContentTypeMapping` | A registered document type; one mapper can serve several types |
-| Teach automatic mapping about a new property editor | `IRelewisePropertyValueConverter` and `services.AddValueConverter<T>()` | Every matching property processed by the converter service |
+| Teach automatic mapping about a new property editor | `IRelewisePropertyValueConverter` and `services.AddLegacyValueConverter<T>()` | Every matching property processed by the converter service |
 
 A **document type alias** selects a page mapping. A **property alias** identifies a
 field such as `contentRows`; a **property editor alias** identifies its editor.
@@ -210,7 +212,7 @@ public sealed class PlainTextPropertyConverter : IRelewisePropertyValueConverter
 Register it before the service provider is built:
 
 ```csharp
-builder.Services.AddValueConverter<PlainTextPropertyConverter>();
+builder.Services.AddLegacyValueConverter<PlainTextPropertyConverter>();
 ```
 
 This makes it available to automatic mapping and to custom mappers that call `IRelewisePropertyConverter`.

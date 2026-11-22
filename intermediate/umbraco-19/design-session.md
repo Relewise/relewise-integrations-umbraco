@@ -181,11 +181,15 @@ compatible built-in conversions apply; unsupported inputs fail with source conte
 Data converters with:
 
 ```csharp
-builder.Services.AddAsyncValueConverter<MyCustomConverter>(); // Implements IAsyncRelewisePropertyValueConverter.
+builder.Services.AddValueConverter<MyCustomConverter>(); // Implements IAsyncRelewisePropertyValueConverter.
 ```
 
-New global Data converters are scoped. The last matching custom registration wins
-and built-ins are fallbacks, regardless of registration before/after `AddRelewise`.
+`AddValueConverter<T>()` requires `IAsyncRelewisePropertyValueConverter` and registers
+scoped global Data converters. Legacy synchronous converters use obsolete
+`AddLegacyValueConverter<T>()`, retaining their singleton lifetime and execution order.
+Both methods enforce the required interface at compile time. The last matching async
+custom registration wins, and built-ins are fallbacks regardless of registration
+before/after `AddRelewise`.
 A field-specific `UseConverter<T>()` selects only that converter for the field and
 does not register it globally. Resolve registered types in the export scope;
 otherwise activate through DI and dispose within that operation. Legacy synchronous

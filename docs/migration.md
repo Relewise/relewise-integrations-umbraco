@@ -16,9 +16,10 @@ integration. For a prerelease package, specify its published version explicitly.
 
 ### Existing mapping and tracking
 
-Existing `AddContentType(...)`, `TrackContentViews()`, `IContentTypeMapping` and
-synchronous converter registrations remain functional. Numeric node IDs and
-existing `AutoMap()` output remain the defaults for existing configurations.
+Existing `AddContentType(...)`, `TrackContentViews()` and `IContentTypeMapping`
+implementations remain functional. Numeric node IDs and existing `AutoMap()` output
+remain the defaults for existing configurations. Synchronous converters remain
+supported, but their registration must change as described below.
 
 The legacy mapper/converter contracts are obsolete with migration guidance.
 Projects that treat warnings as errors must migrate or explicitly suppress those
@@ -40,6 +41,31 @@ New mapping contracts and policies use `Relewise.Integrations.Umbraco.Mapping`;
 search options, contexts and segment policies use `Relewise.Integrations.Umbraco.Search`.
 Add these imports when using those types explicitly. Registration entry points and
 legacy mapping/converter contracts retain their existing namespaces.
+
+### Property value converter registration
+
+`AddValueConverter<T>()` now requires `IAsyncRelewisePropertyValueConverter` and
+registers the converter in the export operation's service scope. This is a
+source-breaking change for existing synchronous converter registrations.
+
+For an existing implementation of `IRelewisePropertyValueConverter`, change only
+its registration to keep its synchronous behavior and singleton lifetime:
+
+```csharp
+// Previously: builder.Services.AddValueConverter<ExistingConverter>();
+builder.Services.AddLegacyValueConverter<ExistingConverter>();
+```
+
+Both the legacy interface and `AddLegacyValueConverter<T>()` are obsolete and
+will be removed in the next major version. To migrate fully, implement
+`IAsyncRelewisePropertyValueConverter`, replace `void Convert(context)` with
+`ValueTask ConvertAsync(context, CancellationToken cancellationToken)`, and register
+with `AddValueConverter<T>()`. Synchronous work can return `ValueTask.CompletedTask`;
+await asynchronous work and propagate cancellation when applicable. Keep
+`CanHandle(context)` on the new implementation. Replace the legacy registration;
+do not register the same converter through both methods.
+
+Existing field-specific `UseConverter<T>()` configuration is unchanged.
 
 ### Indexing and search
 

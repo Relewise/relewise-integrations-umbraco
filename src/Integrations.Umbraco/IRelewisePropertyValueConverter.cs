@@ -7,7 +7,7 @@ namespace Relewise.Integrations.Umbraco;
 /// </summary>
 [Obsolete(
     "Implement IAsyncRelewisePropertyValueConverter and register with " +
-    "AddAsyncValueConverter instead. This interface will be removed in the next major " +
+    "AddValueConverter instead. This interface will be removed in the next major " +
     "version.")]
 public interface IRelewisePropertyValueConverter
 {

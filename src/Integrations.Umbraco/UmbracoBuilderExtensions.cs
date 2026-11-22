@@ -73,14 +73,14 @@ public static class UmbracoBuilderExtensions
         builder.Services.TryAddSingleton<IRelewiseUserLocator, DefaultAnonymousUserLocator>();
 
         builder.Services
-            .AddValueConverter<TextFieldPropertyValueConverter>()
-            .AddValueConverter<RichTextEditorPropertyValueConverter>()
-            .AddValueConverter<CheckboxPropertyValueConverter>()
-            .AddValueConverter<IntegerPropertyValueConverter>()
-            .AddValueConverter<DecimalPropertyValueConverter>()
-            .AddValueConverter<TagsPropertyValueConverter>()
-            .AddValueConverter<NestedContentPropertyValueConverter>()
-            .AddValueConverter<BlockListPropertyValueConverter>();
+            .AddLegacyValueConverter<TextFieldPropertyValueConverter>()
+            .AddLegacyValueConverter<RichTextEditorPropertyValueConverter>()
+            .AddLegacyValueConverter<CheckboxPropertyValueConverter>()
+            .AddLegacyValueConverter<IntegerPropertyValueConverter>()
+            .AddLegacyValueConverter<DecimalPropertyValueConverter>()
+            .AddLegacyValueConverter<TagsPropertyValueConverter>()
+            .AddLegacyValueConverter<NestedContentPropertyValueConverter>()
+            .AddLegacyValueConverter<BlockListPropertyValueConverter>();
 
         builder.AddNotificationHandler<ContentDeletedNotification, DeletedEntityIndexingHandler>();
         builder.Services.AddHttpContextAccessor();

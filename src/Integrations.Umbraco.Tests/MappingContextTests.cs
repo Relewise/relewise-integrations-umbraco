@@ -96,7 +96,7 @@ public class MappingContextTests
 
         var services = new ServiceCollection();
 
-        services.AddValueConverter<BlockListPropertyValueConverter>();
+        services.AddLegacyValueConverter<BlockListPropertyValueConverter>();
         services.AddSingleton(custom.Object);
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
 
@@ -142,7 +142,7 @@ public class MappingContextTests
 
         var services = new ServiceCollection();
 
-        services.AddAsyncValueConverter<BlockListPropertyValueConverter>();
+        services.AddValueConverter<BlockListPropertyValueConverter>();
         services.AddSingleton(custom.Object);
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
         services.AddScoped<Marker>();

@@ -12,8 +12,10 @@ Its equivalent in the new API is:
 .AddRelewise(options => options.MapContent("article", mapping => mapping.AutoMap()))
 ```
 
-Existing `IContentTypeMapping` instances and global `AddValueConverter<T>()`
-registrations remain usable through obsolete compatibility contracts. Use
+Existing `IContentTypeMapping` instances and synchronous global converters remain
+usable through obsolete compatibility contracts. Register asynchronous converters with
+`AddValueConverter<T>()` and synchronous converters with obsolete
+`AddLegacyValueConverter<T>()`. Use
 [custom Content mapping](custom-content-mapping.md) for the legacy API, and
 [block editors](block-editors.md) for extraction behavior and current examples.
 
@@ -111,11 +113,13 @@ conversion calls remain valid but cannot reconstruct an owner.
 Constructor injection is supported for field converters and new
 `IEntityMapper<TEntity>` implementations selected through `UseMapper<T>()`. Registered
 instances resolve from the operation scope; unregistered concrete types are activated
-and disposed within that operation. `AddAsyncValueConverter<T>()` registers scoped
-global Data converters, which take precedence over built-in defaults regardless of
+and disposed within that operation. `AddValueConverter<T>()` registers asynchronous
+global Data converters as scoped services, which take precedence over built-in defaults regardless of
 registration order; the last matching custom registration wins. Separately registered
 legacy custom converters still run and can collide if they write the same Data key.
-Existing synchronous global converters remain singletons through the compatibility adapter.
+`AddLegacyValueConverter<T>()` preserves singleton lifetime and legacy execution order.
+Both registration methods enforce their respective converter interface at compile time.
+When migrating a converter, replace its legacy registration rather than registering it twice.
 Do not capture a scoped service in an existing singleton mapper or converter.
 Do not request another export/rebuild from inside a mapper or converter; recursive
 indexing is rejected to prevent deadlocks.

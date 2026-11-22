@@ -15,6 +15,72 @@ namespace Relewise.Integrations.Umbraco.Tests;
 
 public class AsyncConversionTests
 {
+    [Fact]
+    public async Task RegistrationPreservesLegacySingletonsAndScopesAsyncConvertersWithoutDuplicates()
+    {
+        var services = new ServiceCollection();
+
+        services.AddLegacyValueConverter<LegacyConverter>();
+        services.AddLegacyValueConverter<LegacyConverter>();
+        services.AddValueConverter<ScopedConverter>();
+        services.AddValueConverter<ScopedConverter>();
+
+        Assert.Equal(2, services.Count);
+        Assert.Equal(ServiceLifetime.Singleton, services[0].Lifetime);
+        Assert.Equal(ServiceLifetime.Scoped, services[1].Lifetime);
+
+        await using ServiceProvider root = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        ScopedConverter first;
+
+        await using (AsyncServiceScope scope = root.CreateAsyncScope())
+        {
+            first = Assert.IsType<ScopedConverter>(
+                scope.ServiceProvider.GetRequiredService<IAsyncRelewisePropertyValueConverter>());
+
+            Assert.Same(first, scope.ServiceProvider.GetRequiredService<IAsyncRelewisePropertyValueConverter>());
+            Assert.Same(
+                root.GetRequiredService<IRelewisePropertyValueConverter>(),
+                scope.ServiceProvider.GetRequiredService<IRelewisePropertyValueConverter>());
+            Assert.False(first.Disposed);
+        }
+
+        Assert.True(first.Disposed);
+
+        await using AsyncServiceScope next = root.CreateAsyncScope();
+
+        Assert.NotSame(first, next.ServiceProvider.GetRequiredService<IAsyncRelewisePropertyValueConverter>());
+    }
+
+    [Fact]
+    public async Task ConverterImplementingBothContractsRunsOnlyItsAsyncMethod()
+    {
+        var services = new ServiceCollection();
+
+        services.AddValueConverter<DualConverter>();
+        services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
+
+        Assert.DoesNotContain(
+            services,
+            descriptor => descriptor.ServiceType == typeof(IRelewisePropertyValueConverter));
+
+        await using ServiceProvider root = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        IReadOnlyDictionary<string, DataValue?> result = await root.GetRequiredService<IRelewisePropertyConverter>()
+            .ConvertAsync([Property("value", "Custom.Demo", _ => "original")], ["en-US"]);
+
+        Assert.Equal("async", result["value"]!.ValueAs<string>());
+    }
+
+    [Fact]
+    public void RegistrationsRejectMissingServices()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            ServiceCollectionExtensions.AddValueConverter<AsyncConverter>(null!));
+        Assert.Throws<ArgumentNullException>(() =>
+            ServiceCollectionExtensions.AddLegacyValueConverter<LegacyConverter>(null!));
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(false, true)]
@@ -32,11 +98,11 @@ public class AsyncConversionTests
 
         if (asynchronous)
         {
-            services.AddAsyncValueConverter<AsyncConverter>();
+            services.AddValueConverter<AsyncConverter>();
         }
         else
         {
-            services.AddValueConverter<LegacyConverter>();
+            services.AddLegacyValueConverter<LegacyConverter>();
         }
 
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
@@ -76,7 +142,7 @@ public class AsyncConversionTests
             IPublishedProperty property = Property("price", "Umbraco.Decimal", _ => 1234.56m);
             var services = new ServiceCollection();
 
-            services.AddAsyncValueConverter<DecimalPropertyValueConverter>();
+            services.AddValueConverter<DecimalPropertyValueConverter>();
             services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
 
             await using ServiceProvider provider = services.BuildServiceProvider();
@@ -102,14 +168,14 @@ public class AsyncConversionTests
 
         if (!beforeDefaults)
         {
-            services.AddAsyncValueConverter<TextFieldPropertyValueConverter>();
+            services.AddValueConverter<TextFieldPropertyValueConverter>();
         }
 
         services.AddScoped<IAsyncRelewisePropertyValueConverter>(_ => observed = new ScopedConverter());
 
         if (beforeDefaults)
         {
-            services.AddAsyncValueConverter<TextFieldPropertyValueConverter>();
+            services.AddValueConverter<TextFieldPropertyValueConverter>();
         }
 
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
@@ -250,6 +316,27 @@ public class AsyncConversionTests
         public void Dispose()
         {
             Disposed = true;
+        }
+    }
+
+    public sealed class DualConverter : IAsyncRelewisePropertyValueConverter, IRelewisePropertyValueConverter
+    {
+        public bool CanHandle(RelewisePropertyConverterContext context)
+        {
+            return true;
+        }
+
+        public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            context.Add(context.Property.Alias, "async");
+
+            return ValueTask.CompletedTask;
+        }
+
+        public void Convert(RelewisePropertyConverterContext context)
+        {
+            throw new InvalidOperationException("The synchronous contract must not run.");
         }
     }
 

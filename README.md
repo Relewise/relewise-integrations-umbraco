@@ -184,8 +184,10 @@ or go directly to:
 Umbraco versions, use a compatible integration release and its matching documentation.
 Review [the migration guide](docs/migration.md) before upgrading an existing site.
 
-Existing `AddContentType(...)`, `TrackContentViews()`, `IContentTypeMapping` and
-synchronous converter registrations remain supported. The legacy mapper/converter
+Existing `AddContentType(...)`, `TrackContentViews()` and `IContentTypeMapping` remain
+supported. Synchronous converters must register through obsolete
+`AddLegacyValueConverter<T>()`; `AddValueConverter<T>()` now requires the async interface.
+The legacy mapper/converter
 contracts are obsolete with migration guidance; use the entity mapping and asynchronous
 converter APIs for new code. Obsolete APIs produce compiler warnings; projects that
 treat warnings as errors must address or explicitly suppress them during migration.
