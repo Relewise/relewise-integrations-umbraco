@@ -39,11 +39,12 @@ internal static class CoreSearchTranslation
                 throw new NotSupportedException($"Boolean Data binding '{filter.FieldName}' requires a KeywordFilter.");
             }
 
-            RFilter boolean = Any(keyword.Values.Select(value =>
-                bool.TryParse(value, out var parsed)
-                    ? new ContentDataFilter(key, new EqualsCondition(parsed))
-                    : throw new ArgumentException(
-                        $"Boolean query field '{filter.FieldName}' requires true or false values.")));
+            RFilter boolean = Any(
+                keyword.Values.Select(value =>
+                    bool.TryParse(value, out var parsed)
+                        ? new ContentDataFilter(key, new EqualsCondition(parsed))
+                        : throw new ArgumentException(
+                            $"Boolean query field '{filter.FieldName}' requires true or false values.")));
 
             return filter.Negate ? Negate(boolean) : boolean;
         }
@@ -55,16 +56,19 @@ internal static class CoreSearchTranslation
             IntegerExactFilter f => NumericExact(f.FieldName, "integer", f.Values.Select(v => (double)v), culture),
             DecimalExactFilter f => NumericExact(f.FieldName, "decimal", f.Values.Select(v => (double)v), culture),
             DateTimeOffsetExactFilter f => NumericExact(f.FieldName, "date", f.Values.Select(DateNumber), culture),
-            IntegerRangeFilter f => Any(f.Ranges.Select(r =>
-                NumberRange(f.FieldName, "integer", r.MinValue, r.MaxValue, culture))),
-            DecimalRangeFilter f => Any(f.Ranges.Select(r =>
-                NumberRange(f.FieldName, "decimal", (double?)r.MinValue, (double?)r.MaxValue, culture))),
-            DateTimeOffsetRangeFilter f => Any(f.Ranges.Select(r => NumberRange(
-                f.FieldName,
-                "date",
-                r.MinValue.HasValue ? DateNumber(r.MinValue.Value) : null,
-                r.MaxValue.HasValue ? DateNumber(r.MaxValue.Value) : null,
-                culture))),
+            IntegerRangeFilter f => Any(
+                f.Ranges.Select(r =>
+                    NumberRange(f.FieldName, "integer", r.MinValue, r.MaxValue, culture))),
+            DecimalRangeFilter f => Any(
+                f.Ranges.Select(r =>
+                    NumberRange(f.FieldName, "decimal", (double?)r.MinValue, (double?)r.MaxValue, culture))),
+            DateTimeOffsetRangeFilter f => Any(
+                f.Ranges.Select(r => NumberRange(
+                    f.FieldName,
+                    "date",
+                    r.MinValue.HasValue ? DateNumber(r.MinValue.Value) : null,
+                    r.MaxValue.HasValue ? DateNumber(r.MaxValue.Value) : null,
+                    culture))),
             _ => throw new NotSupportedException(
                 $"The Relewise provider does not support filter '{filter.GetType().Name}'.")
         };
@@ -72,7 +76,8 @@ internal static class CoreSearchTranslation
         return filter.Negate ? Negate(result) : result;
     }
 
-    private static RFilter NumericExact(string field,
+    private static RFilter NumericExact(
+        string field,
         string kind,
         IEnumerable<double> values,
         string? culture = null)
@@ -102,12 +107,14 @@ internal static class CoreSearchTranslation
             return Any([]);
         }
 
-        return new ContentDataFilter(Field(field, kind + "Values", culture),
-            new ContainsCondition(new DataObjectFilter(
-                new ObjectValueCondition[]
-                {
-                    new ObjectValueInRangeCondition("value", new Range<double>(lower, upper))
-                })));
+        return new ContentDataFilter(
+            Field(field, kind + "Values", culture),
+            new ContainsCondition(
+                new DataObjectFilter(
+                    new ObjectValueCondition[]
+                    {
+                        new ObjectValueInRangeCondition("value", new Range<double>(lower, upper))
+                    })));
     }
 
     private static RFilter Any(IEnumerable<RFilter> filters)
@@ -153,7 +160,9 @@ internal static class CoreSearchTranslation
 
             ContentSorting NumericSort(string kind)
             {
-                return new ContentDataSorting(Field(sorter.FieldName,
+                return new ContentDataSorting(
+                    Field(
+                        sorter.FieldName,
                         kind + (sorter.Direction == Direction.Ascending ? "Min" : "Max"),
                         culture),
                     order);
@@ -203,7 +212,8 @@ internal static class CoreSearchTranslation
         data[Field(field, kind + "Max")] = values.Max();
     }
 
-    internal static string Field(string name,
+    internal static string Field(
+        string name,
         string kind,
         string? culture = null)
     {

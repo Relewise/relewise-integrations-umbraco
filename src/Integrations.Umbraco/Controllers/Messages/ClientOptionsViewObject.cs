@@ -9,7 +9,8 @@ namespace Relewise.Integrations.Umbraco.Controllers.Messages;
 public class ClientOptionsViewObject
 {
     /// <summary>
-    /// Creates a new instance of <see cref="ClientOptionsViewObject"/> from the provided <see cref="RelewiseClientOptions"/>
+    /// Creates a new instance of <see cref="ClientOptionsViewObject"/> from the provided <see
+    /// cref="RelewiseClientOptions"/>
     /// </summary>
     /// <param name="options"></param>
     public ClientOptionsViewObject(RelewiseClientOptions options)

@@ -23,7 +23,8 @@ internal static class DemoSetup
             ) || !endpoint.IsLoopback)
         {
             throw new InvalidOperationException(
-                "Configure DatasetId, ApiKey and a local ServerUrl together in local.settings.json. The demo only supports local Datasets.");
+                "Configure DatasetId, ApiKey and a local ServerUrl together in local.settings.json. " +
+                "The demo only supports local Datasets.");
         }
 
         return true;

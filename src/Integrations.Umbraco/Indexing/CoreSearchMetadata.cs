@@ -10,14 +10,16 @@ namespace Relewise.Integrations.Umbraco.Indexing;
 
 internal static class CoreSearchMetadata
 {
-    internal static void Apply(MappedEntity entity,
+    internal static void Apply(
+        MappedEntity entity,
         CoreSearchDocument document,
         string[]? siteCultures = null)
     {
         Dictionary<string, DataValue?> data = EntityMapper.Data(entity.Entity);
 
-        data[CultureKey] = new DataValue(document.Variations.Select(v => v.Culture?.ToLowerInvariant() ?? string.Empty)
-            .Distinct());
+        data[CultureKey] = new DataValue(
+            document.Variations.Select(v => v.Culture?.ToLowerInvariant() ?? string.Empty)
+                .Distinct());
         data[SegmentsKey] = new DataValue(document.Variations.Select(v => v.Segment ?? string.Empty).Distinct());
         data[ProtectedKey] = document.Protection != null;
         data[AccessKey] = new DataValue(document.Protection?.AccessIds.Select(id => id.ToString("D")) ?? []);
@@ -40,15 +42,18 @@ internal static class CoreSearchMetadata
 
                 IndexValue[] values = [.. cultureGroup.Select(field => field.Value)];
 
-                StoreNumbers(converted,
+                StoreNumbers(
+                    converted,
                     group.Key,
                     "integer",
                     values.SelectMany(v => v.Integers ?? []).Select(value => (double)value));
-                StoreNumbers(converted,
+                StoreNumbers(
+                    converted,
                     group.Key,
                     "decimal",
                     values.SelectMany(v => v.Decimals ?? []).Select(value => (double)value));
-                StoreNumbers(converted,
+                StoreNumbers(
+                    converted,
                     group.Key,
                     "date",
                     values.SelectMany(v => v.DateTimeOffsets ?? []).Select(DateNumber));
@@ -131,12 +136,16 @@ internal static class CoreSearchMetadata
         foreach (KeyValuePair<string, List<(string Culture, DataValue Value)>> field in localized)
         {
             data[field.Key] = field.Value[0].Value.Type == DataValue.DataValueTypes.String
-                ? new DataValue(new Multilingual(field.Value
-                    .Select(value => new Multilingual.Value(value.Culture, value.Value))
-                    .ToArray()))
-                : new DataValue(new MultilingualCollection(field.Value
-                    .Select(value => new MultilingualCollection.Value(value.Culture, value.Value))
-                    .ToArray()));
+                ? new DataValue(
+                    new Multilingual(
+                        field.Value
+                            .Select(value => new Multilingual.Value(value.Culture, value.Value))
+                            .ToArray()))
+                : new DataValue(
+                    new MultilingualCollection(
+                        field.Value
+                            .Select(value => new MultilingualCollection.Value(value.Culture, value.Value))
+                            .ToArray()));
         }
     }
 }

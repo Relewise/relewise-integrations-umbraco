@@ -55,15 +55,21 @@ internal static class DemoDictionary
         ("DemoConfiguration", "Demo configuration", "Demokonfiguration"),
         ("RunningWithoutRelewise", "Running without Relewise", "Kører uden Relewise"),
         ("DemoPreviewHelp",
-            "Content preview only. Configure Relewise to enable search, facets, predictions, ingestion and tracked shopping.",
-            "Kun indholdsvisning. Konfigurer Relewise for at aktivere søgning, facetter, søgeforslag, indlæsning og tracking af køb."),
+            "Content preview only. Configure Relewise to enable search, facets, predictions, " +
+            "ingestion and tracked shopping.",
+            "Kun indholdsvisning. Konfigurer Relewise for at aktivere søgning, facetter, " +
+            "søgeforslag, indlæsning og tracking af køb."),
         ("PreviewMode", "Content preview", "Indholdsvisning"),
         ("PreviewModeHelp",
-            "Relewise is not configured. You can explore the seeded pages, but search, filters, offers, cart and checkout require a local Relewise connection.",
-            "Relewise er ikke konfigureret. Du kan udforske de oprettede sider, men søgning, filtre, tilbud, kurv og bestilling kræver en lokal Relewise-forbindelse."),
+            "Relewise is not configured. You can explore the seeded pages, but search, filters, " +
+            "offers, cart and checkout require a local Relewise connection.",
+            "Relewise er ikke konfigureret. Du kan udforske de oprettede sider, men søgning, " +
+            "filtre, tilbud, kurv og bestilling kræver en lokal Relewise-forbindelse."),
         ("ContentPreview",
-            "A small selection of published CMS pages. Connect Relewise to search and filter the complete catalogue.",
-            "Et lille udvalg af publicerede CMS-sider. Tilslut Relewise for at søge og filtrere i hele kataloget."),
+            "A small selection of published CMS pages. Connect Relewise to search and filter the " +
+            "complete catalogue.",
+            "Et lille udvalg af publicerede CMS-sider. Tilslut Relewise for at søge og filtrere i " +
+            "hele kataloget."),
         ("SearchDisabled", "Search not enabled", "Søgning er ikke aktiveret"),
         ("ShoppingDisabled", "Connect Relewise to use the cart and demo checkout.",
             "Tilslut Relewise for at bruge kurv og demobestilling."),
@@ -79,17 +85,25 @@ internal static class DemoDictionary
         ("UpdatingResults", "Updating results…", "Opdaterer resultater…"),
         ("ResultsUpdated", "Results updated", "Resultaterne er opdateret"),
         ("ListingUpdateFailed",
-            "Results could not be updated. Previous results remain displayed. Check your connection and try again.",
-            "Resultaterne kunne ikke opdateres. De tidligere resultater vises stadig. Kontroller forbindelsen, og prøv igen."),
+            "Results could not be updated. Previous results remain displayed. Check your " +
+            "connection and try again.",
+            "Resultaterne kunne ikke opdateres. De tidligere resultater vises stadig. Kontroller " +
+            "forbindelsen, og prøv igen."),
         ("TryAgain", "Try again", "Prøv igen"),
         ("SearchProvider", "Search provider", "Søgeudbyder"),
         ("RelewiseActionFailed",
-            "The Relewise connection could not complete this action. Check the Dataset ID, API credentials and local API server; see the application logs for details.",
-            "Relewise-forbindelsen kunne ikke fuldføre handlingen. Kontroller Dataset-ID, API-oplysninger og den lokale API-server; se detaljer i applikationens log."),
+            "The Relewise connection could not complete this action. Check the Dataset ID, API " +
+            "credentials and local API server; see the application logs for details.",
+            "Relewise-forbindelsen kunne ikke fuldføre handlingen. Kontroller Dataset-ID, " +
+            "API-oplysninger og den lokale API-server; se detaljer i applikationens log."),
         ("ConnectionProblem", "Relewise connection problem", "Problem med forbindelsen til Relewise"),
         ("ConnectionUnavailable",
-            "The configured Relewise connection could not complete this request. Check the Dataset ID, API credentials and local API server. See the application logs for details.",
-            "Den konfigurerede Relewise-forbindelse kunne ikke fuldføre denne forespørgsel. Kontroller Dataset-ID, API-oplysninger og den lokale API-server. Se detaljer i applikationens log."),
+            "The configured Relewise connection could not complete this request. Check the " +
+            "Dataset ID, API credentials and local API server. See the application logs for " +
+            "details.",
+            "Den konfigurerede Relewise-forbindelse kunne ikke fuldføre denne forespørgsel. " +
+            "Kontroller Dataset-ID, API-oplysninger og den lokale API-server. Se detaljer i " +
+            "applikationens log."),
         ("Menu", "Menu", "Menu"),
         ("Close", "Close", "Luk"),
         ("ChooseMarket", "Choose your market", "Vælg dit marked"),
@@ -148,8 +162,10 @@ internal static class DemoDictionary
         ("CartUpdated", "Your cart has been updated.", "Din kurv er opdateret."),
         ("CartCleared", "Your cart has been cleared.", "Din kurv er tømt."),
         ("CartStockLimit",
-            "{0}: only {1} available in total across all options. Your previous cart is unchanged. Reduce the quantity or remove another option of this Product.",
-            "{0}: kun {1} tilgængelige i alt på tværs af alle varianter. Din tidligere kurv er uændret. Reducer antallet, eller fjern en anden variant af produktet."),
+            "{0}: only {1} available in total across all options. Your previous cart is " +
+            "unchanged. Reduce the quantity or remove another option of this Product.",
+            "{0}: kun {1} tilgængelige i alt på tværs af alle varianter. Din tidligere kurv er " +
+            "uændret. Reducer antallet, eller fjern en anden variant af produktet."),
         ("MarketChanged", "Market changed to {0}. Prices and your cart are now shown in {1}.",
             "Markedet er ændret til {0}. Priser og kurv vises nu i {1}."),
         ("ShopAvailable", "Shop available products in this category", "Se produkter på lager i denne kategori"),
@@ -171,8 +187,10 @@ internal static class DemoDictionary
             "Søgningen kunne ikke gennemføres. Tjek dine filtre, og prøv igen."),
         ("NoMatchesHeading", "No matching products or stories", "Ingen matchende produkter eller fortællinger"),
         ("NoMatchesHelp",
-            "Try a shorter search or check the spelling. If you selected filters, remove one or clear them to see more results.",
-            "Prøv en kortere søgning, eller tjek stavningen. Fjern et filter, eller ryd dem alle for at se flere resultater."),
+            "Try a shorter search or check the spelling. If you selected filters, remove one or " +
+            "clear them to see more results.",
+            "Prøv en kortere søgning, eller tjek stavningen. Fjern et filter, eller ryd dem alle " +
+            "for at se flere resultater."),
         ("BrowseWithoutQuery", "Browse without this search", "Se udvalget uden denne søgning"),
         ("OutOfStock", "Out of stock", "Udsolgt"),
         ("LowStock", "Only {0} left", "Kun {0} tilbage"),
@@ -210,12 +228,15 @@ internal static class DemoDictionary
         ("Checkout", "Checkout", "Gå til bestilling"),
         ("DemoCheckout",
             "This is a demo shop. No payment or personal information is needed, and nothing will be shipped.",
-            "Dette er en demobutik. Der kræves ingen betaling eller personoplysninger, og der sendes ingen varer."),
+            "Dette er en demobutik. Der kræves ingen betaling eller personoplysninger, og der " +
+            "sendes ingen varer."),
         ("CartInvalid", "This action could not be completed. Open your cart and try again.",
             "Handlingen kunne ikke gennemføres. Åbn kurven, og prøv igen."),
         ("CartUnavailable",
-            "One or more items are unavailable, or the quantity exceeds available stock. Please update your cart.",
-            "En eller flere varer er ikke tilgængelige, eller antallet overstiger lagerbeholdningen. Opdater kurven."),
+            "One or more items are unavailable, or the quantity exceeds available stock. Please " +
+            "update your cart.",
+            "En eller flere varer er ikke tilgængelige, eller antallet overstiger " +
+            "lagerbeholdningen. Opdater kurven."),
         ("CartFailed", "We could not update your cart right now. Your previous cart is unchanged. Please try again.",
             "Vi kunne ikke opdatere kurven lige nu. Din tidligere kurv er uændret. Prøv igen."),
         ("ClearCart", "Clear cart", "Tøm kurv"),

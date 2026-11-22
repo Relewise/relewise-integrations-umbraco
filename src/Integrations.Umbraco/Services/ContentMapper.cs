@@ -1,4 +1,5 @@
 #pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -56,11 +57,12 @@ internal class ContentMapper : IContentMapper
             culturesToPublish.Add(GetDefaultCulture(umbracoContextReference));
         }
 
-        var contentUpdate = new ContentUpdate(new Content(_configuration.GetContentId(content.PublishedContent))
-        {
-            DisplayName = MapDisplayName(content.PublishedContent, culturesToPublish),
-            CategoryPaths = GetCategoryPaths(content, culturesToPublish)
-        },
+        var contentUpdate = new ContentUpdate(
+            new Content(_configuration.GetContentId(content.PublishedContent))
+            {
+                DisplayName = MapDisplayName(content.PublishedContent, culturesToPublish),
+                CategoryPaths = GetCategoryPaths(content, culturesToPublish)
+            },
             content.UpdateKind);
 
         await AutoMapOrUseMapper(content, culturesToPublish, contentUpdate, token);
@@ -90,7 +92,8 @@ internal class ContentMapper : IContentMapper
         else
         {
             contentUpdate.Content.Data = (await _propertyConverter
-                    .ConvertAsync(content.PublishedContent,
+                    .ConvertAsync(
+                        content.PublishedContent,
                         content.PublishedContent,
                         [.. culturesToPublish],
                         _provider,
@@ -103,10 +106,12 @@ internal class ContentMapper : IContentMapper
         contentUpdate.Content.Data.Add("contentTypeAlias", content.PublishedContent.ContentType.Alias);
         contentUpdate.Content.Data.Add(
             "url",
-            new Multilingual(culturesToPublish
-                .Select(x => new Multilingual.Value(x, content.PublishedContent.Url(x, UrlMode.Absolute)))
-                .ToList()));
-        contentUpdate.Content.Data.Add("createdAt",
+            new Multilingual(
+                culturesToPublish
+                    .Select(x => new Multilingual.Value(x, content.PublishedContent.Url(x, UrlMode.Absolute)))
+                    .ToList()));
+        contentUpdate.Content.Data.Add(
+            "createdAt",
             new DateTimeOffset(content.PublishedContent.CreateDate).ToUnixTimeSeconds());
 
         bool TryGetMapper(MapContent mapContent, [NotNullWhen(true)] out IContentTypeMapping? contentTypeMapping)
@@ -115,7 +120,8 @@ internal class ContentMapper : IContentMapper
         }
     }
 
-    private List<CategoryPath>? GetCategoryPaths(MapContent content,
+    private List<CategoryPath>? GetCategoryPaths(
+        MapContent content,
         List<string> culturesToPublish)
     {
         if (!_documentNavigationQueryService.TryGetParentKey(content.PublishedContent.Key, out _))
@@ -125,7 +131,8 @@ internal class ContentMapper : IContentMapper
 
         return
         [
-            new CategoryPath([
+            new CategoryPath(
+            [
                 .. content.PublishedContent
                     .Breadcrumbs(false)
                     .Select(x =>

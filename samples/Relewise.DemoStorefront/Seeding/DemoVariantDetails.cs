@@ -22,11 +22,12 @@ internal static class DemoVariantDetails
         {
             if (!productType.PropertyTypes.Any(property => property.Alias == alias))
             {
-                productType.AddPropertyType(new PropertyType(strings, text, alias)
-                {
-                    Name = alias == "optionType" ? "Variant option type" : "Size guide",
-                    Variations = alias == "sizeGuide" ? ContentVariation.Culture : ContentVariation.Nothing
-                });
+                productType.AddPropertyType(
+                    new PropertyType(strings, text, alias)
+                    {
+                        Name = alias == "optionType" ? "Variant option type" : "Size guide",
+                        Variations = alias == "sizeGuide" ? ContentVariation.Culture : ContentVariation.Nothing
+                    });
                 productSchemaChanged = true;
             }
         }
@@ -43,11 +44,12 @@ internal static class DemoVariantDetails
         {
             if (!variantType.PropertyTypes.Any(property => property.Alias == alias))
             {
-                variantType.AddPropertyType(new PropertyType(strings, text, alias)
-                {
-                    Name = alias == "optionLabel" ? "Option label" : "Capacity",
-                    Variations = alias == "optionLabel" ? ContentVariation.Culture : ContentVariation.Nothing
-                });
+                variantType.AddPropertyType(
+                    new PropertyType(strings, text, alias)
+                    {
+                        Name = alias == "optionLabel" ? "Option label" : "Capacity",
+                        Variations = alias == "optionLabel" ? ContentVariation.Culture : ContentVariation.Nothing
+                    });
                 schemaChanged = true;
             }
         }
@@ -107,8 +109,14 @@ internal static class DemoVariantDetails
                         product.SetValue(
                             "sizeGuide",
                             culture == "en-US"
-                                ? "Measure around your palm at its widest point, excluding your thumb. The options show hand circumference in centimetres. Choose the larger size if between sizes."
-                                : "Mål rundt om håndfladen på det bredeste sted uden tommelfingeren. Størrelserne viser håndens omkreds i centimeter. Vælg den største størrelse, hvis du ligger mellem to størrelser.",
+                                ? "Measure around your palm at its widest point, excluding your thumb. " +
+                                        "The options show " +
+                                  "hand circumference in centimetres. Choose the larger size if between sizes."
+                                : "Mål rundt om håndfladen på det bredeste sted uden tommelfingeren. " +
+                                        "Størrelserne viser " +
+                                  "håndens omkreds i centimeter. Vælg den største størrelse, " +
+                                        "hvis du ligger mellem to " +
+                                  "størrelser.",
                             culture
                         );
                         productChanged = true;
@@ -228,7 +236,8 @@ internal static class DemoVariantDetails
         ),
         ["FIELDWORK-GEAR-STRAPS"] =
             new Specification("length", ["30 cm", "45 cm", "60 cm"], ["30 cm", "45 cm", "60 cm"]),
-        ["FIELDWORK-SOCKS"] = new Specification("size",
+        ["FIELDWORK-SOCKS"] = new Specification(
+            "size",
             ["EU 36–39", "EU 40–43", "EU 44–47"],
             ["EU 36–39", "EU 40–43", "EU 44–47"]),
         ["FIELDWORK-RAIN-GAITERS"] = new Specification(

@@ -1,4 +1,5 @@
 #pragma warning disable CS0618 // Exercise the legacy converter adapter.
+
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Relewise.Client.DataTypes;
@@ -12,6 +13,57 @@ namespace Relewise.Integrations.Umbraco.Tests;
 
 public class MappingContextTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NestedCustomAggregateReceivesTheExplicitConversionToken(bool blockList)
+    {
+        var owner = Mock.Of<IPublishedContent>();
+        var element = Mock.Of<IPublishedElement>();
+        object value = blockList
+            ? new BlockListModel([new BlockListItem(Guid.NewGuid(), element, null, null)])
+            : new[] { element };
+        IPublishedProperty property = Property(
+            "blocks",
+            blockList ? "Umbraco.BlockList" : "Umbraco.NestedContent",
+            value);
+
+        using var cancellation = new CancellationTokenSource();
+        CancellationToken token = cancellation.Token;
+        var aggregate = new Mock<IRelewisePropertyConverter>(MockBehavior.Strict);
+        var services = new ServiceCollection();
+
+        services.AddSingleton(aggregate.Object);
+
+        await using ServiceProvider provider = services.BuildServiceProvider();
+
+        aggregate.Setup(converter => converter.ConvertAsync(
+                owner,
+                element,
+                It.Is<string[]>(cultures => cultures.SequenceEqual(new[] { "en-US" })),
+                It.IsAny<IServiceProvider>(),
+                token))
+            .ReturnsAsync(new Dictionary<string, DataValue?> { ["body"] = "Nested text" });
+
+        var data = new Dictionary<string, DataValue?>();
+        var context = new RelewisePropertyConverterContext(
+            property,
+            "en-US",
+            data,
+            owner,
+            owner,
+            provider,
+            CancellationToken.None);
+        IAsyncRelewisePropertyValueConverter converter = blockList
+            ? new BlockListPropertyValueConverter(provider)
+            : new NestedContentPropertyValueConverter(provider);
+
+        await converter.ConvertAsync(context, cancellation.Token);
+
+        aggregate.VerifyAll();
+        Assert.Equal(new[] { "Nested text" }, data["blocks"]!.ValueAs<List<string>>());
+    }
+
     [Fact]
     public async Task PropertyOnlyNestedConversionSharesOneScopeWithoutInventingAnOwner()
     {
@@ -95,13 +147,15 @@ public class MappingContextTests
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
         services.AddScoped<Marker>();
 
-        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions
-        { ValidateScopes = true, ValidateOnBuild = true });
+        await using ServiceProvider root = services.BuildServiceProvider(
+            new ServiceProviderOptions
+            { ValidateScopes = true, ValidateOnBuild = true });
         await using AsyncServiceScope scope = root.CreateAsyncScope();
         var marker = scope.ServiceProvider.GetRequiredService<Marker>();
         IReadOnlyDictionary<string, DataValue?> result = scope.ServiceProvider
             .GetRequiredService<IRelewisePropertyConverter>()
-            .Convert(owner,
+            .Convert(
+                owner,
                 source.Object,
                 ["en-US"],
                 scope.ServiceProvider,
@@ -116,7 +170,8 @@ public class MappingContextTests
         cancellation.Cancel();
         Assert.Throws<OperationCanceledException>(() =>
             scope.ServiceProvider.GetRequiredService<IRelewisePropertyConverter>()
-                .Convert(owner,
+                .Convert(
+                    owner,
                     source.Object,
                     ["en-US"],
                     scope.ServiceProvider,
@@ -136,7 +191,8 @@ public class MappingContextTests
         await operation.DisposeAsync();
     }
 
-    private static IPublishedProperty Property(string alias,
+    private static IPublishedProperty Property(
+        string alias,
         string editor,
         object value)
     {

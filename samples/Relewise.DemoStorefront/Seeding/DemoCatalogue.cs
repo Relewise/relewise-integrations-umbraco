@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Relewise.DemoStorefront.Integration.Converters;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
@@ -20,14 +21,15 @@ internal static class DemoCatalogue
             var dataTypes = services.GetRequiredService<IDataTypeService>();
             IDataType text = (await dataTypes.GetAllAsync()).First(type => type.Name == "Textstring");
 
-            variantType.AddPropertyType(new PropertyType(
-                services.GetRequiredService<IShortStringHelper>(),
-                text,
-                "size"
-            )
-            {
-                Name = "Size"
-            });
+            variantType.AddPropertyType(
+                new PropertyType(
+                    services.GetRequiredService<IShortStringHelper>(),
+                    text,
+                    "size"
+                )
+                {
+                    Name = "Size"
+                });
             await types.UpdateAsync(variantType, Constants.Security.SuperUserKey);
         }
 
@@ -132,17 +134,20 @@ internal static class DemoCatalogue
                 product.SetValue("sku", item.Sku);
                 SetText(product, "bodyText", item.Description);
                 product.SetValue("heroImage", "/images/" + item.Image + ".svg");
-                product.SetValue("brand",
+                product.SetValue(
+                    "brand",
                     Udi.Create(Constants.UdiEntityType.Document, brands[BrandIdForSku(item.Sku)].Key).ToString());
                 product.SetValue("stock", item.Stock ?? 10 + categories[item.Category].Level * 5);
 
                 if (item.AdditionalCategory != null)
                 {
-                    product.SetValue("extraCategories",
-                        System.Text.Json.JsonSerializer.Serialize(new[] { categories[item.AdditionalCategory].Key }));
+                    product.SetValue(
+                        "extraCategories",
+                        JsonSerializer.Serialize(new[] { categories[item.AdditionalCategory].Key }));
                 }
 
-                product.SetValue("listPrice",
+                product.SetValue(
+                    "listPrice",
                     DemoBlockValues.Prices(
                         prices,
                         ("DKK", item.Dkk),
@@ -150,8 +155,10 @@ internal static class DemoCatalogue
                         ("USD", item.Usd)
                     )
                 );
-                product.SetValue("salesPrice",
-                    DemoBlockValues.Prices(prices,
+                product.SetValue(
+                    "salesPrice",
+                    DemoBlockValues.Prices(
+                        prices,
                         ("DKK", SalesPrice(item, "DKK", item.Dkk)),
                         ("EUR", SalesPrice(item, "EUR", item.Eur)),
                         ("USD", SalesPrice(item, "USD", item.Usd))
@@ -167,7 +174,8 @@ internal static class DemoCatalogue
                 Udi.Create(Constants.UdiEntityType.Document, brand.Key).ToString() &&
                 BrandIdForSku(item.Sku) != "U19-SMOKE-BRAND")
             {
-                product.SetValue("brand",
+                product.SetValue(
+                    "brand",
                     Udi.Create(Constants.UdiEntityType.Document, brands[BrandIdForSku(item.Sku)].Key).ToString());
                 Publish(product);
             }
@@ -194,8 +202,10 @@ internal static class DemoCatalogue
                     currentPrices.GetValueOrDefault("EUR") == item.Eur &&
                     currentPrices.GetValueOrDefault("USD") == item.Usd)
                 {
-                    product.SetValue("salesPrice",
-                        DemoBlockValues.Prices(prices,
+                    product.SetValue(
+                        "salesPrice",
+                        DemoBlockValues.Prices(
+                            prices,
                             ("DKK", decimal.Round(item.Dkk * .8m, 2)),
                             ("EUR", decimal.Round(item.Eur * .8m, 2)),
                             ("USD", decimal.Round(item.Usd * .8m, 2))
@@ -243,7 +253,8 @@ internal static class DemoCatalogue
             };
     }
 
-    private static decimal SalesPrice(ProductSeed item,
+    private static decimal SalesPrice(
+        ProductSeed item,
         string currency,
         decimal amount)
     {
@@ -549,7 +560,8 @@ internal static class DemoCatalogue
             400m,
             50m,
             50m,
-            "A packable blanket for campsite breakfasts and picnic stops. Only two left; discounted in Europe only.",
+            "A packable blanket for campsite breakfasts and picnic stops. Only two left; " +
+            "discounted in Europe only.",
             "accessories",
             Colors("Forest", "Sand", "Slate"),
             2,
@@ -563,7 +575,8 @@ internal static class DemoCatalogue
             149m,
             19.95m,
             22.95m,
-            "A compact repair kit for packs and camping equipment. Currently out of stock; discounted in the US only.",
+            "A compact repair kit for packs and camping equipment. Currently out of stock; " +
+            "discounted in the US only.",
             "accessories",
             Sizes("Small", "Large"),
             0,
@@ -1254,7 +1267,8 @@ internal static class DemoCatalogue
             229m,
             29.95m,
             34.95m,
-            "A compact 200-lumen headlamp lights the trail while keeping both hands free. A lightweight option for evening walks.",
+            "A compact 200-lumen headlamp lights the trail while keeping both hands free. A " +
+            "lightweight option for evening walks.",
             "headlamp",
             Colors("Forest", "Slate", "Copper"),
             8
@@ -1278,7 +1292,8 @@ internal static class DemoCatalogue
             299m,
             39.95m,
             44.95m,
-            "Insulated hiking gloves keep your hands warm on cold winter walks. Soft lining and a grippy palm help when using trekking poles.",
+            "Insulated hiking gloves keep your hands warm on cold winter walks. Soft lining and a " +
+            "grippy palm help when using trekking poles.",
             "gloves",
             Sizes("Small", "Medium", "Large"),
             8
@@ -1290,7 +1305,8 @@ internal static class DemoCatalogue
             379m,
             49.95m,
             54.95m,
-            "Waterproof hiking gloves protect your hands from wind and rain. Flexible fingers and textured palms suit wet-weather hill walking.",
+            "Waterproof hiking gloves protect your hands from wind and rain. Flexible fingers and " +
+            "textured palms suit wet-weather hill walking.",
             "gloves",
             Sizes("Small", "Medium", "Large"),
             8
@@ -1302,7 +1318,8 @@ internal static class DemoCatalogue
             149m,
             19.95m,
             24.95m,
-            "A small first-aid kit for solo day hikes, with clearly labelled compartments for dressings and basic supplies.",
+            "A small first-aid kit for solo day hikes, with clearly labelled compartments for " +
+            "dressings and basic supplies.",
             "first-aid",
             Sizes("Solo", "Duo"),
             8
@@ -1314,7 +1331,8 @@ internal static class DemoCatalogue
             299m,
             39.95m,
             44.95m,
-            "A roomy first-aid kit for family camping trips, with organised compartments and space for extra dressings and personal supplies.",
+            "A roomy first-aid kit for family camping trips, with organised compartments and " +
+            "space for extra dressings and personal supplies.",
             "first-aid",
             Sizes("Solo", "Duo"),
             8
@@ -1326,7 +1344,8 @@ internal static class DemoCatalogue
             599m,
             79.95m,
             89.95m,
-            "A lightweight folding camping chair with a supportive backrest. Packs into a small carry bag for hiking and campsite evenings.",
+            "A lightweight folding camping chair with a supportive backrest. Packs into a small " +
+            "carry bag for hiking and campsite evenings.",
             "chair",
             Colors("Forest", "Sand", "Slate"),
             8
@@ -1338,7 +1357,8 @@ internal static class DemoCatalogue
             749m,
             99.95m,
             109.95m,
-            "A comfortable folding camp chair with an adjustable reclining backrest and padded seat for relaxed evenings at basecamp.",
+            "A comfortable folding camp chair with an adjustable reclining backrest and padded " +
+            "seat for relaxed evenings at basecamp.",
             "chair",
             Colors("Forest", "Sand", "Slate"),
             8
@@ -1350,7 +1370,8 @@ internal static class DemoCatalogue
             149m,
             19.95m,
             24.95m,
-            "A lightweight 10-litre waterproof dry bag with a rolltop closure keeps spare clothing dry inside your hiking backpack.",
+            "A lightweight 10-litre waterproof dry bag with a rolltop closure keeps spare " +
+            "clothing dry inside your hiking backpack.",
             "pouch",
             Sizes("Small", "Medium", "Large"),
             8
@@ -1362,7 +1383,8 @@ internal static class DemoCatalogue
             299m,
             39.95m,
             44.95m,
-            "A tough 30-litre waterproof dry bag with a reinforced rolltop closure for wet expeditions, canoe trips and protecting bulky camping gear.",
+            "A tough 30-litre waterproof dry bag with a reinforced rolltop closure for wet " +
+            "expeditions, canoe trips and protecting bulky camping gear.",
             "pouch",
             Sizes("Small", "Medium", "Large"),
             8
@@ -1374,7 +1396,8 @@ internal static class DemoCatalogue
             599m,
             79.95m,
             89.95m,
-            "Compact binoculars with 8x magnification and 25 mm lenses for spotting birds and wildlife on day walks. Fold into a small pocket case.",
+            "Compact binoculars with 8x magnification and 25 mm lenses for spotting birds and " +
+            "wildlife on day walks. Fold into a small pocket case.",
             "binoculars",
             Colors("Forest", "Slate", "Sand"),
             8
@@ -1386,7 +1409,8 @@ internal static class DemoCatalogue
             1199m,
             159.95m,
             174.95m,
-            "Waterproof binoculars with 10x magnification and 42 mm lenses for observing distant wildlife in rain and low light.",
+            "Waterproof binoculars with 10x magnification and 42 mm lenses for observing distant " +
+            "wildlife in rain and low light.",
             "binoculars",
             Colors("Forest", "Slate", "Sand"),
             8

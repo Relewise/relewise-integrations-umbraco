@@ -1,9 +1,7 @@
 using Relewise.DemoStorefront.Features.Cart;
 using Relewise.DemoStorefront.Setup;
 using Umbraco.Cms.Core;
-using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
-using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
 
 namespace Relewise.DemoStorefront.Site;
@@ -15,7 +13,8 @@ internal static class MarketEndpoints
         app.MapGet("/store/market", ChangeAsync);
     }
 
-    private static async Task<IResult> ChangeAsync(HttpContext http,
+    private static async Task<IResult> ChangeAsync(
+        HttpContext http,
         string? market,
         string? returnUrl)
     {
@@ -46,7 +45,8 @@ internal static class MarketEndpoints
             return Results.LocalRedirect(selected.ReturnUrl(returnUrl));
         }
 
-        http.Response.Cookies.Append(DemoMarket.CookieName,
+        http.Response.Cookies.Append(
+            DemoMarket.CookieName,
             selected.Id,
             new CookieOptions
             {
@@ -70,11 +70,8 @@ internal static class MarketEndpoints
         {
             using UmbracoContextReference context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>()
                 .EnsureUmbracoContext();
-            IContent site = http.RequestServices.GetRequiredService<IContentService>()
-                .GetRootContent()
-                .Single(node => node.ContentType.Alias == "home");
-            IPublishedContent? home = context.UmbracoContext.Content.GetById(site.Key);
-            IPublishedContent? page = home?.DescendantsOrSelf()
+            IPublishedContent home = SiteContent.Home(http.RequestServices);
+            IPublishedContent? page = home.DescendantsOrSelf()
                 .FirstOrDefault(node =>
                     node.Url("en-US") == uri.AbsolutePath || node.Url("da-DK") == uri.AbsolutePath);
 
@@ -84,7 +81,8 @@ internal static class MarketEndpoints
             }
         }
 
-        StorefrontNavigation.Notify(http,
+        StorefrontNavigation.Notify(
+            http,
             "MarketChanged",
             false,
             Storefront.Text(http, selected.LabelKey),

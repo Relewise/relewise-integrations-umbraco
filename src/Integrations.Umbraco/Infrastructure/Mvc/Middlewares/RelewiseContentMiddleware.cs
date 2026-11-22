@@ -71,7 +71,9 @@ internal class RelewiseContentMiddleware
                             if (ex.StatusCode == HttpStatusCode.NotFound)
                             {
                                 throw new InvalidOperationException(
-                                    $"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com",
+                                    $"The Dataset Id '{tracker.DatasetId}" +
+                                    $"' is not known by Relewise - You can always find your available dataset " +
+                                    $"id's on https://my.relewise.com",
                                     ex);
                             }
 
@@ -85,7 +87,8 @@ internal class RelewiseContentMiddleware
         await _next.Invoke(context);
     }
 
-    private Trackable CreateView(IPublishedContent content,
+    private Trackable CreateView(
+        IPublishedContent content,
         User user)
     {
         var id = _configuration.GetContentId(content);
@@ -133,7 +136,8 @@ internal class RelewiseContentMiddleware
         return new ContentView(user, id);
     }
 
-    private string[] CategoryPath(IPublishedContent content,
+    private string[] CategoryPath(
+        IPublishedContent content,
         Type entityType)
     {
         return
@@ -166,7 +170,7 @@ internal class RelewiseContentMiddleware
 
     private static bool IsNotInPreview(UmbracoContextReference umbracoContextReference)
     {
-        return umbracoContextReference.UmbracoContext.InPreviewMode == false;
+        return !umbracoContextReference.UmbracoContext.InPreviewMode;
     }
 
     private bool EnsureContentAndIsTrackable(IPublishedContent content)

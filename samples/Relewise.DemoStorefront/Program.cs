@@ -10,6 +10,8 @@ using Relewise.DemoStorefront.Seeding;
 using Relewise.DemoStorefront.Setup;
 using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
+using Umbraco.Cms.Core.HostedServices;
+using Umbraco.Cms.Core.Search.Indexing;
 
 namespace Relewise.DemoStorefront;
 
@@ -71,7 +73,7 @@ internal static class Program
             umbraco.AddRelewise(DemoConfiguration.Configure);
         }
 
-        builder.Services.AddTransient<Umbraco.Cms.Core.Search.Indexing.IContentIndexer, StorefrontProductIndexer>();
+        builder.Services.AddTransient<IContentIndexer, StorefrontProductIndexer>();
 
         umbraco.Build();
 
@@ -84,7 +86,7 @@ internal static class Program
         {
             // Export the completed tree after seeding and migrations, including on a fresh installation.
             app.Lifetime.ApplicationStarted.Register(() => app.Services
-                .GetRequiredService<Umbraco.Cms.Core.HostedServices.IBackgroundTaskQueue>()
+                .GetRequiredService<IBackgroundTaskQueue>()
                 .QueueBackgroundWorkItem(async token => await app.Services
                     .GetRequiredService<Relewise.Integrations.Umbraco.Services.IExportContentService>()
                     .ExportAll(new Relewise.Integrations.Umbraco.Services.ExportAllContent(false), token)));

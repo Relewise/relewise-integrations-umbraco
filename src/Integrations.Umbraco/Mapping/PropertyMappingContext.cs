@@ -38,7 +38,8 @@ public class PropertyMappingContext
     /// <summary>The source property, including its editor and localized values.</summary>
     public IPublishedProperty Property { get; }
 
-    /// <summary>The published cultures to include in the destination value, or the site's languages for invariant content.</summary>
+    /// <summary>The published cultures to include in the destination value, or the site's languages for invariant
+    /// content.</summary>
     public IReadOnlyList<string> CulturesToPublish { get; }
 
     /// <summary>The selected built-in destination property.</summary>

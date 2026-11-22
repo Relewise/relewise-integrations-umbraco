@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -19,27 +20,30 @@ internal static class ListingPage
         var section = model.SearchPage ? "search" :
             model.View == "offers" ? "offers" :
             model.Editorial ? "journal" : "shop";
-        var body = new StringBuilder(StorefrontNavigation.Breadcrumb(
-            collection,
-            http,
-            section,
-            model.SearchPage || model.View == "offers" ? heading : null
-        ));
+        var body = new StringBuilder(
+            StorefrontNavigation.Breadcrumb(
+                collection,
+                http,
+                section,
+                model.SearchPage || model.View == "offers" ? heading : null
+            ));
 
         body.Append($"<section class='listing-heading'><h1>{E(heading)}</h1></section>");
 
         if (collection != null)
         {
-            body.Append(StorefrontNavigation.Links(
-                collection.Children().Where(node => node.ContentType.Alias is "productCategory" or "folder"),
-                http));
+            body.Append(
+                StorefrontNavigation.Links(
+                    collection.Children().Where(node => node.ContentType.Alias is "productCategory" or "folder"),
+                    http));
         }
 
-        var json = System.Text.Json.JsonSerializer.Serialize(model, StorefrontChrome.Json);
+        var json = JsonSerializer.Serialize(model, StorefrontChrome.Json);
 
         // Default JSON escaping protects the script boundary even when CMS values contain markup.
         body.Append(
-            $"<div id='storefront-listing'><p role='status'>{E(Text(http, "UpdatingResults"))}</p></div><script id='listing-data' type='application/json'>{json}</script>");
+            $"<div id='storefront-listing'><p role='status'>{E(Text(http, "UpdatingResults"))}" +
+            $"</p></div><script id='listing-data' type='application/json'>{json}</script>");
         http.Items["Fieldwork:HasSearch"] = true;
         http.Items["Fieldwork:SearchProvider"] = "Relewise";
 
@@ -52,7 +56,8 @@ internal static class ListingPage
         );
     }
 
-    internal static string Preview(HttpContext http,
+    internal static string Preview(
+        HttpContext http,
         IPublishedContent? collection)
     {
         http.RequestServices.GetRequiredService<IVariationContextAccessor>().VariationContext =
@@ -83,9 +88,10 @@ internal static class ListingPage
 
         var body = StorefrontNavigation.Breadcrumb(collection, http, editorial ? "journal" : "shop") +
                    $"<h1>{E(heading)}</h1><p>{E(Text(http, "ContentPreview"))}</p><div class='grid'>" +
-                   string.Concat(pages.OrderBy(SiteContent.Title, StringComparer.CurrentCulture)
-                       .Take(6)
-                       .Select(page => ListingCards.Card(page, http))) + "</div>";
+                   string.Concat(
+                       pages.OrderBy(SiteContent.Title, StringComparer.CurrentCulture)
+                           .Take(6)
+                           .Select(page => ListingCards.Card(page, http))) + "</div>";
 
         return Layout(heading, body, false, http, editorial ? "journal" : "shop");
     }

@@ -1,11 +1,15 @@
 #pragma warning disable CS0618 // Verify compatibility with existing converter implementations.
+
+using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Integrations.Umbraco.Services;
+using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Content = Relewise.Client.DataTypes.Content;
 
 namespace Relewise.Integrations.Umbraco.Tests;
 
@@ -16,10 +20,12 @@ public class AsyncConversionTests
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public async Task AutoMapRetainsSingleAndMultipleCultureShapes(bool asynchronous,
+    public async Task AutoMapRetainsSingleAndMultipleCultureShapes(
+        bool asynchronous,
         bool text)
     {
-        IPublishedProperty property = Property("value",
+        IPublishedProperty property = Property(
+            "value",
             "Custom.Demo",
             culture => text ? culture + " text" : culture == "en-US" ? 10 : 20);
         var services = new ServiceCollection();
@@ -61,11 +67,11 @@ public class AsyncConversionTests
     [InlineData("da-DK")]
     public async Task DecimalConversionDoesNotDependOnCurrentCulture(string culture)
     {
-        System.Globalization.CultureInfo previous = System.Globalization.CultureInfo.CurrentCulture;
+        CultureInfo previous = CultureInfo.CurrentCulture;
 
         try
         {
-            System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo(culture);
+            CultureInfo.CurrentCulture = new CultureInfo(culture);
 
             IPublishedProperty property = Property("price", "Umbraco.Decimal", _ => 1234.56m);
             var services = new ServiceCollection();
@@ -82,7 +88,7 @@ public class AsyncConversionTests
         }
         finally
         {
-            System.Globalization.CultureInfo.CurrentCulture = previous;
+            CultureInfo.CurrentCulture = previous;
         }
     }
 
@@ -132,7 +138,8 @@ public class AsyncConversionTests
         {
             var options = new RelewiseUmbracoOptionsBuilder();
 
-            options.MapContent("article",
+            options.MapContent(
+                "article",
                 mapping =>
                 {
                     if (mapperFirst)
@@ -150,7 +157,8 @@ public class AsyncConversionTests
                 });
         }
 
-        new RelewiseUmbracoOptionsBuilder().MapContent("article",
+        new RelewiseUmbracoOptionsBuilder().MapContent(
+            "article",
             mapping =>
             {
                 mapping.AutoMap();
@@ -158,7 +166,8 @@ public class AsyncConversionTests
             });
     }
 
-    private static IPublishedProperty Property(string alias,
+    private static IPublishedProperty Property(
+        string alias,
         string editor,
         Func<string?, object> value)
     {
@@ -166,7 +175,7 @@ public class AsyncConversionTests
 
         type.SetupGet(publishedProperty => publishedProperty.EditorAlias).Returns(editor);
         type.SetupGet(publishedProperty => publishedProperty.Variations)
-            .Returns(global::Umbraco.Cms.Core.Models.ContentVariation.Culture);
+            .Returns(ContentVariation.Culture);
 
         var property = new Mock<IPublishedProperty>();
 
@@ -198,7 +207,8 @@ public class AsyncConversionTests
             return true;
         }
 
-        public async ValueTask ConvertAsync(RelewisePropertyConverterContext context,
+        public async ValueTask ConvertAsync(
+            RelewisePropertyConverterContext context,
             CancellationToken cancellationToken)
         {
             await Task.Yield();
@@ -215,7 +225,7 @@ public class AsyncConversionTests
             context.Property.Alias,
             value is string text
                 ? new DataValue(text)
-                : new DataValue(Convert.ToDouble(value, System.Globalization.CultureInfo.InvariantCulture)));
+                : new DataValue(Convert.ToDouble(value, CultureInfo.InvariantCulture)));
     }
 
     public sealed class ScopedConverter : IAsyncRelewisePropertyValueConverter, IDisposable
@@ -227,7 +237,8 @@ public class AsyncConversionTests
             return true;
         }
 
-        public async ValueTask ConvertAsync(RelewisePropertyConverterContext context,
+        public async ValueTask ConvertAsync(
+            RelewisePropertyConverterContext context,
             CancellationToken cancellationToken)
         {
             await Task.Delay(1, cancellationToken);

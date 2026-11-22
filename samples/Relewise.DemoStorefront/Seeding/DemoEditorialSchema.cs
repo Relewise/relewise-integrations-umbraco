@@ -23,7 +23,8 @@ internal static class DemoEditorialSchema
         IDataType richText = available.First(type => type.EditorAlias == "Umbraco.RichText");
         IDataType boolean = available.First(type => type.EditorAlias == "Umbraco.TrueFalse");
 
-        async Task<IDataType> Data(string name,
+        async Task<IDataType> Data(
+            string name,
             string editor,
             Dictionary<string, object> configuration)
         {
@@ -76,10 +77,12 @@ internal static class DemoEditorialSchema
                 Variations = localized ? ContentVariation.Culture : ContentVariation.Nothing
             };
 
-            created.AddPropertyType(new PropertyType(strings, text, "heading")
-            { Name = "Heading", Variations = created.Variations });
-            created.AddPropertyType(new PropertyType(strings, body, "text")
-            { Name = "Text", Variations = created.Variations });
+            created.AddPropertyType(
+                new PropertyType(strings, text, "heading")
+                { Name = "Heading", Variations = created.Variations });
+            created.AddPropertyType(
+                new PropertyType(strings, body, "text")
+                { Name = "Text", Variations = created.Variations });
             await types.CreateAsync(created, Constants.Security.SuperUserKey);
 
             return created;
@@ -106,13 +109,15 @@ internal static class DemoEditorialSchema
         if (price == null)
         {
             price = new ContentType(strings, -1) { Alias = "currencyPrice", Name = "Currency price", IsElement = true };
-            price.AddPropertyType(new PropertyType(strings, currencies, "currency")
-            { Name = "Currency", Mandatory = true });
+            price.AddPropertyType(
+                new PropertyType(strings, currencies, "currency")
+                { Name = "Currency", Mandatory = true });
             price.AddPropertyType(new PropertyType(strings, amount, "amount") { Name = "Amount", Mandatory = true });
             await types.CreateAsync(price, Constants.Security.SuperUserKey);
         }
 
-        IDataType prices = await Data("Demo multi-currency prices",
+        IDataType prices = await Data(
+            "Demo multi-currency prices",
             "Umbraco.BlockList",
             new Dictionary<string, object>
             {
@@ -135,12 +140,14 @@ internal static class DemoEditorialSchema
         {
             visibility = new ContentType(strings, -1)
             { Alias = "editorialVisibility", Name = "Editorial visibility", IsElement = true };
-            visibility.AddPropertyType(new PropertyType(strings, boolean, "hide")
-            { Name = "Hide from editorial text" });
+            visibility.AddPropertyType(
+                new PropertyType(strings, boolean, "hide")
+                { Name = "Hide from editorial text" });
             await types.CreateAsync(visibility, Constants.Security.SuperUserKey);
         }
 
-        IDataType blocks = await Data("Demo editorial blocks",
+        IDataType blocks = await Data(
+            "Demo editorial blocks",
             "Umbraco.BlockList",
             new Dictionary<string, object>
             {
@@ -157,13 +164,15 @@ internal static class DemoEditorialSchema
         {
             if (!container.PropertyTypes.Any(property => property.Alias == "items"))
             {
-                container.AddPropertyType(new PropertyType(strings, blocks, "items")
-                { Name = "Nested editorial blocks" });
+                container.AddPropertyType(
+                    new PropertyType(strings, blocks, "items")
+                    { Name = "Nested editorial blocks" });
                 await types.UpdateAsync(container, Constants.Security.SuperUserKey);
             }
         }
 
-        IDataType grid = await Data("Demo editorial grid",
+        IDataType grid = await Data(
+            "Demo editorial grid",
             "Umbraco.BlockGrid",
             new Dictionary<string, object>
             {

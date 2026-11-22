@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json;
 using Microsoft.Extensions.Primitives;
 using Relewise.DemoStorefront.Setup;
 using Relewise.DemoStorefront.Site;
@@ -55,10 +57,12 @@ internal static class StorefrontListing
         IServiceProvider services = http.RequestServices;
         var searchers = services.GetRequiredService<ISearcherResolver>();
         var contexts = services.GetRequiredService<IUmbracoContextFactory>();
+
         var requestedType =
             !offersPage && request.Query["type"].FirstOrDefault() == "article" ? "article" : "product";
         var alias = offersPage ? "offers" : requestedType == "article" ? "articles" : "catalogue";
         var offers = offersPage;
+
         string? query = request.Query["q"];
 
         DemoMarket market = DemoMarket.Current(request.HttpContext);
@@ -107,7 +111,7 @@ internal static class StorefrontListing
 
         if (suggestionsOnly)
         {
-            return System.Text.Json.JsonSerializer.Serialize(result.Suggestions ?? []);
+            return JsonSerializer.Serialize(result.Suggestions ?? []);
         }
 
         var lastPage = Math.Max(1, (result.Total - 1) / pageSize + 1);
@@ -117,7 +121,8 @@ internal static class StorefrontListing
             return Redirect(http, PageUrl(request, lastPage));
         }
 
-        var heading = Text(http,
+        var heading = Text(
+            http,
             searchPage ? "SearchResults" : offers ? "OffersNavigation" : editorial ? "Journal" : "Collection");
 
         if (collection != null)
@@ -127,12 +132,14 @@ internal static class StorefrontListing
 
         using UmbracoContextReference context = contexts.EnsureUmbracoContext();
         IPublishedContentCache cache = context.UmbracoContext.Content;
+
         ListingCard[] cards =
         [
             .. result.Documents.Select(document => cache.GetById(document.Id))
                 .Where(content => content != null)
                 .Select(content => ListingCards.CardData(content!, http))
         ];
+
         string[] labelKeys =
         [
             "Filters", "FiltersShort", "FilterAndSort", "SortBy", "ClearFilters", "SearchProvider", "Search",
@@ -145,25 +152,28 @@ internal static class StorefrontListing
             "RecommendedRelewise", "NameAscending", "NameDescending", "PriceAscending", "PriceDescending", "Products",
             "Journal", "SearchResults"
         ];
+
         string[] queryKeys =
             ["type", "q", "sort", "page", "category", "brand", "price", "available", "onSale", "minPrice", "maxPrice"];
         Dictionary<string, string[]> parameters = request.Query.Where(pair =>
                 queryKeys.Contains(pair.Key) && (!offers || pair.Key != "onSale") &&
                 (!offersPage || pair.Key != "type") && pair.Value.Any(value => !string.IsNullOrWhiteSpace(value)))
-            .ToDictionary(pair => pair.Key,
+            .ToDictionary(
+                pair => pair.Key,
                 pair => pair.Value.OfType<string>()
                     .ToArray());
 
         string PageLink(int target)
         {
-            Dictionary<string, StringValues> values = parameters.ToDictionary(pair => pair.Key,
+            Dictionary<string, StringValues> values = parameters.ToDictionary(
+                pair => pair.Key,
                 pair => new StringValues(pair.Value));
 
             values.Remove("page");
 
             if (target > 1)
             {
-                values["page"] = target.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                values["page"] = target.ToString(CultureInfo.InvariantCulture);
             }
 
             return listingPath + QueryString.Create(values);
@@ -212,12 +222,13 @@ internal static class StorefrontListing
             http,
             collection?.Key,
             view,
-            QueryString.Create(parameters.Select(pair =>
-                new KeyValuePair<string, StringValues>(pair.Key, pair.Value))));
+            QueryString.Create(
+                parameters.Select(pair =>
+                    new KeyValuePair<string, StringValues>(pair.Key, pair.Value))));
 
         if (dataOnly)
         {
-            return System.Text.Json.JsonSerializer.Serialize(model, StorefrontChrome.Json);
+            return JsonSerializer.Serialize(model, StorefrontChrome.Json);
         }
 
         return ListingPage.Render(http, collection, model, heading);
@@ -229,10 +240,11 @@ internal static class StorefrontListing
 
         if (json)
         {
-            return System.Text.Json.JsonSerializer.Serialize(new
-            {
-                error = message
-            });
+            return JsonSerializer.Serialize(
+                new
+                {
+                    error = message
+                });
         }
 
         return Layout(Text(http, "Search"), "<p class='empty'>" + E(message) + "</p>", false, http, "shop");
@@ -245,10 +257,12 @@ internal static class StorefrontListing
         return string.Empty;
     }
 
-    private static string PageUrl(HttpRequest request,
+    private static string PageUrl(
+        HttpRequest request,
         long page)
     {
-        Dictionary<string, StringValues> query = request.Query.ToDictionary(value => value.Key,
+        Dictionary<string, StringValues> query = request.Query.ToDictionary(
+            value => value.Key,
             value => value.Value,
             StringComparer.OrdinalIgnoreCase);
 
@@ -258,7 +272,7 @@ internal static class StorefrontListing
         }
         else
         {
-            query["page"] = page.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            query["page"] = page.ToString(CultureInfo.InvariantCulture);
         }
 
         return request.PathBase + request.Path + QueryString.Create(query);

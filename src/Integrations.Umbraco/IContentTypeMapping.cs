@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client.DataTypes;
@@ -7,12 +8,14 @@ namespace Relewise.Integrations.Umbraco;
 /// <summary>
 /// Defines a contract on how to map a PublishedContent
 /// </summary>
-[System.Obsolete(
-    "Use IEntityMapper<Content> with UseMapper<TMapper>() instead. This interface will be removed in the next major version.")]
+[Obsolete(
+    "Use IEntityMapper<Content> with UseMapper<TMapper>() instead. This interface will be " +
+    "removed in the next major version.")]
 public interface IContentTypeMapping
 {
     /// <summary>
-    /// Handles mapping a PublishedContent to a ContentUpdate. Context provides the shared handling of Content Id's and ensure the feed versioning is correct
+    /// Handles mapping a PublishedContent to a ContentUpdate. Context provides the shared handling of Content Id's and
+    /// ensure the feed versioning is correct
     /// </summary>
     /// <param name="context"></param>
     /// <param name="token"></param>

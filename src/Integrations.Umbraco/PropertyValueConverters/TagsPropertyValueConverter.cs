@@ -1,4 +1,6 @@
 #pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
+
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,7 +25,7 @@ internal class TagsPropertyValueConverter : IDefaultPropertyValueConverter, IRel
     }
 
     /// <inheritdoc/>
-    [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
+    [Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
         var value = context.Property.GetValue<IEnumerable<string>>(context.Culture);

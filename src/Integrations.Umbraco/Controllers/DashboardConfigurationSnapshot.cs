@@ -15,7 +15,8 @@ internal static class DashboardConfigurationSnapshot
         List<NamedOptionsViewObject> clients,
         bool middlewareEnabled)
     {
-        return new ConfigurationViewModel(configuration.TrackedContentTypes,
+        return new ConfigurationViewModel(
+            configuration.TrackedContentTypes,
             configuration.ExportedContentTypes,
             clients,
             middlewareEnabled)
@@ -26,11 +27,13 @@ internal static class DashboardConfigurationSnapshot
                 .Select(mapping => Describe(mapping, configuration))
                 .ToArray(),
             DefaultPublishedContentProviderAlias = configuration.SearchProviders.Providers.Keys.FirstOrDefault(alias =>
-                string.Equals(alias,
+                string.Equals(
+                    alias,
                     configuration.SearchProviders.DefaultPublishedContentProviderAlias,
                     StringComparison.OrdinalIgnoreCase)),
             SearchProviders = configuration.SearchProviders.Providers
-                .OrderBy(pair => string.Equals(pair.Key,
+                .OrderBy(pair => string.Equals(
+                    pair.Key,
                     configuration.SearchProviders.DefaultPublishedContentProviderAlias,
                     StringComparison.OrdinalIgnoreCase)
                     ? 0
@@ -76,7 +79,8 @@ internal static class DashboardConfigurationSnapshot
             ResolvedDocumentTypeAliases = configuration.Mappings.Values
                 .Where(mapping => mapping.Export && mapping.EntityType == provider.EntityType
                                                  && (restrictions.Length == 0 ||
-                                                     restrictions.Contains(mapping.DocumentTypeAlias,
+                                                     restrictions.Contains(
+                                                         mapping.DocumentTypeAlias,
                                                          StringComparer.OrdinalIgnoreCase)))
                 .Select(mapping => mapping.DocumentTypeAlias)
                 .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
@@ -115,12 +119,13 @@ internal static class DashboardConfigurationSnapshot
                 })
         ];
 
-        fields.AddRange(mapping.DataMappings.Select(data => new DashboardFieldMappingViewModel
-        {
-            SourcePropertyAlias = data.SourcePropertyAlias,
-            Destination = $"Data[\"{data.Options.DataKey}\"]",
-            Conversion = data.Options.ConverterType?.Name ?? "Automatic selection"
-        }));
+        fields.AddRange(
+            mapping.DataMappings.Select(data => new DashboardFieldMappingViewModel
+            {
+                SourcePropertyAlias = data.SourcePropertyAlias,
+                Destination = $"Data[\"{data.Options.DataKey}\"]",
+                Conversion = data.Options.ConverterType?.Name ?? "Automatic selection"
+            }));
 
         MappingDefinition? parent =
             configuration.Mappings.Values.FirstOrDefault(parent => ReferenceEquals(parent.Variant, mapping));
@@ -142,13 +147,15 @@ internal static class DashboardConfigurationSnapshot
         if (mapping.CategoryPropertyAlias != null)
         {
             relationships.Add(
-                $"{mapping.CategoryPropertyAlias} → Additional categories, using each referenced Category's configured ID source.");
+                $"{mapping.CategoryPropertyAlias}" +
+                $" → Additional categories, using each referenced Category's configured ID source.");
         }
 
         if (mapping.Variant != null)
         {
             relationships.Add(
-                $"Child documents of type '{mapping.Variant.DocumentTypeAlias}' supply Product Variants when their export is configured.");
+                $"Child documents of type '{mapping.Variant.DocumentTypeAlias}" +
+                $"' supply Product Variants when their export is configured.");
         }
 
         if (parent != null)

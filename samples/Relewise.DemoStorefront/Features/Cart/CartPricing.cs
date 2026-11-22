@@ -2,6 +2,8 @@ using System.Globalization;
 using Relewise.DemoStorefront.Features.Products;
 using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.PublishedCache;
+using Umbraco.Cms.Core.Services;
 
 namespace Relewise.DemoStorefront.Features.Cart;
 
@@ -9,11 +11,12 @@ internal static class CartPricing
 {
     internal static PricedCartLine[]? Price(
         List<CartLine> lines,
-        Umbraco.Cms.Core.PublishedCache.IPublishedContentCache cache,
+        IPublishedContentCache cache,
         HttpContext http,
         bool availableOnly = false)
     {
         DemoMarket market = DemoMarket.Current(http);
+        var access = http.RequestServices.GetRequiredService<IPublicAccessService>();
         var result = new List<PricedCartLine>();
 
         foreach (CartLine line in lines)
@@ -22,8 +25,10 @@ internal static class CartPricing
             IPublishedContent? variant = line.VariantKey.HasValue ? cache.GetById(line.VariantKey.Value) : null;
 
             if (product?.ContentType.Alias != "product" || !product.Cultures.ContainsKey(market.Culture) ||
+                access.IsProtected(product.Path).Success ||
                 line.Quantity < 1 || line.Quantity > 99 ||
                 (line.VariantKey.HasValue && (variant?.ContentType.Alias != "productVariant" ||
+                                              access.IsProtected(variant.Path).Success ||
                                               variant.Parent()?.Key != product.Key ||
                                               !variant.Cultures.ContainsKey(market.Culture))) ||
                 (!line.VariantKey.HasValue &&
@@ -50,13 +55,15 @@ internal static class CartPricing
             .All(group => group.Sum(line => line.Line.Quantity) <= group.First().Product.Value<int>("stock"));
     }
 
-    internal static string ReviewKey(PricedCartLine[] lines,
+    internal static string ReviewKey(
+        PricedCartLine[] lines,
         HttpContext http)
     {
         return DemoMarket.Current(http).Currency + "|" +
                string.Join(
                    "|",
                    lines.Select(line =>
-                       $"{line.Line.ProductKey:D}/{line.Line.VariantKey:D}/{line.Line.Quantity}/{line.Amount.ToString("G29", CultureInfo.InvariantCulture)}"));
+                       $"{line.Line.ProductKey:D}/{line.Line.VariantKey:D}/{line.Line.Quantity}/" +
+                       $"{line.Amount.ToString("G29", CultureInfo.InvariantCulture)}"));
     }
 }

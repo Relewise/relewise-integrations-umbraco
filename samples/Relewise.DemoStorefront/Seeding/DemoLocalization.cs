@@ -27,7 +27,8 @@ internal static class DemoLocalization
                             node.Properties.Any(property =>
                                 translatedFields.Contains(property.Alias) &&
                                 !property.PropertyType.VariesByCulture())))
-            .ToDictionary(node => node.Key,
+            .ToDictionary(
+                node => node.Key,
                 node => (node.Name, Invariant: !node.ContentType.VariesByCulture(),
                     Values: translatedFields
                         .Where(alias => node.HasProperty(alias) && !node.Properties
@@ -96,7 +97,8 @@ internal static class DemoLocalization
         // One site root gives every entity the same native culture-aware URL hierarchy.
         if (story.ParentId == -1)
         {
-            Attempt<DomainUpdateResult, DomainOperationStatus> removed = await domains.UpdateDomainsAsync(story.Key,
+            Attempt<DomainUpdateResult, DomainOperationStatus> removed = await domains.UpdateDomainsAsync(
+                story.Key,
                 new DomainsUpdateModel { DefaultIsoCode = "en-US", Domains = [] });
 
             if (!removed.Success)
@@ -115,7 +117,8 @@ internal static class DemoLocalization
                 var changed = false;
                 var publish = original.Published && !original.Edited;
 
-                if (snapshots.TryGetValue(node.Key,
+                if (snapshots.TryGetValue(
+                        node.Key,
                         out (string? Name, bool Invariant, Dictionary<string, object?> Values) snapshot))
                 {
                     if (snapshot.Invariant)
@@ -155,7 +158,8 @@ internal static class DemoLocalization
                 }
 
                 if (node.AvailableCultures.Contains("da-DK", StringComparer.OrdinalIgnoreCase) &&
-                    snapshots.TryGetValue(node.Key,
+                    snapshots.TryGetValue(
+                        node.Key,
                         out (string? Name, bool Invariant, Dictionary<string, object?> Values) blocks))
                 {
                     foreach (var alias in new[] { "contentRows", "pageGrid" })
@@ -197,7 +201,8 @@ internal static class DemoLocalization
 
         var baseUrl = services.GetRequiredService<IConfiguration>()["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!
             .TrimEnd('/');
-        Attempt<DomainUpdateResult, DomainOperationStatus> resultDomains = await domains.UpdateDomainsAsync(home.Key,
+        Attempt<DomainUpdateResult, DomainOperationStatus> resultDomains = await domains.UpdateDomainsAsync(
+            home.Key,
             new DomainsUpdateModel
             {
                 DefaultIsoCode = "en-US",
@@ -217,7 +222,8 @@ internal static class DemoLocalization
         await DemoDictionary.EnsureAsync(services);
     }
 
-    private static (string Name, string Body)? Translate(IContent node,
+    private static (string Name, string Body)? Translate(
+        IContent node,
         IContentService content)
     {
         var sku = node.GetValue<string>("sku");
@@ -273,7 +279,8 @@ internal static class DemoLocalization
                 "Finding your trail" => ("Find din egen sti",
                     "Vores guide til friluftslivet. Vælg din rute, pak let, og efterlad ingen spor."),
                 "A slower kind of weekend" => ("En weekend i roligt tempo",
-                    "God kaffe, en stille lejrplads og tid til at gå på opdagelse. Det vigtigste til en weekend i det fri."),
+                    "God kaffe, en stille lejrplads og tid til at gå på opdagelse. Det vigtigste til en " +
+                    "weekend i det fri."),
                 "Packing for your first camp" => ("Pak til din første telttur",
                     "En praktisk pakkeliste fra Fieldwork-holdet."),
                 _ => null
@@ -308,21 +315,25 @@ internal static class DemoLocalization
         ["FIELDWORK-HIGH-OUTPUT-HEADLAMP"] = ("Kraftig pandelampe til vandring",
             "En genopladelig pandelampe med 600 lumen og en lang lysstråle til mørke stier."),
         ["FIELDWORK-INSULATED-GLOVES"] = ("Isolerede vinterhandsker",
-            "Isolerede vandrehandsker holder hænderne varme på kolde vinterture og giver et godt greb om stavene."),
+            "Isolerede vandrehandsker holder hænderne varme på kolde vinterture og giver et godt " +
+            "greb om stavene."),
         ["FIELDWORK-WATERPROOF-GLOVES"] = ("Vandtætte vandrehandsker",
             "Vandtætte handsker beskytter hænderne mod vind og regn med fleksible fingre og et sikkert greb."),
         ["FIELDWORK-COMPACT-FIRST-AID"] = ("Kompakt førstehjælpssæt",
             "Et lille førstehjælpssæt til dagsture med tydelige rum til forbindinger og basisudstyr."),
         ["FIELDWORK-FAMILY-FIRST-AID"] = ("Førstehjælpssæt til familien",
-            "Et rummeligt førstehjælpssæt til familiens teltture med plads til ekstra forbindinger og personligt udstyr."),
+            "Et rummeligt førstehjælpssæt til familiens teltture med plads til ekstra " +
+            "forbindinger og personligt udstyr."),
         ["FIELDWORK-LIGHT-CAMP-CHAIR"] = ("Ultralet trekkingstol",
-            "En let foldbar campingstol med rygstøtte som pakkes i en lille taske til vandreture og lejraftener."),
+            "En let foldbar campingstol med rygstøtte som pakkes i en lille taske til vandreture " +
+            "og lejraftener."),
         ["FIELDWORK-RECLINING-CHAIR"] = ("Campingstol med justerbart ryglæn",
             "En komfortabel foldestol med justerbart ryglæn og polstret sæde til rolige aftener i lejren."),
         ["FIELDWORK-LIGHT-DRY-BAG"] = ("Let vandtæt rullepose",
             "En let vandtæt pose på 10 liter med rullelukning holder skiftetøjet tørt i rygsækken."),
         ["FIELDWORK-EXPEDITION-DRY-BAG"] = ("Vandtæt ekspeditionspose",
-            "En robust vandtæt pose på 30 liter med forstærket rullelukning til kanoture og vådt campingudstyr."),
+            "En robust vandtæt pose på 30 liter med forstærket rullelukning til kanoture og vådt " +
+            "campingudstyr."),
         ["FIELDWORK-POCKET-BINOCULARS"] = ("Let lommekikkert",
             "En kompakt kikkert med 8 gange forstørrelse og 25 mm linser til fugle og dyreliv på dagsturen."),
         ["FIELDWORK-WATERPROOF-BINOCULARS"] = ("Vandtæt trekkingkikkert",
@@ -369,7 +380,8 @@ internal static class DemoLocalization
         ["FIELDWORK-PICNIC-BLANKET"] = ("Pakketæppe til picnic",
             "Et tæppe til morgenmad på lejrpladsen og picnicpauser. Kun to tilbage; kun på tilbud i Europa."),
         ["FIELDWORK-REPAIR-KIT"] = ("Reparationssæt til vandreturen",
-            "Et kompakt reparationssæt til rygsække og campingudstyr. Midlertidigt udsolgt; kun på tilbud i USA."),
+            "Et kompakt reparationssæt til rygsække og campingudstyr. Midlertidigt udsolgt; kun " +
+            "på tilbud i USA."),
         ["FIELDWORK-HYDRATION-PACK"] = ("Løberygsæk med væskesystem",
             "En tætsiddende løberygsæk med plads til vand og en let trøje."),
         ["FIELDWORK-OVERNIGHT-PACK"] = ("Trekkingrygsæk til overnatning",

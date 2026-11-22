@@ -19,7 +19,8 @@ public class RelewiseDashboardApiComposer : IComposer
     /// <param name="builder"></param>
     public void Compose(IUmbracoBuilder builder)
     {
-        builder.AddBackOfficeOpenApiDocument(Constants.ApiName,
+        builder.AddBackOfficeOpenApiDocument(
+            Constants.ApiName,
             document => document
                 .WithTitle("Relewise Dashboard Backoffice API")
                 .WithBackOfficeAuthentication()
@@ -38,7 +39,8 @@ public class RelewiseDashboardApiComposer : IComposer
     private static bool IsRelewiseController(ControllerActionDescriptor descriptor)
     {
         return descriptor.ControllerTypeInfo.Namespace?
-            .StartsWith("Relewise.Integrations.Umbraco.Controllers",
+            .StartsWith(
+                "Relewise.Integrations.Umbraco.Controllers",
                 StringComparison.InvariantCultureIgnoreCase) is true;
     }
 }

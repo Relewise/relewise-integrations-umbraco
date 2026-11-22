@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Relewise.DemoStorefront.Setup;
 using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
@@ -13,7 +14,8 @@ namespace Relewise.DemoStorefront.Features.Cart;
 
 internal static class CartPages
 {
-    internal static async Task<IResult> Page(HttpContext http,
+    internal static async Task<IResult> Page(
+        HttpContext http,
         bool checkout)
     {
         if (DemoConnection.RequireConnection(http) is { } blocked)
@@ -59,7 +61,7 @@ internal static class CartPages
             if (!checkout)
             {
                 var json =
-                    System.Text.Json.JsonSerializer.Serialize(Model(http, lines, priced), StorefrontChrome.Json);
+                    JsonSerializer.Serialize(Model(http, lines, priced), StorefrontChrome.Json);
 
                 html.Append(
                     $"<div id='cart-page'></div><script id='cart-data' type='application/json'>{json}</script>");
@@ -67,7 +69,8 @@ internal static class CartPages
             else if (lines.Count == 0)
             {
                 html.Append(
-                    $"<p class='empty'>{T(http, "CartEmpty")}</p><a class='button' href='{Storefront.E(StorefrontNavigation.ShoppingUrl(http))}'>{T(http, "ContinueShopping")}</a>");
+                    $"<p class='empty'>{T(http, "CartEmpty")}</p><a class='button' href='" +
+                    $"{Storefront.E(StorefrontNavigation.ShoppingUrl(http))}'>{T(http, "ContinueShopping")}</a>");
             }
             else
             {
@@ -91,15 +94,16 @@ internal static class CartPages
     {
         var path = DemoMarket.Current(http).LanguagePath;
 
-        html.Append($$"""
-                      <ol class="checkout-steps">
-                          <li><a href="{{path}}/cart">{{T(http, "Cart")}}</a></li>
-                          <li aria-current="step">{{T(http, "ReviewOrder")}}</li>
-                          <li>{{T(http, "Confirmation")}}</li>
-                      </ol>
-                      <section class="checkout-review">
-                          <div class="checkout-items"><h2>{{T(http, "CartItems")}}</h2>
-                      """);
+        html.Append(
+            $$"""
+              <ol class="checkout-steps">
+                  <li><a href="{{path}}/cart">{{T(http, "Cart")}}</a></li>
+                  <li aria-current="step">{{T(http, "ReviewOrder")}}</li>
+                  <li>{{T(http, "Confirmation")}}</li>
+              </ol>
+              <section class="checkout-review">
+                  <div class="checkout-items"><h2>{{T(http, "CartItems")}}</h2>
+              """);
 
         foreach (CartLine line in lines)
         {
@@ -112,25 +116,29 @@ internal static class CartPages
             }
 
             IPublishedContent page = item.Variant ?? item.Product;
+            var title = Storefront.E(SiteContent.Title(page));
 
-            html.Append($$"""
-                          <div class="review-item">
-                              <div class="illustration">{{Storefront.Image(page)}}</div>
-                              <span>{{Storefront.E(SiteContent.Title(page))}}<small>{{T(http, "Quantity")}}: {{line.Quantity}}</small></span>
-                              <strong>{{Money(http, item.Amount * line.Quantity)}}</strong>
-                          </div>
-                          """);
+            html.Append(
+                $$"""
+                  <div class="review-item">
+                      <div class="illustration">{{Storefront.Image(page)}}</div>
+                      <span>{{title}}<small>{{T(http, "Quantity")}}: {{line.Quantity}}</small></span>
+                      <strong>{{Money(http, item.Amount * line.Quantity)}}</strong>
+                  </div>
+                  """);
         }
 
         var total = priced.Sum(line => line.Amount * line.Line.Quantity);
+        var totalLabel = T(http, "Total");
 
-        html.Append($$"""
-                          </div>
-                          <aside class="checkout-summary">
-                              <h2>{{T(http, "OrderSummary")}}</h2>
-                              <div class="cart-total"><span>{{T(http, "Total")}}</span><strong>{{Money(http, total)}}</strong></div>
-                              <p class="muted">{{T(http, "DemoCheckout")}}</p>
-                      """);
+        html.Append(
+            $$"""
+                  </div>
+                  <aside class="checkout-summary">
+                      <h2>{{T(http, "OrderSummary")}}</h2>
+                      <div class="cart-total"><span>{{totalLabel}}</span><strong>{{Money(http, total)}}</strong></div>
+                      <p class="muted">{{T(http, "DemoCheckout")}}</p>
+              """);
 
         var ready = priced.Length == lines.Count && InStock(priced);
 
@@ -144,12 +152,13 @@ internal static class CartPages
                 basket.CheckoutToken = Guid.NewGuid().ToString("N");
             }
 
-            html.Append($$"""
-                          <form method="post" action="{{path}}/checkout">
-                              {{FormFields.Token(http)}}{{FormFields.Hidden("checkoutToken", basket.CheckoutToken)}}
-                              <button>{{T(http, "PlaceOrder")}}</button>
-                          </form>
-                          """);
+            html.Append(
+                $$"""
+                  <form method="post" action="{{path}}/checkout">
+                      {{FormFields.Token(http)}}{{FormFields.Hidden("checkoutToken", basket.CheckoutToken)}}
+                      <button>{{T(http, "PlaceOrder")}}</button>
+                  </form>
+                  """);
         }
         else
         {
@@ -179,27 +188,36 @@ internal static class CartPages
 
         var html = new StringBuilder();
 
-        html.Append($$"""
-                      <section class="hero">
-                          <p class="eyebrow">{{T(http, "DemoOrder")}}</p>
-                          <h1>{{T(http, "ThankYou")}}</h1>
-                          <p>{{T(http, "OrderConfirmed")}}</p>
-                          <p>{{T(http, "OrderNumber")}}: <strong>{{Storefront.E(receipt.OrderNumber)}}</strong></p>
-                      </section>
-                      <div class="order-summary">
-                      """);
+        html.Append(
+            $$"""
+              <section class="hero">
+                  <p class="eyebrow">{{T(http, "DemoOrder")}}</p>
+                  <h1>{{T(http, "ThankYou")}}</h1>
+                  <p>{{T(http, "OrderConfirmed")}}</p>
+                  <p>{{T(http, "OrderNumber")}}: <strong>{{Storefront.E(receipt.OrderNumber)}}</strong></p>
+              </section>
+              <div class="order-summary">
+              """);
 
         foreach (PurchasedCartLine line in receipt.Lines)
         {
             html.Append(
-                $"<p>{Storefront.E(line.Name)} × {line.Quantity}<strong>{Money(http, line.Total, receipt.Currency)}</strong></p>");
+                $"<p>{Storefront.E(line.Name)} × {line.Quantity}<strong>" +
+                $"{Money(http, line.Total, receipt.Currency)}</strong></p>");
         }
 
-        html.Append($$"""
-                          <div class="cart-total"><span>{{T(http, "Total")}}</span><strong>{{Money(http, receipt.Total, receipt.Currency)}}</strong></div>
-                      </div>
-                      <a class="button" href="{{Storefront.E(StorefrontNavigation.ShoppingUrl(http))}}">{{T(http, "ContinueShopping")}}</a>
-                      """);
+        var totalLabel = T(http, "Total");
+        var totalValue = Money(http, receipt.Total, receipt.Currency);
+
+        var continueUrl = Storefront.E(StorefrontNavigation.ShoppingUrl(http));
+        var continueLabel = T(http, "ContinueShopping");
+
+        html.Append(
+            $$"""
+                  <div class="cart-total"><span>{{totalLabel}}</span><strong>{{totalValue}}</strong></div>
+              </div>
+              <a class="button" href="{{continueUrl}}">{{continueLabel}}</a>
+              """);
 
         return Html(http, "Confirmation", html.ToString());
     }

@@ -1,4 +1,6 @@
 #pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
@@ -36,7 +38,7 @@ public class ImageCropperValueConverter : IDefaultPropertyValueConverter, IRelew
     }
 
     /// <inheritdoc/>
-    [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
+    [Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
         var value = context.Property.GetValue<ImageCropperValue>(context.Culture);
@@ -50,7 +52,8 @@ public class ImageCropperValueConverter : IDefaultPropertyValueConverter, IRelew
         {
             foreach (ImageCropperValue.ImageCropperCrop crop in value.Crops)
             {
-                context.Add($"{context.Property.Alias}_{crop.Alias}",
+                context.Add(
+                    $"{context.Property.Alias}_{crop.Alias}",
                     value.Src + value.GetCropUrl(crop.Width, crop.Height, _imageUrlGenerator));
             }
         }

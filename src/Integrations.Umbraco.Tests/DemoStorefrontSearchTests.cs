@@ -63,7 +63,8 @@ public class DemoStorefrontSearchTests
         var scoped = new StorefrontSearch(http.Request, false, false, brand.Object);
 
         Assert.DoesNotContain(scoped.Facets(), facet => facet.FieldName == "shopBrand");
-        Assert.Equal(first.ToString("D"),
+        Assert.Equal(
+            first.ToString("D"),
             Assert.Single(Assert.IsType<KeywordFilter>(Assert.Single(scoped.Filters())).Values));
     }
 
@@ -111,7 +112,8 @@ public class DemoStorefrontSearchTests
         var search = new StorefrontSearch(http.Request, false, true);
 
         Assert.Equal("/en/fieldwork-equipment/camping/?q=tent&sort=price-asc", search.ResetUrl());
-        Assert.Equal("/en/fieldwork-equipment/camping/?sort=price-asc&price=low&available=true",
+        Assert.Equal(
+            "/en/fieldwork-equipment/camping/?sort=price-asc&price=low&available=true",
             search.ClearQueryUrl());
     }
 

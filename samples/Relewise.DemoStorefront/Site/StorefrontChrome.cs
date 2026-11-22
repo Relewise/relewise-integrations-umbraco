@@ -47,23 +47,27 @@ internal static class StorefrontChrome
             )
         ];
 
-        links.AddRange(SiteContent.ShoppingCategories(home)
-            .Where(Available)
-            .Select(node =>
-                new StorefrontLink(
-                    SiteContent.Title(node),
-                    node.Url(market.Culture),
-                    path.StartsWith(node.Url(market.Culture), StringComparison.OrdinalIgnoreCase)
-                )));
-        links.Add(new StorefrontLink(
-            Storefront.Text(http, "OffersNavigation"),
-            market.LanguagePath + "/offers",
-            section == "offers",
-            DemoConnection.SearchConfigured(http)
-        ));
-        links.Add(new StorefrontLink(Storefront.Text(http, "Journal"),
-            market.StoreUrl + "?type=article",
-            section == "journal"));
+        links.AddRange(
+            SiteContent.ShoppingCategories(home)
+                .Where(Available)
+                .Select(node =>
+                    new StorefrontLink(
+                        SiteContent.Title(node),
+                        node.Url(market.Culture),
+                        path.StartsWith(node.Url(market.Culture), StringComparison.OrdinalIgnoreCase)
+                    )));
+        links.Add(
+            new StorefrontLink(
+                Storefront.Text(http, "OffersNavigation"),
+                market.LanguagePath + "/offers",
+                section == "offers",
+                DemoConnection.SearchConfigured(http)
+            ));
+        links.Add(
+            new StorefrontLink(
+                Storefront.Text(http, "Journal"),
+                market.StoreUrl + "?type=article",
+                section == "journal"));
 
         string[] keys =
         [
@@ -91,14 +95,17 @@ internal static class StorefrontChrome
                 : market.LanguagePath + "/cart",
             SearchUrl = market.LanguagePath + "/search",
             SuggestionsUrl = market.LanguagePath + "/store/suggestions",
+
             Market = market.Id,
-            MarketLabel = Storefront.Text(http,
+            MarketLabel = Storefront.Text(
+                http,
                 market.Id switch { "dk" => "DenmarkShort", "us" => "UnitedStatesShort", _ => "EuropeShort" }),
             Markets =
             [
                 .. DemoMarket.All.Select(option =>
                     new StorefrontMarketOption(option.Id, Storefront.Text(http, option.LabelKey)))
             ],
+
             Links = [.. links],
             ShopLinks =
             [
@@ -119,12 +126,16 @@ internal static class StorefrontChrome
                             section == "shop" && path == node.Url(market.Culture)
                         ))
             ],
+
             JournalUrl = market.StoreUrl + "?type=article",
+
             DatasetId = DemoConnection.IsConfigured(http)
                 ? http.RequestServices.GetRequiredService<IConfiguration>()["Relewise:DatasetId"]
                 : null,
+
             Count = CartStateStore.Count(http),
             Checkout = checkout,
+
             SearchConfigured = DemoConnection.SearchConfigured(http),
             ShoppingConfigured = DemoConnection.IsConfigured(http),
             SearchPage = section == "search",
@@ -133,10 +144,13 @@ internal static class StorefrontChrome
                 : "product",
             Query = section == "search" ? http.Request.Query["q"].ToString() : ""
         };
+
         var versions = http.RequestServices.GetRequiredService<IFileVersionProvider>();
         var css = versions.AddFileVersionToPath(http.Request.PathBase, "/storefront.css");
         var script = versions.AddFileVersionToPath(http.Request.PathBase, "/storefront/listing.js");
+
         var previewNotice = DemoConnection.IsConfigured(http) ? "" : DemoConnection.PreviewNotice(http);
+
         var shellJson = JsonSerializer.Serialize(model, Json);
         var pageClass = checkout ? "checkout-page" : "shopping-page";
 

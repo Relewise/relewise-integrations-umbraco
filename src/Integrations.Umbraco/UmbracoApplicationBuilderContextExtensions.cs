@@ -12,7 +12,8 @@ namespace Relewise.Integrations.Umbraco;
 public static class UmbracoApplicationBuilderContextExtensions
 {
     /// <summary>
-    /// Tracks all page views of registered content types. Requires that an instance of <see cref="IRelewiseUserLocator"/> has been added to the ServiceCollection.
+    /// Tracks all page views of registered content types. Requires that an instance of <see
+    /// cref="IRelewiseUserLocator"/> has been added to the ServiceCollection.
     /// </summary>
     /// <param name="builder"></param>
     /// <exception cref="ArgumentNullException"></exception>
@@ -35,7 +36,9 @@ public static class UmbracoApplicationBuilderContextExtensions
                 ?.IsService(typeof(IRelewiseUserLocator)) is false)
         {
             throw new InvalidOperationException(
-                $"Could not find {nameof(IRelewiseUserLocator)} registered in the DI. Did you remember to add it to the servicecollection? It is required to automatically track page views.");
+                $"Could not find {nameof(IRelewiseUserLocator)}" +
+                $" registered in the DI. Did you remember to add it to the " +
+                $"servicecollection? It is required to automatically track page views.");
         }
 
         builder.AppBuilder.UseMiddleware<RelewiseContentMiddleware>();

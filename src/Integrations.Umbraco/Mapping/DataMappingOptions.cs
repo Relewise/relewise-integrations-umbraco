@@ -15,7 +15,8 @@ public class DataMappingOptions
     /// <summary>The destination Data key; defaults to the source property alias.</summary>
     public string DataKey { get; set; }
 
-    /// <summary>Select a single Data converter for this field without adding it to global converter selection.</summary>
+    /// <summary>Select a single Data converter for this field without adding it to global converter
+    /// selection.</summary>
     public void UseConverter<TConverter>() where TConverter : class, IAsyncRelewisePropertyValueConverter
     {
         if (ConverterType != null)

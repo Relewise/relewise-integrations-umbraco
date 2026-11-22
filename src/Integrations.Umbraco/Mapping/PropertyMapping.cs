@@ -1,4 +1,5 @@
 #pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+
 using System;
 using System.Threading.Tasks;
 
@@ -15,7 +16,8 @@ internal sealed class PropertyMapping<TEntity, TValue>(
     public string DestinationProperty { get; } = destinationProperty;
     public Type? ConverterType { get; } = converterType;
 
-    public async ValueTask ApplyAsync(object entity,
+    public async ValueTask ApplyAsync(
+        object entity,
         PropertyMappingContext context)
     {
         if (entity is not TEntity destination)
@@ -41,7 +43,9 @@ internal sealed class PropertyMapping<TEntity, TValue>(
         catch (Exception error) when (error is not OperationCanceledException)
         {
             throw new InvalidOperationException(
-                $"Cannot map '{context.Property.Alias}' on document '{context.PublishedContent.Key}' to '{context.DestinationProperty}' for cultures '{string.Join(", ", context.CulturesToPublish)}'.",
+                $"Cannot map '{context.Property.Alias}' on document '{context.PublishedContent.Key}' to '" +
+                $"{context.DestinationProperty}' for cultures '" +
+                $"{string.Join(", ", context.CulturesToPublish)}'.",
                 error);
         }
     }

@@ -23,7 +23,8 @@ public class DemoEditorialMappingTests
 
         variations.VariationContext = previous;
 
-        IPublishedProperty property = Property("contentRows",
+        IPublishedProperty property = Property(
+            "contentRows",
             _ =>
                 variations.VariationContext?.Culture == "da-DK"
                     ? Blocks(Property("text", _ => "Dansk blok"))
@@ -109,7 +110,8 @@ public class DemoEditorialMappingTests
     [Fact]
     public async Task APartialCultureExportDoesNotReadOrEmitAnotherCulture()
     {
-        IPublishedProperty text = Property("text",
+        IPublishedProperty text = Property(
+            "text",
             culture => culture == "da-DK" ? "Dansk blok" : throw new InvalidOperationException("Unrequested culture"),
             true);
         IPublishedProperty property = Property("contentRows", _ => Blocks(text));
@@ -146,11 +148,14 @@ public class DemoEditorialMappingTests
     [Fact]
     public void NestedBlocksExcludeHiddenContentAndStripNonEditorialHtml()
     {
-        BlockListModel nested = Blocks(Property("text",
-            _ => new HtmlEncodedString("<p>Nested text</p><script>secret()</script>")));
+        BlockListModel nested = Blocks(
+            Property(
+                "text",
+                _ => new HtmlEncodedString("<p>Nested text</p><script>secret()</script>")));
         IPublishedElement outer = Element(Property("heading", _ => "Heading"), Property("items", _ => nested));
         IPublishedElement hidden = Element(Property("hide", _ => true));
-        var blocks = new BlockListModel([
+        var blocks = new BlockListModel(
+        [
             new BlockListItem(Guid.NewGuid(), outer, null, null),
             new BlockListItem(Guid.NewGuid(), Element(Property("text", _ => "Hidden text")), Guid.NewGuid(), hidden)
         ]);
@@ -200,10 +205,12 @@ public class DemoEditorialMappingTests
     [Fact]
     public void StorefrontRenderingKeepsRichTextAndHidesWholeContainers()
     {
-        IPublishedElement visible = Element(Property("heading", _ => "A <quiet> place"),
+        IPublishedElement visible = Element(
+            Property("heading", _ => "A <quiet> place"),
             Property("text", _ => new HtmlEncodedString("<p>Take a <strong>break</strong>.</p>")));
         IPublishedElement hidden = Element(Property("hide", _ => true));
-        var child = new BlockGridItem(Guid.NewGuid(),
+        var child = new BlockGridItem(
+            Guid.NewGuid(),
             Element(Property("text", _ => new HtmlEncodedString("Secret child"))),
             null,
             null);
@@ -225,10 +232,12 @@ public class DemoEditorialMappingTests
     [InlineData("da-DK", "Dansk fortælling")]
     public void StorefrontRenderingUsesTheRequestedBlockLanguage(string culture, string expected)
     {
-        BlockListModel blocks = Blocks(Property("text",
-            language => new HtmlEncodedString(
-                language == "da-DK" ? "<p>Dansk fortælling</p>" : "<p>English story</p>"),
-            true));
+        BlockListModel blocks = Blocks(
+            Property(
+                "text",
+                language => new HtmlEncodedString(
+                    language == "da-DK" ? "<p>Dansk fortælling</p>" : "<p>English story</p>"),
+                true));
 
         Assert.Equal("<p>" + expected + "</p>", StorefrontEditorial.Render(blocks, culture));
     }

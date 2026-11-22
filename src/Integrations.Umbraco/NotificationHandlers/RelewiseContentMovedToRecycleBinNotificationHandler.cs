@@ -25,7 +25,8 @@ internal class
         _configuration = configuration;
     }
 
-    public async Task HandleAsync(ContentMovedToRecycleBinNotification notification,
+    public async Task HandleAsync(
+        ContentMovedToRecycleBinNotification notification,
         CancellationToken cancellationToken)
     {
         ITracker? tracker = _exportContentService.GetTrackerOrNull();

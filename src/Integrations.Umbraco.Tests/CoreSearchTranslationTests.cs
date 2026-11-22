@@ -15,16 +15,19 @@ public class CoreSearchTranslationTests
     public void NumericRangesRequireOneValueWithinInclusiveLowerExclusiveUpperBounds()
     {
         RFilter filter =
-            CoreSearchTranslation.MapFilter(new IntegerRangeFilter("price",
-                [new IntegerRangeFilterRange(10, 20)],
-                false));
+            CoreSearchTranslation.MapFilter(
+                new IntegerRangeFilter(
+                    "price",
+                    [new IntegerRangeFilterRange(10, 20)],
+                    false));
 
         Dictionary<string, DataValue?> Data(params double[] values)
         {
             return new Dictionary<string, DataValue?>
             {
-                [CoreSearchTranslation.Field("price", "integerValues")] = new(values.Select(v =>
-                    new DataObject(new Dictionary<string, DataValue?> { ["value"] = v })))
+                [CoreSearchTranslation.Field("price", "integerValues")] = new(
+                    values.Select(v =>
+                        new DataObject(new Dictionary<string, DataValue?> { ["value"] = v })))
             };
         }
 
@@ -33,15 +36,17 @@ public class CoreSearchTranslationTests
         Assert.False(Matches(filter, Data(20)));
         Assert.False(Matches(filter, Data(5, 25)));
         Assert.False(Matches(filter, Data()));
-        Assert.True(Matches(
-            CoreSearchTranslation.MapFilter(
-                new IntegerRangeFilter("price", [new IntegerRangeFilterRange(10, 20)], true)),
-            Data(5, 25)));
+        Assert.True(
+            Matches(
+                CoreSearchTranslation.MapFilter(
+                    new IntegerRangeFilter("price", [new IntegerRangeFilterRange(10, 20)], true)),
+                Data(5, 25)));
     }
 
     // Evaluates the documented filter contract for focused translation tests. A live Dataset
     // check is still required to establish backend ranking and search configuration behavior.
-    private static bool Matches(RFilter filter,
+    private static bool Matches(
+        RFilter filter,
         Dictionary<string, DataValue?> data)
     {
         var result = filter switch
@@ -59,7 +64,8 @@ public class CoreSearchTranslationTests
         return filter.Negated ? !result : result;
     }
 
-    private static bool Matches(ValueCondition condition,
+    private static bool Matches(
+        ValueCondition condition,
         DataValue data)
     {
         var result = condition switch
@@ -76,7 +82,8 @@ public class CoreSearchTranslationTests
         return condition.Negated ? !result : result;
     }
 
-    private static bool Matches(ObjectValueCondition condition,
+    private static bool Matches(
+        ObjectValueCondition condition,
         DataObject data)
     {
         var value = data.Data[condition.Key]!.ValueAs<double>();

@@ -20,9 +20,10 @@ internal sealed class MappedEntityChangeStrategy(EntityIndexingQueue indexing) :
         HashSet<UmbracoObjectTypes>
             objectTypes = [.. indexInfos.SelectMany(index => index.ContainedObjectTypes)];
 
-        indexing.EnqueueChanges(changes.Where(change => objectTypes.Contains(change.ObjectType)
-                                                        && (change.ContentState == ContentState.Published ||
-                                                            change.ChangeImpact == ChangeImpact.Remove)));
+        indexing.EnqueueChanges(
+            changes.Where(change => objectTypes.Contains(change.ObjectType)
+                                    && (change.ContentState == ContentState.Published ||
+                                        change.ChangeImpact == ChangeImpact.Remove)));
 
         return Task.CompletedTask;
     }

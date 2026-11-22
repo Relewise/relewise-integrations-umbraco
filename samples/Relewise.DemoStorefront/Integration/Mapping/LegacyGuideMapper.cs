@@ -1,4 +1,5 @@
 #pragma warning disable CS0618 // Demonstrates compatibility with existing Content mappers.
+
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco;
 using Relewise.Integrations.Umbraco.Services;
@@ -7,7 +8,8 @@ namespace Relewise.DemoStorefront.Integration.Mapping;
 
 internal sealed class LegacyGuideMapper : IContentTypeMapping
 {
-    public Task<ContentUpdate> Map(ContentMappingContext context,
+    public Task<ContentUpdate> Map(
+        ContentMappingContext context,
         CancellationToken token)
     {
         token.ThrowIfCancellationRequested();

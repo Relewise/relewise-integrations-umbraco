@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.ContentEditing;
@@ -23,7 +24,8 @@ internal static class DemoSeed
             if (contentTypes.Get("currencyPrice") == null)
             {
                 throw new InvalidOperationException(
-                    "This demo database uses an earlier schema. Stop the site and move its ignored umbraco/Data directory aside to seed the updated examples.");
+                    "This demo database uses an earlier schema. Stop the site and move its ignored " +
+                    "umbraco/Data directory aside to seed the updated examples.");
             }
 
             await DemoCatalogue.EnsureAsync(services);
@@ -46,7 +48,8 @@ internal static class DemoSeed
             services.GetRequiredService<IConfigurationEditorJsonSerializer>(),
             services.GetRequiredService<ILanguageService>()
         );
-        await Run(services.GetRequiredService<IContentService>(),
+        await Run(
+            services.GetRequiredService<IContentService>(),
             services.GetRequiredService<IContentTypeService>(),
             services.GetRequiredService<IScopeProvider>(),
             services.GetRequiredService<IDomainService>(),
@@ -84,7 +87,8 @@ internal static class DemoSeed
 
         if (categories == null)
         {
-            categories = new DataType(editors.Single(editor => editor.Alias == "Umbraco.DocumentPicker.Multiple"),
+            categories = new DataType(
+                editors.Single(editor => editor.Alias == "Umbraco.DocumentPicker.Multiple"),
                 serializer)
             {
                 Name = "RFC category references",
@@ -106,11 +110,12 @@ internal static class DemoSeed
         {
             template = new Template(strings, "Storefront", "storefront")
             {
-                Content = await System.IO.File.ReadAllTextAsync(Path.Combine(
-                    environment.ContentRootPath,
-                    "Views",
-                    "storefront.cshtml"
-                ))
+                Content = await System.IO.File.ReadAllTextAsync(
+                    Path.Combine(
+                        environment.ContentRootPath,
+                        "Views",
+                        "storefront.cshtml"
+                    ))
             };
             await templates.CreateAsync(template, Constants.Security.SuperUserKey);
         }
@@ -137,8 +142,9 @@ internal static class DemoSeed
 
             if (alias == "article" && !type.PropertyTypes.Any(property => property.Alias == "contentRows"))
             {
-                type.AddPropertyType(new PropertyType(strings, schema.Blocks, "contentRows")
-                { Name = "Editorial blocks" });
+                type.AddPropertyType(
+                    new PropertyType(strings, schema.Blocks, "contentRows")
+                    { Name = "Editorial blocks" });
                 type.AddPropertyType(new PropertyType(strings, schema.Grid, "pageGrid") { Name = "Editorial Grid" });
                 await types.UpdateAsync(type, Constants.Security.SuperUserKey);
             }
@@ -147,10 +153,12 @@ internal static class DemoSeed
             {
                 if (!type.PropertyTypes.Any(property => property.Alias == "listPrice"))
                 {
-                    type.AddPropertyType(new PropertyType(strings, schema.Prices, "listPrice")
-                    { Name = "List prices" });
-                    type.AddPropertyType(new PropertyType(strings, schema.Prices, "salesPrice")
-                    { Name = "Sales prices" });
+                    type.AddPropertyType(
+                        new PropertyType(strings, schema.Prices, "listPrice")
+                        { Name = "List prices" });
+                    type.AddPropertyType(
+                        new PropertyType(strings, schema.Prices, "salesPrice")
+                        { Name = "Sales prices" });
                 }
 
                 if (!type.PropertyTypes.Any(property => property.Alias == "brand"))
@@ -160,8 +168,9 @@ internal static class DemoSeed
 
                 if (!type.PropertyTypes.Any(property => property.Alias == "extraCategories"))
                 {
-                    type.AddPropertyType(new PropertyType(strings, categories, "extraCategories")
-                    { Name = "Additional categories" });
+                    type.AddPropertyType(
+                        new PropertyType(strings, categories, "extraCategories")
+                        { Name = "Additional categories" });
                 }
 
                 if (!type.PropertyTypes.Any(property => property.Alias == "stock"))
@@ -185,13 +194,15 @@ internal static class DemoSeed
 
             foreach (var alias in new[] { "heading", "bodyText", "score" })
             {
-                localized.AddPropertyType(new PropertyType(strings, alias == "score" ? numeric : text, alias)
-                { Name = alias, Variations = ContentVariation.Culture });
+                localized.AddPropertyType(
+                    new PropertyType(strings, alias == "score" ? numeric : text, alias)
+                    { Name = alias, Variations = ContentVariation.Culture });
             }
 
             // The outer editors are invariant; localized values live in nested block elements.
-            localized.AddPropertyType(new PropertyType(strings, schema.Blocks, "contentRows")
-            { Name = "Localized nested blocks" });
+            localized.AddPropertyType(
+                new PropertyType(strings, schema.Blocks, "contentRows")
+                { Name = "Localized nested blocks" });
             localized.AddPropertyType(new PropertyType(strings, schema.Grid, "pageGrid") { Name = "Editorial Grid" });
 
             localized.AllowedTemplates = [template];
@@ -222,12 +233,13 @@ internal static class DemoSeed
 
             IEnumerable<IContent> all = content.GetRootContent()
                 .SelectMany(root =>
-                    new[] { root }.Concat(content.GetPagedDescendants(
-                        root.Id,
-                        0,
-                        1000,
-                        out _
-                    )));
+                    new[] { root }.Concat(
+                        content.GetPagedDescendants(
+                            root.Id,
+                            0,
+                            1000,
+                            out _
+                        )));
             IContent node = all.FirstOrDefault(node => node.Name == name && node.ContentType.Alias == type) ??
                             content.Create(
                                 name,
@@ -276,7 +288,8 @@ internal static class DemoSeed
         }
 
         Node("Fieldwork storefront", -1, "home");
-        Node("Fieldwork",
+        Node(
+            "Fieldwork",
             -1,
             "brand",
             new Dictionary<string, string>
@@ -285,7 +298,8 @@ internal static class DemoSeed
             }
         );
 
-        IContent adventures = Node("Fieldwork adventures",
+        IContent adventures = Node(
+            "Fieldwork adventures",
             -1,
             "productCategory",
             new Dictionary<string, string>
@@ -294,7 +308,8 @@ internal static class DemoSeed
             }
         );
         IContent folder = Node("Trail routes", adventures.Id, "folder");
-        IContent hikes = Node("Day hikes",
+        IContent hikes = Node(
+            "Day hikes",
             folder.Id,
             "productCategory",
             new Dictionary<string, string>
@@ -302,7 +317,8 @@ internal static class DemoSeed
                 ["categoryId"] = "U19-SMOKE-DAYHIKES"
             }
         );
-        IContent category = Node("Fieldwork equipment",
+        IContent category = Node(
+            "Fieldwork equipment",
             -1,
             "productCategory",
             new Dictionary<string, string>
@@ -310,7 +326,8 @@ internal static class DemoSeed
                 ["categoryId"] = "U19-SMOKE-EQUIPMENT"
             }
         );
-        IContent pack = Node("Trail daypack",
+        IContent pack = Node(
+            "Trail daypack",
             category.Id,
             "product",
             new Dictionary<string, string>
@@ -325,8 +342,9 @@ internal static class DemoSeed
         using (IScope scope = scopes.CreateScope())
         {
             scope.EagerWriteLock(Constants.Locks.ContentTree);
-            pack.SetValue("extraCategories",
-                System.Text.Json.JsonSerializer.Serialize(new[] { category.Key, hikes.Key, hikes.Key }));
+            pack.SetValue(
+                "extraCategories",
+                JsonSerializer.Serialize(new[] { category.Key, hikes.Key, hikes.Key }));
             content.Save(pack);
 
             if (!content.Publish(pack, ["*"]).Success)
@@ -337,7 +355,8 @@ internal static class DemoSeed
             scope.Complete();
         }
 
-        Node("Trail daypack Forest",
+        Node(
+            "Trail daypack Forest",
             pack.Id,
             "productVariant",
             new Dictionary<string, string>
@@ -347,7 +366,8 @@ internal static class DemoSeed
                 ["bodyText"] = "The forest green edition of our everyday daypack."
             }
         );
-        Node("Trail daypack Sand",
+        Node(
+            "Trail daypack Sand",
             pack.Id,
             "productVariant",
             new Dictionary<string, string>
@@ -357,7 +377,8 @@ internal static class DemoSeed
                 ["bodyText"] = "A warm sand finish, made for all seasons."
             }
         );
-        Node("Trail flask",
+        Node(
+            "Trail flask",
             category.Id,
             "product",
             new Dictionary<string, string>
@@ -368,7 +389,8 @@ internal static class DemoSeed
                 ["bodyText"] = "Keep your coffee warm and your water cool, from first light to late evening."
             }
         );
-        Node("Camp shelter",
+        Node(
+            "Camp shelter",
             category.Id,
             "product",
             new Dictionary<string, string>
@@ -380,7 +402,8 @@ internal static class DemoSeed
             }
         );
 
-        IContent article = Node("Finding your trail",
+        IContent article = Node(
+            "Finding your trail",
             -1,
             "article",
             new Dictionary<string, string>
@@ -390,7 +413,8 @@ internal static class DemoSeed
             }
         );
 
-        Node("A slower kind of weekend",
+        Node(
+            "A slower kind of weekend",
             -1,
             "article",
             new Dictionary<string, string>
@@ -399,7 +423,8 @@ internal static class DemoSeed
                     "Good coffee, a quiet campsite and time to explore. The essentials for a weekend outside."
             }
         );
-        Node("Packing for your first camp",
+        Node(
+            "Packing for your first camp",
             article.Id,
             "guide",
             new Dictionary<string, string>

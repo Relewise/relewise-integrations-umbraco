@@ -2,8 +2,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Mapping;
+using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
+using Content = Relewise.Client.DataTypes.Content;
 
 namespace Relewise.Integrations.Umbraco.Tests;
 
@@ -50,7 +52,7 @@ public class EntityMappingTests
         var propertyType = new Mock<IPublishedPropertyType>();
 
         propertyType.SetupGet(value => value.Variations)
-            .Returns(global::Umbraco.Cms.Core.Models.ContentVariation.Culture);
+            .Returns(ContentVariation.Culture);
 
         var property = new Mock<IPublishedProperty>();
 
@@ -81,7 +83,8 @@ public class EntityMappingTests
     [InlineData("en-US", "en-US")]
     [InlineData("DA-dk", "da-DK")]
     [InlineData("fr-FR", "da-DK")]
-    public async Task LocalizedBrandNameUsesTheDefaultPublishedLanguageDeterministically(string defaultCulture,
+    public async Task LocalizedBrandNameUsesTheDefaultPublishedLanguageDeterministically(
+        string defaultCulture,
         string expected)
     {
         var languages = new Mock<ILanguageService>();
@@ -96,7 +99,7 @@ public class EntityMappingTests
         await using var operation = new MappingOperation(root, default);
         var type = new Mock<IPublishedPropertyType>();
 
-        type.SetupGet(value => value.Variations).Returns(global::Umbraco.Cms.Core.Models.ContentVariation.Culture);
+        type.SetupGet(value => value.Variations).Returns(ContentVariation.Culture);
 
         var property = new Mock<IPublishedProperty>();
 
@@ -105,7 +108,8 @@ public class EntityMappingTests
             .Returns((string? culture, string? _) => "Name: " + culture);
 
         var source = Mock.Of<IPublishedContent>();
-        var context = new PropertyMappingContext(source,
+        var context = new PropertyMappingContext(
+            source,
             source,
             property.Object,
             ["en-US", "da-DK"],
@@ -134,14 +138,15 @@ public class EntityMappingTests
         await using var operation = new MappingOperation(root, cancellation.Token);
         var type = new Mock<IPublishedPropertyType>();
 
-        type.SetupGet(value => value.Variations).Returns(global::Umbraco.Cms.Core.Models.ContentVariation.Culture);
+        type.SetupGet(value => value.Variations).Returns(ContentVariation.Culture);
 
         var property = new Mock<IPublishedProperty>();
 
         property.SetupGet(value => value.PropertyType).Returns(type.Object);
 
         var source = Mock.Of<IPublishedContent>();
-        var context = new PropertyMappingContext(source,
+        var context = new PropertyMappingContext(
+            source,
             source,
             property.Object,
             ["en-US"],
@@ -176,7 +181,8 @@ public class EntityMappingTests
             {
                 DataMappingOptions? retained = null;
 
-                options.MapBrand("brand",
+                options.MapBrand(
+                    "brand",
                     mapping =>
                     {
                         mapping.MapData("first");
@@ -199,13 +205,15 @@ public class EntityMappingTests
                 if (product)
                 {
                     options.MapProduct("product");
-                    options.SearchProviders.AddProduct("search",
+                    options.SearchProviders.AddProduct(
+                        "search",
                         provider => provider.UnsupportedSegmentBehavior = null!);
                 }
                 else
                 {
                     options.MapContent("article");
-                    options.SearchProviders.AddContent("search",
+                    options.SearchProviders.AddContent(
+                        "search",
                         provider => provider.UnsupportedSegmentBehavior = null!);
                 }
             });
@@ -257,8 +265,24 @@ public class EntityMappingTests
         MappingDefinition definition = services.GetRequiredService<RelewiseUmbracoConfiguration>().Mappings["article"];
 
         Assert.Equal("hero", Assert.Single(definition.DataMappings).Options.DataKey);
-        Assert.Throws<InvalidOperationException>(() => new RelewiseUmbracoOptionsBuilder().MapContent("article",
+        Assert.Throws<InvalidOperationException>(() => new RelewiseUmbracoOptionsBuilder().MapContent(
+            "article",
             mapping => mapping.MapData("foo", data => data.DataKey = "contentTypeAlias")));
+    }
+
+    [Fact]
+    public void DuplicateDataChecksUseTheCurrentConfiguration()
+    {
+        var mapping = new EntityMappingBuilder<Content>();
+        DataMappingOptions? first = null;
+
+        mapping.MapData("first", data => first = data);
+        first!.DataKey = "second";
+        mapping.MapData("first");
+        mapping.Definition.Validate();
+
+        Assert.Equal(["second", "first"], mapping.Definition.DataMappings.Select(data => data.Options.DataKey));
+        Assert.Throws<InvalidOperationException>(() => mapping.MapData("third", data => data.DataKey = "second"));
     }
 
     [Fact]
@@ -299,8 +323,9 @@ public class EntityMappingTests
 
         services.AddScoped<ScopedDependency>();
 
-        await using ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions
-        { ValidateScopes = true, ValidateOnBuild = true });
+        await using ServiceProvider provider = services.BuildServiceProvider(
+            new ServiceProviderOptions
+            { ValidateScopes = true, ValidateOnBuild = true });
         ScopedDependency dependency;
         AsyncConverter converter;
 
@@ -363,15 +388,17 @@ public class EntityMappingTests
             options.SearchProviders.AddContent("articles");
         });
 
-        Assert.Null(services.GetRequiredService<RelewiseUmbracoConfiguration>()
-            .SearchProviders
-            .DefaultPublishedContentProviderAlias);
+        Assert.Null(
+            services.GetRequiredService<RelewiseUmbracoConfiguration>()
+                .SearchProviders
+                .DefaultPublishedContentProviderAlias);
     }
 
     [Fact]
     public void ParentExportAndTrackingSwitchesApplyToChildVariants()
     {
-        using ServiceProvider services = Services(options => options.MapProduct("product",
+        using ServiceProvider services = Services(options => options.MapProduct(
+            "product",
             mapping =>
             {
                 mapping.Export = false;
@@ -391,8 +418,9 @@ public class EntityMappingTests
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) => configure(options));
         services.AddSingleton<RelewiseUmbracoConfiguration>();
 
-        ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions
-        { ValidateScopes = true, ValidateOnBuild = true });
+        ServiceProvider provider = services.BuildServiceProvider(
+            new ServiceProviderOptions
+            { ValidateScopes = true, ValidateOnBuild = true });
 
         _ = provider.GetRequiredService<RelewiseUmbracoConfiguration>();
 

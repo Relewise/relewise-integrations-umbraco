@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Umbraco.Cms.Core.Services;
 
 namespace Relewise.Integrations.Umbraco.Mapping;
 
@@ -17,6 +18,7 @@ internal sealed class MappingOperation(
 
     internal object Resolve(Type type)
     {
+        // DI owns registered services; this operation disposes only instances it creates itself.
         var registered = Services.GetService(type);
 
         if (registered != null)
@@ -45,7 +47,7 @@ internal sealed class MappingOperation(
     internal async Task<string> DefaultCultureAsync(string[] publishedCultures)
     {
         var culture = await (_defaultCulture ??= Services
-            .GetRequiredService<global::Umbraco.Cms.Core.Services.ILanguageService>()
+            .GetRequiredService<ILanguageService>()
             .GetDefaultIsoCodeAsync());
 
         return publishedCultures.FirstOrDefault(value => value.Equals(culture, StringComparison.OrdinalIgnoreCase))

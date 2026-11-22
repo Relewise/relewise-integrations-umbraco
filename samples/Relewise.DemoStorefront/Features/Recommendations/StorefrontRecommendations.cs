@@ -22,7 +22,8 @@ namespace Relewise.DemoStorefront.Features.Recommendations;
 
 internal static class StorefrontRecommendations
 {
-    internal static async Task<IResult> GetAsync(HttpContext http,
+    internal static async Task<IResult> GetAsync(
+        HttpContext http,
         Guid key)
     {
         http.Response.Headers.CacheControl = "no-store";
@@ -73,12 +74,16 @@ internal static class StorefrontRecommendations
 
         User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser();
         var site = http.RequestServices.GetRequiredService<IOptions<GlobalSettings>>().Value.Id;
+
         var productType = product.Value<string>("productType");
         var emptyCart = isHome && http.Request.Query["placement"] == "cart";
         var similarEnabled = !isHome && !string.IsNullOrWhiteSpace(productType);
+
         ProductRecommendationRequestCollection batch = !similarEnabled
-            ? new ProductRecommendationRequestCollection(false,
-                CreateRecentlyViewed(user,
+            ? new ProductRecommendationRequestCollection(
+                false,
+                CreateRecentlyViewed(
+                    user,
                     market,
                     site,
                     isHome ? null : Id(product),
@@ -97,7 +102,8 @@ internal static class StorefrontRecommendations
 
         if (isHome && !emptyCart)
         {
-            batch = new ProductRecommendationRequestCollection(false,
+            batch = new ProductRecommendationRequestCollection(
+                false,
                 CreateRecentlyViewed(user, market, site),
                 CreatePopularProducts(user, market, site)
             );
@@ -172,7 +178,8 @@ internal static class StorefrontRecommendations
             if (emptyCart && recentlyViewed.Length == 0)
             {
                 // Request the fallback only when no visible history remains, keeping analytics meaningful.
-                ProductRecommendationResponse fallback = await client.RecommendAsync(CreatePopularProducts(
+                ProductRecommendationResponse fallback = await client.RecommendAsync(
+                    CreatePopularProducts(
                         user,
                         market,
                         site,
@@ -221,12 +228,14 @@ internal static class StorefrontRecommendations
 
                             if (example != null)
                             {
-                                categories.Add(new CategoryRecommendationCard(candidate.Key,
-                                    Id(candidate),
-                                    candidate.Url(market.Culture),
-                                    SiteContent.Title(candidate),
-                                    Storefront.Image(example)
-                                ));
+                                categories.Add(
+                                    new CategoryRecommendationCard(
+                                        candidate.Key,
+                                        Id(candidate),
+                                        candidate.Url(market.Culture),
+                                        SiteContent.Title(candidate),
+                                        Storefront.Image(example)
+                                    ));
                             }
 
                             if (categories.Count == VisibleCount)
@@ -244,13 +253,14 @@ internal static class StorefrontRecommendations
                 }
             }
 
-            return Results.Json(new
-            {
-                similar,
-                recentlyViewed,
-                popular,
-                categories
-            });
+            return Results.Json(
+                new
+                {
+                    similar,
+                    recentlyViewed,
+                    popular,
+                    categories
+                });
         }
         catch (Exception error) when (DemoConnection.IsConnectionFailure(error, http.RequestAborted))
         {
@@ -262,7 +272,8 @@ internal static class StorefrontRecommendations
         }
     }
 
-    private static bool HasPrice(IPublishedContent product,
+    private static bool HasPrice(
+        IPublishedContent product,
         DemoMarket market)
     {
         return PriceConverter.Read(product.Value("salesPrice"))

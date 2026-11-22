@@ -27,17 +27,21 @@ using Umbraco.Cms.Core.Search.Querying.Sorting;
 using Umbraco.Cms.Core.Services;
 using static Relewise.Integrations.Umbraco.Search.CoreSearchTranslation;
 using Language = Relewise.Client.DataTypes.Language;
+using RelewiseFacet = Relewise.Client.DataTypes.Search.Facets.Queries.Facet;
+using RelewiseFacetResult = Relewise.Client.DataTypes.Search.Facets.Result.FacetResult;
 using RFilter = Relewise.Client.Requests.Filters.Filter;
 using UFacet = Umbraco.Cms.Core.Search.Querying.Faceting.Facet;
 using UFacetResult = Umbraco.Cms.Core.Search.Querying.Faceting.FacetResult;
 using UFilter = Umbraco.Cms.Core.Search.Querying.Filtering.Filter;
+using UmbracoConstants = Umbraco.Cms.Core.Constants;
+using UmbracoSearcher = Umbraco.Cms.Core.Search.ISearcher;
 
 namespace Relewise.Integrations.Umbraco.Search;
 
 internal sealed class MappedEntitySearcher(
     RelewiseUmbracoConfiguration configuration,
     IServiceScopeFactory scopes,
-    IHttpContextAccessor http) : global::Umbraco.Cms.Core.Search.ISearcher
+    IHttpContextAccessor http) : UmbracoSearcher
 {
     public async Task<SearchResult> SearchAsync(
         string indexAlias,
@@ -59,7 +63,7 @@ internal sealed class MappedEntitySearcher(
         ArgumentOutOfRangeException.ThrowIfNegative(take);
         ArgumentOutOfRangeException.ThrowIfNegative(maxSuggestions);
 
-        var alias = indexAlias == global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent
+        var alias = indexAlias == UmbracoConstants.Search.IndexAliases.PublishedContent
             ? configuration.SearchProviders.DefaultPublishedContentProviderAlias ?? indexAlias
             : indexAlias;
 
@@ -77,25 +81,28 @@ internal sealed class MappedEntitySearcher(
             if (!behavior.IgnoreSegment)
             {
                 throw new NotSupportedException(
-                    "Segment-specific core queries are not supported. Configure Ignore() to execute without a segment.");
+                    "Segment-specific core queries are not supported. " +
+                    "Configure Ignore() to execute without a segment.");
             }
-
-            segment = null;
         }
 
         var requirePublishedPage = provider.Options is not ProductSearchProviderOptions
         {
             RequirePublishedPage: false
         };
+
         await using AsyncServiceScope scope = scopes.CreateAsyncScope();
         IServiceProvider services = http.HttpContext?.RequestServices ?? scope.ServiceProvider;
+
         User user = await services.GetRequiredService<IRelewiseUserLocator>().GetUser();
         var language = culture ?? await services.GetRequiredService<ILanguageService>().GetDefaultIsoCodeAsync();
         var context = new SearchRequestContext(services, user, language);
         var site = EntityIndexingService.SiteId(services);
+
         UFilter[] supplied = filters?.ToArray() ?? [];
         UFacet[] selectedFacets = facets?.ToArray() ?? [];
         Sorter[] selectedSorters = sorters?.ToArray() ?? [];
+
         IReadOnlyDictionary<string, string> booleanDataFields =
             provider.Options is ProductSearchProviderOptions productOptions
                 ? productOptions.BooleanDataFields
@@ -126,11 +133,13 @@ internal sealed class MappedEntitySearcher(
         var client = services.GetRequiredService<IRelewiseClientFactory>()
             .GetClient<ISearcher>(Constants.NamedClientName);
 
-        ContentSearchRequest Create(IEnumerable<UFilter> selected,
+        ContentSearchRequest Create(
+            IEnumerable<UFilter> selected,
             int offset,
             int count)
         {
-            var request = new ContentSearchRequest(new Language(language),
+            var request = new ContentSearchRequest(
+                new Language(language),
                 Currency.Undefined,
                 user,
                 provider.Location(alias),
@@ -157,15 +166,14 @@ internal sealed class MappedEntitySearcher(
 
             request.Filters!.Add(
                 new OrFilter([.. sourceAliases.Select(a => (RFilter)Equal("contentTypeAlias", a))]));
-            request.Filters!.Add(new OrFilter(
-            [
-                .. (culture == null ? new[] { "" } : ["", culture.ToLowerInvariant()]).Select(value =>
-                    (RFilter)new ContentDataFilter(CultureKey, new ContainsCondition(value)))
-            ]));
-            request.Filters!.Add(new OrFilter([
-                .. (segment == null ? new[] { "" } : ["", segment]).Select(value =>
-                    (RFilter)new ContentDataFilter(SegmentsKey, new ContainsCondition(value)))
-            ]));
+            request.Filters!.Add(
+                new OrFilter(
+                [
+                    .. (culture == null ? new[] { "" } : ["", culture.ToLowerInvariant()]).Select(value =>
+                        (RFilter)new ContentDataFilter(CultureKey, new ContainsCondition(value)))
+                ]));
+            // Segment-specific queries either throw above or use only the invariant segment.
+            request.Filters!.Add(new ContentDataFilter(SegmentsKey, new ContainsCondition("")));
 
             if (accessContext?.Bypass != true)
             {
@@ -173,7 +181,8 @@ internal sealed class MappedEntitySearcher(
 
                 if (accessContext != null && accessContext.PrincipalId != Guid.Empty)
                 {
-                    allowed.AddRange((accessContext.GroupIds ?? []).Append(accessContext.PrincipalId)
+                    allowed.AddRange(
+                        (accessContext.GroupIds ?? []).Append(accessContext.PrincipalId)
                         .Select(id => new ContentDataFilter(AccessKey, new ContainsCondition(id.ToString("D")))));
                 }
 
@@ -199,7 +208,8 @@ internal sealed class MappedEntitySearcher(
 
             if (provider.Options is ContentSearchProviderOptions content)
             {
-                var outgoing = new ContentSearchRequest(source.Language,
+                var outgoing = new ContentSearchRequest(
+                    source.Language,
                     source.Currency,
                     user,
                     provider.Location(alias),
@@ -245,7 +255,8 @@ internal sealed class MappedEntitySearcher(
             }
 
             var options = (ProductSearchProviderOptions)provider.Options;
-            var target = new ProductSearchRequest(source.Language,
+            var target = new ProductSearchRequest(
+                source.Language,
                 source.Currency,
                 user,
                 provider.Location(alias),
@@ -267,7 +278,7 @@ internal sealed class MappedEntitySearcher(
                 target.Sorting!.Value = ProductSort(source.Sorting.Value);
             }
 
-            foreach (Relewise.Client.DataTypes.Search.Facets.Queries.Facet sourceFacet in source.Facets!.Items)
+            foreach (RelewiseFacet sourceFacet in source.Facets!.Items)
             {
                 if (sourceFacet is not ContentDataStringValueFacet facet)
                 {
@@ -285,17 +296,15 @@ internal sealed class MappedEntitySearcher(
                 }
             }
 
-            int originalSkip = source.Skip, originalTake = source.Take;
-
             options.Configure?.Invoke(target, context);
             target.Filters =
-                new FilterCollection([.. (target.Filters?.Items ?? []), .. mandatory.Select(ProductFilter)]);
+                new FilterCollection([.. target.Filters?.Items ?? [], .. mandatory.Select(ProductFilter)]);
             target.User = user;
             target.Language = new Language(language);
             target.IndexSelector = null;
             target.Term = query;
-            target.Skip = originalSkip;
-            target.Take = originalTake;
+            target.Skip = pagingSkip;
+            target.Take = pagingTake;
             target.Settings ??= new ProductSearchSettings();
 
             if (target.Settings.VariantRequestSettings?.MaxVariantsPerProduct > 1)
@@ -334,8 +343,9 @@ internal sealed class MappedEntitySearcher(
                         .. (response.Facets?.Items ?? []).Select(f => f switch
                         {
                             ProductDataStringValueFacetResult text => (
-                                global::Relewise.Client.DataTypes.Search.Facets.Result.FacetResult)new
-                                ContentDataStringValueFacetResult(text.Key,
+                                RelewiseFacetResult)new
+                                ContentDataStringValueFacetResult(
+                                    text.Key,
                                     text.Selected,
                                     text.CollectionFilterType,
                                     text.Available),
@@ -345,45 +355,45 @@ internal sealed class MappedEntitySearcher(
                                 null,
                                 [
                                     .. (boolean.Available ?? []).Select(value =>
-                                        new AvailableFacetValue<string>(value.Value ? "true" : "false",
+                                        new AvailableFacetValue<string>(
+                                            value.Value ? "true" : "false",
                                             value.Selected,
                                             value.Hits))
                                 ]),
                             _ => null
                         })
-                        .OfType<global::Relewise.Client.DataTypes.Search.Facets.Result.FacetResult>()
+                        .OfType<RelewiseFacetResult>()
                     ]
                 }
             };
 #pragma warning restore CS0618
         }
 
-        Task<ContentSearchResponse> Run(ContentSearchRequest request)
-        {
-            return Execute(request);
-        }
-
         ContentSearchRequest request = Create(supplied, skip, take);
 
         ApplySorting(request, selectedSorters, culture);
 
-        ContentSearchResponse result = await Run(request);
+        ContentSearchResponse result = await Execute(request);
         var facetResults = new List<UFacetResult>();
 
+        // Facet counts exclude their own selected values while retaining the other filters.
         foreach (UFacet facet in selectedFacets)
         {
-            facetResults.Add(await ComputeFacet(Create(supplied.Where(f => f.FieldName != facet.FieldName), 0, 0),
-                facet,
-                Run,
-                culture,
-                booleanDataFields));
+            facetResults.Add(
+                await ComputeFacet(
+                    Create(supplied.Where(f => f.FieldName != facet.FieldName), 0, 0),
+                    facet,
+                    Execute,
+                    culture,
+                    booleanDataFields));
         }
 
         string[] suggestions = [];
 
         if (maxSuggestions > 0 && query != null && predictionSource != null)
         {
-            var prediction = new SearchTermPredictionRequest(predictionSource.Language,
+            var prediction = new SearchTermPredictionRequest(
+                predictionSource.Language,
                 predictionSource.Currency,
                 user,
                 predictionSource.DisplayedAtLocation!,
@@ -391,8 +401,9 @@ internal sealed class MappedEntitySearcher(
                 maxSuggestions)
             {
                 // Predictions retain the fully configured query scope, including protection and provider filters.
-                Filters = new FilterCollection([
-                    .. (predictionSource.Filters?.Items ?? []), .. predictionSource.PostFilters?.Items ?? []
+                Filters = new FilterCollection(
+                [
+                    .. predictionSource.Filters?.Items ?? [], .. predictionSource.PostFilters?.Items ?? []
                 ]),
                 RelevanceModifiers = predictionSource.RelevanceModifiers,
                 ContextValues = predictionSource.ContextValues,
@@ -429,7 +440,8 @@ internal sealed class MappedEntitySearcher(
     {
         return filter switch
         {
-            ContentDataFilter f => new ProductDataFilter(f.Key,
+            ContentDataFilter f => new ProductDataFilter(
+                f.Key,
                 f.ObjectPath!,
                 f.Conditions,
                 f.MustMatchAllConditions,
@@ -490,64 +502,75 @@ internal sealed class MappedEntitySearcher(
                 ContentSearchResponse response = await execute(request);
                 foreach (AvailableFacetValue<string>? bucket in response.Facets?.DataString(dataKey)?.Available ?? [])
                 {
-                    values.Add(facet switch
-                    {
-                        KeywordFacet => new KeywordFacetValue(bucket.Value, bucket.Hits),
-                        IntegerExactFacet => new IntegerExactFacetValue(checked((int)ParseNumber(bucket.Value)),
-                            bucket.Hits),
-                        DecimalExactFacet => new DecimalExactFacetValue((decimal)ParseNumber(bucket.Value),
-                            bucket.Hits),
-                        _ => new DateTimeOffsetExactFacetValue(
-                            DateTimeOffset.FromUnixTimeMilliseconds(checked((long)ParseNumber(bucket.Value))),
-                            bucket.Hits)
-                    });
+                    values.Add(
+                        facet switch
+                        {
+                            KeywordFacet => new KeywordFacetValue(bucket.Value, bucket.Hits),
+                            IntegerExactFacet => new IntegerExactFacetValue(
+                                checked((int)ParseNumber(bucket.Value)),
+                                bucket.Hits),
+                            DecimalExactFacet => new DecimalExactFacetValue(
+                                (decimal)ParseNumber(bucket.Value),
+                                bucket.Hits),
+                            _ => new DateTimeOffsetExactFacetValue(
+                                DateTimeOffset.FromUnixTimeMilliseconds(checked((long)ParseNumber(bucket.Value))),
+                                bucket.Hits)
+                        });
                 }
 
                 break;
             case IntegerRangeFacet f:
                 foreach (IntegerRangeFacetRange range in f.Ranges)
                 {
-                    values.Add(new IntegerRangeFacetValue(
-                        range.Key,
-                        range.MinValue,
-                        range.MaxValue,
-                        await CountRange(request,
-                            execute,
-                            NumberRange(f.FieldName, "integer", range.MinValue, range.MaxValue, culture))));
+                    values.Add(
+                        new IntegerRangeFacetValue(
+                            range.Key,
+                            range.MinValue,
+                            range.MaxValue,
+                            await CountRange(
+                                request,
+                                execute,
+                                NumberRange(f.FieldName, "integer", range.MinValue, range.MaxValue, culture))));
                 }
 
                 break;
             case DecimalRangeFacet f:
                 foreach (DecimalRangeFacetRange range in f.Ranges)
                 {
-                    values.Add(new DecimalRangeFacetValue(
-                        range.Key,
-                        range.MinValue,
-                        range.MaxValue,
-                        await CountRange(request,
-                            execute,
-                            NumberRange(f.FieldName,
-                                "decimal",
-                                (double?)range.MinValue,
-                                (double?)range.MaxValue,
-                                culture))));
+                    values.Add(
+                        new DecimalRangeFacetValue(
+                            range.Key,
+                            range.MinValue,
+                            range.MaxValue,
+                            await CountRange(
+                                request,
+                                execute,
+                                NumberRange(
+                                    f.FieldName,
+                                    "decimal",
+                                    (double?)range.MinValue,
+                                    (double?)range.MaxValue,
+                                    culture))));
                 }
 
                 break;
             case DateTimeOffsetRangeFacet f:
                 foreach (DateTimeOffsetRangeFacetRange range in f.Ranges)
                 {
-                    values.Add(new DateTimeOffsetRangeFacetValue(
-                        range.Key,
-                        range.MinValue,
-                        range.MaxValue,
-                        await CountRange(request,
-                            execute,
-                            NumberRange(f.FieldName,
-                                "date",
-                                range.MinValue.HasValue ? DateNumber(range.MinValue.Value) : null,
-                                range.MaxValue.HasValue ? DateNumber(range.MaxValue.Value) : null,
-                                culture))));
+                    values.Add(
+                        new DateTimeOffsetRangeFacetValue(
+                            range.Key,
+                            range.MinValue,
+                            range.MaxValue,
+                            await CountRange(
+                                request,
+                                execute,
+                                NumberRange(
+                                    f.FieldName,
+                                    "date",
+                                    range.MinValue.HasValue ? DateNumber(range.MinValue.Value) : null,
+                                    range.MaxValue.HasValue ? DateNumber(range.MaxValue.Value) : null,
+                                    culture))));
                 }
 
                 break;

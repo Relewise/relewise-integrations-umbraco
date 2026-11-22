@@ -16,8 +16,11 @@ internal static class CartTracking
         ITracker tracker = RequiredTracker(http);
         User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser();
 
-        await tracker.TrackAsync(new RelewiseCart(user,
-                new Money(DemoMarket.Current(http).Currency,
+        await tracker.TrackAsync(
+            new RelewiseCart(
+                user,
+                new Money(
+                    DemoMarket.Current(http).Currency,
                     lines.Sum(line => line.Amount * line.Line.Quantity)),
                 Items(lines, http)),
             http.RequestAborted);

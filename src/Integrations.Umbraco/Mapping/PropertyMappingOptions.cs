@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Relewise.Integrations.Umbraco.Mapping;
 
@@ -10,10 +11,11 @@ public class PropertyMappingOptions<TValue>
     {
     }
 
-    internal Func<PropertyMappingContext, System.Threading.Tasks.ValueTask<TValue>>? Converter { get; private set; }
+    internal Func<PropertyMappingContext, ValueTask<TValue>>? Converter { get; private set; }
     internal Type? ConverterType { get; private set; }
 
-    /// <summary>Use this converter only for the configured property, resolving dependencies in the export scope.</summary>
+    /// <summary>Use this converter only for the configured property, resolving dependencies in the export
+    /// scope.</summary>
     public void UseConverter<TConverter>() where TConverter : class, IPropertyMappingConverter<TValue>
     {
         if (Converter != null)

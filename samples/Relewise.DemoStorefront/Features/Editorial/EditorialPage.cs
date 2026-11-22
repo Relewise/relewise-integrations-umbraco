@@ -8,22 +8,22 @@ namespace Relewise.DemoStorefront.Features.Editorial;
 
 internal static class EditorialPage
 {
-    internal static string Render(IPublishedContent page,
-        HttpContext http)
+    internal static string Render(IPublishedContent page, HttpContext http)
     {
-        var culture = DemoMarket.Current(http).Culture;
+        DemoMarket market = DemoMarket.Current(http);
         var html = new StringBuilder(Breadcrumb(page, http, "journal"));
 
-        html.Append(
-            $"<article class='reading'><header class='article-header'><p class='eyebrow'>{T(http, "Journal")}</p><h1>{Storefront.E(Title(page))}</h1><p class='lead'>{Storefront.E(page.Value<string>("bodyText"))}</p></header>");
+        html.Append("<article class='reading'><header class='article-header'>");
+        html.Append($"<p class='eyebrow'>{T(http, "Journal")}</p><h1>{Storefront.E(Title(page))}</h1>");
+        html.Append($"<p class='lead'>{Storefront.E(page.Value<string>("bodyText"))}</p></header>");
 
         foreach (var alias in new[] { "contentRows", "pageGrid" })
         {
-            html.Append(StorefrontEditorial.Render(page.GetProperty(alias)?.GetValue(), culture));
+            html.Append(StorefrontEditorial.Render(page.GetProperty(alias)?.GetValue(), market.Culture));
         }
 
-        html.Append(
-            $"<p class='reading-back'><a class='text-link' href='{DemoMarket.Current(http).StoreUrl}?type=article'>{T(http, "ReturnJournal")}</a></p></article>");
+        html.Append("<p class='reading-back'><a class='text-link' href='");
+        html.Append($"{market.StoreUrl}?type=article'>{T(http, "ReturnJournal")}</a></p></article>");
         html.Append(IntegrationDetails.Render(page, http));
 
         return html.ToString();

@@ -7,7 +7,8 @@ namespace Relewise.DemoStorefront.Features.Recommendations;
 
 internal static class RecommendationPlacement
 {
-    internal static string Placeholder(IPublishedContent page,
+    internal static string Placeholder(
+        IPublishedContent page,
         HttpContext http)
     {
         RecommendationModel? configuration = Configuration(page, http);
@@ -20,7 +21,8 @@ internal static class RecommendationPlacement
         var json = JsonSerializer.Serialize(configuration, StorefrontChrome.Json);
 
         return
-            $"<div id='product-recommendations'></div><script id='recommendation-data' type='application/json'>{json}</script>";
+            $"<div id='product-recommendations'></div><script id='recommendation-data' " +
+            $"type='application/json'>{json}</script>";
     }
 
     internal static RecommendationModel? Configuration(

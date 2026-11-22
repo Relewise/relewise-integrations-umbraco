@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Relewise.DemoStorefront.Integration.Converters;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
@@ -38,28 +39,30 @@ internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentI
         if (!string.IsNullOrWhiteSpace(additional))
         {
             categories.AddRange(
-                (System.Text.Json.JsonSerializer.Deserialize<Guid[]>(additional) ?? [])
+                (JsonSerializer.Deserialize<Guid[]>(additional) ?? [])
                 .Select(key => key.ToString("D")));
         }
 
-        fields.Add(new IndexField(
-            "shopCategory",
-            new IndexValue { Keywords = categories.Distinct().ToArray() },
-            null,
-            null
-        ));
+        fields.Add(
+            new IndexField(
+                "shopCategory",
+                new IndexValue { Keywords = categories.Distinct().ToArray() },
+                null,
+                null
+            ));
 
         var brandReference = product.GetValue<string>("brand", published: published);
 
         if (!string.IsNullOrWhiteSpace(brandReference) && UdiParser.TryParse(brandReference, out Udi? brand) &&
             brand is GuidUdi brandId)
         {
-            fields.Add(new IndexField(
-                "shopBrand",
-                new IndexValue { Keywords = [brandId.Guid.ToString("D")] },
-                null,
-                null
-            ));
+            fields.Add(
+                new IndexField(
+                    "shopBrand",
+                    new IndexValue { Keywords = [brandId.Guid.ToString("D")] },
+                    null,
+                    null
+                ));
         }
 
         Dictionary<string, decimal> sales =
@@ -67,12 +70,13 @@ internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentI
 
         foreach (var (currency, amount) in sales)
         {
-            fields.Add(new IndexField(
-                "shopPrice" + currency,
-                new IndexValue { Decimals = [amount] },
-                null,
-                null
-            ));
+            fields.Add(
+                new IndexField(
+                    "shopPrice" + currency,
+                    new IndexValue { Decimals = [amount] },
+                    null,
+                    null
+                ));
         }
 
         return Task.FromResult<IEnumerable<IndexField>>(fields);

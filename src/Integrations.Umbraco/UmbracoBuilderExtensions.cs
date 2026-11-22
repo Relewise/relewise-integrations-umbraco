@@ -1,5 +1,9 @@
-#pragma warning disable CS0618 // Retain legacy converter registration order; the execution pipeline awaits async built-ins.
+// Retain legacy converter registration order; the execution pipeline awaits async built-ins.
+
+#pragma warning disable CS0618
+
 using System;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Relewise.Client.Extensions.DependencyInjection;
@@ -11,8 +15,10 @@ using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
+using Umbraco.Cms.Core.Search;
 using Umbraco.Cms.Core.Search.Configuration;
 using Umbraco.Cms.Core.Search.Indexing;
+using UmbracoConstants = Umbraco.Cms.Core.Constants;
 
 namespace Relewise.Integrations.Umbraco;
 
@@ -40,7 +46,8 @@ public static class UmbracoBuilderExtensions
     /// Registers services and configures <see cref="RelewiseUmbracoOptionsBuilder"/>.
     /// </summary>
     /// <param name="builder">The <see cref="IUmbracoBuilder"/></param>
-    /// <param name="configure">A delegate to configure <see cref="RelewiseUmbracoOptionsBuilder"/> which also includes the <see cref="IServiceProvider"/> if you need to do service lookups part of this configuration.</param>
+    /// <param name="configure">A delegate to configure <see cref="RelewiseUmbracoOptionsBuilder"/> which also includes
+    /// the <see cref="IServiceProvider"/> if you need to do service lookups part of this configuration.</param>
     /// <returns>The <see cref="IUmbracoBuilder"/></returns>
     public static IUmbracoBuilder AddRelewise(
         this IUmbracoBuilder builder,
@@ -49,7 +56,8 @@ public static class UmbracoBuilderExtensions
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(configure);
 
-        builder.Services.AddRelewise(x => x.Named.Add(Constants.NamedClientName,
+        builder.Services.AddRelewise(x => x.Named.Add(
+            Constants.NamedClientName,
             clientOptions =>
             {
                 clientOptions.Tracker.Timeout = TimeSpan.FromMinutes(2);
@@ -84,7 +92,8 @@ public static class UmbracoBuilderExtensions
         builder.Services.TryAddTransient<MappedEntityChangeStrategy>();
         builder.Services.TryAddTransient<MappedEntitySearcher>();
         builder.Services.AddOptions<IndexOptions>()
-            .PostConfigure<RelewiseUmbracoConfiguration>((indexes,
+            .PostConfigure<RelewiseUmbracoConfiguration>((
+                indexes,
                 configuration) =>
             {
                 indexes.RegisterContentIndex<MappedEntityIndexer, MappedEntitySearcher, MappedEntityChangeStrategy>(
@@ -106,14 +115,16 @@ public static class UmbracoBuilderExtensions
                 if (configuration.SearchProviders.DefaultPublishedContentProviderAlias != null)
                 {
                     ContentIndexRegistration original =
-                        indexes.GetContentIndexRegistration(global::Umbraco.Cms.Core.Constants.Search.IndexAliases
-                            .PublishedContent)
+                        indexes.GetContentIndexRegistration(
+                            UmbracoConstants.Search.IndexAliases
+                                .PublishedContent)
                         ?? throw new InvalidOperationException(
                             "Umbraco's published-content search registration is required.");
 
                     // Preserve Examine's indexer and change strategy; only route published queries to Relewise.
-                    typeof(UmbracoBuilderExtensions).GetMethod(nameof(UsePublishedSearcher),
-                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+                    typeof(UmbracoBuilderExtensions).GetMethod(
+                            nameof(UsePublishedSearcher),
+                            BindingFlags.NonPublic | BindingFlags.Static)!
                         .MakeGenericMethod(original.Indexer, original.ContentChangeStrategy)
                         .Invoke(null, [indexes, original]);
                 }
@@ -125,10 +136,11 @@ public static class UmbracoBuilderExtensions
     private static void UsePublishedSearcher<TIndexer, TStrategy>(
         IndexOptions indexes,
         ContentIndexRegistration original)
-        where TIndexer : class, global::Umbraco.Cms.Core.Search.IIndexer
+        where TIndexer : class, IIndexer
         where TStrategy : class, IContentChangeStrategy
     {
-        indexes.RegisterContentIndex<TIndexer, MappedEntitySearcher, TStrategy>(original.IndexAlias,
+        indexes.RegisterContentIndex<TIndexer, MappedEntitySearcher, TStrategy>(
+            original.IndexAlias,
             original.SameOriginOnly,
             System.Linq.Enumerable.ToArray(original.ContainedObjectTypes));
     }

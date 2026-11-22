@@ -1,5 +1,7 @@
+using System.Text.Json;
 using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
+using Umbraco.Cms.Core.Search;
 
 namespace Relewise.DemoStorefront.Setup;
 
@@ -7,7 +9,8 @@ namespace Relewise.DemoStorefront.Setup;
 internal static class DemoConnection
 {
     internal const string SetupUrl =
-        "https://github.com/Relewise/relewise-integrations-umbraco/tree/main/samples/Relewise.DemoStorefront#connect-a-local-relewise-dataset";
+        "https://github.com/Relewise/relewise-integrations-umbraco/tree/main/" +
+        "samples/Relewise.DemoStorefront#connect-a-local-relewise-dataset";
 
     internal static bool IsConfigured(HttpContext http)
     {
@@ -19,17 +22,21 @@ internal static class DemoConnection
         return IsConfigured(http) &&
                http.RequestServices
                    .GetRequiredService<
-                       Umbraco.Cms.Core.Search.ISearcherResolver>()
+                       ISearcherResolver>()
                    .GetSearcher("catalogue") != null;
     }
 
     internal static string PreviewNotice(HttpContext http)
     {
         return
-            $"<section class='notice demo-preview-notice' role='note'><strong>{Storefront.E(Storefront.Text(http, "PreviewMode"))}</strong><p>{Storefront.E(Storefront.Text(http, "PreviewModeHelp"))}</p><a class='text-link' href='{SetupUrl}'>{Storefront.E(Storefront.Text(http, "ConfigureRelewise"))}</a></section>";
+            $"<section class='notice demo-preview-notice' role='note'><strong>" +
+            $"{Storefront.E(Storefront.Text(http, "PreviewMode"))}</strong><p>" +
+            $"{Storefront.E(Storefront.Text(http, "PreviewModeHelp"))}</p><a class='text-link' href='" +
+            $"{SetupUrl}'>{Storefront.E(Storefront.Text(http, "ConfigureRelewise"))}</a></section>";
     }
 
-    internal static string Unavailable(HttpContext http,
+    internal static string Unavailable(
+        HttpContext http,
         bool json)
     {
         http.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
@@ -39,10 +46,11 @@ internal static class DemoConnection
 
         if (json)
         {
-            return System.Text.Json.JsonSerializer.Serialize(new
-            {
-                error = message
-            });
+            return JsonSerializer.Serialize(
+                new
+                {
+                    error = message
+                });
         }
 
         var title = Storefront.Text(http, IsConfigured(http) ? "SearchDisabled" : "FeatureUnavailable");
@@ -51,7 +59,8 @@ internal static class DemoConnection
         if (IsConfigured(http))
         {
             body +=
-                $"<p>{Storefront.E(message)}</p><a href='{SetupUrl}'>{Storefront.E(Storefront.Text(http, "ConfigureRelewise"))}</a>";
+                $"<p>{Storefront.E(message)}</p><a href='{SetupUrl}'>" +
+                $"{Storefront.E(Storefront.Text(http, "ConfigureRelewise"))}</a>";
         }
 
         return Storefront.Layout(title, body, false, http, "shop");
@@ -84,7 +93,8 @@ internal static class DemoConnection
                (error.InnerException != null && IsConnectionFailure(error.InnerException, aborted));
     }
 
-    internal static async Task InvokeAsync(HttpContext http,
+    internal static async Task InvokeAsync(
+        HttpContext http,
         RequestDelegate next)
     {
         try
@@ -109,10 +119,11 @@ internal static class DemoConnection
             if (http.Request.Path.Value?.EndsWith("/suggestions", StringComparison.Ordinal) == true ||
                 http.Request.Path.Value?.EndsWith("/results", StringComparison.Ordinal) == true)
             {
-                await http.Response.WriteAsJsonAsync(new
-                {
-                    error = message
-                },
+                await http.Response.WriteAsJsonAsync(
+                    new
+                    {
+                        error = message
+                    },
                     http.RequestAborted
                 );
 
@@ -120,10 +131,14 @@ internal static class DemoConnection
             }
 
             var body =
-                $"<section class='notice notice-error' role='alert'><h1>{Storefront.E(Storefront.Text(http, "ConnectionProblem"))}</h1><p>{Storefront.E(message)}</p><a href='{SetupUrl}'>{Storefront.E(Storefront.Text(http, "ConfigureRelewise"))}</a></section>";
+                $"<section class='notice notice-error' role='alert'><h1>" +
+                $"{Storefront.E(Storefront.Text(http, "ConnectionProblem"))}</h1><p>{Storefront.E(message)}" +
+                $"</p><a href='{SetupUrl}'>{Storefront.E(Storefront.Text(http, "ConfigureRelewise"))}" +
+                $"</a></section>";
 
             http.Response.ContentType = "text/html; charset=utf-8";
-            await http.Response.WriteAsync(Storefront.Layout(
+            await http.Response.WriteAsync(
+                Storefront.Layout(
                     Storefront.Text(http, "ConnectionProblem"),
                     body,
                     true,

@@ -12,6 +12,7 @@ using Relewise.Client.Responses;
 using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core;
+using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.HostedServices;
 using Umbraco.Cms.Core.Models;
@@ -25,13 +26,32 @@ namespace Relewise.Integrations.Umbraco.Tests;
 
 public class EntityIndexingServiceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CancelledOperationsDoNotReadOrWriteEntities(bool delete)
+    {
+        await using var fixture = new Fixture();
+        var token = new CancellationToken(true);
+
+        Task operation = delete
+            ? fixture.Writer.DeleteAsync([new DeletedEntity(typeof(Product), "sku", Guid.NewGuid(), true)], token)
+            : fixture.Writer.ExportAsync([Guid.NewGuid()], cancellationToken: token);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => operation);
+        Assert.Empty(fixture.Tracked);
+        fixture.Reader.VerifyNoOtherCalls();
+        fixture.Strategy.VerifyNoOtherCalls();
+    }
+
     [Fact]
     public async Task RawDraftRemovalIsReconciledEvenWhenThePublishedStrategyIgnoresIt()
     {
         await using var fixture = new Fixture();
         Guid removed = Guid.NewGuid(), draft = Guid.NewGuid();
 
-        await fixture.Writer.ApplyChangesAsync([
+        await fixture.Writer.ApplyChangesAsync(
+            [
                 ContentChange.Document(removed, ChangeImpact.Remove, ContentState.Draft),
                 ContentChange.Document(draft, ChangeImpact.Refresh, ContentState.Draft)
             ],
@@ -58,7 +78,8 @@ public class EntityIndexingServiceTests
             .ReturnsAsync(new ContentDetailsCollectionResponse([new ContentResultDetails("external")], 1));
         await fixture.Writer.DeleteAsync(
             [
-                new DeletedEntity(product ? typeof(Product) : typeof(Client.DataTypes.Content),
+                new DeletedEntity(
+                    product ? typeof(Product) : typeof(Client.DataTypes.Content),
                     "external",
                     Guid.NewGuid(),
                     false)
@@ -113,7 +134,8 @@ public class EntityIndexingServiceTests
             fixture.Services.GetRequiredService<RelewiseUmbracoConfiguration>(),
             Mock.Of<IContentService>(),
             scopes.Object,
-            new EntityIndexingQueue(fixture.Writer,
+            new EntityIndexingQueue(
+                fixture.Writer,
                 queue.Object,
                 Mock.Of<IHostApplicationLifetime>(),
                 NullLogger<EntityIndexingQueue>.Instance),
@@ -149,7 +171,8 @@ public class EntityIndexingServiceTests
 
         Assert.Equal(ContentAdministrativeAction.UpdateKind.Delete, action.Kind);
         Assert.Contains("external-id", JsonConvert.SerializeObject(action.Filters));
-        fixture.Reader.Verify(value => value.QueryAsync(It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()),
+        fixture.Reader.Verify(
+            value => value.QueryAsync(It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -164,7 +187,8 @@ public class EntityIndexingServiceTests
             [new DeletedEntity(typeof(Product), "external-product", Guid.NewGuid(), false)],
             CancellationToken.None);
         Assert.Empty(fixture.Tracked);
-        fixture.Reader.Verify(value => value.QueryAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()),
+        fixture.Reader.Verify(
+            value => value.QueryAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -204,9 +228,14 @@ public class EntityIndexingServiceTests
     }
 
     [Fact]
-    public async Task ConcurrentRebuildsAreSerializedWithoutDatabaseLeases()
+    public async Task ConcurrentRebuildsUseTheSharedQueueWithoutDatabaseLeases()
     {
         await using var fixture = new Fixture();
+        var writer = new EntityIndexingQueue(
+            fixture.Writer,
+            Mock.Of<IBackgroundTaskQueue>(),
+            Mock.Of<IHostApplicationLifetime>(),
+            NullLogger<EntityIndexingQueue>.Instance);
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         int active = 0, maximum = 0;
@@ -220,11 +249,11 @@ public class EntityIndexingServiceTests
                 Interlocked.Decrement(ref active);
             });
 
-        Task first = fixture.Writer.RebuildAsync();
+        Task first = writer.RebuildAsync();
 
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(3));
 
-        Task second = fixture.Writer.RebuildAsync();
+        Task second = writer.RebuildAsync();
 
         Assert.False(second.IsCompleted);
         release.SetResult();
@@ -327,7 +356,8 @@ public class EntityIndexingServiceTests
             languages.Setup(value => value.GetAllAsync()).ReturnsAsync(Array.Empty<ILanguage>());
             Strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            Strategy.Setup(value => value.HandleAsync(It.IsAny<IEnumerable<ContentIndexInfo>>(),
+            Strategy.Setup(value => value.HandleAsync(
+                    It.IsAny<IEnumerable<ContentIndexInfo>>(),
                     It.IsAny<IEnumerable<ContentChange>>(),
                     It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
@@ -335,7 +365,7 @@ public class EntityIndexingServiceTests
             var services = new ServiceCollection();
 
             services.AddLogging();
-            services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(options =>
+            services.Configure<GlobalSettings>(options =>
                 options.Id = "test-installation");
             services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
                 options.MapContent("article", mapping => mapping.AutoMap()));
@@ -346,8 +376,9 @@ public class EntityIndexingServiceTests
             services.AddSingleton(Strategy.Object);
             services.AddSingleton(Mock.Of<IContentService>());
             services.AddSingleton<EntityIndexingService>();
-            Services = services.BuildServiceProvider(new ServiceProviderOptions
-            { ValidateScopes = true, ValidateOnBuild = true });
+            Services = services.BuildServiceProvider(
+                new ServiceProviderOptions
+                { ValidateScopes = true, ValidateOnBuild = true });
             Writer = Services.GetRequiredService<EntityIndexingService>();
         }
 

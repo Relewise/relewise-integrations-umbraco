@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Antiforgery;
 using Relewise.DemoStorefront.Setup;
 using Relewise.DemoStorefront.Site;
@@ -7,7 +8,8 @@ namespace Relewise.DemoStorefront.Features.Products;
 
 internal static class PurchaseControls
 {
-    internal static string Availability(IPublishedContent product,
+    internal static string Availability(
+        IPublishedContent product,
         HttpContext http)
     {
         var stock = product.Value<int>("stock");
@@ -19,7 +21,8 @@ internal static class PurchaseControls
                 : DemoMarket.Current(http).StoreUrl;
 
             return
-                $"<p class='availability sold-out'>{T(http, "OutOfStock")}</p><a class='text-link' href='{Storefront.E(path)}?available=true'>{T(http, "ShopAvailable")}</a>";
+                $"<p class='availability sold-out'>{T(http, "OutOfStock")}</p><a class='text-link' href='" +
+                $"{Storefront.E(path)}?available=true'>{T(http, "ShopAvailable")}</a>";
         }
 
         if (ProductPrices.Read(product, "salesPrice", DemoMarket.Current(http).Currency) == null)
@@ -28,10 +31,13 @@ internal static class PurchaseControls
         }
 
         return
-            $"<p class='availability'>{(stock <= 3 ? Storefront.E(Storefront.Text(http, "LowStock", stock)) : T(http, "InStock"))}</p>";
+            $"<p class='availability'>" +
+            $"{(stock <= 3 ? Storefront.E(Storefront.Text(http, "LowStock", stock)) : T(http, "InStock"))}" +
+            $"</p>";
     }
 
-    internal static string AddForm(IPublishedContent page,
+    internal static string AddForm(
+        IPublishedContent page,
         HttpContext http)
     {
         if (!DemoConnection.IsConfigured(http))
@@ -61,19 +67,23 @@ internal static class PurchaseControls
             ["variant"] = isVariant ? page.Key.ToString() : ""
         };
         string[] keys = ["Quantity", "AddCart", "AddingToCart", "PurchaseFailed", "CartUpdated"];
-        var json = System.Text.Json.JsonSerializer.Serialize(new
-        {
-            url = DemoMarket.Current(http).LanguagePath + "/cart/add",
-            maximum = Math.Min(99, stock),
-            fields,
-            labels = keys.ToDictionary(key => key, key => Storefront.Text(http, key))
-        },
+        var json = JsonSerializer.Serialize(
+            new
+            {
+                url = DemoMarket.Current(http).LanguagePath + "/cart/add",
+                maximum = Math.Min(99, stock),
+                fields,
+                labels = keys.ToDictionary(key => key, key => Storefront.Text(http, key))
+            },
             StorefrontChrome.Json);
 
         return
-            $"<div id='purchase-controls'><form method='post' action='{DemoMarket.Current(http).LanguagePath}/cart/add' class='add-cart'>" +
+            ($"<div id='purchase-controls'><form method='post' action='" +
+             $"{DemoMarket.Current(http).LanguagePath}/cart/add' class='add-cart'>") +
             string.Concat(fields.Select(field => FormFields.Hidden(field.Key, field.Value))) +
-            $"<label>{T(http, "Quantity")}<input type='number' name='quantity' min='1' max='{Math.Min(99, stock)}' value='1' required></label><button>{T(http, "AddCart")}</button></form></div><script id='purchase-data' type='application/json'>{json}</script>";
+            ($"<label>{T(http, "Quantity")}<input type='number' name='quantity' min='1' max='" +
+             $"{Math.Min(99, stock)}' value='1' required></label><button>{T(http, "AddCart")}" +
+             $"</button></form></div><script id='purchase-data' type='application/json'>{json}</script>");
     }
 
     private static string T(HttpContext http, string key)

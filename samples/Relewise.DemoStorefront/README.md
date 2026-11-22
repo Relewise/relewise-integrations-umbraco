@@ -98,6 +98,7 @@ Search, recommendations, page views, Cart and Order events share
 [StorefrontUserLocator.cs](Integration/Tracking/StorefrontUserLocator.cs). Product and Variant views use the
 same canonical IDs as export. Recommendations do not create extra Product views.
 The cart updates asynchronously and validates quantities/prices on the server.
+Protected Product and Variant pages are excluded from cart actions as well as browsing.
 Tracking failures prevent Cart/Order changes from being saved. Retry deduplication and
 cart state are in memory and are illustrative rather than a production commerce engine.
 

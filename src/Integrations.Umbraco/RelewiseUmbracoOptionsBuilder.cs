@@ -1,4 +1,5 @@
 #pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+
 using System;
 using System.Collections.Generic;
 using Relewise.Client.DataTypes;
@@ -25,7 +26,8 @@ public class RelewiseUmbracoOptionsBuilder
     public SearchProviderOptions SearchProviders { get; } = new();
 
     /// <summary>Map a distinct Document Type to Relewise Content.</summary>
-    public RelewiseUmbracoOptionsBuilder MapContent(string documentTypeAlias,
+    public RelewiseUmbracoOptionsBuilder MapContent(
+        string documentTypeAlias,
         Action<ContentTypeBuilder>? configure = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(documentTypeAlias);
@@ -94,7 +96,8 @@ public class RelewiseUmbracoOptionsBuilder
         return this;
     }
 
-    private void Register(string documentTypeAlias,
+    private void Register(
+        string documentTypeAlias,
         MappingDefinition mapping)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(documentTypeAlias);
@@ -109,7 +112,8 @@ public class RelewiseUmbracoOptionsBuilder
             if (existing.EntityType == mapping.EntityType)
             {
                 throw new InvalidOperationException(
-                    $"{mapping.EntityType.Name} mapping '{existing.DocumentTypeAlias}' is already registered; cannot register '{documentTypeAlias}'.");
+                    $"{mapping.EntityType.Name} mapping '{existing.DocumentTypeAlias}" +
+                    $"' is already registered; cannot register '{documentTypeAlias}'.");
             }
         }
 
@@ -138,11 +142,6 @@ public class RelewiseUmbracoOptionsBuilder
         {
             throw new InvalidOperationException(
                 $"Document Type '{contentType}' is already registered for another entity type.");
-        }
-
-        if (ContentBuilders.ContainsKey(contentType) && throwIfExists)
-        {
-            throw new ArgumentException("A contentType with that name was already registered", nameof(contentType));
         }
 
         if (ContentBuilders.TryGetValue(contentType, out ContentTypeBuilder? builder))

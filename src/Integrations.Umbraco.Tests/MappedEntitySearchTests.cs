@@ -11,9 +11,11 @@ using Relewise.Client.Requests.Search;
 using Relewise.Client.Requests.Search.Settings;
 using Relewise.Client.Responses.Search;
 using Relewise.Integrations.Umbraco.Search;
+using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
 using Umbraco.Cms.Core.Services;
+using UmbracoConstants = Umbraco.Cms.Core.Constants;
 
 namespace Relewise.Integrations.Umbraco.Tests;
 
@@ -26,7 +28,8 @@ public class MappedEntitySearchTests
     [InlineData(true, false, false)]
     [InlineData(true, false, true)]
     [InlineData(true, true, false)]
-    public async Task ProtectionRequiresAPrincipalAndBypassRetainsSiteMembership(bool product,
+    public async Task ProtectionRequiresAPrincipalAndBypassRetainsSiteMembership(
+        bool product,
         bool bypass,
         bool authenticated)
     {
@@ -51,7 +54,7 @@ public class MappedEntitySearchTests
 
         var services = new ServiceCollection();
 
-        services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(settings =>
+        services.Configure<GlobalSettings>(settings =>
             settings.Id = "protected-site");
         services.AddSingleton(factory.Object);
         services.AddSingleton(store.Object);
@@ -73,8 +76,9 @@ public class MappedEntitySearchTests
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();
 
-        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions
-        { ValidateScopes = true, ValidateOnBuild = true });
+        await using ServiceProvider root = services.BuildServiceProvider(
+            new ServiceProviderOptions
+            { ValidateScopes = true, ValidateOnBuild = true });
         Guid principal = authenticated ? Guid.NewGuid() : Guid.Empty, group = Guid.NewGuid();
         AccessContext access = bypass ? AccessContext.BypassProtection() : new AccessContext(principal, [group]);
 
@@ -101,7 +105,8 @@ public class MappedEntitySearchTests
     [InlineData(true, null)]
     [InlineData(true, true)]
     [InlineData(true, false)]
-    public async Task RequestCustomizationRetainsIdentityMembershipAndPaging(bool product,
+    public async Task RequestCustomizationRetainsIdentityMembershipAndPaging(
+        bool product,
         bool? requirePublishedPage)
     {
         var sent = new ConcurrentBag<PaginatedSearchRequest>();
@@ -125,7 +130,7 @@ public class MappedEntitySearchTests
 
         var services = new ServiceCollection();
 
-        services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(settings =>
+        services.Configure<GlobalSettings>(settings =>
             settings.Id = "test-site");
         services.AddSingleton(clients.Object);
         services.AddSingleton(store.Object);
@@ -149,13 +154,15 @@ public class MappedEntitySearchTests
             }
         }
 
-        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options,
+        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((
+            options,
             _) =>
         {
             if (product)
             {
                 options.MapProduct("product");
-                options.SearchProviders.AddProduct("catalogue",
+                options.SearchProviders.AddProduct(
+                    "catalogue",
                     provider =>
                     {
                         if (requirePublishedPage.HasValue)
@@ -169,7 +176,8 @@ public class MappedEntitySearchTests
             else
             {
                 options.MapContent("article");
-                options.SearchProviders.AddContent("articles",
+                options.SearchProviders.AddContent(
+                    "articles",
                     provider => provider.ConfigureRequest((request, _) => Customize(request)));
                 options.SearchProviders.DefaultPublishedContentProviderAlias = "articles";
             }
@@ -177,27 +185,30 @@ public class MappedEntitySearchTests
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();
 
-        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions
-        { ValidateScopes = true, ValidateOnBuild = true });
+        await using ServiceProvider root = services.BuildServiceProvider(
+            new ServiceProviderOptions
+            { ValidateScopes = true, ValidateOnBuild = true });
         var accessor = root.GetRequiredService<IHttpContextAccessor>();
         await using AsyncServiceScope scope = root.CreateAsyncScope();
 
         accessor.HttpContext = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
 
         User expected = await scope.ServiceProvider.GetRequiredService<IRelewiseUserLocator>().GetUser();
-        var alias = product ? "catalogue" : global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent;
+        var alias = product ? "catalogue" : UmbracoConstants.Search.IndexAliases.PublishedContent;
 
         try
         {
             await root.GetRequiredService<MappedEntitySearcher>()
-                .SearchAsync(alias,
+                .SearchAsync(
+                    alias,
                     "trail",
                     culture: "en-US",
                     skip: 2,
                     take: 3,
                     facets:
                     [
-                        new IntegerRangeFacet("number",
+                        new IntegerRangeFacet(
+                            "number",
                             [new IntegerRangeFacetRange("first", 0, 10), new IntegerRangeFacetRange("second", 10, 20)])
                     ]);
         }
@@ -208,7 +219,8 @@ public class MappedEntitySearchTests
 
         Assert.Equal(3, sent.Count);
         Assert.Equal(3, configured.Distinct(ReferenceEqualityComparer.Instance).Count());
-        Assert.All(sent,
+        Assert.All(
+            sent,
             request =>
             {
                 Assert.Same(expected, request.User);
@@ -218,7 +230,8 @@ public class MappedEntitySearchTests
 
                 DataFilter[] predicates = [.. request.Filters.Items.SelectMany(DataFilters)];
 
-                Assert.Equal(!product || requirePublishedPage != false,
+                Assert.Equal(
+                    !product || requirePublishedPage != false,
                     predicates.Any(filter => filter.Key == "rwUmbracoPublished"));
 
                 foreach (var key in new[]
@@ -241,8 +254,10 @@ public class MappedEntitySearchTests
             });
         Assert.Single(sent, request => request.Skip == 2 && request.Take == 3);
         Assert.Equal(2, sent.Count(request => request.Skip == 0 && request.Take == 0));
-        Assert.All(sent,
-            request => Assert.Equal(product ? "Umbraco search: catalogue" : "Umbraco search: articles",
+        Assert.All(
+            sent,
+            request => Assert.Equal(
+                product ? "Umbraco search: catalogue" : "Umbraco search: articles",
                 request.DisplayedAtLocation));
     }
 
@@ -252,7 +267,8 @@ public class MappedEntitySearchTests
     [InlineData(true, "tra", 1)]
     [InlineData(true, "   ", 4)]
     [InlineData(false, "tra", 0)]
-    public async Task PredictionsRetainConfiguredScopeIdentityAndCancellation(bool product,
+    public async Task PredictionsRetainConfiguredScopeIdentityAndCancellation(
+        bool product,
         string term,
         int maximum)
     {
@@ -272,15 +288,17 @@ public class MappedEntitySearchTests
 
         sdk.Setup(client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), cancellationToken))
             .Callback<SearchTermPredictionRequest, CancellationToken>((request, _) => prediction = request)
-            .ReturnsAsync(new SearchTermPredictionResponse
-            {
-                Predictions =
-                [
-                    new SearchTermPredictionResult { Term = "Trail" },
-                    new SearchTermPredictionResult { Term = "trail" },
-                    new SearchTermPredictionResult { Term = "Travel" }, new SearchTermPredictionResult { Term = " " }
-                ]
-            });
+            .ReturnsAsync(
+                new SearchTermPredictionResponse
+                {
+                    Predictions =
+                    [
+                        new SearchTermPredictionResult { Term = "Trail" },
+                        new SearchTermPredictionResult { Term = "trail" },
+                        new SearchTermPredictionResult { Term = "Travel" },
+                        new SearchTermPredictionResult { Term = " " }
+                    ]
+                });
 
         var clients = new Mock<IRelewiseClientFactory>();
 
@@ -289,46 +307,58 @@ public class MappedEntitySearchTests
 
         var services = new ServiceCollection();
 
-        services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(settings =>
+        services.Configure<GlobalSettings>(settings =>
             settings.Id = "prediction-site");
         services.AddSingleton(clients.Object);
         services.AddScoped<IRelewiseUserLocator, ScopedVisitor>();
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options,
+        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((
+            options,
             _) =>
         {
             if (product)
             {
                 options.MapProduct("product");
-                options.SearchProviders.AddProduct("profile",
-                    provider => provider.ConfigureRequest((request,
+                options.SearchProviders.AddProduct(
+                    "profile",
+                    provider => provider.ConfigureRequest((
+                        request,
                         _) =>
                     {
                         request.Currency = new Currency("DKK");
-                        request.Filters!.Add(new ProductDataFilter("offer",
-                            new Client.Requests.Conditions.EqualsCondition(true)));
-                        request.PostFilters = new FilterCollection(new ProductDataFilter("stock",
-                            new Client.Requests.Conditions.EqualsCondition(true)));
+                        request.Filters!.Add(
+                            new ProductDataFilter(
+                                "offer",
+                                new Client.Requests.Conditions.EqualsCondition(true)));
+                        request.PostFilters = new FilterCollection(
+                            new ProductDataFilter(
+                                "stock",
+                                new Client.Requests.Conditions.EqualsCondition(true)));
                     }));
             }
             else
             {
                 options.MapContent("article");
-                options.SearchProviders.AddContent("profile",
-                    provider => provider.ConfigureRequest((request,
+                options.SearchProviders.AddContent(
+                    "profile",
+                    provider => provider.ConfigureRequest((
+                        request,
                         _) =>
                     {
                         request.Currency = new Currency("DKK");
-                        request.Filters!.Add(new ContentDataFilter("offer",
-                            new Client.Requests.Conditions.EqualsCondition(true)));
+                        request.Filters!.Add(
+                            new ContentDataFilter(
+                                "offer",
+                                new Client.Requests.Conditions.EqualsCondition(true)));
                     }));
             }
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();
 
-        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions
-        { ValidateScopes = true, ValidateOnBuild = true });
+        await using ServiceProvider root = services.BuildServiceProvider(
+            new ServiceProviderOptions
+            { ValidateScopes = true, ValidateOnBuild = true });
         await using AsyncServiceScope scope = root.CreateAsyncScope();
         var accessor = root.GetRequiredService<IHttpContextAccessor>();
 
@@ -337,7 +367,8 @@ public class MappedEntitySearchTests
 
         var principal = Guid.NewGuid();
         SearchResult result = await root.GetRequiredService<MappedEntitySearcher>()
-            .SearchAsync("profile",
+            .SearchAsync(
+                "profile",
                 term,
                 culture: "da-DK",
                 accessContext: new AccessContext(principal, []),
@@ -359,7 +390,8 @@ public class MappedEntitySearchTests
         Assert.Equal(sent.Currency, prediction.Currency);
         Assert.Equal(sent.Language, prediction.Language);
         Assert.Equal(sent.DisplayedAtLocation, prediction.DisplayedAtLocation);
-        Assert.Equal(product ? EntityType.Product : EntityType.Content,
+        Assert.Equal(
+            product ? EntityType.Product : EntityType.Content,
             Assert.Single(prediction.Settings!.TargetEntityTypes!));
         Assert.Null(prediction.IndexSelector);
 
@@ -377,7 +409,8 @@ public class MappedEntitySearchTests
             Assert.Contains("stock", json);
         }
 
-        sdk.Verify(client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), cancellationToken),
+        sdk.Verify(
+            client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), cancellationToken),
             Times.Once);
     }
 

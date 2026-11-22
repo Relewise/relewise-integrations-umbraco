@@ -23,7 +23,8 @@ public class RichTextEditorPropertyValueConverterTests
     [InlineData("Umbraco.TinyMCE", "")]
     [InlineData("Umbraco.RichText", null)]
     [InlineData("Umbraco.TinyMCE", null)]
-    public void DefaultRegistrationExportsPublishedHtml(string editorAlias,
+    public void DefaultRegistrationExportsPublishedHtml(
+        string editorAlias,
         string? html)
     {
         using ServiceProvider services = CreateServices();
@@ -70,8 +71,9 @@ public class RichTextEditorPropertyValueConverterTests
     {
         using ServiceProvider services = CreateServices(true, registerBeforeDefaults);
 
-        Assert.Single(services.GetServices<IAsyncRelewisePropertyValueConverter>()
-            .OfType<RichTextEditorPropertyValueConverter>());
+        Assert.Single(
+            services.GetServices<IAsyncRelewisePropertyValueConverter>()
+                .OfType<RichTextEditorPropertyValueConverter>());
 
         var property = new PublishedProperty("Umbraco.RichText", new HtmlEncodedString("<p>Description</p>"));
         IReadOnlyDictionary<string, DataValue?> result = services.GetRequiredService<IRelewisePropertyConverter>()
@@ -161,7 +163,8 @@ public class RichTextEditorPropertyValueConverterTests
             throw new NotSupportedException();
         }
 
-        public object GetDeliveryApiValue(bool expanding,
+        public object GetDeliveryApiValue(
+            bool expanding,
             string? culture = null,
             string? segment = null)
         {
@@ -190,7 +193,8 @@ public class RichTextEditorPropertyValueConverterTests
             return value is not null;
         }
 
-        public object ConvertSourceToInter(IPublishedElement owner,
+        public object ConvertSourceToInter(
+            IPublishedElement owner,
             object? source,
             bool preview)
         {

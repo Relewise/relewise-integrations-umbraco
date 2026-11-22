@@ -1,4 +1,5 @@
 #pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+
 using System.Collections.Generic;
 using Relewise.Client.DataTypes;
 

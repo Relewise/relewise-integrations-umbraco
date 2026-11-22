@@ -1,3 +1,4 @@
+using System.Globalization;
 using Relewise.DemoStorefront.Integration.Converters;
 using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -6,7 +7,8 @@ namespace Relewise.DemoStorefront.Features.Products;
 
 internal static class ProductPrices
 {
-    internal static (string Sale, string? List, string? Savings) Display(IPublishedContent product,
+    internal static (string Sale, string? List, string? Savings) Display(
+        IPublishedContent product,
         HttpContext http)
     {
         DemoMarket market = DemoMarket.Current(http);
@@ -14,8 +16,9 @@ internal static class ProductPrices
         string Amount(decimal value)
         {
             return market.Currency + " " +
-                   value.ToString("N2",
-                       System.Globalization.CultureInfo.GetCultureInfo(market.Culture));
+                   value.ToString(
+                       "N2",
+                       CultureInfo.GetCultureInfo(market.Culture));
         }
 
         var sale = Read(product, "salesPrice", market.Currency);

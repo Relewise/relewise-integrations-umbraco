@@ -1,5 +1,7 @@
 #pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -36,7 +38,8 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
         set => Definition.AdministrativeActions = value ?? throw new ArgumentNullException(nameof(value));
     }
 
-    /// <summary>Run a scoped mapper after declarative fields and configured relationships, allowing final application-field customization.</summary>
+    /// <summary>Run a scoped mapper after declarative fields and configured relationships, allowing final
+    /// application-field customization.</summary>
     public void UseMapper<TMapper>() where TMapper : class, IEntityMapper<TEntity>
     {
         if (Definition.Mapper != null)
@@ -57,7 +60,8 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
             }
 
             return operation.Resolve<TMapper>()
-                .MapAsync(new EntityMappingContext<TEntity>(source, destination, cultures, operation),
+                .MapAsync(
+                    new EntityMappingContext<TEntity>(source, destination, cultures, operation),
                     operation.CancellationToken);
         };
     }
@@ -110,7 +114,8 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
 
         Definition.AddProperty(
             property.Name,
-            new PropertyMapping<TEntity, TValue>(sourcePropertyAlias,
+            new PropertyMapping<TEntity, TValue>(
+                sourcePropertyAlias,
                 property.Name,
                 assign,
                 options.Converter,
@@ -127,7 +132,7 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
         configure?.Invoke(options);
         ArgumentException.ThrowIfNullOrWhiteSpace(options.DataKey);
 
-        if (!Definition.DataKeys.Add(options.DataKey))
+        if (Definition.DataMappings.Any(mapping => mapping.Options.DataKey == options.DataKey))
         {
             throw new InvalidOperationException($"Data key '{options.DataKey}' is already mapped.");
         }

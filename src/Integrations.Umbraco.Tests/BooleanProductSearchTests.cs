@@ -10,9 +10,11 @@ using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Search;
 using Relewise.Client.Responses.Search;
 using Relewise.Integrations.Umbraco.Search;
+using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
+using UmbracoFacetResult = Umbraco.Cms.Core.Search.Querying.Faceting.FacetResult;
 
 namespace Relewise.Integrations.Umbraco.Tests;
 
@@ -29,25 +31,27 @@ public class BooleanProductSearchTests
 
         client.Setup(value => value.SearchAsync(It.IsAny<ProductSearchRequest>(), It.IsAny<CancellationToken>()))
             .Callback<ProductSearchRequest, CancellationToken>((request, _) => sent.Add(request))
-            .ReturnsAsync(new ProductSearchResponse
-            {
-                Hits = 3,
-                Results = [],
-                Facets = new ProductFacetResult
+            .ReturnsAsync(
+                new ProductSearchResponse
                 {
-                    Items =
-                    [
-                        new ProductDataBooleanValueFacetResult(DataSelectionStrategy.Product,
-                            "onSale_EUR",
-                            omittedSelection ? null! : [],
-                            null,
-                            [
-                                new AvailableFacetValue<bool>(true, false, 3),
-                                new AvailableFacetValue<bool>(false, false, 7)
-                            ])
-                    ]
-                }
-            });
+                    Hits = 3,
+                    Results = [],
+                    Facets = new ProductFacetResult
+                    {
+                        Items =
+                        [
+                            new ProductDataBooleanValueFacetResult(
+                                DataSelectionStrategy.Product,
+                                "onSale_EUR",
+                                omittedSelection ? null! : [],
+                                null,
+                                [
+                                    new AvailableFacetValue<bool>(true, false, 3),
+                                    new AvailableFacetValue<bool>(false, false, 7)
+                                ])
+                        ]
+                    }
+                });
 
         var factory = new Mock<IRelewiseClientFactory>();
 
@@ -56,7 +60,7 @@ public class BooleanProductSearchTests
 
         var services = new ServiceCollection();
 
-        services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(options =>
+        services.Configure<GlobalSettings>(options =>
             options.Id = "boolean-site");
         services.AddSingleton(factory.Object);
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -69,8 +73,9 @@ public class BooleanProductSearchTests
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();
 
-        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions
-        { ValidateScopes = true, ValidateOnBuild = true });
+        await using ServiceProvider root = services.BuildServiceProvider(
+            new ServiceProviderOptions
+            { ValidateScopes = true, ValidateOnBuild = true });
         SearchResult result = await root.GetRequiredService<MappedEntitySearcher>()
             .SearchAsync(
                 "products",
@@ -88,7 +93,8 @@ public class BooleanProductSearchTests
         Assert.DoesNotContain("rwUmbracoField_sale", main);
         Assert.DoesNotContain("onSale_EUR", JsonConvert.SerializeObject(sent[1].Filters));
         Assert.IsType<ProductDataBooleanValueFacet>(Assert.Single(sent[1].Facets!.Items));
-        Assert.All(sent,
+        Assert.All(
+            sent,
             request =>
             {
                 var json = JsonConvert.SerializeObject(request.Filters);
@@ -98,7 +104,7 @@ public class BooleanProductSearchTests
                 Assert.Contains("rwUmbracoSearchProtected", json);
             });
 
-        global::Umbraco.Cms.Core.Search.Querying.Faceting.FacetResult facet = Assert.Single(result.Facets);
+        UmbracoFacetResult facet = Assert.Single(result.Facets);
 
         Assert.Equal("sale", facet.FieldName);
         Assert.Equal(3, Assert.Single(facet.Values.OfType<KeywordFacetValue>(), value => value.Key == "true").Count);
@@ -109,7 +115,8 @@ public class BooleanProductSearchTests
     [InlineData("true", false)]
     [InlineData("false", false)]
     [InlineData("true", true)]
-    public void BooleanValuesAndNegationAreTyped(string value,
+    public void BooleanValuesAndNegationAreTyped(
+        string value,
         bool negate)
     {
         Client.Requests.Filters.Filter filter = CoreSearchTranslation.MapFilter(
@@ -137,10 +144,12 @@ public class BooleanProductSearchTests
         options.MapBooleanData("sale");
         Assert.Throws<InvalidOperationException>(() => options.MapBooleanData("sale"));
         Assert.Throws<ArgumentException>(() =>
-            CoreSearchTranslation.MapFilter(new KeywordFilter("sale", ["yes"], false),
+            CoreSearchTranslation.MapFilter(
+                new KeywordFilter("sale", ["yes"], false),
                 booleanDataFields: options.BooleanDataFields));
         Assert.Throws<NotSupportedException>(() =>
-            CoreSearchTranslation.MapFilter(new DecimalRangeFilter("sale", [], false),
+            CoreSearchTranslation.MapFilter(
+                new DecimalRangeFilter("sale", [], false),
                 booleanDataFields: options.BooleanDataFields));
     }
 

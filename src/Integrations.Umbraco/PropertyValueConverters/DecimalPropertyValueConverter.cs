@@ -1,5 +1,6 @@
 #pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
-using System.Globalization;
+
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client.DataTypes;
@@ -23,21 +24,10 @@ internal class DecimalPropertyValueConverter : IDefaultPropertyValueConverter, I
     }
 
     /// <inheritdoc/>
-    [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
+    [Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
         var value = context.Property.GetValue<decimal>(context.Culture);
-        var number = 0d;
-
-        if (double.TryParse(
-                value.ToString(CultureInfo.InvariantCulture),
-                NumberStyles.Float | NumberStyles.AllowThousands,
-                CultureInfo.InvariantCulture,
-                out var n))
-        {
-            number = n;
-        }
-
-        context.Add(context.Property.Alias, new DataValue(number));
+        context.Add(context.Property.Alias, new DataValue((double)value));
     }
 }

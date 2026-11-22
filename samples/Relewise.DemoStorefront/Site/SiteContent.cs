@@ -1,5 +1,6 @@
 using Umbraco.Cms.Core.Models.PublishedContent;
-using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.PublishedCache;
+using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
 
 namespace Relewise.DemoStorefront.Site;
@@ -8,27 +9,18 @@ internal static class SiteContent
 {
     internal static IPublishedContent Home(IServiceProvider services)
     {
-        HttpContext? http = services.GetRequiredService<IHttpContextAccessor>().HttpContext;
-
-        if (http?.Items["Fieldwork:Home"] is IPublishedContent cached)
-        {
-            return cached;
-        }
-
-        Guid key = services.GetRequiredService<IContentService>()
-            .GetRootContent()
-            .Single(node => node.ContentType.Alias == "home")
-            .Key;
-        IPublishedContent home = services.GetRequiredService<IUmbracoContextAccessor>()
+        var navigation = services.GetRequiredService<IDocumentNavigationQueryService>();
+        IPublishedContentCache content = services.GetRequiredService<IUmbracoContextAccessor>()
             .GetRequiredUmbracoContext()
-            .Content.GetById(key)!;
+            .Content;
 
-        if (http != null)
+        // Rendering needs published content only, not a lookup through the editing/content service.
+        if (!navigation.TryGetRootKeysOfType("home", out IEnumerable<Guid> keys))
         {
-            http.Items["Fieldwork:Home"] = home;
+            throw new InvalidOperationException("The published demo home page could not be found.");
         }
 
-        return home;
+        return keys.Select(key => content.GetById(key)).OfType<IPublishedContent>().Single();
     }
 
     internal static IEnumerable<IPublishedContent> ShoppingCategories(IPublishedContent home)

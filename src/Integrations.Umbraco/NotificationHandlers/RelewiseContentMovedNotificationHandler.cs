@@ -19,7 +19,8 @@ internal class RelewiseContentMovedNotificationHandler : INotificationAsyncHandl
 
     public async Task HandleAsync(ContentMovedNotification notification, CancellationToken cancellationToken)
     {
-        await _exportContentService.Export(new ExportContent(
+        await _exportContentService.Export(
+            new ExportContent(
                 [.. notification.MoveInfoCollection.Select(x => x.Entity)],
                 ContentUpdate.UpdateKind.ReplaceProvidedProperties),
             cancellationToken);

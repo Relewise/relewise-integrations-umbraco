@@ -66,7 +66,8 @@ public class DashboardApiController : RelewiseApiControllerBase
 
         if (exporter == null)
         {
-            return Problem("Register the Umbraco integration before exporting.",
+            return Problem(
+                "Register the Umbraco integration before exporting.",
                 statusCode: StatusCodes.Status409Conflict);
         }
 
@@ -93,17 +94,19 @@ public class DashboardApiController : RelewiseApiControllerBase
             _provider.GetService<ILogger<DashboardApiController>>()
                 ?.LogError(ex, "Could not load Relewise integration configuration.");
 
-            return Ok(new ConfigurationErrorViewModel(
-                "The integration configuration could not be loaded. Check the application logs for details."));
+            return Ok(
+                new ConfigurationErrorViewModel(
+                    "The integration configuration could not be loaded. Check the application logs for details."));
         }
 
         if (configuration == null)
         {
-            return Ok(new ConfigurationErrorViewModel(
-                "Register AddRelewise on the Umbraco builder to enable mapping, indexing and tracking.")
-            {
-                IntegrationRegistered = false
-            });
+            return Ok(
+                new ConfigurationErrorViewModel(
+                    "Register AddRelewise on the Umbraco builder to enable mapping, indexing and tracking.")
+                {
+                    IntegrationRegistered = false
+                });
         }
 
         IRelewiseClientFactory clientFactory;
@@ -120,11 +123,14 @@ public class DashboardApiController : RelewiseApiControllerBase
 
             integrationClients =
             [
-                new DashboardClientViewModel("Tracker",
+                new DashboardClientViewModel(
+                    "Tracker",
                     new ClientOptionsViewObject(clientFactory.GetOptions<ITracker>(Constants.NamedClientName))),
-                new DashboardClientViewModel("Searcher",
+                new DashboardClientViewModel(
+                    "Searcher",
                     new ClientOptionsViewObject(clientFactory.GetOptions<ISearcher>(Constants.NamedClientName))),
-                new DashboardClientViewModel("Data accessor",
+                new DashboardClientViewModel(
+                    "Data accessor",
                     new ClientOptionsViewObject(clientFactory.GetOptions<IDataAccessor>(Constants.NamedClientName)))
             ];
         }
@@ -133,8 +139,10 @@ public class DashboardApiController : RelewiseApiControllerBase
             _provider.GetService<ILogger<DashboardApiController>>()
                 ?.LogError(ex, "Could not load Relewise client configuration.");
 
-            return Ok(new ConfigurationErrorViewModel(
-                "Relewise client settings are unavailable. Configure the Dataset ID, API key and server URL in application configuration, then restart the site."));
+            return Ok(
+                new ConfigurationErrorViewModel(
+                    "Relewise client settings are unavailable. Configure the Dataset ID, API key and " +
+                    "server URL in application configuration, then restart the site."));
         }
 
         List<NamedOptionsViewObject> clients =
@@ -147,6 +155,7 @@ public class DashboardApiController : RelewiseApiControllerBase
                     RelewiseClientOptions trackerOptions = clientFactory.GetOptions<ITracker>(name);
                     RelewiseClientOptions recommenderOptions = clientFactory.GetOptions<IRecommender>(name);
                     RelewiseClientOptions searcherOptions = clientFactory.GetOptions<ISearcher>(name);
+
                     RelewiseClientOptions searchAdministratorOptions =
                         clientFactory.GetOptions<ISearchAdministrator>(name);
                     RelewiseClientOptions analyzerOptions = clientFactory.GetOptions<IAnalyzer>(name);
@@ -165,7 +174,8 @@ public class DashboardApiController : RelewiseApiControllerBase
 
         try
         {
-            clients.Insert(0,
+            clients.Insert(
+                0,
                 new NamedOptionsViewObject(
                     "Default",
                     new ClientOptionsViewObject(clientFactory.GetOptions<ITracker>()),
@@ -180,7 +190,8 @@ public class DashboardApiController : RelewiseApiControllerBase
         }
         catch (ArgumentException)
         {
-            // we'll just ignore this exception as it just means that there no default client has been configured, which is okay
+            // we'll just ignore this exception as it just means that there no default client has been configured, which
+            // is okay
         }
 
         ConfigurationViewModel result =

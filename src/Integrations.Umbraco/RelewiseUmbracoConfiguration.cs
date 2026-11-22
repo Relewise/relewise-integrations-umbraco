@@ -1,4 +1,5 @@
 #pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,6 +11,7 @@ using Relewise.Integrations.Umbraco.Search;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Extensions;
+using Content = Relewise.Client.DataTypes.Content;
 
 namespace Relewise.Integrations.Umbraco;
 
@@ -46,7 +48,7 @@ public class RelewiseUmbracoConfiguration
         foreach (KeyValuePair<string, ContentTypeBuilder?> content in options.ContentBuilders)
         {
             MappingDefinition definition = content.Value?.Definition ??
-                                           new MappingDefinition(typeof(Relewise.Client.DataTypes.Content))
+                                           new MappingDefinition(typeof(Content))
                                            { AutomaticData = true };
 
             definition.DocumentTypeAlias = content.Key;
@@ -145,14 +147,16 @@ public class RelewiseUmbracoConfiguration
         return GetContentId(content.Id, content.Key);
     }
 
-    private static string ResolvePropertyId(object? raw,
+    private static string ResolvePropertyId(
+        object? raw,
         string sourcePropertyAlias,
         Guid nodeKey)
     {
         if (raw is not (string or Guid or byte or short or int or long or ushort or uint or ulong or decimal))
         {
             throw new InvalidOperationException(
-                $"ID property '{sourcePropertyAlias}' on '{nodeKey}' must contain a string, GUID, or integer/decimal ID.");
+                $"ID property '{sourcePropertyAlias}' on '{nodeKey}" +
+                $"' must contain a string, GUID, or integer/decimal ID.");
         }
 
         var value = Convert.ToString(raw, CultureInfo.InvariantCulture);
@@ -165,7 +169,8 @@ public class RelewiseUmbracoConfiguration
         return value;
     }
 
-    private string GetContentId(int id,
+    private string GetContentId(
+        int id,
         Guid key)
     {
         return UseContentKeysAsIds ? key.ToString("D") : id.ToString(CultureInfo.InvariantCulture);

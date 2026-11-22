@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Antiforgery;
 using Relewise.DemoStorefront.Features.Recommendations;
 using Relewise.DemoStorefront.Integration;
@@ -32,13 +33,14 @@ internal static class CartModelBuilder
             ImageHtml = page == null ? "" : Storefront.Image(page),
             Quantity = amount,
             Maximum = priced == null ? 0 : Math.Max(0, Math.Min(99, priced.Product.Value<int>("stock"))),
-            UnitPrice = priced == null ? "" : System.Net.WebUtility.HtmlDecode(Money(http, priced.Amount)),
-            LineTotal = priced == null ? "" : System.Net.WebUtility.HtmlDecode(Money(http, priced.Amount * amount)),
+            UnitPrice = priced == null ? "" : WebUtility.HtmlDecode(Money(http, priced.Amount)),
+            LineTotal = priced == null ? "" : WebUtility.HtmlDecode(Money(http, priced.Amount * amount)),
             Available = priced != null
         };
     }
 
-    internal static CartModel Model(HttpContext http,
+    internal static CartModel Model(
+        HttpContext http,
         List<CartLine> lines,
         PricedCartLine[] priced)
     {
@@ -70,7 +72,7 @@ internal static class CartModelBuilder
             AntiforgeryField = token.FormFieldName,
             AntiforgeryToken = token.RequestToken ?? "",
             Count = lines.Sum(line => line.Quantity),
-            Total = System.Net.WebUtility.HtmlDecode(Money(http, priced.Sum(line => line.Amount * line.Line.Quantity))),
+            Total = WebUtility.HtmlDecode(Money(http, priced.Sum(line => line.Amount * line.Line.Quantity))),
             Ready = lines.Count > 0 && priced.Length == lines.Count && InStock(priced)
         };
     }

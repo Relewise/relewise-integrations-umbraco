@@ -117,11 +117,12 @@ internal sealed class StorefrontSearch(
         if (custom)
         {
             // Demo prices have cent precision; Umbraco's native upper bound is exclusive.
-            filters.Add(new DecimalRangeFilter(
-                PriceField,
-                [new DecimalRangeFilterRange(minimum, maximum + 0.01m)],
-                false
-            ));
+            filters.Add(
+                new DecimalRangeFilter(
+                    PriceField,
+                    [new DecimalRangeFilterRange(minimum, maximum + 0.01m)],
+                    false
+                ));
         }
 
         return [.. filters];
@@ -176,7 +177,8 @@ internal sealed class StorefrontSearch(
         return new KeywordSorter(Constants.Search.FieldNames.Name, Direction.Ascending);
     }
 
-    internal ListingFacet[] Groups(SearchResult result,
+    internal ListingFacet[] Groups(
+        SearchResult result,
         IPublishedContent home)
     {
         if (editorial)
@@ -193,17 +195,20 @@ internal sealed class StorefrontSearch(
                     .OfType<KeywordFacetValue>() ?? [])
                 .ToDictionary(value => value.Key, value => value.Count);
 
-            groups.Add(new ListingFacet("category",
-                Storefront.Text(request.HttpContext, "Categories"),
-                [
-                    .. SiteContent.ShoppingCategories(home)
-                        .OrderBy(node => node.Name, StringComparer.CurrentCulture)
-                        .Select(node => new ListingChoice(node.Key.ToString("D"),
-                            node.Name,
-                            counts.GetValueOrDefault(node.Key.ToString("D")),
-                            Selected("category", node.Key.ToString("D"))
-                        ))
-                ]));
+            groups.Add(
+                new ListingFacet(
+                    "category",
+                    Storefront.Text(request.HttpContext, "Categories"),
+                    [
+                        .. SiteContent.ShoppingCategories(home)
+                            .OrderBy(node => node.Name, StringComparer.CurrentCulture)
+                            .Select(node => new ListingChoice(
+                                node.Key.ToString("D"),
+                                node.Name,
+                                counts.GetValueOrDefault(node.Key.ToString("D")),
+                                Selected("category", node.Key.ToString("D"))
+                            ))
+                    ]));
         }
 
         if (!FixedBrand)
@@ -213,33 +218,36 @@ internal sealed class StorefrontSearch(
                     .OfType<KeywordFacetValue>() ?? [])
                 .ToDictionary(value => value.Key, value => value.Count);
 
-            groups.Add(new ListingFacet(
-                "brand",
-                Storefront.Text(request.HttpContext, "Brands"),
-                [
-                    .. SiteContent.ShoppingBrands(home)
-                        .Select(node => new ListingChoice(node.Key.ToString("D"),
-                            SiteContent.Title(node),
-                            counts.GetValueOrDefault(node.Key.ToString("D")),
-                            Selected("brand", node.Key.ToString("D"))
-                        ))
-                ]));
+            groups.Add(
+                new ListingFacet(
+                    "brand",
+                    Storefront.Text(request.HttpContext, "Brands"),
+                    [
+                        .. SiteContent.ShoppingBrands(home)
+                            .Select(node => new ListingChoice(
+                                node.Key.ToString("D"),
+                                SiteContent.Title(node),
+                                counts.GetValueOrDefault(node.Key.ToString("D")),
+                                Selected("brand", node.Key.ToString("D"))
+                            ))
+                    ]));
         }
 
-        groups.Add(new ListingFacet(
-            "price",
-            Storefront.Text(request.HttpContext, "Price"),
-            [
-                .. (result.Facets.FirstOrDefault(facet => facet.FieldName == PriceField)
-                    ?.Values
-                    .OfType<DecimalRangeFacetValue>() ?? [])
-                .Select(range => new ListingChoice(
-                    range.Key,
-                    PriceLabel(range.Min, range.Max),
-                    range.Count,
-                    Selected("price", range.Key)
-                ))
-            ]));
+        groups.Add(
+            new ListingFacet(
+                "price",
+                Storefront.Text(request.HttpContext, "Price"),
+                [
+                    .. (result.Facets.FirstOrDefault(facet => facet.FieldName == PriceField)
+                        ?.Values
+                        .OfType<DecimalRangeFacetValue>() ?? [])
+                    .Select(range => new ListingChoice(
+                        range.Key,
+                        PriceLabel(range.Min, range.Max),
+                        range.Count,
+                        Selected("price", range.Key)
+                    ))
+                ]));
 
         var available = result.Facets.FirstOrDefault(facet => facet.FieldName == "inStock")
             ?.Values
@@ -265,13 +273,14 @@ internal sealed class StorefrontSearch(
                 .FirstOrDefault(value => value.Key == "true")
                 ?.Count ?? 0;
 
-            showOnly.Add(new ListingChoice(
-                "true",
-                Storefront.Text(request.HttpContext, "OnSale"),
-                onSale,
-                Selected("onSale", "true"),
-                "onSale"
-            ));
+            showOnly.Add(
+                new ListingChoice(
+                    "true",
+                    Storefront.Text(request.HttpContext, "OnSale"),
+                    onSale,
+                    Selected("onSale", "true"),
+                    "onSale"
+                ));
         }
 
         groups.Add(new ListingFacet("showOnly", Storefront.Text(request.HttpContext, "ShowOnly"), [.. showOnly]));
@@ -352,7 +361,8 @@ internal sealed class StorefrontSearch(
         }
     }
 
-    private string PriceLabel(decimal? min,
+    private string PriceLabel(
+        decimal? min,
         decimal? max)
     {
         DemoMarket market = DemoMarket.Current(request.HttpContext);
@@ -392,8 +402,9 @@ internal sealed class StorefrontSearch(
     internal string ClearQueryUrl()
     {
         return ListingPath +
-               QueryString.Create(request.Query.Where(pair =>
-                   pair.Key is not ("page" or "q" or "collection" or "view")));
+               QueryString.Create(
+                   request.Query.Where(pair =>
+                       pair.Key is not ("page" or "q" or "collection" or "view")));
     }
 
     private bool Selected(string name, string value)

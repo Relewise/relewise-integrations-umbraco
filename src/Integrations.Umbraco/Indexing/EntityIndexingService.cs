@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ using Relewise.Client.Requests.Shared;
 using Relewise.Client.Responses;
 using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -28,14 +30,14 @@ using Content = Relewise.Client.DataTypes.Content;
 
 namespace Relewise.Integrations.Umbraco.Indexing;
 
-// The writer keeps no integration-owned database records. Rebuilds reconcile source metadata in Relewise.
+// EntityIndexingQueue serializes all writes; this service owns only the scope of each export.
+// Rebuilds reconcile source metadata in Relewise without integration-owned database records.
 internal sealed class EntityIndexingService(
     IServiceScopeFactory scopeFactory,
     RelewiseUmbracoConfiguration configuration,
     ILogger<EntityIndexingService> logger) : IEntityIndexingOperations
 {
     internal const string IndexAlias = "Relewise_MappedEntities";
-    private readonly SemaphoreSlim _writer = new(1, 1);
 
     internal static string SiteId(IServiceProvider services)
     {
@@ -65,7 +67,8 @@ internal sealed class EntityIndexingService(
         return RunAsync([], false, false, changes: changes, token: token);
     }
 
-    public async Task DeleteAsync(IEnumerable<DeletedEntity> deleted,
+    public async Task DeleteAsync(
+        IEnumerable<DeletedEntity> deleted,
         CancellationToken token)
     {
         DeletedEntity[] snapshots = [.. deleted];
@@ -75,47 +78,45 @@ internal sealed class EntityIndexingService(
             return;
         }
 
-        await _writer.WaitAsync(token);
+        token.ThrowIfCancellationRequested();
 
-        try
+        await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
+
+        var clients = scope.ServiceProvider.GetRequiredService<IRelewiseClientFactory>();
+        var tracker = clients.GetClient<ITracker>(Constants.NamedClientName);
+
+        var actions = new List<Trackable>();
+
+        foreach (DeletedEntity entity in snapshots)
         {
-            await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
-            var clients = scope.ServiceProvider.GetRequiredService<IRelewiseClientFactory>();
-            var tracker = clients.GetClient<ITracker>(Constants.NamedClientName);
-            var actions = new List<Trackable>();
-
-            foreach (DeletedEntity entity in snapshots)
+            if (entity.Synchronize)
             {
-                if (entity.Synchronize)
-                {
-                    actions.Add(DeleteIdentity(entity.EntityType, entity.Id));
-                }
-                else if (entity.EntityType == typeof(Content) || entity.EntityType == typeof(Product))
-                {
-                    var filters = new FilterCollection(
-                        DataFilter(entity.EntityType,
-                            "rwUmbracoNodeKey",
-                            new EqualsCondition(entity.NodeKey.ToString("D"))),
-                        DataFilter(entity.EntityType,
-                            "rwUmbracoSite",
-                            new EqualsCondition(SiteId(scope.ServiceProvider))));
-
-                    await MarkUnavailableAsync(clients.GetClient<IDataAccessor>(Constants.NamedClientName),
-                        tracker,
-                        entity.EntityType,
-                        filters,
-                        token);
-                }
+                actions.Add(DeleteIdentity(entity.EntityType, entity.Id));
             }
-
-            if (actions.Count > 0)
+            else if (entity.EntityType == typeof(Content) || entity.EntityType == typeof(Product))
             {
-                await tracker.TrackAsync(actions, token);
+                var filters = new FilterCollection(
+                    DataFilter(
+                        entity.EntityType,
+                        "rwUmbracoNodeKey",
+                        new EqualsCondition(entity.NodeKey.ToString("D"))),
+                    DataFilter(
+                        entity.EntityType,
+                        "rwUmbracoSite",
+                        new EqualsCondition(SiteId(scope.ServiceProvider))));
+
+                await MarkUnavailableAsync(
+                    clients.GetClient<IDataAccessor>(Constants.NamedClientName),
+                    tracker,
+                    entity.EntityType,
+                    filters,
+                    token);
             }
         }
-        finally
+
+        if (actions.Count > 0)
         {
-            _writer.Release();
+            await tracker.TrackAsync(actions, token);
         }
     }
 
@@ -133,28 +134,33 @@ internal sealed class EntityIndexingService(
             return;
         }
 
-        var started = System.Diagnostics.Stopwatch.GetTimestamp();
-        var mappedCount = 0;
+        token.ThrowIfCancellationRequested();
 
-        await _writer.WaitAsync(token);
+        var started = Stopwatch.GetTimestamp();
+        var mappedCount = 0;
 
         try
         {
             await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
             IServiceProvider services = scope.ServiceProvider;
-            var site = SiteId(services);
+
+            using UmbracoContextReference context = services
+                .GetRequiredService<IUmbracoContextFactory>()
+                .EnsureUmbracoContext();
+
             var clients = services.GetRequiredService<IRelewiseClientFactory>();
             var tracker = clients.GetClient<ITracker>(Constants.NamedClientName);
-            using global::Umbraco.Cms.Core.UmbracoContextReference context =
-                services.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
             var strategy = services.GetRequiredService<IPublishedContentChangeStrategy>();
+
+            var site = SiteId(services);
+
             var collected = new IndexingKeyCollector();
             HashSet<Guid> requested = [.. keys];
-            var aggregateChildren = new HashSet<Guid>();
 
             if (rebuild)
             {
-                await strategy.RebuildAsync(new ContentIndexInfo(IndexAlias, [UmbracoObjectTypes.Document], collected),
+                await strategy.RebuildAsync(
+                    new ContentIndexInfo(IndexAlias, [UmbracoObjectTypes.Document], collected),
                     token);
             }
             else
@@ -172,13 +178,17 @@ internal sealed class EntityIndexingService(
             // Already-unpublished permanent deletions can be reported through the draft flow.
             if (changes != null)
             {
-                collected.Keys.UnionWith(changes
-                    .Where(change =>
-                        change.ObjectType == UmbracoObjectTypes.Document && change.ChangeImpact == ChangeImpact.Remove)
-                    .Select(change => change.Id));
+                collected.Keys.UnionWith(
+                    changes
+                        .Where(change =>
+                            change.ObjectType == UmbracoObjectTypes.Document &&
+                            change.ChangeImpact == ChangeImpact.Remove)
+                        .Select(change => change.Id));
             }
 
             requested.UnionWith(collected.Keys);
+
+            var aggregateChildren = new HashSet<Guid>();
 
             // A child Variant contributes to its parent Product, rather than creating an independent entity.
             foreach (Guid key in requested.ToArray())
@@ -191,7 +201,8 @@ internal sealed class EntityIndexingService(
                     IContent? editable = services.GetRequiredService<IContentService>().GetById(key);
 
                     if (editable == null ||
-                        !configuration.Mappings.TryGetValue(editable.ContentType.Alias,
+                        !configuration.Mappings.TryGetValue(
+                            editable.ContentType.Alias,
                             out MappingDefinition? removedMapping) ||
                         removedMapping.EntityType != typeof(ProductVariant))
                     {
@@ -222,13 +233,16 @@ internal sealed class EntityIndexingService(
                 }
             }
 
-            var generation = Guid.NewGuid().ToString("N");
-            var version = feedVersion ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             await using var operation = new MappingOperation(services, token);
             var mapper = new EntityMapper(configuration);
+
+            var generation = Guid.NewGuid().ToString("N");
+            var version = feedVersion ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
             var siteCultures = (await services.GetRequiredService<ILanguageService>().GetAllAsync())
                 .Select(language => language.IsoCode)
                 .ToArray();
+
             var desired = new List<MappedEntity>();
             var claims = new HashSet<string>(StringComparer.Ordinal);
             var unmapped = new HashSet<Guid>();
@@ -262,13 +276,15 @@ internal sealed class EntityIndexingService(
                         .Distinct(StringComparer.OrdinalIgnoreCase)
                         .ToArray();
 
-                // Invariant values are shared across the site's languages, rather than belonging only to its default language.
+                // Invariant values are shared across the site's languages, rather than belonging only to its default
+                // language.
                 if (!source.ContentType.VariesByCulture())
                 {
                     cultures = siteCultures;
                 }
 
-                MappedEntity mapped = await mapper.MapAsync(source,
+                MappedEntity mapped = await mapper.MapAsync(
+                    source,
                     mapping,
                     operation,
                     site,
@@ -303,15 +319,17 @@ internal sealed class EntityIndexingService(
 
                 if (entity.Synchronize)
                 {
-                    updates.Add(Administrative(
-                        entity.Entity.GetType(),
-                        new FilterCollection(
-                            DataFilter(entity.Entity.GetType(),
-                                "rwUmbracoNodeKey",
-                                new EqualsCondition(entity.NodeKey.ToString("D"))),
-                            DataFilter(entity.Entity.GetType(), "rwUmbracoSite", new EqualsCondition(site))),
-                        false,
-                        true));
+                    updates.Add(
+                        Administrative(
+                            entity.Entity.GetType(),
+                            new FilterCollection(
+                                DataFilter(
+                                    entity.Entity.GetType(),
+                                    "rwUmbracoNodeKey",
+                                    new EqualsCondition(entity.NodeKey.ToString("D"))),
+                                DataFilter(entity.Entity.GetType(), "rwUmbracoSite", new EqualsCondition(site))),
+                            false,
+                            true));
                 }
             }
 
@@ -352,26 +370,35 @@ internal sealed class EntityIndexingService(
                     {
                         var filters = new FilterCollection(
                             DataFilter(type, "rwUmbracoSite", new EqualsCondition(site)),
-                            new OrFilter([
-                                .. group.Select(mapping => DataFilter(type,
+                            new OrFilter(
+                            [
+                                .. group.Select(mapping => DataFilter(
+                                    type,
                                     "contentTypeAlias",
                                     new EqualsCondition(mapping.DocumentTypeAlias)))
                             ]));
 
-                        filters.Add(rebuild
-                            ? DataFilter(type,
-                                "rwUmbracoExportGeneration",
-                                new EqualsCondition(generation, true),
-                                false)
-                            : new OrFilter([
-                                .. removal.Keys
-                                    .Select(key =>
-                                        DataFilter(type, "rwUmbracoNodeKey", new EqualsCondition(key.ToString("D"))))
-                            ]));
+                        filters.Add(
+                            rebuild
+                                ? DataFilter(
+                                    type,
+                                    "rwUmbracoExportGeneration",
+                                    new EqualsCondition(generation, true),
+                                    false)
+                                : new OrFilter(
+                                [
+                                    .. removal.Keys
+                                        .Select(key =>
+                                            DataFilter(
+                                                type,
+                                                "rwUmbracoNodeKey",
+                                                new EqualsCondition(key.ToString("D"))))
+                                ]));
 
                         if (type == typeof(Content) || type == typeof(Product))
                         {
-                            await MarkUnavailableAsync(clients.GetClient<IDataAccessor>(Constants.NamedClientName),
+                            await MarkUnavailableAsync(
+                                clients.GetClient<IDataAccessor>(Constants.NamedClientName),
                                 tracker,
                                 type,
                                 filters,
@@ -393,12 +420,12 @@ internal sealed class EntityIndexingService(
         }
         finally
         {
-            _writer.Release();
             logger.LogDebug(
-                "Relewise export finished: rebuild={Rebuild}, mapped={Mapped}, elapsedMilliseconds={ElapsedMilliseconds}",
+                "Relewise export finished: rebuild={Rebuild}, mapped={Mapped}, " +
+                "elapsedMilliseconds={ElapsedMilliseconds}",
                 rebuild,
                 mappedCount,
-                System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+                Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
     }
 
@@ -427,14 +454,15 @@ internal sealed class EntityIndexingService(
 
                 foreach (ProductResultDetails? product in response.Products ?? [])
                 {
-                    updates.Add(new ProductUpdate(
-                        new Product(product.ProductId)
-                        {
-                            Assortments = null,
-                            CategoryPaths = null,
-                            Data = new Dictionary<string, DataValue?> { ["rwUmbracoPublished"] = false }
-                        },
-                        ProductUpdate.UpdateKind.ReplaceProvidedProperties));
+                    updates.Add(
+                        new ProductUpdate(
+                            new Product(product.ProductId)
+                            {
+                                Assortments = null,
+                                CategoryPaths = null,
+                                Data = new Dictionary<string, DataValue?> { ["rwUmbracoPublished"] = false }
+                            },
+                            ProductUpdate.UpdateKind.ReplaceProvidedProperties));
                 }
 
                 query.NextPageToken = response.NextPageToken;
@@ -450,14 +478,15 @@ internal sealed class EntityIndexingService(
 
                 foreach (ContentResultDetails? content in response.Contents ?? [])
                 {
-                    updates.Add(new ContentUpdate(
-                        new Content(content.ContentId)
-                        {
-                            Assortments = null,
-                            CategoryPaths = null,
-                            Data = new Dictionary<string, DataValue?> { ["rwUmbracoPublished"] = false }
-                        },
-                        ContentUpdate.UpdateKind.ReplaceProvidedProperties));
+                    updates.Add(
+                        new ContentUpdate(
+                            new Content(content.ContentId)
+                            {
+                                Assortments = null,
+                                CategoryPaths = null,
+                                Data = new Dictionary<string, DataValue?> { ["rwUmbracoPublished"] = false }
+                            },
+                            ContentUpdate.UpdateKind.ReplaceProvidedProperties));
                 }
 
                 if ((response.Contents?.Length ?? 0) < query.NumberOfResults)
@@ -488,27 +517,32 @@ internal sealed class EntityIndexingService(
             : new ContentCategoryDataFilter(key, condition, filterOutIfKeyIsNotFound);
     }
 
-    private static Trackable DeleteIdentity(Type type,
+    private static Trackable DeleteIdentity(
+        Type type,
         string id)
     {
         return type == typeof(Product)
             ? new ProductAdministrativeAction(null, null, id, ProductAdministrativeAction.UpdateKind.Delete)
             : type == typeof(Content)
-                ? new ContentAdministrativeAction(null,
+                ? new ContentAdministrativeAction(
+                    null,
                     null,
                     new FilterCollection(new ContentIdFilter(id)),
                     ContentAdministrativeAction.UpdateKind.Delete)
                 : type == typeof(Brand)
-                    ? new BrandAdministrativeAction(null,
+                    ? new BrandAdministrativeAction(
+                        null,
                         null,
                         new FilterCollection(new BrandIdFilter(id)),
                         BrandAdministrativeAction.UpdateKind.Delete)
                     : type == typeof(ProductCategory)
-                        ? new ProductCategoryAdministrativeAction(null,
+                        ? new ProductCategoryAdministrativeAction(
+                            null,
                             null,
                             id,
                             CategoryAdministrativeAction.UpdateKind.Delete)
-                        : new ContentCategoryAdministrativeAction(null,
+                        : new ContentCategoryAdministrativeAction(
+                            null,
                             null,
                             id,
                             CategoryAdministrativeAction.UpdateKind.Delete);

@@ -20,14 +20,15 @@ internal static class DemoProductTypes
                 (await services.GetRequiredService<IDataTypeService>().GetAllAsync()).First(type =>
                     type.Name == "Textstring");
 
-            productType.AddPropertyType(new PropertyType(
-                services.GetRequiredService<IShortStringHelper>(),
-                text,
-                "productType"
-            )
-            {
-                Name = "Product type"
-            });
+            productType.AddPropertyType(
+                new PropertyType(
+                    services.GetRequiredService<IShortStringHelper>(),
+                    text,
+                    "productType"
+                )
+                {
+                    Name = "Product type"
+                });
             await types.UpdateAsync(productType, Constants.Security.SuperUserKey);
         }
 

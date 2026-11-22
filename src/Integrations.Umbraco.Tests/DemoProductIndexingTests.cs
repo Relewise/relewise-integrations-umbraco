@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Moq;
 using Relewise.DemoStorefront.Integration.Converters;
 using Relewise.DemoStorefront.Integration.Indexing;
@@ -5,6 +6,7 @@ using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search.Indexing;
 using Umbraco.Cms.Core.Services;
+using UmbracoConstants = Umbraco.Cms.Core.Constants;
 
 namespace Relewise.Integrations.Umbraco.Tests;
 
@@ -28,8 +30,9 @@ public class DemoProductIndexingTests
         var brand = Guid.NewGuid();
 
         product.Setup(value => value.GetValue<string>("brand", null, null, true))
-            .Returns(Udi.Create(global::Umbraco.Cms.Core.Constants.UdiEntityType.Document, brand)
-                .ToString());
+            .Returns(
+                Udi.Create(UmbracoConstants.UdiEntityType.Document, brand)
+                    .ToString());
 
         var category = Guid.NewGuid();
         var identities = new Mock<IIdKeyMap>();
@@ -72,20 +75,21 @@ public class DemoProductIndexingTests
 
     private static string Prices(params (string Currency, decimal Amount)[] values)
     {
-        return System.Text.Json.JsonSerializer.Serialize(new
-        {
-            contentData = values.Select(value => new
+        return JsonSerializer.Serialize(
+            new
             {
-                values = new object[]
+                contentData = values.Select(value => new
                 {
-                    new
+                    values = new object[]
                     {
-                        alias = "currency",
-                        value = (object)System.Text.Json.JsonSerializer.Serialize(new[] { value.Currency })
-                    },
-                    new { alias = "amount", value = (object)value.Amount }
-                }
-            })
-        });
+                        new
+                        {
+                            alias = "currency",
+                            value = (object)JsonSerializer.Serialize(new[] { value.Currency })
+                        },
+                        new { alias = "amount", value = (object)value.Amount }
+                    }
+                })
+            });
     }
 }

@@ -19,7 +19,7 @@ internal sealed class EntityIndexingQueue(
     IHostApplicationLifetime lifetime,
     ILogger<EntityIndexingQueue> logger)
 {
-    internal const int BatchSize = 100;
+    private const int BatchSize = 100;
     private readonly Lock _sync = new();
     private readonly Queue<Work> _pending = new();
     private readonly SemaphoreSlim _processing = new(1, 1);
@@ -69,7 +69,8 @@ internal sealed class EntityIndexingQueue(
         return ExecuteAsync(cancellation => indexing.RebuildAsync(permanentlyDelete, cancellation), token);
     }
 
-    private async Task ExecuteAsync(Func<CancellationToken, Task> action,
+    private async Task ExecuteAsync(
+        Func<CancellationToken, Task> action,
         CancellationToken token)
     {
         if (_execution.Value is { Active: true })
@@ -78,11 +79,12 @@ internal sealed class EntityIndexingQueue(
                 "An explicit export or rebuild cannot be started recursively from an indexing mapper or converter.");
         }
 
+        // Queued work retains the caller's token; the linked source belongs only to this wait.
+        var boundary = new Boundary(action, token);
+
         using var waiting = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.ApplicationStopping);
 
         waiting.Token.ThrowIfCancellationRequested();
-
-        var boundary = new Boundary(action, token);
 
         lock (_sync)
         {
@@ -98,7 +100,8 @@ internal sealed class EntityIndexingQueue(
             {
                 while (!boundary.Completion.Task.IsCompleted)
                 {
-                    // Finish the current operation's scope before returning, but leave other callers' queued work intact.
+                    // Finish the current operation's scope before returning, but leave other callers' queued work
+                    // intact.
                     waiting.Token.ThrowIfCancellationRequested();
 
                     await ProcessAsync(
@@ -153,13 +156,11 @@ internal sealed class EntityIndexingQueue(
     {
         using var stopping = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.ApplicationStopping);
 
-        token = stopping.Token;
-
         var entered = false;
 
         try
         {
-            await _processing.WaitAsync(token);
+            await _processing.WaitAsync(stopping.Token);
 
             entered = true;
 
@@ -167,7 +168,7 @@ internal sealed class EntityIndexingQueue(
 
             if (work != null)
             {
-                await ProcessAsync(work, token);
+                await ProcessAsync(work, stopping.Token);
             }
         }
         finally
@@ -182,7 +183,7 @@ internal sealed class EntityIndexingQueue(
                 _flushQueued = false;
             }
 
-            if (!token.IsCancellationRequested)
+            if (!stopping.IsCancellationRequested)
             {
                 ScheduleFlush();
             }
@@ -216,7 +217,8 @@ internal sealed class EntityIndexingQueue(
         }
     }
 
-    private async Task ProcessAsync(Work work,
+    private async Task ProcessAsync(
+        Work work,
         CancellationToken token)
     {
         Execution? previous = _execution.Value;
@@ -272,14 +274,15 @@ internal sealed class EntityIndexingQueue(
                 else
                 {
                     boundary.Completion.TrySetException(error);
-                    _ = boundary.Completion.Task
-                        .Exception; // Observe even if its caller cancelled while waiting for the writer.
+                    // Observe even if its caller cancelled while waiting for the writer.
+                    _ = boundary.Completion.Task.Exception;
                 }
             }
 
             if (!cancelled)
             {
-                logger.LogError(error,
+                logger.LogError(
+                    error,
                     "Relewise indexing work failed. A full export may be needed to reconcile published content.");
             }
         }

@@ -14,7 +14,8 @@ public class SearchProviderOptions
 
     internal Dictionary<string, SearchProviderDefinition> Providers { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Provider selected for ordinary Umbraco published-content queries. Null preserves the existing provider.</summary>
+    /// <summary>Provider selected for ordinary Umbraco published-content queries. Null preserves the existing
+    /// provider.</summary>
     public string? DefaultPublishedContentProviderAlias { get; set; }
 
     /// <summary>Register a Content search with optional Document Type selection.</summary>
@@ -82,7 +83,8 @@ public class SearchProviderOptions
             if (!found)
             {
                 throw new InvalidOperationException(
-                    $"Search provider '{registration.Key}' has no exported {registration.Value.EntityType.Name} mapping.");
+                    $"Search provider '{registration.Key}' has no exported " +
+                    $"{registration.Value.EntityType.Name} mapping.");
             }
 
             if (registration.Value.ContentOptions?.DocumentTypeAliases is { } aliases)
@@ -102,7 +104,8 @@ public class SearchProviderOptions
                         mapping.EntityType != typeof(Content) || !mapping.Export)
                     {
                         throw new InvalidOperationException(
-                            $"Search provider '{registration.Key}' references an unknown or non-Content mapping '{alias}'.");
+                            $"Search provider '{registration.Key}' references an unknown " +
+                        $"or non-Content mapping '{alias}'.");
                     }
 
                     aliases[i] = mapping.DocumentTypeAlias;

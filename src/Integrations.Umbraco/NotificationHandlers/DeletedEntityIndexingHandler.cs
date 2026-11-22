@@ -47,17 +47,20 @@ internal sealed class DeletedEntityIndexingHandler(
 
             try
             {
-                work.Entities.Add(new DeletedEntity(mapping.EntityType,
-                    configuration.GetContentId(deleted),
-                    deleted.Key,
-                    mapping.AdministrativeActions.Enabled));
+                work.Entities.Add(
+                    new DeletedEntity(
+                        mapping.EntityType,
+                        configuration.GetContentId(deleted),
+                        deleted.Key,
+                        mapping.AdministrativeActions.Enabled));
             }
             catch (InvalidOperationException error)
             {
                 // Deleting an invalid draft must remain possible; a full export can reconcile its previous identity.
                 logger.LogWarning(
                     error,
-                    "Could not resolve the deleted node {NodeKey}; rebuild Relewise exports to reconcile its previous identity.",
+                    "Could not resolve the deleted node {NodeKey}; rebuild Relewise exports to reconcile " +
+                    "its previous identity.",
                     deleted.Key);
             }
         }
@@ -69,7 +72,8 @@ internal sealed class DeletedEntityIndexingHandler(
 
         if (scopes.Context is { } context)
         {
-            RemovalWork? pending = context.Enlist("Relewise:DeletedSources",
+            RemovalWork? pending = context.Enlist(
+                "Relewise:DeletedSources",
                 () => new RemovalWork(),
                 (completed, items) =>
                 {

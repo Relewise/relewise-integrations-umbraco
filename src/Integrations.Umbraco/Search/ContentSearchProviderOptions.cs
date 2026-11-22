@@ -15,13 +15,15 @@ public class ContentSearchProviderOptions
     /// <summary>Source Content Document Types to include; null includes all exported Content mappings.</summary>
     public string[]? DocumentTypeAliases { get; set; }
 
-    /// <summary>Stable analytics/merchandising label. Defaults to Umbraco search: followed by the provider alias.</summary>
+    /// <summary>Stable analytics/merchandising label. Defaults to Umbraco search: followed by the provider
+    /// alias.</summary>
     public string? DisplayedAtLocation { get; set; }
 
     /// <summary>How to handle a requested segment. Defaults to rejecting unsupported segment queries.</summary>
     public UnsupportedSegmentBehavior UnsupportedSegmentBehavior { get; set; } = UnsupportedSegmentBehavior.Throw();
 
-    /// <summary>Customize a fresh request for each execution. Mandatory access, mapping, identity, and paging constraints remain enforced.</summary>
+    /// <summary>Customize a fresh request for each execution. Mandatory access, mapping, identity, and paging
+    /// constraints remain enforced.</summary>
     public void ConfigureRequest(Action<ContentSearchRequest, SearchRequestContext> configure)
     {
         ArgumentNullException.ThrowIfNull(configure);

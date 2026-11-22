@@ -4,7 +4,8 @@ namespace Relewise.DemoStorefront.Site;
 
 internal static class DemoIllustrations
 {
-    internal static string? Render(IPublishedContent content,
+    internal static string? Render(
+        IPublishedContent content,
         string image)
     {
         var name = image.StartsWith("/images/", StringComparison.Ordinal) &&
@@ -28,12 +29,12 @@ internal static class DemoIllustrations
         };
 
         return
-            $"<svg viewBox='0 0 300 300' aria-hidden='true' style='color:{colour}'><use href='/images/products.svg#{name}'></use></svg>";
+            $"<svg viewBox='0 0 300 300' aria-hidden='true' style='color:{colour}" +
+            $"'><use href='/images/products.svg#{name}'></use></svg>";
     }
 
-    private static readonly HashSet<string> Assets =
-    [
-        with (StringComparer.Ordinal),
+    private static readonly IReadOnlySet<string> Assets = new HashSet<string>(StringComparer.Ordinal)
+    {
         "accessories",
         "beanie",
         "binoculars",
@@ -58,5 +59,5 @@ internal static class DemoIllustrations
         "socks",
         "straps",
         "sunglasses"
-    ];
+    };
 }

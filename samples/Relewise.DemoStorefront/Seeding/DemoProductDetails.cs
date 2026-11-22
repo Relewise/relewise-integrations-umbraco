@@ -20,10 +20,12 @@ internal static class DemoProductDetails
         {
             if (!type.PropertyTypes.Any(property => property.Alias == alias))
             {
-                type.AddPropertyType(new PropertyType(services.GetRequiredService<IShortStringHelper>(),
-                        dataTypes.First(data => data.Name == editor),
-                        alias)
-                { Name = name });
+                type.AddPropertyType(
+                    new PropertyType(
+                            services.GetRequiredService<IShortStringHelper>(),
+                            dataTypes.First(data => data.Name == editor),
+                            alias)
+                    { Name = name });
                 schemaChanged = true;
             }
         }

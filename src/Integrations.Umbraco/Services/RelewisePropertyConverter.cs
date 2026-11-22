@@ -1,4 +1,5 @@
 #pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,8 @@ internal class RelewisePropertyConverter(
     IServiceProvider? provider = null)
     : IRelewisePropertyConverter
 {
-    public IReadOnlyDictionary<string, DataValue?> Convert(IEnumerable<IPublishedProperty> properties,
+    public IReadOnlyDictionary<string, DataValue?> Convert(
+        IEnumerable<IPublishedProperty> properties,
         string[] cultures)
     {
         return ConvertAsync(properties, cultures).GetAwaiter().GetResult();
@@ -47,7 +49,8 @@ internal class RelewisePropertyConverter(
 
         await using AsyncServiceScope scope = provider.CreateAsyncScope();
 
-        return (await ConvertPropertiesAsync(properties,
+        return (await ConvertPropertiesAsync(
+            properties,
             cultures,
             null,
             null,
@@ -63,7 +66,8 @@ internal class RelewisePropertyConverter(
         IServiceProvider services,
         CancellationToken cancellationToken = default)
     {
-        return (await ConvertPropertiesAsync(sourceElement.Properties,
+        return (await ConvertPropertiesAsync(
+            sourceElement.Properties,
             cultures,
             publishedContent,
             sourceElement,
@@ -79,7 +83,8 @@ internal class RelewisePropertyConverter(
         IServiceProvider services,
         CancellationToken cancellationToken)
     {
-        return (await ConvertPropertiesAsync(sourceElement.Properties,
+        return (await ConvertPropertiesAsync(
+            sourceElement.Properties,
             cultures,
             publishedContent,
             sourceElement,
@@ -96,7 +101,8 @@ internal class RelewisePropertyConverter(
         MappingOperation operation,
         IAsyncRelewisePropertyValueConverter? selected)
     {
-        return ConvertPropertiesAsync([property],
+        return ConvertPropertiesAsync(
+            [property],
             cultures,
             publishedContent,
             sourceElement,
@@ -142,7 +148,8 @@ internal class RelewisePropertyConverter(
                 {
                     var localizedDataKeys = new Dictionary<string, DataValue?>();
 
-                    handled |= await ConvertPropertyValueAsync(property,
+                    handled |= await ConvertPropertyValueAsync(
+                        property,
                         culture,
                         localizedDataKeys,
                         publishedContent,
@@ -167,18 +174,22 @@ internal class RelewisePropertyConverter(
                         {
                             dataKeys.Add(
                                 values.Key,
-                                new MultilingualCollection(values
-                                    .Select(x => new MultilingualCollection.Value(x.Lang, x.Value))
-                                    .ToArray()));
+                                new MultilingualCollection(
+                                    values
+                                        .Select(x => new MultilingualCollection.Value(x.Lang, x.Value))
+                                        .ToArray()));
                         }
                         else
                         {
-                            // We only support having strings as multilingual, so we need to check if the values are strings or not.
+                            // We only support having strings as multilingual, so we need to check if the values are
+                            // strings or not.
                             if (values.All(x => x.Value?.Type == DataValue.DataValueTypes.String))
                             {
-                                dataKeys.Add(values.Key,
-                                    new Multilingual(values.Select(x => new Multilingual.Value(x.Lang, x.Value))
-                                        .ToArray()));
+                                dataKeys.Add(
+                                    values.Key,
+                                    new Multilingual(
+                                        values.Select(x => new Multilingual.Value(x.Lang, x.Value))
+                                            .ToArray()));
                             }
                             else
                             {
@@ -197,7 +208,8 @@ internal class RelewisePropertyConverter(
             }
             else
             {
-                handled |= await ConvertPropertyValueAsync(property,
+                handled |= await ConvertPropertyValueAsync(
+                    property,
                     cultures.First(),
                     dataKeys,
                     publishedContent,
@@ -223,7 +235,8 @@ internal class RelewisePropertyConverter(
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var context = new RelewisePropertyConverterContext(property,
+        var context = new RelewisePropertyConverterContext(
+            property,
             culture,
             dataKeys,
             publishedContent,
@@ -236,7 +249,8 @@ internal class RelewisePropertyConverter(
             if (!selected.CanHandle(context))
             {
                 throw new InvalidOperationException(
-                    $"Selected converter {selected.GetType().Name} cannot handle '{property.Alias}' for culture '{culture}'.");
+                    $"Selected converter {selected.GetType().Name} cannot handle '{property.Alias}" +
+                    $"' for culture '{culture}'.");
             }
 
             await selected.ConvertAsync(context, cancellationToken);

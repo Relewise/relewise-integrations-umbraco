@@ -26,7 +26,7 @@ internal static class CartOperations
 
         await current.Gate.WaitAsync(http.RequestAborted);
 
-        // Keep the gate through validation, tracking and state updates.
+        // Serialize tracking with the state change so concurrent requests cannot overwrite a newer cart.
         try
         {
             current.CheckoutToken = null;
@@ -57,7 +57,8 @@ internal static class CartOperations
         }
     }
 
-    internal static async Task<IResult> ExecuteAsync(HttpContext http,
+    internal static async Task<IResult> ExecuteAsync(
+        HttpContext http,
         string action,
         IFormCollection form)
     {
@@ -68,7 +69,7 @@ internal static class CartOperations
 
         await current.Gate.WaitAsync(http.RequestAborted);
 
-        // Keep the gate through validation, tracking and state updates.
+        // Serialize tracking with the state change so concurrent requests cannot overwrite a newer cart.
         try
         {
             using UmbracoContextReference context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>()
@@ -152,6 +153,7 @@ internal static class CartOperations
                     variantKey = parsedVariant;
                 }
 
+                // Reusing a command ID makes retrying a lost response safe without adding the item twice.
                 if (action == "add" && WantsJson(http))
                 {
                     if (!Guid.TryParse(form["commandId"], out commandId) || commandId == Guid.Empty)
@@ -279,7 +281,8 @@ internal static class CartOperations
                 .CreateLogger("StorefrontCart")
                 .LogError(error, "Unable to complete the demo cart action.");
 
-            return Error(http,
+            return Error(
+                http,
                 DemoConnection.IsConnectionFailure(error, http.RequestAborted) ? "RelewiseActionFailed" : "CartFailed");
         }
         finally

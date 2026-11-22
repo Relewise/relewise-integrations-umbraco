@@ -3,12 +3,14 @@ using System.Net;
 using Relewise.Client.DataTypes;
 using Relewise.DemoStorefront.Integration.Converters;
 using Umbraco.Cms.Core.Dictionary;
+using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.DemoStorefront.Site;
 
 public static class Storefront
 {
-    internal static string Text(HttpContext http,
+    internal static string Text(
+        HttpContext http,
         string key,
         params object[] values)
     {
@@ -25,7 +27,8 @@ public static class Storefront
         return WebUtility.HtmlEncode(value ?? "");
     }
 
-    public static string Prices(object? value,
+    public static string Prices(
+        object? value,
         HttpContext http)
     {
         DemoMarket market = DemoMarket.Current(http);
@@ -38,7 +41,7 @@ public static class Storefront
             : E(market.Currency + " " + price.Amount.ToString("N2", CultureInfo.GetCultureInfo(market.Culture)));
     }
 
-    public static string Image(Umbraco.Cms.Core.Models.PublishedContent.IPublishedContent content)
+    public static string Image(IPublishedContent content)
     {
         var image = content.Value<string>("heroImage");
 
@@ -55,7 +58,9 @@ public static class Storefront
     public static string Icon()
     {
         return
-            "<svg viewBox='0 0 200 180' aria-hidden='true'><path d='M20 150 100 30 180 150z'/><path d='M100 30v120h60z' fill='white' opacity='.2'/><path d='m70 150 30-60 30 60' fill='#edf1e9'/></svg>";
+            "<svg viewBox='0 0 200 180' aria-hidden='true'><path d='M20 150 100 30 180 " +
+            "150z'/><path d='M100 30v120h60z' fill='white' opacity='.2'/><path d='m70 150 30-60 " +
+            "30 60' fill='#edf1e9'/></svg>";
     }
 
     public static string Layout(string title, string body, bool connected, HttpContext http, string section)

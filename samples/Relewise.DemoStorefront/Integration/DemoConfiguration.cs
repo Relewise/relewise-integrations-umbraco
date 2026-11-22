@@ -5,13 +5,14 @@ using Relewise.DemoStorefront.Integration.Mapping;
 using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
 using Relewise.Integrations.Umbraco.Search;
+using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.DemoStorefront.Integration;
 
 internal static class DemoConfiguration
 {
     internal static string EntityId(
-        Umbraco.Cms.Core.Models.PublishedContent.IPublishedContent content,
+        IPublishedContent content,
         IServiceProvider services)
     {
         return
@@ -29,7 +30,8 @@ internal static class DemoConfiguration
     {
         options.UseContentKeysAsIds = true;
 
-        options.MapContent("article",
+        options.MapContent(
+            "article",
             mapping =>
             {
                 mapping.Map(entity => entity.DisplayName, "heading");
@@ -40,7 +42,8 @@ internal static class DemoConfiguration
                 mapping.UseMapper<EditorialMapper>(); // Runs last, after declarative fields.
             });
 
-        options.MapContent("localizedArticle",
+        options.MapContent(
+            "localizedArticle",
             mapping =>
             {
                 mapping.Map(entity => entity.DisplayName, "heading");
@@ -59,17 +62,20 @@ internal static class DemoConfiguration
 
         options.MapBrand("brand", mapping => mapping.IdFromProperty("brandId"));
 
-        options.MapProduct("product",
+        options.MapProduct(
+            "product",
             mapping =>
             {
                 mapping.IdFromProperty("sku");
                 // For externally managed Products, use AdministrativeActionPolicy.None() here.
 
                 mapping.Map(product => product.DisplayName, "heading");
-                mapping.Map(product => product.ListPrice,
+                mapping.Map(
+                    product => product.ListPrice,
                     "listPrice",
                     property => property.UseConverter<PriceConverter>());
-                mapping.Map(product => product.SalesPrice,
+                mapping.Map(
+                    product => product.SalesPrice,
                     "salesPrice",
                     property => property.UseConverter<PriceConverter>());
 
@@ -88,7 +94,8 @@ internal static class DemoConfiguration
 
                 mapping.UseMapper<DemoProductMapper>(); // Enrich the SDK Product after built-in properties are mapped.
 
-                mapping.VariantsFromChildren("productVariant",
+                mapping.VariantsFromChildren(
+                    "productVariant",
                     variant =>
                     {
                         variant.IdFromProperty("sku");
@@ -103,7 +110,8 @@ internal static class DemoConfiguration
                     });
             });
 
-        options.SearchProviders.AddContent("articles",
+        options.SearchProviders.AddContent(
+            "articles",
             provider =>
             {
                 provider.DocumentTypeAliases = ["article", "localizedArticle", "guide"];
@@ -116,7 +124,8 @@ internal static class DemoConfiguration
 
         options.SearchProviders.AddProduct("catalogue", ConfigureProductSearch);
 
-        options.SearchProviders.AddProduct("offers",
+        options.SearchProviders.AddProduct(
+            "offers",
             provider =>
             {
                 ConfigureProductSearch(provider);

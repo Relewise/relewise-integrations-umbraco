@@ -1,4 +1,5 @@
 #pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +36,8 @@ internal class BlockListPropertyValueConverter(IServiceProvider serviceProvider)
 
         if (blockList != null)
         {
-            // NOTE: This needs to be resolved manually, since it would cause a circular dependency if injected through constructor
+            // NOTE: This needs to be resolved manually, since it would cause a circular dependency if injected through
+            // constructor
             var propertyConverter =
                 (context.Services ?? serviceProvider).GetRequiredService<IRelewisePropertyConverter>();
 
@@ -45,18 +47,21 @@ internal class BlockListPropertyValueConverter(IServiceProvider serviceProvider)
             {
                 IReadOnlyDictionary<string, DataValue?> converted =
                     propertyConverter is RelewisePropertyConverter contextual && context.Services != null
-                        ? await contextual.ConvertElementAsync(context.PublishedContent,
+                        ? await contextual.ConvertElementAsync(
+                            context.PublishedContent,
                             blockItem.Content,
                             [context.Culture],
                             context.Services,
                             cancellationToken)
                         : context.PublishedContent != null && context.Services != null
-                            ? await propertyConverter.ConvertAsync(context.PublishedContent,
+                            ? await propertyConverter.ConvertAsync(
+                                context.PublishedContent,
                                 blockItem.Content,
                                 [context.Culture],
                                 context.Services,
-                                context.CancellationToken)
-                            : await propertyConverter.ConvertAsync(blockItem.Content.Properties,
+                                cancellationToken)
+                            : await propertyConverter.ConvertAsync(
+                                blockItem.Content.Properties,
                                 [context.Culture],
                                 cancellationToken);
 

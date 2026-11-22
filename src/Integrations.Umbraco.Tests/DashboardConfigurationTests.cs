@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -20,25 +21,29 @@ public class DashboardConfigurationTests
         using ServiceProvider services = Services(options =>
         {
             options.UseContentKeysAsIds = true;
-            options.MapContent("article",
+            options.MapContent(
+                "article",
                 mapping =>
                 {
                     mapping.Map(entity => entity.DisplayName, "heading");
                     mapping.MapData("body", data => data.DataKey = "searchText");
                     mapping.UseMapper<EditorialMapper>();
                 });
-            options.MapProduct("product",
+            options.MapProduct(
+                "product",
                 mapping =>
                 {
                     mapping.IdFromProperty("sku");
-                    mapping.Map(entity => entity.ListPrice,
+                    mapping.Map(
+                        entity => entity.ListPrice,
                         "prices",
                         property => property.UseConverter<PriceConverter>());
                     mapping.AdministrativeActions = AdministrativeActionPolicy.None();
                     mapping.BrandFrom("brandPicker");
                     mapping.VariantsFromChildren("variant", variant => variant.IdFromProperty("variantSku"));
                 });
-            options.SearchProviders.AddContent("editorial",
+            options.SearchProviders.AddContent(
+                "editorial",
                 provider =>
                 {
                     provider.DocumentTypeAliases = ["article"];
@@ -49,7 +54,8 @@ public class DashboardConfigurationTests
             options.SearchProviders.DefaultPublishedContentProviderAlias = "editorial";
         });
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            DashboardConfigurationSnapshot.Create(
+                services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 false);
 
@@ -67,7 +73,8 @@ public class DashboardConfigurationTests
         Assert.Equal("DisplayName", heading.Destination);
         Assert.Equal("Default", heading.Conversion);
 
-        DashboardFieldMappingViewModel body = Assert.Single(article.Fields,
+        DashboardFieldMappingViewModel body = Assert.Single(
+            article.Fields,
             field => field.SourcePropertyAlias == "body");
 
         Assert.Equal("Data[\"searchText\"]", body.Destination);
@@ -84,7 +91,8 @@ public class DashboardConfigurationTests
 
         Assert.Equal("ListPrice", price.Destination);
         Assert.Equal(nameof(PriceConverter), price.Conversion);
-        Assert.Contains(product.Relationships,
+        Assert.Contains(
+            product.Relationships,
             relationship => relationship.Contains("brandPicker") && relationship.Contains("configured ID"));
 
         DashboardMappingViewModel variant =
@@ -99,8 +107,9 @@ public class DashboardConfigurationTests
         Assert.Equal(["article"], editorial.DocumentTypeAliases);
         Assert.True(editorial.CustomRequest);
         Assert.Equal("Umbraco search: editorial", editorial.DisplayedAtLocation);
-        Assert.False(Assert.Single(snapshot.SearchProviders, provider => provider.Alias == "commerce")
-            .RequirePublishedPage);
+        Assert.False(
+            Assert.Single(snapshot.SearchProviders, provider => provider.Alias == "commerce")
+                .RequirePublishedPage);
     }
 
     [Fact]
@@ -108,7 +117,8 @@ public class DashboardConfigurationTests
     {
         using ServiceProvider services = Services(_ => { });
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            DashboardConfigurationSnapshot.Create(
+                services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 false);
 
@@ -135,14 +145,16 @@ public class DashboardConfigurationTests
             options.SearchProviders.DefaultPublishedContentProviderAlias = "CATALOGUE";
         });
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            DashboardConfigurationSnapshot.Create(
+                services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 true);
 
         Assert.Equal(
             new[] { "aArticle", "zGuide", "product", "aaaVariant", "brand", "category", "topic" },
             snapshot.Mappings.Select(mapping => mapping.DocumentTypeAlias));
-        Assert.Equal(["catalogue", "articles", "zAll"],
+        Assert.Equal(
+            ["catalogue", "articles", "zAll"],
             snapshot.SearchProviders.Select(provider => provider.Alias));
     }
 
@@ -158,7 +170,8 @@ public class DashboardConfigurationTests
             options.ServerUrl = new Uri("https://localhost:5000/");
             options.Timeout = TimeSpan.FromSeconds(5);
             options.Named.Add("zebra", named => named.Timeout = TimeSpan.FromSeconds(15));
-            options.Named.Add(Constants.NamedClientName,
+            options.Named.Add(
+                Constants.NamedClientName,
                 named =>
                 {
                     named.Tracker.Timeout = TimeSpan.FromSeconds(120);
@@ -172,7 +185,8 @@ public class DashboardConfigurationTests
         var snapshot =
             Assert.IsType<ConfigurationViewModel>(Assert.IsType<OkObjectResult>(controller.Configuration()).Value);
 
-        Assert.Equal(["Tracker", "Searcher", "Data accessor"],
+        Assert.Equal(
+            ["Tracker", "Searcher", "Data accessor"],
             snapshot.IntegrationClients.Select(client => client.Name));
         Assert.Equal(120, snapshot.IntegrationClients.First().Options.Timeout);
 
@@ -182,19 +196,21 @@ public class DashboardConfigurationTests
         Assert.Equal(12, searcher.Options.Timeout);
         Assert.Equal("https://localhost:5001/", searcher.Options.ServerUrl);
         Assert.All(snapshot.IntegrationClients, client => Assert.Equal(dataset, client.Options.DatasetId));
-        Assert.Equal(["Default", "Alpha", "Default", "zebra"],
+        Assert.Equal(
+            ["Default", "Alpha", "Default", "zebra"],
             snapshot.Named.Select(registration => registration.Name));
         Assert.True(snapshot.Named[0].IsDefault);
         Assert.False(snapshot.Named[1].IsDefault);
         Assert.False(snapshot.Named[2].IsDefault);
         Assert.Equal(5, snapshot.Named[0].Tracker.Timeout);
-        Assert.DoesNotContain(apiKey, System.Text.Json.JsonSerializer.Serialize(snapshot));
+        Assert.DoesNotContain(apiKey, JsonSerializer.Serialize(snapshot));
     }
 
     [Fact]
     public void IntegrationConnectionsRemainAvailableWithoutSdkDefaultsOrOtherRegistrations()
     {
-        using ServiceProvider services = ConnectionServices(options => options.Named.Add(Constants.NamedClientName,
+        using ServiceProvider services = ConnectionServices(options => options.Named.Add(
+            Constants.NamedClientName,
             named =>
             {
                 named.DatasetId = Guid.NewGuid();
@@ -219,7 +235,8 @@ public class DashboardConfigurationTests
             options.MapContent("guide");
             options.MapContent("viewOnly", mapping => mapping.Export = false);
             options.MapProduct("cataloguePage");
-            options.SearchProviders.AddContent("allContent",
+            options.SearchProviders.AddContent(
+                "allContent",
                 provider =>
                 {
                     provider.DisplayedAtLocation = "  ";
@@ -228,7 +245,8 @@ public class DashboardConfigurationTests
                         throw new InvalidOperationException("Must not run while inspecting settings"));
                 });
             options.SearchProviders.AddContent("articles", provider => provider.DocumentTypeAliases = ["article"]);
-            options.SearchProviders.AddProduct("catalogue",
+            options.SearchProviders.AddProduct(
+                "catalogue",
                 provider =>
                 {
                     provider.RequirePublishedPage = false;
@@ -237,7 +255,8 @@ public class DashboardConfigurationTests
             options.SearchProviders.DefaultPublishedContentProviderAlias = "CATALOGUE";
         });
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            DashboardConfigurationSnapshot.Create(
+                services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 true);
 
@@ -279,7 +298,8 @@ public class DashboardConfigurationTests
         using ServiceProvider services = Services(options =>
         {
             options.MapContent("automatic", mapping => mapping.AutoMap());
-            options.MapContent("explicit",
+            options.MapContent(
+                "explicit",
                 mapping => mapping.MapData("blocks", data => data.UseConverter<EditorialBlocksConverter>()));
             options.MapBrand("brand");
 #pragma warning disable CS0618 // Verify the retained legacy mapper is described accurately.
@@ -287,7 +307,8 @@ public class DashboardConfigurationTests
 #pragma warning restore CS0618
         });
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            DashboardConfigurationSnapshot.Create(
+                services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 true);
         DashboardMappingViewModel automatic =
@@ -321,7 +342,8 @@ public class DashboardConfigurationTests
     [Fact]
     public void ViewOnlyMappingsAndDisabledParentSettingsRemainVisible()
     {
-        using ServiceProvider services = Services(options => options.MapProduct("product",
+        using ServiceProvider services = Services(options => options.MapProduct(
+            "product",
             mapping =>
             {
                 mapping.Export = false;
@@ -329,11 +351,13 @@ public class DashboardConfigurationTests
                 mapping.VariantsFromChildren("variant");
             }));
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            DashboardConfigurationSnapshot.Create(
+                services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 true);
 
-        Assert.All(snapshot.Mappings,
+        Assert.All(
+            snapshot.Mappings,
             mapping =>
             {
                 Assert.False(mapping.Export);

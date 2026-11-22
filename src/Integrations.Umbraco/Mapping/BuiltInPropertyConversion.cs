@@ -24,14 +24,17 @@ internal static class BuiltInPropertyConversion
             foreach (var publishedCulture in context.CulturesToPublish)
             {
                 var raw =
-                    context.Property.GetValue(context.Property.PropertyType.VariesByCulture()
-                        ? publishedCulture
-                        : null);
+                    context.Property.GetValue(
+                        context.Property.PropertyType.VariesByCulture()
+                            ? publishedCulture
+                            : null);
 
                 if (raw != null)
                 {
-                    values.Add(new Multilingual.Value(publishedCulture,
-                        Convert.ToString(raw, CultureInfo.InvariantCulture)));
+                    values.Add(
+                        new Multilingual.Value(
+                            publishedCulture,
+                            Convert.ToString(raw, CultureInfo.InvariantCulture)));
                 }
             }
 
@@ -62,6 +65,8 @@ internal static class BuiltInPropertyConversion
         }
 
         throw new InvalidOperationException(
-            $"Property '{context.Property.Alias}' on '{context.PublishedContent.Key}' cannot map to {typeof(TValue).Name} ({context.DestinationProperty}). Configure a typed converter. MultiCurrency values require explicit currency codes.");
+            $"Property '{context.Property.Alias}' on '{context.PublishedContent.Key}' cannot map to " +
+            $"{typeof(TValue).Name} ({context.DestinationProperty}" +
+            $"). Configure a typed converter. MultiCurrency values require explicit currency codes.");
     }
 }

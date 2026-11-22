@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Umbraco.Cms.Core.Services;
@@ -10,8 +11,9 @@ internal static class DemoBlockValues
     internal static string Story(IContentTypeService types, string body)
     {
         var key = Guid.NewGuid();
-        var markup = string.Concat(body.Split('\n', StringSplitOptions.RemoveEmptyEntries)
-            .Select(paragraph => "<p>" + System.Net.WebUtility.HtmlEncode(paragraph) + "</p>"));
+        var markup = string.Concat(
+            body.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(paragraph => "<p>" + WebUtility.HtmlEncode(paragraph) + "</p>"));
 
         return Serialize(
             "Umbraco.BlockList",
@@ -22,7 +24,8 @@ internal static class DemoBlockValues
         );
     }
 
-    internal static string Prices(Guid priceType,
+    internal static string Prices(
+        Guid priceType,
         params (string Currency, decimal Amount)[] prices)
     {
         Guid[] keys = [.. prices.Select(_ => Guid.NewGuid())];
@@ -51,6 +54,7 @@ internal static class DemoBlockValues
         Guid nestedType = types.Get(localized ? "localizedEditorialText" : "editorialText")!.Key;
         Guid groupType = types.Get(localized ? "localizedEditorialGroup" : "editorialGroup")!.Key;
         Guid settingType = types.Get("editorialVisibility")!.Key;
+
         var nestedKey = Guid.NewGuid();
         object[] nestedValues = localized
             ?
@@ -79,6 +83,7 @@ internal static class DemoBlockValues
                     RichText("<p>Follow the <strong>woodland</strong> path &amp; refill your flask.</p>")
                 )
             ];
+
         var nestedExposure = (localized ? ["en-US", "da-DK"] : new string?[] { null })
             .Select(culture => (object)new { contentKey = nestedKey, culture, segment = (string?)null })
             .ToArray();
@@ -89,10 +94,12 @@ internal static class DemoBlockValues
             [],
             nestedExposure
         );
+
         var textKey = Guid.NewGuid();
         var groupKey = Guid.NewGuid();
         var hiddenKey = Guid.NewGuid();
         var settingsKey = Guid.NewGuid();
+
         object[] groupValues = localized
             ?
             [
@@ -105,13 +112,15 @@ internal static class DemoBlockValues
                 Value("heading", "Umbraco.TextBox", "Nested editorial content"),
                 Value("items", "Umbraco.BlockList", JsonSerializer.Deserialize<JsonElement>(nested))
             ];
+
         var exposure = new[] { textKey, hiddenKey }.Select(key => (object)new
         {
             contentKey = key,
             culture = (string?)null,
             segment = (string?)null
         })
-            .Concat((localized ? ["en-US", "da-DK"] : new string?[] { null })
+            .Concat(
+                (localized ? ["en-US", "da-DK"] : new string?[] { null })
                 .Select(culture => (object)new { contentKey = groupKey, culture, segment = (string?)null }))
             .ToArray();
 
@@ -119,7 +128,8 @@ internal static class DemoBlockValues
             "Umbraco.BlockList",
             [new { contentKey = textKey }, new { contentKey = groupKey }, new { contentKey = hiddenKey, settingsKey }],
             [
-                Element(textKey,
+                Element(
+                    textKey,
                     textType,
                     Value("heading", "Umbraco.TextBox", "Ready for the outdoors"),
                     Value(
@@ -129,7 +139,8 @@ internal static class DemoBlockValues
                     )
                 ),
                 Element(groupKey, groupType, groupValues),
-                Element(hiddenKey,
+                Element(
+                    hiddenKey,
                     textType,
                     Value("heading", "Umbraco.TextBox", "Hidden block example"),
                     Value("text", "Umbraco.RichText", RichText("<p>Hidden editorial marker: secret-list-note.</p>"))
@@ -144,8 +155,10 @@ internal static class DemoBlockValues
     {
         Guid groupType = types.Get("editorialGroup")!.Key;
         Guid textType = types.Get("editorialText")!.Key;
+
         var parent = Guid.NewGuid();
         var child = Guid.NewGuid();
+
         var hidden = Guid.NewGuid();
         var hiddenChild = Guid.NewGuid();
         var settings = Guid.NewGuid();
@@ -155,7 +168,8 @@ internal static class DemoBlockValues
             [GridItem(parent, child), GridItem(hidden, hiddenChild, settings)],
             [
                 Element(parent, groupType, Value("heading", "Umbraco.TextBox", "Grid adventure planner")),
-                Element(child,
+                Element(
+                    child,
                     textType,
                     Value("heading", "Umbraco.TextBox", "Inside the Grid area"),
                     Value(
@@ -285,7 +299,8 @@ internal static class DemoBlockValues
         };
     }
 
-    private static object Element(Guid key,
+    private static object Element(
+        Guid key,
         Guid type,
         params object[] values)
     {
@@ -304,18 +319,20 @@ internal static class DemoBlockValues
         };
     }
 
-    private static string Serialize(string editor,
+    private static string Serialize(
+        string editor,
         object[] layout,
         object[] content,
         object[] settings,
         object[] expose)
     {
-        return JsonSerializer.Serialize(new
-        {
-            layout = new Dictionary<string, object> { [editor] = layout },
-            contentData = content,
-            settingsData = settings,
-            expose
-        });
+        return JsonSerializer.Serialize(
+            new
+            {
+                layout = new Dictionary<string, object> { [editor] = layout },
+                contentData = content,
+                settingsData = settings,
+                expose
+            });
     }
 }

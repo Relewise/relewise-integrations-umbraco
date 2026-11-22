@@ -9,14 +9,17 @@ namespace Relewise.DemoStorefront.Features.Products;
 
 internal static class ProductPage
 {
-    internal static string Render(IPublishedContent page,
+    internal static string Render(
+        IPublishedContent page,
         HttpContext http)
     {
         IPublishedContent product = page.ContentType.Alias == "productVariant" ? page.Parent()! : page;
         var brand = product.Value<IPublishedContent>("brand");
+
         (string Sale, string? List, string? Savings) prices = ProductPrices.Display(product, http);
         IPublishedContent[] variants =
             [.. product.Children().Where(node => node.ContentType.Alias == "productVariant")];
+
         var lead = page.Value<string>("bodyText") ?? "";
         var parentLead = product.Value<string>("bodyText") ?? "";
         var rawOption = page.Value<string>("size");
@@ -31,10 +34,14 @@ internal static class ProductPage
         var html = new StringBuilder(Breadcrumb(page, http, "shop"));
 
         html.Append(
-            $"<section class='detail'><div class='illustration'>{Storefront.Image(page)}</div><div class='details'><p class='eyebrow'>{Storefront.E(brand?.Name ?? "Fieldwork")}</p><h1>{Storefront.E(Title(page))}</h1><p class='lead'>{Storefront.E(lead)}</p><div class='price'><strong>{Storefront.E(prices.Sale)}</strong>" +
+            ($"<section class='detail'><div class='illustration'>{Storefront.Image(page)}" +
+             $"</div><div class='details'><p class='eyebrow'>{Storefront.E(brand?.Name ?? "Fieldwork")}" +
+             $"</p><h1>{Storefront.E(Title(page))}</h1><p class='lead'>{Storefront.E(lead)}" +
+             $"</p><div class='price'><strong>{Storefront.E(prices.Sale)}</strong>") +
             (prices.List == null
                 ? ""
-                : $"<del>{Storefront.E(prices.List)}</del><span class='offer-label'>{Storefront.E(prices.Savings)}</span>") +
+                : $"<del>{Storefront.E(prices.List)}</del>" +
+                    $"<span class='offer-label'>{Storefront.E(prices.Savings)}</span>") +
             "</div>");
         html.Append(PurchaseControls.Availability(product, http));
 
@@ -67,7 +74,9 @@ internal static class ProductPage
                 var label = ProductOptions.Label(variant);
 
                 html.Append(
-                    $"<a href='{Storefront.E(variant.Url())}' {(page.Key == variant.Key ? "class='selected' aria-current='page'" : "")}>{Storefront.E(label)}</a>");
+                    $"<a href='{Storefront.E(variant.Url())}' " +
+                    $"{(page.Key == variant.Key ? "class='selected' aria-current='page'" : "")}>" +
+                    $"{Storefront.E(label)}</a>");
             }
 
             html.Append("</div>");
@@ -78,7 +87,8 @@ internal static class ProductPage
         if (!string.IsNullOrWhiteSpace(sizeGuide))
         {
             html.Append(
-                $"<details class='size-guide'><summary>{T(http, "SizeGuide")}</summary><p>{Storefront.E(sizeGuide)}</p></details>");
+                $"<details class='size-guide'><summary>{T(http, "SizeGuide")}</summary><p>" +
+                $"{Storefront.E(sizeGuide)}</p></details>");
         }
 
         html.Append(PurchaseControls.AddForm(page, http));
@@ -106,7 +116,8 @@ internal static class ProductPage
         if (brand != null)
         {
             html.Append(
-                $"<p class='muted'>{T(http, "Brand")}: <a class='text-link' href='{Storefront.E(brand.Url())}'>{Storefront.E(Title(brand))}</a></p>");
+                $"<p class='muted'>{T(http, "Brand")}: <a class='text-link' href='" +
+                $"{Storefront.E(brand.Url())}'>{Storefront.E(Title(brand))}</a></p>");
         }
 
         html.Append("</div></section>");

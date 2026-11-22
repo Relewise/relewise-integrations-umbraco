@@ -1,4 +1,5 @@
 #pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,7 +34,8 @@ internal sealed class MappedEntity(
 
         return Entity switch
         {
-            Content content => new ContentUpdate(content,
+            Content content => new ContentUpdate(
+                content,
                 contentUpdateKind ?? ContentUpdate.UpdateKind.ReplaceProvidedProperties),
             Product product => new ProductUpdate(
                 product,
@@ -45,9 +47,11 @@ internal sealed class MappedEntity(
                 BrandUpdateKind = BrandUpdate.UpdateKind.None
             },
             Brand brand => new BrandUpdate(brand, BrandUpdate.UpdateKind.ReplaceProvidedProperties),
-            ProductCategory category => new ProductCategoryUpdate(category,
+            ProductCategory category => new ProductCategoryUpdate(
+                category,
                 CategoryUpdate.UpdateKind.ReplaceProvidedProperties),
-            ContentCategory category => new ContentCategoryUpdate(category,
+            ContentCategory category => new ContentCategoryUpdate(
+                category,
                 CategoryUpdate.UpdateKind.ReplaceProvidedProperties),
             _ => throw new InvalidOperationException("Variants must be exported through their Product.")
         };

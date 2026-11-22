@@ -42,11 +42,16 @@ internal static class StorefrontNavigation
         var notice = JsonSerializer.Deserialize<Notice>(json)!;
         var text = Storefront.E(Storefront.Text(http, notice.Key, [.. notice.Values]));
         var actions = notice.Key == "CartAdded"
-            ? $"<div class='notice-actions'><a class='text-link' href='{DemoMarket.Current(http).LanguagePath}/cart'>{Storefront.E(Storefront.Text(http, "ViewCart"))}</a><a class='text-link' href='{Storefront.E(ShoppingUrl(http))}'>{Storefront.E(Storefront.Text(http, "ContinueShopping"))}</a></div>"
+            ? $"<div class='notice-actions'><a class='text-link' href='" +
+              $"{DemoMarket.Current(http).LanguagePath}/cart'>" +
+              $"{Storefront.E(Storefront.Text(http, "ViewCart"))}</a><a class='text-link' href='" +
+              $"{Storefront.E(ShoppingUrl(http))}'>" +
+              $"{Storefront.E(Storefront.Text(http, "ContinueShopping"))}</a></div>"
             : string.Empty;
 
         return
-            $"<section class='notice {(notice.Error ? "notice-error" : "")}' role='{(notice.Error ? "alert" : "status")}'><p>{text}</p>{actions}</section>";
+            $"<section class='notice {(notice.Error ? "notice-error" : "")}' role='" +
+            $"{(notice.Error ? "alert" : "status")}'><p>{text}</p>{actions}</section>";
     }
 
     internal static async Task RememberListingAsync(
@@ -93,7 +98,8 @@ internal static class StorefrontNavigation
         return Links(ShoppingCategories(home), http);
     }
 
-    internal static string Links(IEnumerable<IPublishedContent> pages,
+    internal static string Links(
+        IEnumerable<IPublishedContent> pages,
         HttpContext http)
     {
         IPublishedContent[] links = [.. pages.OrderBy(Title, StringComparer.CurrentCultureIgnoreCase)];
@@ -133,11 +139,12 @@ internal static class StorefrontNavigation
 
         if (page != null && section == "shop")
         {
-            crumbs.AddRange(page.Ancestors()
-                .Reverse()
-                .Where(node => node.ContentType.Alias == "productCategory" &&
-                               node.Value<string>("categoryId") != "U19-SMOKE-EQUIPMENT")
-                .Select(node => (Title(node), (string?)node.Url())));
+            crumbs.AddRange(
+                page.Ancestors()
+                    .Reverse()
+                    .Where(node => node.ContentType.Alias == "productCategory" &&
+                                   node.Value<string>("categoryId") != "U19-SMOKE-EQUIPMENT")
+                    .Select(node => (Title(node), (string?)node.Url())));
 
             if (page.ContentType.Alias == "productVariant" && page.Parent() is { } parent)
             {
@@ -159,9 +166,11 @@ internal static class StorefrontNavigation
         }
 
         return $"<nav class='breadcrumbs' aria-label='{T(http, "Breadcrumb")}'><ol>" +
-               string.Concat(crumbs.Select(crumb => crumb.Url == null
-                   ? $"<li aria-current='page'>{Storefront.E(crumb.Name)}</li>"
-                   : $"<li><a href='{Storefront.E(crumb.Url)}'>{Storefront.E(crumb.Name)}</a></li>")) + "</ol></nav>";
+               string.Concat(
+                   crumbs.Select(crumb => crumb.Url == null
+                       ? $"<li aria-current='page'>{Storefront.E(crumb.Name)}</li>"
+                       : $"<li><a href='{Storefront.E(crumb.Url)}'>{Storefront.E(crumb.Name)}</a></li>")) +
+               "</ol></nav>";
     }
 
     private static string T(HttpContext http, string key)

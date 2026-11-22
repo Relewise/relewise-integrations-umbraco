@@ -27,7 +27,8 @@ public class EntityMappingContext<TEntity> where TEntity : class
     /// <summary>The published source document.</summary>
     public IPublishedContent PublishedContent { get; }
 
-    /// <summary>The typed destination. Its identity and integration metadata remain controlled by the integration.</summary>
+    /// <summary>The typed destination. Its identity and integration metadata remain controlled by the
+    /// integration.</summary>
     public TEntity Entity { get; }
 
     /// <summary>Published cultures included in this export, or the site's languages for invariant content.</summary>
