@@ -220,11 +220,11 @@ public class DemoEditorialMappingTests
         };
         var blocks = new BlockListModel([new BlockListItem(Guid.NewGuid(), visible, null, null)]);
 
-        string html = StorefrontEditorial.Render(blocks, "en-US");
+        EditorialSection section = Assert.Single(StorefrontEditorial.Sections(blocks, "en-US"));
 
-        Assert.Contains("A &lt;quiet&gt; place", html);
-        Assert.Contains("<p>Take a <strong>break</strong>.</p>", html);
-        Assert.Equal("", StorefrontEditorial.Render(new BlockGridModel([container], 12), "en-US"));
+        Assert.Equal("A <quiet> place", section.Heading);
+        Assert.Equal("<p>Take a <strong>break</strong>.</p>", section.Text!.ToHtmlString());
+        Assert.Empty(StorefrontEditorial.Sections(new BlockGridModel([container], 12), "en-US"));
     }
 
     [Theory]
@@ -239,7 +239,9 @@ public class DemoEditorialMappingTests
                     language == "da-DK" ? "<p>Dansk fortælling</p>" : "<p>English story</p>"),
                 true));
 
-        Assert.Equal("<p>" + expected + "</p>", StorefrontEditorial.Render(blocks, culture));
+        Assert.Equal(
+            "<p>" + expected + "</p>",
+            Assert.Single(StorefrontEditorial.Sections(blocks, culture)).Text!.ToHtmlString());
     }
 
     private static IVariationContextAccessor Variations()

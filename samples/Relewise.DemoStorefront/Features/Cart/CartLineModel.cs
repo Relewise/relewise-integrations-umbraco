@@ -2,8 +2,9 @@ using JetBrains.Annotations;
 
 namespace Relewise.DemoStorefront.Features.Cart;
 
+/// <summary>Display values and canonical identities for one cart line.</summary>
 [UsedImplicitly(ImplicitUseTargetFlags.Members)]
-internal sealed record CartLineModel
+public sealed record CartLineModel
 {
     public Guid ProductKey { get; init; }
     public Guid? VariantKey { get; init; }

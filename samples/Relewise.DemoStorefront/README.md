@@ -114,14 +114,17 @@ Everything stays in this one project; namespaces follow the folders.
 | --- | --- |
 | [Integration](Integration) | Package registration, mapper/converter examples, indexing and tracking identity |
 | [Features](Features) | Browsing, Products, editorial pages, recommendations and Cart; related models stay with their feature |
-| [Site](Site) | Shared page shell, published-content lookup, navigation and market selection |
+| [Site](Site) | Shared view models, Razor endpoint adapter, published-content lookup, navigation and market selection |
+| [Views](Views) | Razor pages, layout and shared partials; normal Razor encoding for text and attributes |
 | [Setup](Setup) / [Seeding](Seeding) | Local installation/connection checks and initial Umbraco schema/content |
 | [Client/src](Client/src) | Vue components grouped into shell, browsing, Cart and recommendations |
 
 `Program.cs` composes startup and registers endpoints. Cart HTTP endpoints delegate
 shopping operations, pricing, state and Relewise event construction to separate files;
-page renderers handle HTML. Listings, detail pages and Cart share
-[ProductPrices](Features/Products/ProductPrices.cs); reusable form fields live in `Site`.
+typed view models feed the Razor templates. Listings, detail pages and Cart share
+[ProductPrices](Features/Products/ProductPrices.cs). Razor owns forms and antiforgery inputs;
+Vue keeps the interactive search, recommendations and cart experience. The existing Vue
+image payload uses a small, encoded `TagBuilder` adapter rather than page templates in C#.
 `Views` and `wwwroot` retain their conventional locations.
 
 ## Developing the sample

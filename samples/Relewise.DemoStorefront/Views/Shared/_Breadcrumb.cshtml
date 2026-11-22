@@ -1,0 +1,16 @@
+@model BreadcrumbItem[]
+<nav class="breadcrumbs" aria-label="@Text(Context, "Breadcrumb")">
+    <ol>
+        @foreach (BreadcrumbItem crumb in Model)
+        {
+            if (crumb.Url == null)
+            {
+                <li aria-current="page">@crumb.Name</li>
+            }
+            else
+            {
+                <li><a href="@crumb.Url">@crumb.Name</a></li>
+            }
+        }
+    </ol>
+</nav>

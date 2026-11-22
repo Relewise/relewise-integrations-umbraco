@@ -1,0 +1,10 @@
+@model IntegrationField[]
+<details class="developer-details" lang="en">
+    <summary>Integration details</summary>
+    <dl>
+        @foreach (IntegrationField field in Model)
+        {
+            <dt>@field.Label</dt><dd><code>@field.Value</code></dd>
+        }
+    </dl>
+</details>

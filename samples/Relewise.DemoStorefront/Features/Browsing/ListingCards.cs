@@ -46,34 +46,4 @@ internal static class ListingCards
             product && page.Value<IPublishedContent>("brand") is { } brand ? Title(brand) : null
         );
     }
-
-    internal static string Card(
-        IPublishedContent page,
-        HttpContext http)
-    {
-        ListingCard card = CardData(page, http);
-        string details = card.Product
-            ? $"<span class='card-price'><strong>{Storefront.E(card.Price)}</strong>" +
-              (card.ListPrice == null
-                  ? ""
-                  : $"<del>{Storefront.E(card.ListPrice)}</del><span class='offer-label'>" +
-                    $"{Storefront.E(card.Savings)}</span>") +
-              $"</span><span class='card-availability'>{Storefront.E(card.Availability)}</span>" +
-              (card.Options == null ? "" : $"<span class='card-options'>{Storefront.E(card.Options)}</span>")
-            : $"<strong>{T(http, "ReadStory")}</strong>";
-
-        string label = card.Brand == null
-            ? T(http, card.Product ? "Equipment" : "FieldNotes")
-            : Storefront.E(card.Brand);
-
-        return $"<article class='card' data-node='{card.Key}' data-entity='{Storefront.E(card.EntityId)}'>" +
-               $"<a href='{Storefront.E(card.Url)}'><div class='illustration'>{card.ImageHtml}</div>" +
-               $"<div class='card-body'><small>{label}</small><h3>{Storefront.E(card.Title)}</h3>" +
-               $"{details}<p>{Storefront.E(card.Summary)}</p></div></a></article>";
-    }
-
-    private static string T(HttpContext http, string key)
-    {
-        return Storefront.E(Storefront.Text(http, key));
-    }
 }

@@ -2,5 +2,6 @@ using JetBrains.Annotations;
 
 namespace Relewise.DemoStorefront.Features.Browsing;
 
+/// <summary>A facet choice with its result count and selection state.</summary>
 [UsedImplicitly(ImplicitUseTargetFlags.Members)]
-internal sealed record ListingChoice(string Value, string Label, long Count, bool Selected, string? QueryName = null);
+public sealed record ListingChoice(string Value, string Label, long Count, bool Selected, string? QueryName = null);

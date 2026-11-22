@@ -1,5 +1,3 @@
-using System.Text;
-using System.Text.Json;
 using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -11,7 +9,7 @@ namespace Relewise.DemoStorefront.Features.Browsing;
 
 internal static class ListingPage
 {
-    internal static string Render(
+    internal static StorefrontPage Create(
         HttpContext http,
         IPublishedContent? collection,
         ListingModel model,
@@ -20,43 +18,28 @@ internal static class ListingPage
         string section = model.SearchPage ? "search" :
             model.View == "offers" ? "offers" :
             model.Editorial ? "journal" : "shop";
-        var body = new StringBuilder(
+        var page = new ListingPageModel(
+            heading,
             StorefrontNavigation.Breadcrumb(
                 collection,
                 http,
                 section,
-                model.SearchPage || model.View == "offers" ? heading : null
-            ));
+                model.SearchPage || model.View == "offers" ? heading : null),
+            collection == null
+                ? []
+                : StorefrontNavigation.Links(
+                    collection.Children()
+                        .Where(node => node.ContentType.Alias is "productCategory" or "folder")),
+            model,
+            []);
 
-        body.Append($"<section class='listing-heading'><h1>{E(heading)}</h1></section>");
-
-        if (collection != null)
-        {
-            body.Append(
-                StorefrontNavigation.Links(
-                    collection.Children().Where(node => node.ContentType.Alias is "productCategory" or "folder"),
-                    http));
-        }
-
-        string json = JsonSerializer.Serialize(model, StorefrontChrome.Json);
-
-        // Default JSON escaping protects the script boundary even when CMS values contain markup.
-        body.Append(
-            $"<div id='storefront-listing'><p role='status'>{E(Text(http, "UpdatingResults"))}" +
-            $"</p></div><script id='listing-data' type='application/json'>{json}</script>");
         http.Items["Fieldwork:HasSearch"] = true;
         http.Items["Fieldwork:SearchProvider"] = "Relewise";
 
-        return Layout(
-            heading,
-            body.ToString(),
-            true,
-            http,
-            section
-        );
+        return new StorefrontPage(heading, section, "/Views/Browsing/Listing.cshtml", page);
     }
 
-    internal static string Preview(
+    internal static StorefrontPage Preview(
         HttpContext http,
         IPublishedContent? collection)
     {
@@ -86,13 +69,18 @@ internal static class ListingPage
 
         pages = pages.Where(node => !access.IsProtected(node.Path).Success);
 
-        string body = StorefrontNavigation.Breadcrumb(collection, http, editorial ? "journal" : "shop") +
-                      $"<h1>{E(heading)}</h1><p>{E(Text(http, "ContentPreview"))}</p><div class='grid'>" +
-                      string.Concat(
-                          pages.OrderBy(SiteContent.Title, StringComparer.CurrentCulture)
-                              .Take(6)
-                              .Select(page => ListingCards.Card(page, http))) + "</div>";
+        string section = editorial ? "journal" : "shop";
+        var page = new ListingPageModel(
+            heading,
+            StorefrontNavigation.Breadcrumb(collection, http, section),
+            [],
+            null,
+            [
+                .. pages.OrderBy(SiteContent.Title, StringComparer.CurrentCulture)
+                    .Take(6)
+                    .Select(node => ListingCards.CardData(node, http))
+            ]);
 
-        return Layout(heading, body, false, http, editorial ? "journal" : "shop");
+        return new StorefrontPage(heading, section, "/Views/Browsing/Listing.cshtml", page);
     }
 }

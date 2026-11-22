@@ -1,0 +1,24 @@
+@using Relewise.DemoStorefront.Features.Products
+@model PurchaseModel
+@if (Model.Message != null)
+{
+    <p class="muted">@Model.Message</p>
+}
+else if (Model.Json != null)
+{
+    <div id="purchase-controls">
+        <form asp-antiforgery="false" method="post"
+            action="@(DemoMarket.Current(Context).LanguagePath)/cart/add" class="add-cart">
+            @foreach (KeyValuePair<string, string> field in Model.Fields)
+            {
+                <input type="hidden" name="@field.Key" value="@field.Value">
+            }
+            <label>@Text(Context, "Quantity")<input type="number" name="quantity" min="1" max="@Model.Maximum"
+                value="1" required></label>
+            <button>@Text(Context, "AddCart")</button>
+        </form>
+    </div>
+    <script id="purchase-data" type="application/json">
+        @Html.Raw(Model.Json)
+    </script>
+}

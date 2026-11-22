@@ -26,44 +26,33 @@ internal static class DemoConnection
                    .GetSearcher("catalogue") != null;
     }
 
-    internal static string PreviewNotice(HttpContext http)
-    {
-        return
-            $"<section class='notice demo-preview-notice' role='note'><strong>" +
-            $"{Storefront.E(Storefront.Text(http, "PreviewMode"))}</strong><p>" +
-            $"{Storefront.E(Storefront.Text(http, "PreviewModeHelp"))}</p><a class='text-link' href='" +
-            $"{SetupUrl}'>{Storefront.E(Storefront.Text(http, "ConfigureRelewise"))}</a></section>";
-    }
-
-    internal static string Unavailable(
-        HttpContext http,
-        bool json)
+    internal static StorefrontResponse Unavailable(HttpContext http, bool json)
     {
         http.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
         http.Response.Headers.CacheControl = "no-store";
 
-        string message = Storefront.Text(http, IsConfigured(http) ? "SearchNotEnabled" : "PreviewModeHelp");
-
         if (json)
         {
-            return JsonSerializer.Serialize(
-                new
-                {
-                    error = message
-                });
+            return new StorefrontResponse(Json: JsonSerializer.Serialize(new { error = UnavailableMessage(http) }));
         }
 
+        return new StorefrontResponse(UnavailablePage(http));
+    }
+
+    private static string UnavailableMessage(HttpContext http)
+    {
+        return Storefront.Text(http, IsConfigured(http) ? "SearchNotEnabled" : "PreviewModeHelp");
+    }
+
+    private static StorefrontPage UnavailablePage(HttpContext http)
+    {
         string title = Storefront.Text(http, IsConfigured(http) ? "SearchDisabled" : "FeatureUnavailable");
-        var body = $"<h1>{Storefront.E(title)}</h1>";
 
-        if (IsConfigured(http))
-        {
-            body +=
-                $"<p>{Storefront.E(message)}</p><a href='{SetupUrl}'>" +
-                $"{Storefront.E(Storefront.Text(http, "ConfigureRelewise"))}</a>";
-        }
-
-        return Storefront.Layout(title, body, false, http, "shop");
+        return new StorefrontPage(
+            title,
+            "shop",
+            "/Views/Shared/Message.cshtml",
+            new StorefrontMessage(UnavailableMessage(http), Help: IsConfigured(http)));
     }
 
     internal static IResult? RequireConnection(HttpContext http, bool json = false)
@@ -73,13 +62,9 @@ internal static class DemoConnection
             return null;
         }
 
-        string body = Unavailable(http, json);
+        http.Response.Headers.CacheControl = "no-store";
 
-        return Results.Content(
-            body,
-            json ? "application/json" : "text/html; charset=utf-8",
-            statusCode: StatusCodes.Status503ServiceUnavailable
-        );
+        return Unavailable(http, json);
     }
 
     internal static bool IsConnectionFailure(Exception error, CancellationToken aborted)
@@ -130,23 +115,12 @@ internal static class DemoConnection
                 return;
             }
 
-            string body =
-                $"<section class='notice notice-error' role='alert'><h1>" +
-                $"{Storefront.E(Storefront.Text(http, "ConnectionProblem"))}</h1><p>{Storefront.E(message)}" +
-                $"</p><a href='{SetupUrl}'>{Storefront.E(Storefront.Text(http, "ConfigureRelewise"))}" +
-                $"</a></section>";
-
-            http.Response.ContentType = "text/html; charset=utf-8";
-            await http.Response.WriteAsync(
-                Storefront.Layout(
-                    Storefront.Text(http, "ConnectionProblem"),
-                    body,
-                    true,
-                    http,
-                    "shop"
-                ),
-                http.RequestAborted
-            );
+            var page = new StorefrontPage(
+                Storefront.Text(http, "ConnectionProblem"),
+                "shop",
+                "/Views/Shared/Message.cshtml",
+                new StorefrontMessage(message, true));
+            await new StorefrontResponse(page).ExecuteAsync(http);
         }
     }
 }

@@ -51,15 +51,7 @@ internal static class BrowsingEndpoints
 
                     bool suggestions = operation == "suggestions";
 
-                    return Results.Content(
-                        await StorefrontListing.RenderAsync(
-                            http,
-                            collection,
-                            suggestions,
-                            !suggestions
-                        ),
-                        "application/json"
-                    );
+                    return await StorefrontListing.GetAsync(http, collection, suggestions, !suggestions);
                 });
         }
 
@@ -77,7 +69,7 @@ internal static class BrowsingEndpoints
                                 http.Request.Query.Where(pair => pair.Key != "provider")));
                     }
 
-                    return Results.Content(await StorefrontListing.RenderAsync(http, view: view), "text/html");
+                    return await StorefrontListing.GetAsync(http, view: view);
                 });
         }
     }

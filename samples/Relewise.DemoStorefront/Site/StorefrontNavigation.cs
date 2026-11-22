@@ -26,32 +26,24 @@ internal static class StorefrontNavigation
         data.Save();
     }
 
-    internal static string Feedback(HttpContext http)
+    internal static StorefrontNotice? Feedback(HttpContext http)
     {
         ITempDataDictionary data = http.RequestServices.GetRequiredService<ITempDataDictionaryFactory>()
             .GetTempData(http);
 
         if (data[NoticeKey] is not string json)
         {
-            return string.Empty;
+            return null;
         }
 
         data.Remove(NoticeKey);
         data.Save();
 
         var notice = JsonSerializer.Deserialize<Notice>(json)!;
-        string text = Storefront.E(Storefront.Text(http, notice.Key, [.. notice.Values]));
-        string actions = notice.Key == "CartAdded"
-            ? $"<div class='notice-actions'><a class='text-link' href='" +
-              $"{DemoMarket.Current(http).LanguagePath}/cart'>" +
-              $"{Storefront.E(Storefront.Text(http, "ViewCart"))}</a><a class='text-link' href='" +
-              $"{Storefront.E(ShoppingUrl(http))}'>" +
-              $"{Storefront.E(Storefront.Text(http, "ContinueShopping"))}</a></div>"
-            : string.Empty;
-
-        return
-            $"<section class='notice {(notice.Error ? "notice-error" : "")}' role='" +
-            $"{(notice.Error ? "alert" : "status")}'><p>{text}</p>{actions}</section>";
+        return new StorefrontNotice(
+            Storefront.Text(http, notice.Key, [.. notice.Values]),
+            notice.Error,
+            notice.Key == "CartAdded");
     }
 
     internal static async Task RememberListingAsync(
@@ -93,26 +85,16 @@ internal static class StorefrontNavigation
 
     private sealed record Notice(string Key, bool Error, string[] Values);
 
-    internal static string CategoryLinks(IPublishedContent home, HttpContext http)
+    internal static StorefrontLink[] Links(IEnumerable<IPublishedContent> pages)
     {
-        return Links(ShoppingCategories(home), http);
+        return
+        [
+            .. pages.OrderBy(Title, StringComparer.CurrentCultureIgnoreCase)
+                .Select(page => new StorefrontLink(Title(page), page.Url(), false))
+        ];
     }
 
-    internal static string Links(
-        IEnumerable<IPublishedContent> pages,
-        HttpContext http)
-    {
-        IPublishedContent[] links = [.. pages.OrderBy(Title, StringComparer.CurrentCultureIgnoreCase)];
-
-        return links.Length == 0
-            ? ""
-            : $"<nav class='categories' aria-label='{T(http, "Categories")}'>" +
-              string.Concat(
-                  links.Select(page => $"<a href='{Storefront.E(page.Url())}'>{Storefront.E(Title(page))}</a>")) +
-              "</nav>";
-    }
-
-    internal static string Breadcrumb(
+    internal static BreadcrumbItem[] Breadcrumb(
         IPublishedContent? page,
         HttpContext http,
         string section,
@@ -165,16 +147,6 @@ internal static class StorefrontNavigation
             crumbs[^1] = (crumbs[^1].Name, null);
         }
 
-        return $"<nav class='breadcrumbs' aria-label='{T(http, "Breadcrumb")}'><ol>" +
-               string.Concat(
-                   crumbs.Select(crumb => crumb.Url == null
-                       ? $"<li aria-current='page'>{Storefront.E(crumb.Name)}</li>"
-                       : $"<li><a href='{Storefront.E(crumb.Url)}'>{Storefront.E(crumb.Name)}</a></li>")) +
-               "</ol></nav>";
-    }
-
-    private static string T(HttpContext http, string key)
-    {
-        return Storefront.E(Storefront.Text(http, key));
+        return [.. crumbs.Select(crumb => new BreadcrumbItem(crumb.Name, crumb.Url))];
     }
 }

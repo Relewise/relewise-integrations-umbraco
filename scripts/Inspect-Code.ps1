@@ -1,4 +1,4 @@
-# Run after building the solution. Reports stay outside the repository.
+# Local developer check; do not run in CI/CD. Build the solution first. Reports stay outside the repository.
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path $PSScriptRoot -Parent
 $settingsHash = (Get-FileHash (Join-Path $repository '.editorconfig') -Algorithm SHA256).Hash

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Relewise.DemoStorefront.Features.Cart;
 using Relewise.DemoStorefront.Setup;
 using Umbraco.Cms.Core;
@@ -13,11 +12,7 @@ internal static class StorefrontChrome
 {
     internal static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    internal static string Render(
-        string title,
-        string body,
-        HttpContext http,
-        string section)
+    internal static StorefrontShellModel Create(HttpContext http, string section)
     {
         http.Response.Headers.CacheControl = "no-store";
 
@@ -86,7 +81,7 @@ internal static class StorefrontChrome
             shellLabels["EditCart"] = Storefront.Text(http, "ContinueShopping");
         }
 
-        var model = new StorefrontShellModel
+        return new StorefrontShellModel
         {
             Labels = shellLabels,
             HomeUrl = market.HomeUrl,
@@ -144,34 +139,5 @@ internal static class StorefrontChrome
                 : "product",
             Query = section == "search" ? http.Request.Query["q"].ToString() : ""
         };
-
-        var versions = http.RequestServices.GetRequiredService<IFileVersionProvider>();
-        string css = versions.AddFileVersionToPath(http.Request.PathBase, "/storefront.css");
-        string script = versions.AddFileVersionToPath(http.Request.PathBase, "/storefront/listing.js");
-
-        string previewNotice = DemoConnection.IsConfigured(http) ? "" : DemoConnection.PreviewNotice(http);
-
-        string shellJson = JsonSerializer.Serialize(model, Json);
-        string pageClass = checkout ? "checkout-page" : "shopping-page";
-
-        return $$"""
-                 <!doctype html>
-                 <html lang="{{market.Culture}}">
-                 <head>
-                     <meta charset="utf-8">
-                     <meta name="viewport" content="width=device-width">
-                     <title>{{Storefront.E(title)}} | Fieldwork</title>
-                     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-                     <link rel="stylesheet" href="{{Storefront.E(css)}}">
-                     <script type="module" src="{{Storefront.E(script)}}"></script>
-                 </head>
-                 <body class="{{pageClass}}">
-                     <div id="storefront-shell"></div>
-                     <script id="shell-data" type="application/json">{{shellJson}}</script>
-                     <main>{{previewNotice}}{{StorefrontNavigation.Feedback(http)}}{{body}}</main>
-                     <div id="storefront-footer"></div>
-                 </body>
-                 </html>
-                 """;
     }
 }

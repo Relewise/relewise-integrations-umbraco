@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Relewise.DemoStorefront.Features.Browsing;
 using Relewise.DemoStorefront.Setup;
+using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core.Dictionary;
 
 namespace Relewise.Integrations.Umbraco.Tests;
@@ -31,11 +32,14 @@ public class DemoConnectionTests
 
         http.Request.Path = "/en/store/results";
 
-        string result = await StorefrontListing.RenderAsync(http, suggestionsOnly: suggestionsOnly, dataOnly: dataOnly);
+        StorefrontResponse result = await StorefrontListing.GetAsync(
+            http,
+            suggestionsOnly: suggestionsOnly,
+            dataOnly: dataOnly);
 
         Assert.Equal(503, http.Response.StatusCode);
-        Assert.Contains("Configure Relewise", result);
-        Assert.Contains("error", result);
+        Assert.Contains("Configure Relewise", result.Json);
+        Assert.Contains("error", result.Json);
     }
 
     [Fact]

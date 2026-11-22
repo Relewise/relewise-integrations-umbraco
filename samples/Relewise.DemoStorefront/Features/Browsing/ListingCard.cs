@@ -1,6 +1,7 @@
 namespace Relewise.DemoStorefront.Features.Browsing;
 
-internal sealed record ListingCard(
+/// <summary>Display values for a product or editorial card.</summary>
+public sealed record ListingCard(
     Guid Key,
     string EntityId,
     string Url,

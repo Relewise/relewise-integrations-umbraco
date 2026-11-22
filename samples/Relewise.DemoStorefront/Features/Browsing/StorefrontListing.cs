@@ -16,7 +16,7 @@ namespace Relewise.DemoStorefront.Features.Browsing;
 // Shop, category and Brand pages share one query path through Umbraco's search abstraction.
 internal static class StorefrontListing
 {
-    internal static async Task<string> RenderAsync(
+    internal static async Task<StorefrontResponse> GetAsync(
         HttpContext http,
         IPublishedContent? collection = null,
         bool suggestionsOnly = false,
@@ -46,12 +46,12 @@ internal static class StorefrontListing
                 return DemoConnection.Unavailable(http, dataOnly || suggestionsOnly);
             }
 
-            return ListingPage.Preview(http, collection);
+            return new StorefrontResponse(ListingPage.Preview(http, collection));
         }
 
         if (suggestionsOnly && request.Query["q"].ToString().Trim().Length is < 2 or > 80)
         {
-            return "[]";
+            return new StorefrontResponse(Json: "[]");
         }
 
         IServiceProvider services = http.RequestServices;
@@ -111,7 +111,7 @@ internal static class StorefrontListing
 
         if (suggestionsOnly)
         {
-            return JsonSerializer.Serialize(result.Suggestions ?? []);
+            return new StorefrontResponse(Json: JsonSerializer.Serialize(result.Suggestions ?? []));
         }
 
         long lastPage = Math.Max(1, (result.Total - 1) / pageSize + 1);
@@ -228,33 +228,34 @@ internal static class StorefrontListing
 
         if (dataOnly)
         {
-            return JsonSerializer.Serialize(model, StorefrontChrome.Json);
+            return new StorefrontResponse(Json: JsonSerializer.Serialize(model, StorefrontChrome.Json));
         }
 
-        return ListingPage.Render(http, collection, model, heading);
+        return new StorefrontResponse(ListingPage.Create(http, collection, model, heading));
     }
 
-    private static string Invalid(HttpContext http, string message, bool json)
+    private static StorefrontResponse Invalid(HttpContext http, string message, bool json)
     {
         http.Response.StatusCode = StatusCodes.Status400BadRequest;
 
         if (json)
         {
-            return JsonSerializer.Serialize(
-                new
-                {
-                    error = message
-                });
+            return new StorefrontResponse(Json: JsonSerializer.Serialize(new { error = message }));
         }
 
-        return Layout(Text(http, "Search"), "<p class='empty'>" + E(message) + "</p>", false, http, "shop");
+        return new StorefrontResponse(
+            new StorefrontPage(
+                Text(http, "Search"),
+                "shop",
+                "/Views/Shared/Message.cshtml",
+                new StorefrontMessage(message, Empty: true)));
     }
 
-    private static string Redirect(HttpContext http, string url)
+    private static StorefrontResponse Redirect(HttpContext http, string url)
     {
         http.Response.Redirect(url);
 
-        return string.Empty;
+        return new StorefrontResponse();
     }
 
     private static string PageUrl(

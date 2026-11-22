@@ -1,0 +1,53 @@
+@using Relewise.DemoStorefront.Features.Home
+@using Relewise.DemoStorefront.Features.Browsing
+@model HomePageModel
+@{
+    DemoMarket market = DemoMarket.Current(Context);
+}
+<section class="welcome">
+    <div>
+        <p class="eyebrow">Fieldwork @Text(Context, "OutdoorGoods")</p>
+        <h1>@Title(Model.Page)</h1>
+        <p class="lead">@(Model.Page.Value<string>("bodyText"))</p>
+        <div class="actions">
+            <a class="button" href="@market.StoreUrl">@Text(Context, "ExploreCollection")</a>
+            <a class="button secondary" href="@(market.StoreUrl)?type=article">@Text(Context, "ExploreJournal")</a>
+        </div>
+    </div>
+    <div class="illustration">@Html.Raw(Icon())</div>
+</section>
+@if (DemoConnection.IsConfigured(Context))
+{
+    @await Html.PartialAsync("/Views/Recommendations/_Placement.cshtml", Model.Recommendations)
+}
+else
+{
+    <section class="page-section">
+        <h2>@Text(Context, "ShopByCategory")</h2>
+        @await Html.PartialAsync("/Views/Shared/_CategoryLinks.cshtml", Model.Categories)
+    </section>
+    <section class="page-section">
+        <div class="section-heading">
+            <h2>@Text(Context, "FromCollection")</h2>
+            <a href="@market.StoreUrl">@Text(Context, "ViewAllProducts")</a>
+        </div>
+        <div class="grid">
+            @foreach (ListingCard card in Model.Products)
+            {
+                @await Html.PartialAsync("/Views/Browsing/_Card.cshtml", card)
+            }
+        </div>
+    </section>
+}
+<section class="page-section">
+    <div class="section-heading">
+        <h2>@Text(Context, "Journal")</h2>
+        <a href="@(market.StoreUrl)?type=article">@Text(Context, "ViewAllStories")</a>
+    </div>
+    <div class="grid">
+        @foreach (ListingCard card in Model.Articles)
+        {
+            @await Html.PartialAsync("/Views/Browsing/_Card.cshtml", card)
+        }
+    </div>
+</section>

@@ -2,5 +2,6 @@ using JetBrains.Annotations;
 
 namespace Relewise.DemoStorefront.Features.Browsing;
 
+/// <summary>An applied filter and its removal link.</summary>
 [UsedImplicitly(ImplicitUseTargetFlags.Members)]
-internal sealed record ListingChip(string Label, string Url);
+public sealed record ListingChip(string Label, string Url);

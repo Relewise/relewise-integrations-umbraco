@@ -1,3 +1,4 @@
 namespace Relewise.DemoStorefront.Features.Cart;
 
-internal sealed record PurchasedCartLine(string Name, int Quantity, decimal Total);
+/// <summary>A purchased line captured at the time of the demo order.</summary>
+public sealed record PurchasedCartLine(string Name, int Quantity, decimal Total);

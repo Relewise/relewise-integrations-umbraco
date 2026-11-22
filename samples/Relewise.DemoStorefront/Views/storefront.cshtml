@@ -1,7 +1,11 @@
-@using Relewise.DemoStorefront.Site
 @inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
-@inject Umbraco.Cms.Core.Models.PublishedContent.IVariationContextAccessor Variations
+@inject IVariationContextAccessor Variations
 @{
-    Variations.VariationContext = new Umbraco.Cms.Core.Models.PublishedContent.VariationContext(DemoMarket.Current(Context).Culture);
+    Layout = null;
+    Variations.VariationContext = new VariationContext(DemoMarket.Current(Context).Culture);
+    StorefrontPage? page = await StorefrontPages.CreateAsync(Model, Context);
 }
-@Html.Raw(await StorefrontPages.RenderAsync(Model, Context))
+@if (page != null)
+{
+    @await Html.PartialAsync("/Views/Storefront/Page.cshtml", page)
+}

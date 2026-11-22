@@ -21,7 +21,9 @@ internal static class CartEndpoints
         app.MapGet(
             "/{language:regex(^(en|da)$)}/checkout",
             async Task<IResult> (HttpContext http) => await CartPages.Page(http, true));
-        app.MapGet("/{language:regex(^(en|da)$)}/confirmation", CartPages.Confirmation);
+        app.MapGet(
+            "/{language:regex(^(en|da)$)}/confirmation",
+            (HttpContext http) => CartPages.Confirmation(http));
         app.MapPost(
             "/{language:regex(^(en|da)$)}/cart/{action:regex(^(add|update|clear)$)}",
             (HttpContext http, string action) => MutateAsync(http, action));

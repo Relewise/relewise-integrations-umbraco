@@ -1,5 +1,3 @@
-using System.Net;
-using System.Text;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Strings;
@@ -8,23 +6,20 @@ namespace Relewise.DemoStorefront.Features.Editorial;
 
 internal static class StorefrontEditorial
 {
-    internal static string Render(
+    internal static EditorialSection[] Sections(
         object? value,
         string culture)
     {
-        var html = new StringBuilder();
+        var sections = new List<EditorialSection>();
 
         void Element(IPublishedElement content)
         {
-            if (content.GetProperty("heading")?.GetValue(culture) is string heading &&
-                !string.IsNullOrWhiteSpace(heading))
-            {
-                html.Append($"<h2>{WebUtility.HtmlEncode(heading)}</h2>");
-            }
+            var heading = content.GetProperty("heading")?.GetValue(culture) as string;
+            var text = content.GetProperty("text")?.GetValue(culture) as IHtmlEncodedString;
 
-            if (content.GetProperty("text")?.GetValue(culture) is IHtmlEncodedString text)
+            if (!string.IsNullOrWhiteSpace(heading) || text != null)
             {
-                html.Append(text.ToHtmlString());
+                sections.Add(new EditorialSection(heading, text));
             }
 
             Visit(content.GetProperty("items")?.GetValue(culture));
@@ -67,6 +62,6 @@ internal static class StorefrontEditorial
 
         Visit(value);
 
-        return html.ToString();
+        return [.. sections];
     }
 }

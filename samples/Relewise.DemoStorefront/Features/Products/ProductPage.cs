@@ -1,15 +1,12 @@
-using System.Text;
 using Relewise.DemoStorefront.Features.Recommendations;
 using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core.Models.PublishedContent;
-using static Relewise.DemoStorefront.Site.SiteContent;
-using static Relewise.DemoStorefront.Site.StorefrontNavigation;
 
 namespace Relewise.DemoStorefront.Features.Products;
 
 internal static class ProductPage
 {
-    internal static string Render(
+    internal static ProductPageModel Create(
         IPublishedContent page,
         HttpContext http)
     {
@@ -31,104 +28,43 @@ internal static class ProductPage
             lead = parentLead;
         }
 
-        var html = new StringBuilder(Breadcrumb(page, http, "shop"));
+        var option = product.Value<string>("optionType");
 
-        html.Append(
-            ($"<section class='detail'><div class='illustration'>{Storefront.Image(page)}" +
-             $"</div><div class='details'><p class='eyebrow'>{Storefront.E(brand?.Name ?? "Fieldwork")}" +
-             $"</p><h1>{Storefront.E(Title(page))}</h1><p class='lead'>{Storefront.E(lead)}" +
-             $"</p><div class='price'><strong>{Storefront.E(prices.Sale)}</strong>") +
-            (prices.List == null
-                ? ""
-                : $"<del>{Storefront.E(prices.List)}</del>" +
-                  $"<span class='offer-label'>{Storefront.E(prices.Savings)}</span>") +
-            "</div>");
-        html.Append(PurchaseControls.Availability(product, http));
-
-        if (variants.Length > 0)
+        if (string.IsNullOrWhiteSpace(option))
         {
-            var option = product.Value<string>("optionType");
-
-            if (string.IsNullOrWhiteSpace(option))
-            {
-                option = variants.Any(variant => !string.IsNullOrWhiteSpace(variant.Value<string>("color")))
-                    ? "colour"
-                    : "size";
-            }
-
-            string key = option switch
-            {
-                "colour" => "ChooseColour",
-                "capacity" => "ChooseCapacity",
-                "dimensions" => "ChooseDimensions",
-                "occupancy" => "ChooseOccupancy",
-                "pack" => "ChoosePackSize",
-                "length" => "ChooseLength",
-                _ => "ChooseSize"
-            };
-
-            html.Append($"<p class='option-label'>{T(http, key)}</p><div class='variants'>");
-
-            foreach (IPublishedContent variant in variants)
-            {
-                string label = ProductOptions.Label(variant);
-
-                html.Append(
-                    $"<a href='{Storefront.E(variant.Url())}' " +
-                    $"{(page.Key == variant.Key ? "class='selected' aria-current='page'" : "")}>" +
-                    $"{Storefront.E(label)}</a>");
-            }
-
-            html.Append("</div>");
+            option = variants.Any(variant => !string.IsNullOrWhiteSpace(variant.Value<string>("color")))
+                ? "colour"
+                : "size";
         }
 
-        var sizeGuide = product.Value<string>("sizeGuide");
-
-        if (!string.IsNullOrWhiteSpace(sizeGuide))
+        string optionLabel = option switch
         {
-            html.Append(
-                $"<details class='size-guide'><summary>{T(http, "SizeGuide")}</summary><p>" +
-                $"{Storefront.E(sizeGuide)}</p></details>");
-        }
+            "colour" => "ChooseColour",
+            "capacity" => "ChooseCapacity",
+            "dimensions" => "ChooseDimensions",
+            "occupancy" => "ChooseOccupancy",
+            "pack" => "ChoosePackSize",
+            "length" => "ChooseLength",
+            _ => "ChooseSize"
+        };
 
-        html.Append(PurchaseControls.AddForm(page, http));
-
-        var weight = product.Value<int>("weightGrams");
-        string? capacity = page.Value<string>("capacity") ?? product.Value<string>("capacity");
-
-        if (weight > 0 || !string.IsNullOrWhiteSpace(capacity))
+        return new ProductPageModel
         {
-            html.Append($"<section class='product-specifications'><h2>{T(http, "Specifications")}</h2><dl>");
-
-            if (weight > 0)
-            {
-                html.Append($"<dt>{T(http, "Weight")}</dt><dd>{weight} g</dd>");
-            }
-
-            if (!string.IsNullOrWhiteSpace(capacity))
-            {
-                html.Append($"<dt>{T(http, "Capacity")}</dt><dd>{Storefront.E(capacity)}</dd>");
-            }
-
-            html.Append("</dl></section>");
-        }
-
-        if (brand != null)
-        {
-            html.Append(
-                $"<p class='muted'>{T(http, "Brand")}: <a class='text-link' href='" +
-                $"{Storefront.E(brand.Url())}'>{Storefront.E(Title(brand))}</a></p>");
-        }
-
-        html.Append("</div></section>");
-        html.Append(RecommendationPlacement.Placeholder(page, http));
-        html.Append(IntegrationDetails.Render(page, http));
-
-        return html.ToString();
-    }
-
-    private static string T(HttpContext http, string key)
-    {
-        return Storefront.E(Storefront.Text(http, key));
+            Page = page,
+            Brand = brand,
+            Lead = lead,
+            Prices = prices,
+            Variants =
+            [
+                .. variants.Select(variant =>
+                    new StorefrontLink(ProductOptions.Label(variant), variant.Url(), page.Key == variant.Key))
+            ],
+            OptionLabel = optionLabel,
+            SizeGuide = product.Value<string>("sizeGuide"),
+            Weight = product.Value<int>("weightGrams"),
+            Capacity = page.Value<string>("capacity") ?? product.Value<string>("capacity"),
+            Purchase = PurchaseControls.Create(page, product, http),
+            Recommendations = RecommendationPlacement.Configuration(page, http)
+        };
     }
 }

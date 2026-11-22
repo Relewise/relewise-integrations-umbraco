@@ -2,5 +2,6 @@ using JetBrains.Annotations;
 
 namespace Relewise.DemoStorefront.Features.Browsing;
 
+/// <summary>A displayed facet and its available choices.</summary>
 [UsedImplicitly(ImplicitUseTargetFlags.Members)]
-internal sealed record ListingFacet(string Name, string Label, ListingChoice[] Choices);
+public sealed record ListingFacet(string Name, string Label, ListingChoice[] Choices);

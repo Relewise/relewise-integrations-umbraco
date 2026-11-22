@@ -1,0 +1,22 @@
+@model StorefrontMessage
+@if (Model.Error)
+{
+    <section class="notice notice-error" role="alert">
+        <h1>@ViewData["Title"]</h1>
+        <p>@Model.Message</p>
+        <a href="@DemoConnection.SetupUrl">@Text(Context, "ConfigureRelewise")</a>
+    </section>
+}
+else if (Model.Empty)
+{
+    <p class="empty">@Model.Message</p>
+}
+else
+{
+    <h1>@ViewData["Title"]</h1>
+    @if (Model.Help)
+    {
+        <p>@Model.Message</p>
+        <a href="@DemoConnection.SetupUrl">@Text(Context, "ConfigureRelewise")</a>
+    }
+}

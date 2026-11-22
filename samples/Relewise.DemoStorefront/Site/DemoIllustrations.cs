@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.DemoStorefront.Site;
@@ -28,9 +29,16 @@ internal static class DemoIllustrations
             _ => "#556746"
         };
 
-        return
-            $"<svg viewBox='0 0 300 300' aria-hidden='true' style='color:{colour}" +
-            $"'><use href='/images/products.svg#{name}'></use></svg>";
+        var svg = new TagBuilder("svg");
+        svg.Attributes["viewBox"] = "0 0 300 300";
+        svg.Attributes["aria-hidden"] = "true";
+        svg.Attributes["style"] = "color:" + colour;
+
+        var symbol = new TagBuilder("use");
+        symbol.Attributes["href"] = "/images/products.svg#" + name;
+        svg.InnerHtml.AppendHtml(symbol);
+
+        return Storefront.Markup(svg);
     }
 
     private static readonly IReadOnlySet<string> Assets = new HashSet<string>(StringComparer.Ordinal)

@@ -12,17 +12,12 @@ internal static class CartHttp
             new VariationContext(DemoMarket.Current(http).Culture);
     }
 
-    internal static string T(HttpContext http, string key)
-    {
-        return Storefront.E(Storefront.Text(http, key));
-    }
-
     internal static string Money(HttpContext http, decimal amount, string? currency = null)
     {
         DemoMarket market = DemoMarket.Current(http);
         var value = amount.ToString("N2", CultureInfo.GetCultureInfo(market.Culture));
 
-        return Storefront.E((currency ?? market.Currency) + " " + value);
+        return (currency ?? market.Currency) + " " + value;
     }
 
     internal static IResult Error(

@@ -6,7 +6,7 @@ namespace Relewise.DemoStorefront.Site;
 
 internal static class IntegrationDetails
 {
-    internal static string Render(
+    internal static IntegrationField[] Fields(
         IPublishedContent page,
         HttpContext http)
     {
@@ -31,12 +31,6 @@ internal static class IntegrationDetails
                     DemoConfiguration.EntityId(page, http.RequestServices)));
         }
 
-        string rows = string.Concat(
-            fields.Select(field =>
-                $"<dt>{Storefront.E(field.Label)}</dt><dd><code>{Storefront.E(field.Value)}</code></dd>"));
-
-        return
-            $"<details class='developer-details' lang='en'><summary>Integration details</summary><dl>" +
-            $"{rows}</dl></details>";
+        return [.. fields.Select(field => new IntegrationField(field.Label, field.Value))];
     }
 }

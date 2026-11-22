@@ -1,13 +1,13 @@
 using System.Globalization;
-using System.Net;
-using Relewise.Client.DataTypes;
-using Relewise.DemoStorefront.Integration.Converters;
+using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Html;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Umbraco.Cms.Core.Dictionary;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.DemoStorefront.Site;
 
-public static class Storefront
+internal static class Storefront
 {
     internal static string Text(
         HttpContext http,
@@ -22,26 +22,7 @@ public static class Storefront
         return values.Length == 0 ? text : string.Format(culture, text, values);
     }
 
-    public static string E(string? value)
-    {
-        return WebUtility.HtmlEncode(value ?? "");
-    }
-
-    public static string Prices(
-        object? value,
-        HttpContext http)
-    {
-        DemoMarket market = DemoMarket.Current(http);
-        Money? price = PriceConverter.Read(value)
-            ?.Values
-            ?.SingleOrDefault(price => price.Currency.Value == market.Currency);
-
-        return price == null
-            ? E(Text(http, "PriceUnavailable", market.Currency))
-            : E(market.Currency + " " + price.Amount.ToString("N2", CultureInfo.GetCultureInfo(market.Culture)));
-    }
-
-    public static string Image(IPublishedContent content)
+    internal static string Image(IPublishedContent content)
     {
         var image = content.Value<string>("heroImage");
 
@@ -52,19 +33,52 @@ public static class Storefront
 
         image = string.IsNullOrWhiteSpace(image) ? "/images/daypack.svg" : image;
 
-        return DemoIllustrations.Render(content, image) ?? $"<img alt='' width='190' height='190' src='{E(image)}'>";
+        string? illustration = DemoIllustrations.Render(content, image);
+
+        if (illustration != null)
+        {
+            return illustration;
+        }
+
+        var tag = new TagBuilder("img") { TagRenderMode = TagRenderMode.SelfClosing };
+        tag.Attributes["alt"] = "";
+        tag.Attributes["width"] = "190";
+        tag.Attributes["height"] = "190";
+        tag.Attributes["src"] = image;
+
+        return Markup(tag);
     }
 
-    public static string Icon()
+    internal static string Icon()
     {
-        return
-            "<svg viewBox='0 0 200 180' aria-hidden='true'><path d='M20 150 100 30 180 " +
-            "150z'/><path d='M100 30v120h60z' fill='white' opacity='.2'/><path d='m70 150 30-60 " +
-            "30 60' fill='#edf1e9'/></svg>";
+        var svg = new TagBuilder("svg");
+        svg.Attributes["viewBox"] = "0 0 200 180";
+        svg.Attributes["aria-hidden"] = "true";
+
+        var mountain = new TagBuilder("path") { TagRenderMode = TagRenderMode.SelfClosing };
+        mountain.Attributes["d"] = "M20 150 100 30 180 150z";
+        svg.InnerHtml.AppendHtml(mountain);
+
+        var light = new TagBuilder("path") { TagRenderMode = TagRenderMode.SelfClosing };
+        light.Attributes["d"] = "M100 30v120h60z";
+        light.Attributes["fill"] = "white";
+        light.Attributes["opacity"] = ".2";
+        svg.InnerHtml.AppendHtml(light);
+
+        var entrance = new TagBuilder("path") { TagRenderMode = TagRenderMode.SelfClosing };
+        entrance.Attributes["d"] = "m70 150 30-60 30 60";
+        entrance.Attributes["fill"] = "#edf1e9";
+        svg.InnerHtml.AppendHtml(entrance);
+
+        return Markup(svg);
     }
 
-    public static string Layout(string title, string body, bool connected, HttpContext http, string section)
+    // Existing Vue payloads carry image fragments. TagBuilder encodes attributes; page markup lives in Razor.
+    internal static string Markup(IHtmlContent content)
     {
-        return StorefrontChrome.Render(title, body, http, section);
+        using var writer = new StringWriter(CultureInfo.InvariantCulture);
+        content.WriteTo(writer, HtmlEncoder.Default);
+
+        return writer.ToString();
     }
 }

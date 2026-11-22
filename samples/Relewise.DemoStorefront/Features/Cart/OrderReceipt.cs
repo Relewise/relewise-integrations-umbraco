@@ -1,6 +1,7 @@
 namespace Relewise.DemoStorefront.Features.Cart;
 
-internal sealed record OrderReceipt(
+/// <summary>The completed demo order shown on the confirmation page.</summary>
+public sealed record OrderReceipt(
     string OrderNumber,
     string Currency,
     decimal Total,
