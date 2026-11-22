@@ -6,13 +6,15 @@ using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Infrastructure.Scoping;
 
+namespace Relewise.DemoStorefront;
+
 internal static class DemoEditorial
 {
     internal static void Ensure(IServiceProvider services)
     {
-        var content = services.GetRequiredService<IContentService>();
-        var types = services.GetRequiredService<IContentTypeService>();
-        using var scope = services.GetRequiredService<IScopeProvider>().CreateScope();
+        IContentService content = services.GetRequiredService<IContentService>();
+        IContentTypeService types = services.GetRequiredService<IContentTypeService>();
+        using IScope scope = services.GetRequiredService<IScopeProvider>().CreateScope();
         scope.EagerWriteLock(Constants.Locks.ContentTree);
         IContent home = content.GetRootContent().Single(node => node.ContentType.Alias == "home");
         foreach (Story story in Stories)
@@ -37,7 +39,7 @@ internal static class DemoEditorial
             node.SetValue("contentRows", DemoBlockValues.Story(types, story.EnglishBody), "en-US");
             node.SetValue("contentRows", DemoBlockValues.Story(types, story.DanishBody), "da-DK");
             content.Save(node);
-            var published = content.Publish(node, ["en-US", "da-DK"]);
+            PublishResult published = content.Publish(node, ["en-US", "da-DK"]);
             if (!published.Success)
             {
                 throw new InvalidOperationException($"Failed publishing story '{node.Name}': {published.Result}.");
@@ -73,7 +75,7 @@ internal static class DemoEditorial
         }
 
         bool homeChanged = false;
-        foreach (var (culture, oldTitle, title, intro) in new[]
+        foreach ((string? culture, string? oldTitle, string? title, string? intro) in new[]
         {
             ("en-US", "Fieldwork storefront", "Make room for the outdoors", "Thoughtful equipment and fresh ideas for days on the trail, nights under canvas and the adventures in between."),
             ("da-DK", "Fieldwork friluftsbutik", "Gør plads til friluftslivet", "Gennemtænkt udstyr og nye idéer til dage på stien, nætter i telt og alle eventyrene derimellem.")
@@ -119,7 +121,7 @@ internal static class DemoEditorial
         {
             if (value is JsonObject obj)
             {
-                foreach (var field in obj.ToArray())
+                foreach (KeyValuePair<string, JsonNode?> field in obj.ToArray())
                 {
                     if (field.Value is JsonValue scalar && scalar.TryGetValue(out string? text))
                     {

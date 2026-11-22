@@ -1,3 +1,5 @@
+namespace Relewise.DemoStorefront;
+
 internal sealed class ListingModel
 {
     public string View { get; init; } = "store";

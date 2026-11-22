@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core.Cache;
@@ -27,7 +28,7 @@ public class RichTextEditorPropertyValueConverterTests
         using ServiceProvider services = CreateServices();
         var property = new PublishedProperty(editorAlias, html is null ? null : new HtmlEncodedString(html));
 
-        var result = services.GetRequiredService<IRelewisePropertyConverter>().Convert([property], ["en-US"]);
+        IReadOnlyDictionary<string, DataValue?> result = services.GetRequiredService<IRelewisePropertyConverter>().Convert([property], ["en-US"]);
 
         Assert.Equal(html, result["description"]?.Value);
         Assert.Null(property.RequestedCulture);
@@ -41,7 +42,7 @@ public class RichTextEditorPropertyValueConverterTests
         using ServiceProvider services = CreateServices();
         var property = new PublishedProperty(editorAlias, new PublishedHtml(), ContentVariation.Culture);
 
-        var result = services.GetRequiredService<IRelewisePropertyConverter>().Convert([property], ["da-DK"]);
+        IReadOnlyDictionary<string, DataValue?> result = services.GetRequiredService<IRelewisePropertyConverter>().Convert([property], ["da-DK"]);
 
         Assert.Equal("<p>Dansk beskrivelse</p>", result["description"]?.Value);
         Assert.Equal("da-DK", property.RequestedCulture);
@@ -53,7 +54,7 @@ public class RichTextEditorPropertyValueConverterTests
         using ServiceProvider services = CreateServices();
         var property = new PublishedProperty("Custom.Editor", new HtmlEncodedString("<p>Other content</p>"));
 
-        var result = services.GetRequiredService<IRelewisePropertyConverter>().Convert([property], ["en-US"]);
+        IReadOnlyDictionary<string, DataValue?> result = services.GetRequiredService<IRelewisePropertyConverter>().Convert([property], ["en-US"]);
 
         Assert.Empty(result);
     }
@@ -68,7 +69,7 @@ public class RichTextEditorPropertyValueConverterTests
         Assert.Single(services.GetServices<IAsyncRelewisePropertyValueConverter>().OfType<RichTextEditorPropertyValueConverter>());
 
         var property = new PublishedProperty("Umbraco.RichText", new HtmlEncodedString("<p>Description</p>"));
-        var result = services.GetRequiredService<IRelewisePropertyConverter>().Convert([property], ["en-US"]);
+        IReadOnlyDictionary<string, DataValue?> result = services.GetRequiredService<IRelewisePropertyConverter>().Convert([property], ["en-US"]);
         Assert.Equal("<p>Description</p>", result["description"]?.Value);
     }
 
@@ -102,7 +103,7 @@ public class RichTextEditorPropertyValueConverterTests
 
         public TBuilder WithCollectionBuilder<TBuilder>() where TBuilder : ICollectionBuilder
         {
-            if (!_collections.TryGetValue(typeof(TBuilder), out var builder))
+            if (!_collections.TryGetValue(typeof(TBuilder), out ICollectionBuilder? builder))
             {
                 _collections.Add(typeof(TBuilder), builder = Activator.CreateInstance<TBuilder>());
             }

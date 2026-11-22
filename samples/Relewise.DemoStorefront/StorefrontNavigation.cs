@@ -1,7 +1,9 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
+
+namespace Relewise.DemoStorefront;
 
 // Navigation and short-lived feedback for the example; basket contents stay in StorefrontCart.
 internal static class StorefrontNavigation
@@ -10,7 +12,7 @@ internal static class StorefrontNavigation
 
     internal static void Notify(HttpContext http, string key, bool error = false, params string[] values)
     {
-        var data = http.RequestServices.GetRequiredService<ITempDataDictionaryFactory>().GetTempData(http);
+        ITempDataDictionary data = http.RequestServices.GetRequiredService<ITempDataDictionaryFactory>().GetTempData(http);
         data[NoticeKey] = JsonSerializer.Serialize(new Notice(key, error, values));
         // Minimal API results do not execute MVC's TempData save filter.
         data.Save();
@@ -18,7 +20,7 @@ internal static class StorefrontNavigation
 
     internal static string Feedback(HttpContext http)
     {
-        var data = http.RequestServices.GetRequiredService<ITempDataDictionaryFactory>().GetTempData(http);
+        ITempDataDictionary data = http.RequestServices.GetRequiredService<ITempDataDictionaryFactory>().GetTempData(http);
         if (data[NoticeKey] is not string json)
         {
             return string.Empty;
@@ -48,7 +50,7 @@ internal static class StorefrontNavigation
         string path = market.LanguagePath + (view is "search" or "offers" ? "/" + view : "/store");
         if (Guid.TryParse(http.Session.GetString("fieldwork-listing-collection"), out Guid key))
         {
-            var cache = http.RequestServices.GetRequiredService<IUmbracoContextAccessor>().GetRequiredUmbracoContext().Content;
+            IPublishedContentCache cache = http.RequestServices.GetRequiredService<IUmbracoContextAccessor>().GetRequiredUmbracoContext().Content;
             string? translated = cache?.GetById(key)?.Url(market.Culture);
             if (!string.IsNullOrWhiteSpace(translated) && translated.StartsWith('/') && !translated.StartsWith("//"))
             {

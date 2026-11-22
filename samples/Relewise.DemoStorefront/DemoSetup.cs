@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 
+namespace Relewise.DemoStorefront;
+
 internal static class DemoSetup
 {
     internal static bool HasRelewiseConfiguration(IConfiguration configuration)
@@ -13,7 +15,11 @@ internal static class DemoSetup
             return false;
         }
 
-        if (!Guid.TryParse(id, out _) || string.IsNullOrWhiteSpace(key) || !Uri.TryCreate(server, UriKind.Absolute, out var endpoint) || !endpoint.IsLoopback)
+        if (!Guid.TryParse(id, out _) || string.IsNullOrWhiteSpace(key) || !Uri.TryCreate(
+            server,
+            UriKind.Absolute,
+            out Uri? endpoint
+        ) || !endpoint.IsLoopback)
         {
             throw new InvalidOperationException("Configure DatasetId, ApiKey and a local ServerUrl together in local.settings.json. The demo only supports local Datasets.");
         }

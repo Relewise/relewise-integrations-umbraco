@@ -18,6 +18,7 @@ using Relewise.Client.Requests.Search;
 using Relewise.Client.Requests.Search.Settings;
 using Relewise.Client.Requests.Shared;
 using Relewise.Client.Responses.Search;
+using Relewise.Client.Search;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
@@ -48,7 +49,7 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
 
         string alias = indexAlias == global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent
             ? configuration.SearchProviders.DefaultPublishedContentProviderAlias ?? indexAlias : indexAlias;
-        if (!configuration.SearchProviders.Providers.TryGetValue(alias, out var provider))
+        if (!configuration.SearchProviders.Providers.TryGetValue(alias, out SearchProviderDefinition? provider))
         {
             throw new InvalidOperationException($"No Relewise query provider is configured for '{alias}'.");
         }
@@ -75,14 +76,14 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
         Sorter[] selectedSorters = sorters?.ToArray() ?? [];
         IReadOnlyDictionary<string, string> booleanDataFields = provider.Options is ProductSearchProviderOptions productOptions
             ? productOptions.BooleanDataFields : new Dictionary<string, string>();
-        foreach (var facet in selectedFacets)
+        foreach (UFacet facet in selectedFacets)
         {
             if (booleanDataFields.ContainsKey(facet.FieldName) && facet is not KeywordFacet)
             {
                 throw new NotSupportedException($"Boolean Data binding '{facet.FieldName}' requires a KeywordFacet.");
             }
         }
-        foreach (var sorter in selectedSorters)
+        foreach (Sorter sorter in selectedSorters)
         {
             if (sorter.FieldName != null && booleanDataFields.ContainsKey(sorter.FieldName))
             {
@@ -91,7 +92,7 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
         }
         string[] sourceAliases = provider.ContentOptions?.DocumentTypeAliases ?? configuration.Mappings.Values
             .Where(mapping => mapping.Export && mapping.EntityType == provider.EntityType).Select(mapping => mapping.DocumentTypeAlias).ToArray();
-        var client = services.GetRequiredService<IRelewiseClientFactory>().GetClient<global::Relewise.Client.Search.ISearcher>(Constants.NamedClientName);
+        ISearcher client = services.GetRequiredService<IRelewiseClientFactory>().GetClient<global::Relewise.Client.Search.ISearcher>(Constants.NamedClientName);
         ContentSearchRequest Create(IEnumerable<UFilter> selected, int offset, int count)
         {
             var request = new ContentSearchRequest(new Language(language), Currency.Undefined, user, provider.Location(alias), query, offset, count)
@@ -317,8 +318,8 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
                 string dataKey = booleanDataFields != null && booleanDataFields.TryGetValue(facet.FieldName, out string? directKey)
                     ? directKey : Field(facet.FieldName, kind, culture);
                 request.Facets!.AddDataString(dataKey);
-                var response = await execute(request);
-                foreach (var bucket in response.Facets?.DataString(dataKey)?.Available ?? [])
+                ContentSearchResponse response = await execute(request);
+                foreach (AvailableFacetValue<string>? bucket in response.Facets?.DataString(dataKey)?.Available ?? [])
                 {
                     values.Add(facet switch
                     {
@@ -330,7 +331,7 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
                 }
                 break;
             case IntegerRangeFacet f:
-                foreach (var range in f.Ranges)
+                foreach (IntegerRangeFacetRange range in f.Ranges)
                 {
                     values.Add(new IntegerRangeFacetValue(range.Key, range.MinValue, range.MaxValue,
                     await CountRange(request, execute, NumberRange(f.FieldName, "integer", range.MinValue, range.MaxValue, culture))));
@@ -338,7 +339,7 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
 
                 break;
             case DecimalRangeFacet f:
-                foreach (var range in f.Ranges)
+                foreach (DecimalRangeFacetRange range in f.Ranges)
                 {
                     values.Add(new DecimalRangeFacetValue(range.Key, range.MinValue, range.MaxValue,
                     await CountRange(request, execute, NumberRange(f.FieldName, "decimal", (double?)range.MinValue, (double?)range.MaxValue, culture))));
@@ -346,7 +347,7 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
 
                 break;
             case DateTimeOffsetRangeFacet f:
-                foreach (var range in f.Ranges)
+                foreach (DateTimeOffsetRangeFacetRange range in f.Ranges)
                 {
                     values.Add(new DateTimeOffsetRangeFacetValue(range.Key, range.MinValue, range.MaxValue,
                     await CountRange(request, execute, NumberRange(f.FieldName, "date", range.MinValue.HasValue ? DateNumber(range.MinValue.Value) : null,

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +12,7 @@ using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco;
@@ -23,7 +25,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         string id = configuration.GetContentId(source);
         object entity = Create(definition.EntityType, id);
         bool synchronize = definition.AdministrativeActions.Enabled && parentAdministrativeActions;
-        var data = Data(entity);
+        Dictionary<string, DataValue?> data = Data(entity);
         if (synchronize && entity is not Brand)
         {
             entity.GetType().GetProperty("DisplayName")!.SetValue(entity, DisplayName(source, cultures));
@@ -68,7 +70,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
             {
                 IReadOnlyDictionary<string, DataValue?> converted = await operation.Services.GetRequiredService<IRelewisePropertyConverter>()
                     .ConvertAsync(source, source, cultures, operation.Services, operation.CancellationToken);
-                foreach (var field in converted)
+                foreach (KeyValuePair<string, DataValue?> field in converted)
                 {
                     data.Add(field.Key, field.Value);
                 }
@@ -94,7 +96,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                     data.Add(mapping.Options.DataKey, null);
                     continue;
                 }
-                foreach (var field in converted.Data)
+                foreach (KeyValuePair<string, DataValue?> field in converted.Data)
                 {
                     string destination = field.Key == property.Alias ? mapping.Options.DataKey : field.Key;
                     if (field.Key != property.Alias && mapping.Options.DataKey != property.Alias)
@@ -119,7 +121,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                 foreach (IPublishedContent category in Picked(source, definition.CategoryPropertyAlias, cultures[0], operation))
                 {
                     RequireMapping(category, typeof(ProductCategory));
-                    var pickedPath = CategoryPaths(category, typeof(ProductCategory), cultures, false, true);
+                    List<CategoryPath> pickedPath = CategoryPaths(category, typeof(ProductCategory), cultures, false, true);
                     foreach (CategoryPath path in pickedPath)
                     {
                         if (!paths.Any(existing => existing.BreadcrumbPathStartingFromRoot.Select(x => x.Id).SequenceEqual(path.BreadcrumbPathStartingFromRoot.Select(x => x.Id), StringComparer.Ordinal)))
@@ -136,7 +138,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         }
         if (entity is Product product && definition.BrandPropertyAlias != null)
         {
-            var brands = Picked(source, definition.BrandPropertyAlias, cultures[0], operation).ToArray();
+            IPublishedContent[] brands = Picked(source, definition.BrandPropertyAlias, cultures[0], operation).ToArray();
             if (brands.Length > 1)
             {
                 throw new InvalidOperationException("BrandFrom requires a single picked Brand document.");
@@ -207,7 +209,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
     private bool HasMapping(Type type) => configuration.Mappings.Values.Any(mapping => mapping.EntityType == type);
     private void RequireMapping(IPublishedContent source, Type type)
     {
-        if (!configuration.Mappings.TryGetValue(source.ContentType.Alias, out var mapping) || mapping.EntityType != type)
+        if (!configuration.Mappings.TryGetValue(source.ContentType.Alias, out MappingDefinition? mapping) || mapping.EntityType != type)
         {
             throw new InvalidOperationException($"Referenced document '{source.Key}' is not mapped as {type.Name}.");
         }
@@ -217,7 +219,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         var entries = new List<CategoryNameAndId>();
         foreach (IPublishedContent ancestor in source.Breadcrumbs(andSelf: includeSelf))
         {
-            if (!legacy && (!configuration.Mappings.TryGetValue(ancestor.ContentType.Alias, out var mapping) || mapping.EntityType != categoryType))
+            if (!legacy && (!configuration.Mappings.TryGetValue(ancestor.ContentType.Alias, out MappingDefinition? mapping) || mapping.EntityType != categoryType))
             {
                 continue;
             }
@@ -247,7 +249,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
 
         if (property.PropertyType.EditorAlias == "Umbraco.DocumentPicker.Multiple")
         {
-            using var context = operation.Services.GetRequiredService<global::Umbraco.Cms.Core.Web.IUmbracoContextFactory>().EnsureUmbracoContext();
+            using UmbracoContextReference context = operation.Services.GetRequiredService<global::Umbraco.Cms.Core.Web.IUmbracoContextFactory>().EnsureUmbracoContext();
             return ReferenceKeys(source, alias, culture, operation).Select(key => context.UmbracoContext.Content?.GetById(key)).OfType<IPublishedContent>().ToArray();
         }
         if (value == null)
@@ -310,8 +312,8 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
             return published;
         }
 
-        var contextFactory = operation.Services.GetRequiredService<global::Umbraco.Cms.Core.Web.IUmbracoContextFactory>();
-        using var context = contextFactory.EnsureUmbracoContext();
+        IUmbracoContextFactory contextFactory = operation.Services.GetRequiredService<global::Umbraco.Cms.Core.Web.IUmbracoContextFactory>();
+        using UmbracoContextReference context = contextFactory.EnsureUmbracoContext();
         return [operation.Services.GetRequiredService<global::Umbraco.Cms.Core.PublishedCache.IDefaultCultureAccessor>().DefaultCulture];
     }
     private static Multilingual DisplayName(IPublishedContent source, string[] cultures)
@@ -334,7 +336,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
     internal static string Identity(object entity) => (string)entity.GetType().GetProperty("Id")!.GetValue(entity)!;
     internal static Dictionary<string, DataValue?> Data(object entity)
     {
-        var property = entity.GetType().GetProperty("Data")!;
+        PropertyInfo property = entity.GetType().GetProperty("Data")!;
         if (property.GetValue(entity) is Dictionary<string, DataValue?> data)
         {
             return data;

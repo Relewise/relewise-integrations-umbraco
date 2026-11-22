@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client.DataTypes;
@@ -22,8 +22,8 @@ internal class RelewiseContentMovedNotificationHandler : INotificationAsyncHandl
     public async Task HandleAsync(ContentMovedNotification notification, CancellationToken cancellationToken)
     {
         await _exportContentService.Export(new ExportContent(
-            notification.MoveInfoCollection.Select(x => x.Entity).ToArray(), 
-            ContentUpdate.UpdateKind.ReplaceProvidedProperties), 
+            notification.MoveInfoCollection.Select(x => x.Entity).ToArray(),
+            ContentUpdate.UpdateKind.ReplaceProvidedProperties),
             cancellationToken);
     }
 }

@@ -26,12 +26,12 @@ internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvi
 
     public async ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
     {
-        var elementItems = context.Property.GetValue<IEnumerable<IPublishedElement>?>(context.Culture)?.ToArray();
+        IPublishedElement[]? elementItems = context.Property.GetValue<IEnumerable<IPublishedElement>?>(context.Culture)?.ToArray();
 
         if (elementItems != null)
         {
             // NOTE: This needs to be resolved manually, since it would cause a circular dependency if injected through constructor
-            var propertyConverter = (context.Services ?? serviceProvider).GetRequiredService<IRelewisePropertyConverter>();
+            IRelewisePropertyConverter propertyConverter = (context.Services ?? serviceProvider).GetRequiredService<IRelewisePropertyConverter>();
 
             var properties = new List<DataValue?>();
 

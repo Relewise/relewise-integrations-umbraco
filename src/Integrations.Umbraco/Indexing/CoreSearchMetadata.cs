@@ -11,27 +11,27 @@ internal static class CoreSearchMetadata
 {
     internal static void Apply(MappedEntity entity, CoreSearchDocument document, string[]? siteCultures = null)
     {
-        var data = EntityMapper.Data(entity.Entity);
+        Dictionary<string, DataValue?> data = EntityMapper.Data(entity.Entity);
         data[CultureKey] = new DataValue(document.Variations.Select(v => v.Culture?.ToLowerInvariant() ?? string.Empty).Distinct());
         data[SegmentsKey] = new DataValue(document.Variations.Select(v => v.Segment ?? string.Empty).Distinct());
         data[ProtectedKey] = document.Protection != null;
         data[AccessKey] = new DataValue(document.Protection?.AccessIds.Select(id => id.ToString("D")) ?? []);
         // Retain supported default-segment metadata without blocking business-data export.
-        foreach (var group in document.Fields.GroupBy(field => field.FieldName))
+        foreach (IGrouping<string, IndexField> group in document.Fields.GroupBy(field => field.FieldName))
         {
             StoreText(
                 data,
                 group.Key,
                 group.Where(field => field.Segment == null).ToArray(),
                 siteCultures ?? document.Variations.Select(value => value.Culture).OfType<string>().ToArray());
-            foreach (var cultureGroup in group.Where(field => field.Segment == null).GroupBy(field => field.Culture).OrderBy(group => group.Key != null))
+            foreach (IGrouping<string?, IndexField>? cultureGroup in group.Where(field => field.Segment == null).GroupBy(field => field.Culture).OrderBy(group => group.Key != null))
             {
                 var converted = new Dictionary<string, DataValue?>();
-                var values = cultureGroup.Select(field => field.Value).ToArray();
+                IndexValue[] values = cultureGroup.Select(field => field.Value).ToArray();
                 StoreNumbers(converted, group.Key, "integer", values.SelectMany(v => v.Integers ?? []).Select(value => (double)value));
                 StoreNumbers(converted, group.Key, "decimal", values.SelectMany(v => v.Decimals ?? []).Select(value => (double)value));
                 StoreNumbers(converted, group.Key, "date", values.SelectMany(v => v.DateTimeOffsets ?? []).Select(DateNumber));
-                foreach (var field in converted)
+                foreach (KeyValuePair<string, DataValue?> field in converted)
                 {
                     if (cultureGroup.Key == null)
                     {
@@ -64,14 +64,14 @@ internal static class CoreSearchMetadata
         var localized = new Dictionary<string, List<(string Culture, DataValue Value)>>();
         foreach (string culture in localizedCultures.Concat(siteCultures).Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            var values = fields.Where(field => field.Culture == null || string.Equals(field.Culture, culture, StringComparison.OrdinalIgnoreCase))
+            IndexValue[] values = fields.Where(field => field.Culture == null || string.Equals(field.Culture, culture, StringComparison.OrdinalIgnoreCase))
                 .Select(field => field.Value).ToArray();
             var converted = new Dictionary<string, DataValue?>();
             StoreStrings(converted, name, "keyword", values.SelectMany(value => value.Keywords ?? []));
             StoreStrings(converted, name, "text", values.SelectMany(Texts));
-            foreach (var field in converted)
+            foreach (KeyValuePair<string, DataValue?> field in converted)
             {
-                if (!localized.TryGetValue(field.Key, out var entries))
+                if (!localized.TryGetValue(field.Key, out List<(string Culture, DataValue Value)>? entries))
                 {
                     localized[field.Key] = entries = [];
                 }
@@ -80,7 +80,7 @@ internal static class CoreSearchMetadata
             }
         }
 
-        foreach (var field in localized)
+        foreach (KeyValuePair<string, List<(string Culture, DataValue Value)>> field in localized)
         {
             data[field.Key] = field.Value[0].Value.Type == DataValue.DataValueTypes.String
                 ? new DataValue(new Multilingual(field.Value

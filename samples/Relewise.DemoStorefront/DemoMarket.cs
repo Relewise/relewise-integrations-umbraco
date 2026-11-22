@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http;
+namespace Relewise.DemoStorefront;
 
 // Application preferences: these are not integration configuration or Dataset boundaries.
 internal sealed record DemoMarket(string Id, string LabelKey, string Culture, string Currency)

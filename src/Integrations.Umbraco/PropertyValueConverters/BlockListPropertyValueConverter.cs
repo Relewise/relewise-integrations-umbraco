@@ -31,7 +31,7 @@ internal class BlockListPropertyValueConverter(IServiceProvider serviceProvider)
         if (blockList != null)
         {
             // NOTE: This needs to be resolved manually, since it would cause a circular dependency if injected through constructor
-            var propertyConverter = (context.Services ?? serviceProvider).GetRequiredService<IRelewisePropertyConverter>();
+            IRelewisePropertyConverter propertyConverter = (context.Services ?? serviceProvider).GetRequiredService<IRelewisePropertyConverter>();
 
             var properties = new List<DataValue?>();
 

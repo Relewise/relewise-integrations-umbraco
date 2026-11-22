@@ -55,9 +55,7 @@ const sorts = computed(() => [
 const activeFilterCount = computed(() => model.value.chips.length);
 function parameters() {
     const values = new URLSearchParams();
-    for (const name of ['type', 'provider']) {
-        for (const value of model.value.parameters[name] ?? []) values.append(name, value);
-    }
+    for (const value of model.value.parameters.type ?? []) values.append('type', value);
     if (query.value) values.set('q', query.value);
     if (sort.value) values.set('sort', sort.value);
     for (const [name, valuesForName] of Object.entries(choices)) {

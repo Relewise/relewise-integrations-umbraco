@@ -1,4 +1,4 @@
-﻿namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco;
 
 internal struct Constants
 {

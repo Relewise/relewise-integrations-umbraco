@@ -1,4 +1,4 @@
-# Umbraco 19 configuration — review draft
+# Umbraco 19 configuration â€” review draft
 
 **Intermediate review document, updated 2026-11-20.** These examples describe the
 API implemented on this branch, targeting Umbraco 19 / .NET 11. Review the API and
@@ -417,19 +417,17 @@ storefront is included as a sample; raw execution reports and credentials stay l
 
 | Screenshot | Review focus |
 | --- | --- |
-| [Product search](images/01-storefront-product-search.jpg) | Product results and storefront. |
+| [Mobile predictions](images/56-storefront-predictions-mobile.jpg) | Touch-friendly search suggestions with query refinement and a focused mobile overlay. |
 | [Product recommendations](images/02-product-recommendations-desktop.jpg) | Specific alternatives and genuine browsing history with prices and availability. |
 | [Recommendations on mobile](images/03-product-recommendations-mobile.jpg) | Responsive cards and distinct Similar Products/Recently Viewed sections. |
 | [Content search](images/04-content-search.jpg) | Content query results. |
-| [Product in My Relewise](images/05-my-relewise-product.jpg) | Ingested Product fields. |
-| [Variants in My Relewise](images/06-my-relewise-variants.jpg) | Child Variant ingestion. |
 | [Unpublished page excluded](images/07-unpublished-product-search.jpg) | Publication lifecycle outcome. |
 | [Danish search](images/09-multilingual-search.jpg) | Multilingual Content search. |
 | [SDK identity correlation](images/10-storefront-identity-correlation.jpg) | Shared visitor and canonical entity IDs. |
 | [Received view events](images/11-my-relewise-all-view-types.jpg) | Content/Product/Variant/Brand/Category events and Category paths. |
 | [F5 without Relewise credentials](images/12-f5-content-preview.jpg) | Seeded CMS content preview with disabled search and shopping and a setup link. |
 | [Installed Product search](images/13-installed-product-search.jpg) | Named Product provider in the maintained storefront. |
-| [Installed Variant page](images/14-installed-variant-view.jpg) | Canonical Variant ID with its parent Product. |
+| [Installed Variant page](images/14-installed-variant-view.jpg) | Canonical Product and Variant IDs alongside Umbraco node, document type and culture context. |
 | [Installed tracking correlation](images/15-installed-identity-correlation.jpg) | One visitor across searches and all supported view events. |
 | [Local My Relewise Product](images/16-local-my-relewise-product.jpg) | Exported display name, image and Brand. |
 | [Local My Relewise Variants](images/17-local-my-relewise-variants.jpg) | Both canonical child Variant IDs. |
@@ -453,7 +451,7 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | [Mobile checkout](images/36-storefront-mobile-checkout.jpg) | Stacked review and summary with the same order flow. |
 | [Product specifications](images/40-storefront-product-specifications.jpg) | Representative illustration and editable native CMS specification fields. |
 | [Popular discovery](images/41-storefront-popular-discovery.jpg) | Views-based Product recommendations and Category tiles link into the catalogue. |
-| [Global search](images/42-storefront-global-search.jpg) | Dedicated results page with Product and Journal scopes, independent of the previous collection or Offers filter. |
+| [Global search](images/42-storefront-global-search.jpg) | Custom search predictions with keyboard selection, highlighted completions and query refinement. |
 | [Offers](images/43-storefront-offers.jpg) | Dedicated landing page, active navigation and sale prices for the selected market. |
 | [Added to cart](images/44-storefront-added-to-cart.jpg) | Confirmation drawer with authoritative item, quantity and basket total. |
 | [Market selection](images/45-storefront-market-selection.jpg) | Compact header control opens language/currency choices. |
@@ -463,3 +461,7 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | [Empty cart confirmation](images/49-storefront-empty-cart-confirmation.jpg) | Secondary action requires confirmation before removing all items. |
 | [Empty cart](images/50-storefront-empty-cart.jpg) | Responsive empty state, clear shopping routes and genuine viewing history. |
 | [Demo without Relewise](images/51-storefront-without-relewise.jpg) | Content preview notice, disabled controls and configuration guidance. |
+| [Footer navigation](images/52-storefront-footer-desktop.jpg) | Direct Brand and Category links, market selection and Relewise branding. |
+| [Mobile footer](images/53-storefront-footer-mobile.jpg) | Expandable navigation groups and the visible synthetic-demo notice. |
+| [Demo information](images/54-storefront-demo-information.jpg) | Provider configuration, Dataset ID and documentation in an accessible dialog. |
+| [Checkout footer](images/55-storefront-checkout-footer.jpg) | Compact branding and demo notice preserve the checkout flow on narrow screens. |

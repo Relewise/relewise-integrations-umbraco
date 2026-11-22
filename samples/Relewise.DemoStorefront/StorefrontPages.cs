@@ -2,19 +2,20 @@ using System.Text;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
+
+namespace Relewise.DemoStorefront;
 
 internal static class StorefrontPages
 {
     internal static IPublishedContent Home(IServiceProvider services)
     {
-        var http = services.GetRequiredService<IHttpContextAccessor>().HttpContext;
+        HttpContext? http = services.GetRequiredService<IHttpContextAccessor>().HttpContext;
         if (http?.Items["Fieldwork:Home"] is IPublishedContent cached)
         {
             return cached;
         }
         Guid key = services.GetRequiredService<IContentService>().GetRootContent().Single(node => node.ContentType.Alias == "home").Key;
-        var home = services.GetRequiredService<IUmbracoContextAccessor>().GetRequiredUmbracoContext().Content!.GetById(key)!;
+        IPublishedContent home = services.GetRequiredService<IUmbracoContextAccessor>().GetRequiredUmbracoContext().Content!.GetById(key)!;
         if (http != null)
         {
             http.Items["Fieldwork:Home"] = home;
@@ -53,7 +54,7 @@ internal static class StorefrontPages
 
     internal static IEnumerable<IPublishedContent> ShoppingCategories(IPublishedContent home)
     {
-        var equipment = home.Descendants().FirstOrDefault(node => node.ContentType.Alias == "productCategory" &&
+        IPublishedContent? equipment = home.Descendants().FirstOrDefault(node => node.ContentType.Alias == "productCategory" &&
             node.Value<string>("categoryId") == "U19-SMOKE-EQUIPMENT");
         return equipment?.Children().Where(node => node.ContentType.Alias == "productCategory") ?? [];
     }
@@ -63,7 +64,7 @@ internal static class StorefrontPages
 
     internal static string Links(IEnumerable<IPublishedContent> pages, HttpContext http)
     {
-        var links = pages.OrderBy(Title, StringComparer.CurrentCultureIgnoreCase).ToArray();
+        IPublishedContent[] links = pages.OrderBy(Title, StringComparer.CurrentCultureIgnoreCase).ToArray();
         return links.Length == 0 ? "" : $"<nav class='categories' aria-label='{T(http, "Categories")}'>" +
             string.Concat(links.Select(page => $"<a href='{Storefront.E(page.Url())}'>{Storefront.E(Title(page))}</a>")) + "</nav>";
     }
@@ -72,8 +73,20 @@ internal static class StorefrontPages
     {
         var market = DemoMarket.Current(http);
         var crumbs = new List<(string Name, string? Url)> { (Storefront.Text(http, "Home"), market.HomeUrl) };
-        string key = section switch { "journal" => "Journal", "offers" => "OffersNavigation", "search" => "SearchResults", _ => "Shop" };
-        string sectionUrl = section switch { "journal" => market.StoreUrl + "?type=article", "offers" => market.LanguagePath + "/offers", "search" => market.LanguagePath + "/search", _ => market.StoreUrl };
+        string key = section switch
+        {
+            "journal" => "Journal",
+            "offers" => "OffersNavigation",
+            "search" => "SearchResults",
+            _ => "Shop"
+        };
+        string sectionUrl = section switch
+        {
+            "journal" => market.StoreUrl + "?type=article",
+            "offers" => market.LanguagePath + "/offers",
+            "search" => market.LanguagePath + "/search",
+            _ => market.StoreUrl
+        };
         crumbs.Add((Storefront.Text(http, key), sectionUrl));
         if (page != null && section == "shop")
         {
@@ -119,7 +132,11 @@ internal static class StorefrontPages
         decimal? list = Read("listPrice");
         int? percent = DiscountPercentage(sale, list);
         string? savings = percent.HasValue
-            ? percent > 0 ? Storefront.Text(http, "SavePercent", percent.Value) : Storefront.Text(http, "SaveAmount", Amount(list!.Value - sale!.Value))
+            ? percent > 0 ? Storefront.Text(http, "SavePercent", percent.Value) : Storefront.Text(
+                http,
+                "SaveAmount",
+                Amount(list!.Value - sale!.Value)
+            )
             : null;
         return (sale.HasValue ? Amount(sale.Value) : Storefront.Text(http, "PriceUnavailable", market.Currency),
             percent.HasValue ? Amount(list!.Value) : null, savings);
@@ -130,14 +147,15 @@ internal static class StorefrontPages
         bool product = page.ContentType.Alias == "product";
         string image = page.ContentType.Alias is "product" or "article" && !string.IsNullOrWhiteSpace(page.Value<string>("heroImage"))
             ? Storefront.Image(page) : Storefront.Icon();
-        var prices = product ? SalePrices(page, http) : (Sale: "", List: (string?)null, Savings: (string?)null);
+        (string Sale, string? List, string? Savings) prices = product ? SalePrices(page, http) : (Sale: "", List: (string?)null, Savings: (string?)null);
         int stock = page.Value<int>("stock");
         string[] options = product ? page.Children().Where(node => node.ContentType.Alias == "productVariant").Select(OptionLabel).Distinct().ToArray() : [];
         return new ListingCard(page.Key, DemoConfiguration.EntityId(page, http.RequestServices), page.Url(), Title(page),
             page.Value<string>("bodyText") ?? "", image, product, prices.Sale, prices.List,
             product ? Storefront.Text(http, stock <= 0 ? "OutOfStock" : stock <= 3 ? "LowStock" : "InStock", stock) : "",
             options.Length > 0 ? Storefront.Text(http, "AvailableOptions", string.Join(", ", options)) : null, prices.Savings,
-            product && page.Value<IPublishedContent>("brand") is { } brand ? Title(brand) : null);
+            product && page.Value<IPublishedContent>("brand") is { } brand ? Title(brand) : null
+        );
     }
 
     internal static string Card(IPublishedContent page, HttpContext http)
@@ -155,8 +173,8 @@ internal static class StorefrontPages
     private static string Welcome(IPublishedContent home, HttpContext http)
     {
         var market = DemoMarket.Current(http);
-        var access = http.RequestServices.GetRequiredService<IPublicAccessService>();
-        var nodes = home.Descendants().Where(node => !access.IsProtected(node.Path).Success).ToArray();
+        IPublicAccessService access = http.RequestServices.GetRequiredService<IPublicAccessService>();
+        IPublishedContent[] nodes = home.Descendants().Where(node => !access.IsProtected(node.Path).Success).ToArray();
         return $"<section class='welcome'><div><p class='eyebrow'>Fieldwork {T(http, "OutdoorGoods")}</p><h1>{Storefront.E(Title(home))}</h1><p class='lead'>{Storefront.E(home.Value<string>("bodyText"))}</p><div class='actions'><a class='button' href='{market.StoreUrl}'>{T(http, "ExploreCollection")}</a><a class='button secondary' href='{market.StoreUrl}?type=article'>{T(http, "ExploreJournal")}</a></div></div><div class='illustration'>{Storefront.Icon()}</div></section>" +
             (DemoConnection.IsConfigured(http) ? StorefrontRecommendations.Placeholder(home, http) :
             $"<section class='page-section'><h2>{T(http, "ShopByCategory")}</h2>{CategoryLinks(home, http)}</section>" +
@@ -169,9 +187,9 @@ internal static class StorefrontPages
     private static string Product(IPublishedContent page, HttpContext http)
     {
         IPublishedContent product = page.ContentType.Alias == "productVariant" ? page.Parent()! : page;
-        var brand = product.Value<IPublishedContent>("brand");
-        var prices = SalePrices(product, http);
-        var variants = product.Children().Where(node => node.ContentType.Alias == "productVariant").ToArray();
+        IPublishedContent? brand = product.Value<IPublishedContent>("brand");
+        (string Sale, string? List, string? Savings) prices = SalePrices(product, http);
+        IPublishedContent[] variants = product.Children().Where(node => node.ContentType.Alias == "productVariant").ToArray();
         string lead = page.Value<string>("bodyText") ?? "";
         string parentLead = product.Value<string>("bodyText") ?? "";
         string? rawOption = page.Value<string>("size");
@@ -259,7 +277,30 @@ internal static class StorefrontPages
     }
 
     private static string DeveloperDetails(IPublishedContent page, HttpContext http)
-        => $"<details class='developer-details'><summary>{T(http, "IntegrationDetails")}</summary><p>{T(http, "UmbracoKey")}: <code>{page.Key}</code></p><p>Relewise ID: <code>{Storefront.E(DemoConfiguration.EntityId(page, http.RequestServices))}</code></p></details>";
+    {
+        var fields = new List<(string Label, string Value)>
+        {
+            ("Umbraco node ID", page.Id.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+            ("Umbraco key", page.Key.ToString("D")),
+            ("Document type", page.ContentType.Alias),
+            ("Culture", DemoMarket.Current(http).Culture)
+        };
+        if (page.ContentType.Alias == "productVariant" && page.Parent() is { } product)
+        {
+            fields.Add(("Relewise Product ID", DemoConfiguration.EntityId(product, http.RequestServices)));
+            fields.Add(("Relewise Variant ID", DemoConfiguration.EntityId(page, http.RequestServices)));
+            fields.Add(("Parent Product key", product.Key.ToString("D")));
+        }
+        else
+        {
+            fields.Add((page.ContentType.Alias == "product" ? "Relewise Product ID" : "Relewise Content ID",
+                DemoConfiguration.EntityId(page, http.RequestServices)));
+        }
+
+        string rows = string.Concat(fields.Select(field =>
+            $"<dt>{Storefront.E(field.Label)}</dt><dd><code>{Storefront.E(field.Value)}</code></dd>"));
+        return $"<details class='developer-details' lang='en'><summary>Integration details</summary><dl>{rows}</dl></details>";
+    }
 
     internal static string OptionLabel(IPublishedContent page)
     {

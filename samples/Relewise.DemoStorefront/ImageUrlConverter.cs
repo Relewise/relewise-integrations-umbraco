@@ -1,5 +1,7 @@
 using Relewise.Integrations.Umbraco;
 
+namespace Relewise.DemoStorefront;
+
 /// <summary>Globally converts the demo's relative image paths into URLs usable by a separate frontend.</summary>
 internal sealed class ImageUrlConverter(IConfiguration configuration) : IAsyncRelewisePropertyValueConverter
 {

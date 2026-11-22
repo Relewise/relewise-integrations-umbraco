@@ -1,6 +1,7 @@
 #pragma warning disable CS0618 // Exercise the legacy converter adapter.
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core.Models.Blocks;
@@ -13,7 +14,7 @@ public class MappingContextTests
     [Fact]
     public async Task PropertyOnlyNestedConversionSharesOneScopeWithoutInventingAnOwner()
     {
-        var elements = Enumerable.Range(0, 2).Select(_ =>
+        IPublishedElement[] elements = Enumerable.Range(0, 2).Select(_ =>
         {
             var element = new Mock<IPublishedElement>();
             element.SetupGet(value => value.Properties).Returns([Property("body", "Custom.Context", "Nested text")]);
@@ -32,7 +33,7 @@ public class MappingContextTests
         services.AddValueConverter<BlockListPropertyValueConverter>();
         services.AddSingleton(custom.Object);
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
-        await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         await root.GetRequiredService<IRelewisePropertyConverter>().ConvertAsync([Property("blocks", "Umbraco.BlockList", blocks)], ["en-US"]);
         Assert.Equal(2, observed.Count);
         Assert.All(observed, context => Assert.Null(context.PublishedContent));
@@ -44,12 +45,12 @@ public class MappingContextTests
     [Fact]
     public async Task NestedBlockConversionRetainsOwnerElementScopeAndCancellation()
     {
-        var owner = Mock.Of<IPublishedContent>();
-        var leaf = Property("body", "Custom.Context", "Nested text");
+        IPublishedContent owner = Mock.Of<IPublishedContent>();
+        IPublishedProperty leaf = Property("body", "Custom.Context", "Nested text");
         var element = new Mock<IPublishedElement>();
         element.SetupGet(value => value.Properties).Returns([leaf]);
         var blocks = new BlockListModel([new BlockListItem(Guid.NewGuid(), element.Object, null, null)]);
-        var blockProperty = Property("blocks", "Umbraco.BlockList", blocks);
+        IPublishedProperty blockProperty = Property("blocks", "Umbraco.BlockList", blocks);
         var source = new Mock<IPublishedElement>();
         source.SetupGet(value => value.Properties).Returns([blockProperty]);
         using var cancellation = new CancellationTokenSource();
@@ -66,10 +67,10 @@ public class MappingContextTests
         services.AddSingleton(custom.Object);
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
         services.AddScoped<Marker>();
-        await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
-        await using var scope = root.CreateAsyncScope();
+        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        await using AsyncServiceScope scope = root.CreateAsyncScope();
         Marker marker = scope.ServiceProvider.GetRequiredService<Marker>();
-        var result = scope.ServiceProvider.GetRequiredService<IRelewisePropertyConverter>().Convert(owner, source.Object, ["en-US"], scope.ServiceProvider, cancellation.Token);
+        IReadOnlyDictionary<string, DataValue?> result = scope.ServiceProvider.GetRequiredService<IRelewisePropertyConverter>().Convert(owner, source.Object, ["en-US"], scope.ServiceProvider, cancellation.Token);
         Assert.Equal("Nested text", Assert.Single(result["blocks"]!.ValueAsListOf<string>()));
         Assert.NotNull(observed);
         Assert.Same(owner, observed.PublishedContent);
@@ -83,9 +84,9 @@ public class MappingContextTests
     [Fact]
     public async Task FailingDisposalStillReleasesOtherActivatedMappingResources()
     {
-        await using var root = new ServiceCollection().BuildServiceProvider();
+        await using ServiceProvider root = new ServiceCollection().BuildServiceProvider();
         var operation = new MappingOperation(root, default);
-        var resource = operation.Resolve<Resource>();
+        Resource resource = operation.Resolve<Resource>();
         operation.Resolve<FailingResource>();
         await Assert.ThrowsAsync<AggregateException>(() => operation.DisposeAsync().AsTask());
         Assert.True(resource.Disposed);

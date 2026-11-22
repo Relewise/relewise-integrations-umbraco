@@ -1,4 +1,5 @@
 using Moq;
+using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
@@ -9,7 +10,7 @@ public class DemoPriceConverterTests
     [Fact]
     public void ReadsEachEnteredCurrencyAndAmountIncludingZero()
     {
-        var prices = PriceConverter.Read(Entries(("DKK", 899m), ("eur", 119.95m), ("USD", 0m)))!;
+        MultiCurrency prices = PriceConverter.Read(Entries(("DKK", 899m), ("eur", 119.95m), ("USD", 0m)))!;
         Assert.NotNull(prices.Values);
         Assert.Equal(3, prices.Values.Count);
         Assert.Contains(prices.Values, price => price.Currency.Value == "DKK" && price.Amount == 899m);
@@ -20,7 +21,7 @@ public class DemoPriceConverterTests
     [Fact]
     public void DuplicateCurrenciesAreRejectedAfterNormalization()
     {
-        var error = Assert.Throws<InvalidOperationException>(() => PriceConverter.Read(Entries(("EUR", 10m), (" eur ", 20m))));
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => PriceConverter.Read(Entries(("EUR", 10m), (" eur ", 20m))));
         Assert.Contains("more than once", error.Message);
     }
 

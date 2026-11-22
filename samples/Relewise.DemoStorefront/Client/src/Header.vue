@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, ref, watch } from 'vue';
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import SearchBox from './SearchBox.vue';
 import { shop } from './shopState';
 
@@ -26,6 +26,10 @@ function escapeMenu() {
         menuButton.value?.focus();
     }
 }
+onMounted(() => {
+    if (!props.initial.checkout) window.addEventListener('fieldwork:choose-market', chooseMarket);
+});
+onUnmounted(() => window.removeEventListener('fieldwork:choose-market', chooseMarket));
 function chooseMarket() {
     returnUrl.value = location.pathname + location.search;
     market.value.showModal();
@@ -50,7 +54,7 @@ function closeConfirmation() {
             <a :href="initial.homeUrl" class="logo">FIELDWORK<span>{{ initial.labels.OutdoorGoods }}</span></a>
             <SearchBox v-if="!initial.checkout" :initial="initial" />
             <div v-if="!initial.checkout" class="header-actions">
-                <button class="market-trigger" @click="chooseMarket"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>{{ initial.marketLabel }}<span aria-hidden="true">⌄</span></button>
+                <button class="market-trigger" aria-haspopup="dialog" aria-controls="market-dialog" @click="chooseMarket"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></svg>{{ initial.marketLabel }}<span class="market-chevron" aria-hidden="true" /></button>
                 <a v-if="initial.shoppingConfigured" :href="initial.cartUrl" class="header-cart" :aria-label="`${initial.labels.Cart} (${shop.count})`"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14l1 14H4L5 7Zm3 0V5a4 4 0 0 1 8 0v2"/></svg><span>{{ initial.labels.Cart }}</span><strong :key="shop.count" class="cart-count">{{ shop.count }}</strong></a>
                 <span v-else class="header-cart" aria-disabled="true" :title="initial.labels.ShoppingDisabled">{{ initial.labels.Cart }}</span>
             </div>
@@ -61,10 +65,10 @@ function closeConfirmation() {
                 <a v-if="link.enabled !== false" :href="link.url" :aria-current="link.active ? 'page' : undefined">{{ link.label }}</a>
                 <span v-else class="navigation-disabled" aria-disabled="true" :title="initial.labels.SearchDisabled">{{ link.label }}</span>
             </template>
-            <button class="mobile-market" @click="chooseMarket">{{ initial.marketLabel }} ⌄</button>
+            <button class="mobile-market" aria-haspopup="dialog" aria-controls="market-dialog" @click="chooseMarket">{{ initial.marketLabel }} <span class="market-chevron" aria-hidden="true" /></button>
         </nav>
     </header>
-    <dialog v-if="!initial.checkout" ref="market" class="market-dialog" aria-labelledby="market-title">
+    <dialog v-if="!initial.checkout" id="market-dialog" ref="market" class="market-dialog" aria-labelledby="market-title">
         <button class="dialog-close icon-button" :aria-label="initial.labels.Close" @click="market.close()">×</button>
         <h2 id="market-title">{{ initial.labels.ChooseMarket }}</h2>
         <form :action="initial.marketUrl" class="market-form">

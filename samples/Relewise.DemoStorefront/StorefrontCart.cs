@@ -7,9 +7,11 @@ using Relewise.Client.DataTypes;
 using Relewise.Client.Requests;
 using Relewise.Integrations.Umbraco;
 using Relewise.Integrations.Umbraco.Services;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
+
+namespace Relewise.DemoStorefront;
 
 internal static class StorefrontCart
 {
@@ -31,10 +33,11 @@ internal static class StorefrontCart
             await basket.Gate.WaitAsync(http.RequestAborted);
             try
             {
-                using var context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
+                using UmbracoContextReference context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
                 SetCulture(http);
-                var lines = Read(http);
-                return Results.Json(Model(http, lines, Price(lines, context.UmbracoContext.Content!, http, availableOnly: true)!));
+                List<Line> lines = Read(http);
+                PricedLine[] priced = Price(lines, context.UmbracoContext.Content!, http, availableOnly: true)!;
+                return Results.Json(Model(http, lines, priced));
             }
             finally
             {
@@ -67,7 +70,7 @@ internal static class StorefrontCart
                 return;
             }
 
-            using var context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
+            using UmbracoContextReference context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
             SetCulture(http);
             PricedLine[]? priced = Price(lines, context.UmbracoContext.Content!, http, availableOnly: true);
             if (priced != null)
@@ -119,7 +122,7 @@ internal static class StorefrontCart
             return $"<p class='muted'>{T(http, "SelectVariant")}</p>";
         }
 
-        var tokens = http.RequestServices.GetRequiredService<IAntiforgery>().GetAndStoreTokens(http);
+        AntiforgeryTokenSet tokens = http.RequestServices.GetRequiredService<IAntiforgery>().GetAndStoreTokens(http);
         var fields = new Dictionary<string, string>
         {
             [tokens.FormFieldName] = tokens.RequestToken ?? "",
@@ -160,7 +163,7 @@ internal static class StorefrontCart
         await current.Gate.WaitAsync(http.RequestAborted);
         try
         {
-            using var context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
+            using UmbracoContextReference context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
             SetCulture(http);
             IFormCollection form = await http.Request.ReadFormAsync(http.RequestAborted);
             List<Line> lines = Read(http);
@@ -191,14 +194,19 @@ internal static class StorefrontCart
                 decimal total = priced.Sum(line => line.Amount * line.Line.Quantity);
                 string currency = DemoMarket.Current(http).Currency;
                 ITracker tracker = RequiredTracker(http);
-                await tracker.TrackAsync(new Trackable[]
-                {
+                Trackable[] events =
+                [
                     new Order(user, new Money(currency, total), orderNumber, Items(priced, http)),
                     new Cart(user, new Money(currency, 0m), Array.Empty<LineItem>())
-                }, http.RequestAborted);
+                ];
+                await tracker.TrackAsync(events, http.RequestAborted);
 
                 var receipt = new Receipt(orderNumber, currency, total, priced.Select(line =>
-                    new PurchasedLine(StorefrontPages.Title(line.Variant ?? line.Product), line.Line.Quantity, line.Amount * line.Line.Quantity)).ToArray(), token);
+                    new PurchasedLine(
+                        StorefrontPages.Title(line.Variant ?? line.Product),
+                        line.Line.Quantity,
+                        line.Amount * line.Line.Quantity
+                    )).ToArray(), token);
                 Basket state = State(http);
                 state.Receipt = receipt;
                 state.Lines = [];
@@ -245,9 +253,15 @@ internal static class StorefrontCart
                         {
                             return Error(http, "CartInvalid");
                         }
-                        var snapshot = Price(lines, context.UmbracoContext.Content!, http, availableOnly: true)!;
-                        var item = snapshot.SingleOrDefault(value => value.Line.ProductKey == productKey && value.Line.VariantKey == variantKey);
-                        return Results.Json(new CartMutationResult(Model(http, lines, snapshot), item == null ? null : LineModel(item.Line, item, http, quantity)));
+                        PricedLine[] snapshot = Price(
+                            lines,
+                            context.UmbracoContext.Content!,
+                            http,
+                            availableOnly: true
+                        )!;
+                        PricedLine? item = snapshot.SingleOrDefault(value => value.Line.ProductKey == productKey && value.Line.VariantKey == variantKey);
+                        CartLineModel? addedLine = item == null ? null : LineModel(item.Line, item, http, quantity);
+                        return Results.Json(new CartMutationResult(Model(http, lines, snapshot), addedLine));
                     }
                 }
 
@@ -278,10 +292,11 @@ internal static class StorefrontCart
             }
             if (!removing && !InStock(updated))
             {
-                var exceeded = updated.GroupBy(line => line.Product.Key)
+                IGrouping<Guid, PricedLine> exceeded = updated.GroupBy(line => line.Product.Key)
                     .First(group => group.Sum(line => line.Line.Quantity) > group.First().Product.Value<int>("stock"));
-                return Error(http, "CartStockLimit", exceeded.First().Product.Name,
-                    Math.Max(0, exceeded.First().Product.Value<int>("stock")).ToString(CultureInfo.InvariantCulture));
+                IPublishedContent product = exceeded.First().Product;
+                string stock = Math.Max(0, product.Value<int>("stock")).ToString(CultureInfo.InvariantCulture);
+                return Error(http, "CartStockLimit", product.Name, stock);
             }
 
             await TrackCart(updated, http);
@@ -303,15 +318,19 @@ internal static class StorefrontCart
                 PricedLine? added = action == "add" ? updated.Single(value =>
                     value.Line.ProductKey == Guid.Parse(form["product"].ToString()) &&
                     value.Line.VariantKey == (Guid.TryParse(form["variant"], out Guid key) ? key : null)) : null;
-                return Results.Json(new CartMutationResult(Model(http, lines, updated),
-                    added == null ? null : LineModel(added.Line, added, http, int.Parse(form["quantity"].ToString(), CultureInfo.InvariantCulture))));
+                CartLineModel? addedLine = added == null ? null : LineModel(
+                    added.Line,
+                    added,
+                    http,
+                    int.Parse(form["quantity"].ToString(), CultureInfo.InvariantCulture));
+                return Results.Json(new CartMutationResult(Model(http, lines, updated), addedLine));
             }
             if (action == "add")
             {
                 Guid addedProduct = Guid.Parse(form["product"].ToString());
                 Guid? addedVariant = Guid.TryParse(form["variant"], out Guid variant) ? variant : null;
                 PricedLine added = updated.Single(line => line.Line.ProductKey == addedProduct && line.Line.VariantKey == addedVariant);
-                var page = added.Variant ?? added.Product;
+                IPublishedContent page = added.Variant ?? added.Product;
                 StorefrontNavigation.Notify(http, "CartAdded", false, StorefrontPages.Title(page));
                 return Results.LocalRedirect(page.Url(DemoMarket.Current(http).Culture));
             }
@@ -340,58 +359,36 @@ internal static class StorefrontCart
         await basket.Gate.WaitAsync(http.RequestAborted);
         try
         {
-            using var context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
+            using UmbracoContextReference context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
             SetCulture(http);
             string key = checkout ? "Checkout" : "Cart";
             if (checkout)
             {
                 http.Items["Fieldwork:Checkout"] = true;
             }
-            string path = DemoMarket.Current(http).LanguagePath;
-            var html = new StringBuilder(checkout ? "" : StorefrontPages.Breadcrumb(null, http, "shop", Storefront.Text(http, key)));
-            html.Append($"<section class='hero'><h1>{T(http, checkout ? "ReviewOrder" : "Cart")}</h1>{(checkout ? $"<p>{T(http, "ReviewIntro")}</p>" : "")}</section>");
+            var html = new StringBuilder();
+            if (!checkout)
+            {
+                html.Append(StorefrontPages.Breadcrumb(null, http, "shop", Storefront.Text(http, key)));
+            }
+            string heading = T(http, checkout ? "ReviewOrder" : "Cart");
+            string introduction = checkout ? $"<p>{T(http, "ReviewIntro")}</p>" : string.Empty;
+            html.Append($"<section class='hero'><h1>{heading}</h1>{introduction}</section>");
+
             List<Line> lines = Read(http);
             PricedLine[] priced = Price(lines, context.UmbracoContext.Content!, http, availableOnly: true)!;
-            bool unavailable = priced.Length != lines.Count;
-            bool ready = lines.Count > 0 && !unavailable && InStock(priced);
             if (!checkout)
             {
                 string json = System.Text.Json.JsonSerializer.Serialize(Model(http, lines, priced), StorefrontChrome.Json);
                 html.Append($"<div id='cart-page'></div><script id='cart-data' type='application/json'>{json}</script>");
-                return Html(http, key, html.ToString());
             }
-            if (lines.Count == 0)
+            else if (lines.Count == 0)
             {
                 html.Append($"<p class='empty'>{T(http, "CartEmpty")}</p><a class='button' href='{Storefront.E(StorefrontNavigation.ShoppingUrl(http))}'>{T(http, "ContinueShopping")}</a>");
             }
-            else if (checkout)
+            else
             {
-                html.Append($"<ol class='checkout-steps'><li><a href='{path}/cart'>{T(http, "Cart")}</a></li><li aria-current='step'>{T(http, "ReviewOrder")}</li><li>{T(http, "Confirmation")}</li></ol><section class='checkout-review'><div class='checkout-items'><h2>{T(http, "CartItems")}</h2>");
-                foreach (Line line in lines)
-                {
-                    PricedLine? item = priced.SingleOrDefault(value => value.Line == line);
-                    html.Append(item == null
-                        ? $"<p role='alert'>{T(http, "UnavailableItem")}</p>"
-                        : $"<div class='review-item'><div class='illustration'>{Storefront.Image(item.Variant ?? item.Product)}</div><span>{Storefront.E(StorefrontPages.Title(item.Variant ?? item.Product))}<small>{T(http, "Quantity")}: {line.Quantity}</small></span><strong>{Money(http, item.Amount * line.Quantity)}</strong></div>");
-                }
-                html.Append($"</div><aside class='checkout-summary'><h2>{T(http, "OrderSummary")}</h2><div class='cart-total'><span>{T(http, "Total")}</span><strong>{Money(http, priced.Sum(line => line.Amount * line.Line.Quantity))}</strong></div><p class='muted'>{T(http, "DemoCheckout")}</p>");
-                if (ready)
-                {
-                    string review = ReviewKey(priced, http);
-                    if (basket.CheckoutKey != review || basket.CheckoutToken == null)
-                    {
-                        basket.CheckoutKey = review;
-                        basket.CheckoutToken = Guid.NewGuid().ToString("N");
-                    }
-                    html.Append($"<form method='post' action='{path}/checkout'>{Token(http)}{Hidden("checkoutToken", basket.CheckoutToken)}<button>{T(http, "PlaceOrder")}</button></form>");
-                }
-                else
-                {
-                    basket.CheckoutToken = null;
-                    basket.CheckoutKey = null;
-                    html.Append($"<p role='alert'>{T(http, "CartUnavailable")}</p>");
-                }
-                html.Append("</aside></section>");
+                AppendCheckout(html, lines, priced, basket, http);
             }
             return Html(http, key, html.ToString());
         }
@@ -399,6 +396,70 @@ internal static class StorefrontCart
         {
             basket.Gate.Release();
         }
+    }
+
+    private static void AppendCheckout(StringBuilder html, List<Line> lines, PricedLine[] priced, Basket basket, HttpContext http)
+    {
+        string path = DemoMarket.Current(http).LanguagePath;
+        html.Append($$"""
+            <ol class="checkout-steps">
+                <li><a href="{{path}}/cart">{{T(http, "Cart")}}</a></li>
+                <li aria-current="step">{{T(http, "ReviewOrder")}}</li>
+                <li>{{T(http, "Confirmation")}}</li>
+            </ol>
+            <section class="checkout-review">
+                <div class="checkout-items"><h2>{{T(http, "CartItems")}}</h2>
+            """);
+        foreach (Line line in lines)
+        {
+            PricedLine? item = priced.SingleOrDefault(value => value.Line == line);
+            if (item == null)
+            {
+                html.Append($"<p role='alert'>{T(http, "UnavailableItem")}</p>");
+                continue;
+            }
+
+            IPublishedContent page = item.Variant ?? item.Product;
+            html.Append($$"""
+                <div class="review-item">
+                    <div class="illustration">{{Storefront.Image(page)}}</div>
+                    <span>{{Storefront.E(StorefrontPages.Title(page))}}<small>{{T(http, "Quantity")}}: {{line.Quantity}}</small></span>
+                    <strong>{{Money(http, item.Amount * line.Quantity)}}</strong>
+                </div>
+                """);
+        }
+        decimal total = priced.Sum(line => line.Amount * line.Line.Quantity);
+        html.Append($$"""
+                </div>
+                <aside class="checkout-summary">
+                    <h2>{{T(http, "OrderSummary")}}</h2>
+                    <div class="cart-total"><span>{{T(http, "Total")}}</span><strong>{{Money(http, total)}}</strong></div>
+                    <p class="muted">{{T(http, "DemoCheckout")}}</p>
+            """);
+
+        bool ready = priced.Length == lines.Count && InStock(priced);
+        if (ready)
+        {
+            string review = ReviewKey(priced, http);
+            if (basket.CheckoutKey != review || basket.CheckoutToken == null)
+            {
+                basket.CheckoutKey = review;
+                basket.CheckoutToken = Guid.NewGuid().ToString("N");
+            }
+            html.Append($$"""
+                <form method="post" action="{{path}}/checkout">
+                    {{Token(http)}}{{Hidden("checkoutToken", basket.CheckoutToken)}}
+                    <button>{{T(http, "PlaceOrder")}}</button>
+                </form>
+                """);
+        }
+        else
+        {
+            basket.CheckoutToken = null;
+            basket.CheckoutKey = null;
+            html.Append($"<p role='alert'>{T(http, "CartUnavailable")}</p>");
+        }
+        html.Append("</aside></section>");
     }
 
     private static string ReviewKey(PricedLine[] lines, HttpContext http) => DemoMarket.Current(http).Currency + "|" +
@@ -417,11 +478,26 @@ internal static class StorefrontCart
         }
 
         http.Items["Fieldwork:Checkout"] = true;
-        string html =
-            $"<section class='hero'><p class='eyebrow'>{T(http, "DemoOrder")}</p><h1>{T(http, "ThankYou")}</h1><p>{T(http, "OrderConfirmed")}</p><p>{T(http, "OrderNumber")}: <strong>{Storefront.E(receipt.OrderNumber)}</strong></p></section><div class='order-summary'>" +
-            string.Concat(receipt.Lines.Select(line => $"<p>{Storefront.E(line.Name)} × {line.Quantity}<strong>{Money(http, line.Total, receipt.Currency)}</strong></p>")) +
-            $"<div class='cart-total'><span>{T(http, "Total")}</span><strong>{Money(http, receipt.Total, receipt.Currency)}</strong></div></div><a class='button' href='{Storefront.E(StorefrontNavigation.ShoppingUrl(http))}'>{T(http, "ContinueShopping")}</a>";
-        return Html(http, "Confirmation", html);
+        var html = new StringBuilder();
+        html.Append($$"""
+            <section class="hero">
+                <p class="eyebrow">{{T(http, "DemoOrder")}}</p>
+                <h1>{{T(http, "ThankYou")}}</h1>
+                <p>{{T(http, "OrderConfirmed")}}</p>
+                <p>{{T(http, "OrderNumber")}}: <strong>{{Storefront.E(receipt.OrderNumber)}}</strong></p>
+            </section>
+            <div class="order-summary">
+            """);
+        foreach (PurchasedLine line in receipt.Lines)
+        {
+            html.Append($"<p>{Storefront.E(line.Name)} × {line.Quantity}<strong>{Money(http, line.Total, receipt.Currency)}</strong></p>");
+        }
+        html.Append($$"""
+                <div class="cart-total"><span>{{T(http, "Total")}}</span><strong>{{Money(http, receipt.Total, receipt.Currency)}}</strong></div>
+            </div>
+            <a class="button" href="{{Storefront.E(StorefrontNavigation.ShoppingUrl(http))}}">{{T(http, "ContinueShopping")}}</a>
+            """);
+        return Html(http, "Confirmation", html.ToString());
     }
 
     private static PricedLine[]? Price(List<Line> lines, Umbraco.Cms.Core.PublishedCache.IPublishedContentCache cache, HttpContext http, bool availableOnly = false)
@@ -470,7 +546,8 @@ internal static class StorefrontCart
         DemoConfiguration.EntityId(line.Product, http.RequestServices),
         line.Variant == null ? null : DemoConfiguration.EntityId(line.Variant, http.RequestServices),
         line.Line.Quantity,
-        line.Amount * line.Line.Quantity)).ToArray();
+        line.Amount * line.Line.Quantity
+    )).ToArray();
 
     private static decimal? UnitPrice(IPublishedContent product, HttpContext http) =>
         PriceConverter.Read(product.GetProperty("salesPrice")?.GetValue())?.Values?
@@ -491,7 +568,7 @@ internal static class StorefrontCart
             http.Session.SetString(SessionMarkerKey, "active");
         }
         string key = "fieldwork-basket-" + http.Session.Id;
-        var cache = http.RequestServices.GetRequiredService<IMemoryCache>();
+        IMemoryCache cache = http.RequestServices.GetRequiredService<IMemoryCache>();
         lock (StateCreation)
         {
             return cache.GetOrCreate(key, entry =>
@@ -512,7 +589,11 @@ internal static class StorefrontCart
         if (WantsJson(http))
         {
             int status = key is "RelewiseActionFailed" or "CartFailed" ? 503 : key is "CartStockLimit" or "CartUnavailable" ? 409 : 400;
-            return Results.Json(new { error = Storefront.Text(http, key, values.Cast<object>().ToArray()) }, statusCode: status);
+            return Results.Json(new
+            {
+                error = Storefront.Text(http, key, values.Cast<object>().ToArray())
+            }, statusCode: status
+            );
         }
         StorefrontNavigation.Notify(http, key, true, values);
         return Results.LocalRedirect(DemoMarket.Current(http).LanguagePath + "/cart");
@@ -522,7 +603,7 @@ internal static class StorefrontCart
 
     private static CartLineModel LineModel(Line line, PricedLine? priced, HttpContext http, int? quantity = null)
     {
-        var page = priced?.Variant ?? priced?.Product;
+        IPublishedContent? page = priced?.Variant ?? priced?.Product;
         int amount = quantity ?? line.Quantity;
         return new CartLineModel
         {
@@ -544,7 +625,7 @@ internal static class StorefrontCart
     private static CartModel Model(HttpContext http, List<Line> lines, PricedLine[] priced)
     {
         string path = DemoMarket.Current(http).LanguagePath;
-        var token = http.RequestServices.GetRequiredService<IAntiforgery>().GetAndStoreTokens(http);
+        AntiforgeryTokenSet token = http.RequestServices.GetRequiredService<IAntiforgery>().GetAndStoreTokens(http);
         string[] labels = ["CartIntro", "EmptyCartHeading", "EmptyCartDescription", "ExploreCollection", "BrowseOffers", "CartEmpty", "ContinueShopping", "CartItems", "Quantity", "Each", "Total", "OrderSummary", "Checkout", "RemoveCart", "ChangeQuantity",
             "EmptyCartAction", "EmptyCartConfirm", "Cancel", "CartUpdating", "CartUpdated", "CartUnavailable", "UnavailableItem", "UnavailableTotal", "PurchaseFailed", "Close"];
         return new CartModel
@@ -556,7 +637,11 @@ internal static class StorefrontCart
             ContinueUrl = StorefrontNavigation.ShoppingUrl(http),
             ShopUrl = path + "/store",
             OffersUrl = path + "/offers",
-            Recommendations = StorefrontRecommendations.Configuration(StorefrontPages.Home(http.RequestServices), http, emptyCart: true),
+            Recommendations = StorefrontRecommendations.Configuration(
+                StorefrontPages.Home(http.RequestServices),
+                http,
+                emptyCart: true
+            ),
             AntiforgeryField = token.FormFieldName,
             AntiforgeryToken = token.RequestToken ?? "",
             Count = lines.Sum(line => line.Quantity),
@@ -566,7 +651,14 @@ internal static class StorefrontCart
     }
 
     private static IResult Html(HttpContext http, string title, string body, int status = 200) => Results.Content(
-        Storefront.Layout(Storefront.Text(http, title), body, http.RequestServices.GetService<RelewiseUmbracoConfiguration>() != null, http, "cart"), "text/html", statusCode: status);
+        Storefront.Layout(
+            Storefront.Text(http, title),
+            body,
+            http.RequestServices.GetService<RelewiseUmbracoConfiguration>() != null,
+            http,
+            "cart"
+        ), "text/html", statusCode: status
+    );
 
     private sealed class Basket
     {

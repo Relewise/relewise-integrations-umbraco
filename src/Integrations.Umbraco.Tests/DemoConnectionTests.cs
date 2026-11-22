@@ -18,7 +18,7 @@ public class DemoConnectionTests
         dictionary.Setup(value => value[It.IsAny<string>()]).Returns("Configure Relewise");
         var factory = new Mock<ICultureDictionaryFactory>();
         factory.Setup(value => value.CreateDictionary(It.IsAny<CultureInfo>())).Returns(dictionary.Object);
-        using var services = new ServiceCollection().AddSingleton(factory.Object).BuildServiceProvider();
+        using ServiceProvider services = new ServiceCollection().AddSingleton(factory.Object).BuildServiceProvider();
         var http = new DefaultHttpContext { RequestServices = services };
         http.Request.Path = "/en/store/results";
 
@@ -32,7 +32,7 @@ public class DemoConnectionTests
     public void MissingConfigurationEnablesContentPreviewWithoutResolvingAnySearchProvider()
     {
         Assert.False(DemoSetup.HasRelewiseConfiguration(new ConfigurationBuilder().Build()));
-        using var services = new ServiceCollection().BuildServiceProvider();
+        using ServiceProvider services = new ServiceCollection().BuildServiceProvider();
         var http = new DefaultHttpContext { RequestServices = services };
         Assert.False(DemoConnection.IsConfigured(http));
         Assert.False(DemoConnection.SearchConfigured(http));
@@ -44,7 +44,7 @@ public class DemoConnectionTests
     [InlineData("Relewise:ServerUrl", "https://localhost:5000")]
     public void PartialConfigurationIsRejectedInsteadOfSilentlyEnteringPreview(string key, string value)
     {
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { [key] = value }).Build();
+        IConfigurationRoot configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { [key] = value }).Build();
         Assert.Throws<InvalidOperationException>(() => DemoSetup.HasRelewiseConfiguration(configuration));
     }
 
@@ -63,7 +63,7 @@ public class DemoConnectionTests
     public async Task UnrelatedErrorsStillPropagate()
     {
         var error = new InvalidOperationException("Programming error");
-        var actual = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        InvalidOperationException actual = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             DemoConnection.InvokeAsync(new DefaultHttpContext(), _ => throw error));
         Assert.Same(error, actual);
     }

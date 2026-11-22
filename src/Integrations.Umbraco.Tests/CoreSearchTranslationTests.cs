@@ -14,7 +14,7 @@ public class CoreSearchTranslationTests
     [Fact]
     public void NumericRangesRequireOneValueWithinInclusiveLowerExclusiveUpperBounds()
     {
-        var filter = CoreSearchTranslation.MapFilter(new IntegerRangeFilter("price", [new(10, 20)], false));
+        RFilter filter = CoreSearchTranslation.MapFilter(new IntegerRangeFilter("price", [new(10, 20)], false));
         Dictionary<string, DataValue?> Data(params double[] values) => new()
         {
             [CoreSearchTranslation.Field("price", "integerValues")] = new DataValue(values.Select(v =>
@@ -37,7 +37,7 @@ public class CoreSearchTranslationTests
         {
             AndFilter f => f.Filters!.All(x => Matches(x, data)),
             OrFilter f => f.Filters!.Any(x => Matches(x, data)),
-            ContentDataFilter f when !data.TryGetValue(f.Key!, out var value) || value is null => !f.FilterOutIfKeyIsNotFound,
+            ContentDataFilter f when !data.TryGetValue(f.Key!, out DataValue? value) || value is null => !f.FilterOutIfKeyIsNotFound,
             ContentDataFilter f => f.MustMatchAllConditions
                 ? f.Conditions!.Items!.All(c => Matches(c, data[f.Key!]!))
                 : f.Conditions!.Items!.Any(c => Matches(c, data[f.Key!]!)),

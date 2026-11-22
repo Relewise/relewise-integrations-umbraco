@@ -1,16 +1,20 @@
 using System.Text;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Search;
+using Umbraco.Cms.Core.Search.Querying;
+using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
-using static Storefront;
+using static Relewise.DemoStorefront.Storefront;
+
+namespace Relewise.DemoStorefront;
 
 // Shop, category and Brand pages share one query path through Umbraco's search abstraction.
 internal static class StorefrontListing
 {
     internal static async Task<string> RenderAsync(HttpContext http, IPublishedContent? collection = null, bool suggestionsOnly = false, bool dataOnly = false, string? view = null)
     {
-        var request = http.Request;
+        HttpRequest request = http.Request;
         view ??= request.Query["view"].FirstOrDefault() ?? "store";
         if (view is not ("store" or "search" or "offers"))
         {
@@ -20,7 +24,7 @@ internal static class StorefrontListing
         bool offersPage = view == "offers";
         if (!DemoConnection.SearchConfigured(http))
         {
-            string[] searchParameters = ["q", "provider", "category", "brand", "price", "available", "onSale", "minPrice", "maxPrice", "sort", "page"];
+            string[] searchParameters = ["q", "category", "brand", "price", "available", "onSale", "minPrice", "maxPrice", "sort", "page"];
             if (DemoConnection.IsConfigured(http) || dataOnly || suggestionsOnly || searchPage || offersPage || searchParameters.Any(request.Query.ContainsKey))
             {
                 return DemoConnection.Unavailable(http, dataOnly || suggestionsOnly);
@@ -31,18 +35,12 @@ internal static class StorefrontListing
         {
             return "[]";
         }
-        var services = http.RequestServices;
-        var searchers = services.GetRequiredService<ISearcherResolver>();
-        var contexts = services.GetRequiredService<IUmbracoContextFactory>();
-        string requestedType = request.Query["type"].FirstOrDefault() == "article" ? "article" : "product";
-        string alias = offersPage ? "offers" : request.Query["provider"].FirstOrDefault() ?? (requestedType == "article" ? "articles" : "catalogue");
-        if (!new[] { "catalogue", "articles", "guides", "allEditorial", "localized", "offers", "commerceCatalogue", Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent }.Contains(alias))
-        {
-            return Invalid(http, Text(http, "InvalidSearch"), dataOnly || suggestionsOnly);
-        }
-
-        bool offers = offersPage || alias == "offers";
-        string requestedProvider = alias;
+        IServiceProvider services = http.RequestServices;
+        ISearcherResolver searchers = services.GetRequiredService<ISearcherResolver>();
+        IUmbracoContextFactory contexts = services.GetRequiredService<IUmbracoContextFactory>();
+        string requestedType = !offersPage && request.Query["type"].FirstOrDefault() == "article" ? "article" : "product";
+        string alias = offersPage ? "offers" : requestedType == "article" ? "articles" : "catalogue";
+        bool offers = offersPage;
         string? query = request.Query["q"];
 
         var market = DemoMarket.Current(request.HttpContext);
@@ -57,29 +55,21 @@ internal static class StorefrontListing
         {
             return Redirect(http, PageUrl(request, 1));
         }
-        var settings = services.GetRequiredService<IConfiguration>();
-        if (alias == Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent && settings.GetValue<bool?>("Demo:DefaultSearch") == false)
-        {
-            return DemoConnection.Unavailable(http, dataOnly || suggestionsOnly);
-        }
-        var searcher = searchers.GetSearcher(alias);
+        ISearcher? searcher = searchers.GetSearcher(alias);
         if (searcher == null)
         {
             return Invalid(http, Text(http, "InvalidSearch"), dataOnly || suggestionsOnly);
         }
 
-        string effectiveProvider = alias == Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent
-            ? settings["Demo:DefaultProvider"] ?? "articles" : requestedProvider;
-        bool editorial = effectiveProvider is "articles" or "guides" or "allEditorial" or "localized" ||
-            (effectiveProvider == Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent && requestedType == "article");
+        bool editorial = requestedType == "article";
         string listingPath = collection?.Url(culture) ?? (view == "store" ? market.StoreUrl : market.LanguagePath + "/" + view);
         var browsing = new StorefrontSearch(request, editorial, offers, collection, listingPath);
-        var home = StorefrontPages.Home(services);
+        IPublishedContent home = StorefrontPages.Home(services);
         if ((collection != null && editorial) || !browsing.IsValid(home))
         {
             return Invalid(http, Text(http, "InvalidSearch"), dataOnly || suggestionsOnly);
         }
-        var result = await searcher.SearchAsync(
+        SearchResult result = await searcher.SearchAsync(
             alias,
             query,
             filters: browsing.Filters(),
@@ -88,7 +78,8 @@ internal static class StorefrontListing
             culture: culture,
             skip: suggestionsOnly ? 0 : (page - 1) * pageSize,
             take: suggestionsOnly ? 0 : pageSize,
-            maxSuggestions: suggestionsOnly ? 5 : 0);
+            maxSuggestions: suggestionsOnly ? 5 : 0
+        );
         if (suggestionsOnly)
         {
             return System.Text.Json.JsonSerializer.Serialize(result.Suggestions ?? []);
@@ -99,29 +90,20 @@ internal static class StorefrontListing
             return Redirect(http, PageUrl(request, lastPage));
         }
 
-        string heading = searchPage ? Text(http, "SearchResults") : offers ? Text(request.HttpContext, "OffersNavigation") : alias switch
-        {
-            "catalogue" or "commerceCatalogue" => Text(request.HttpContext, "Collection"),
-            "articles" => Text(request.HttpContext, "Journal"),
-            "guides" => Text(request.HttpContext, "Guides"),
-            "allEditorial" => Text(request.HttpContext, "Editorial"),
-            "localized" => Text(request.HttpContext, "Localized"),
-            "offers" => Text(request.HttpContext, "Offers"),
-            _ => Text(request.HttpContext, editorial ? "Journal" : "Collection")
-        };
+        string heading = Text(http, searchPage ? "SearchResults" : offers ? "OffersNavigation" : editorial ? "Journal" : "Collection");
         if (collection != null)
         {
             heading = collection.Value<string>("heading") ?? collection.Name;
         }
-        using var context = contexts.EnsureUmbracoContext();
-        var cards = result.Documents.Select(document => context.UmbracoContext.Content?.GetById(document.Id))
+        using UmbracoContextReference context = contexts.EnsureUmbracoContext();
+        ListingCard[] cards = result.Documents.Select(document => context.UmbracoContext.Content?.GetById(document.Id))
             .Where(content => content != null).Select(content => StorefrontPages.CardData(content!, http)).ToArray();
         string[] labelKeys = ["Filters", "FiltersShort", "FilterAndSort", "SortBy", "ClearFilters", "SearchProvider", "Search", "SearchProducts", "SearchJournal",
             "SearchPlaceholder", "EditorialSearchPlaceholder", "UpdatingResults", "ResultsUpdated", "ListingUpdateFailed", "TryAgain",
             "CustomPriceRange", "MinimumPrice", "MaximumPrice", "PriceRangeInvalid", "AppliedFilters", "RemoveFilter", "Browse", "NoMatchesHeading", "NoMatchesHelp", "BrowseWithoutQuery", "Previous", "Next",
             "Pagination", "Equipment", "FieldNotes", "ReadStory", "OnOffer", "Updating", "Recommended", "RecommendedRelewise", "NameAscending", "NameDescending", "PriceAscending", "PriceDescending", "Products", "Journal", "SearchResults"];
-        string[] queryKeys = ["type", "provider", "q", "sort", "page", "category", "brand", "price", "available", "onSale", "minPrice", "maxPrice"];
-        var parameters = request.Query.Where(pair => queryKeys.Contains(pair.Key) && (!offers || pair.Key != "onSale") && (!offersPage || pair.Key is not ("provider" or "type")) && pair.Value.Any(value => !string.IsNullOrWhiteSpace(value)))
+        string[] queryKeys = ["type", "q", "sort", "page", "category", "brand", "price", "available", "onSale", "minPrice", "maxPrice"];
+        var parameters = request.Query.Where(pair => queryKeys.Contains(pair.Key) && (!offers || pair.Key != "onSale") && (!offersPage || pair.Key != "type") && pair.Value.Any(value => !string.IsNullOrWhiteSpace(value)))
             .ToDictionary(pair => pair.Key, pair => pair.Value.OfType<string>().ToArray());
         string PageLink(int target)
         {
@@ -151,7 +133,13 @@ internal static class StorefrontListing
             Cards = cards,
             Heading = string.IsNullOrWhiteSpace(query) ? Text(http, "Browse") : Text(http, "ResultsFor", query),
             ResultLabel = Text(http, result.Total == 1 ? "Result" : "Results", result.Total),
-            RangeLabel = cards.Length == 0 ? Text(http, "Results", 0) : Text(http, "ShowingRange", (page - 1L) * pageSize + 1, (page - 1L) * pageSize + cards.Length, result.Total),
+            RangeLabel = cards.Length == 0 ? Text(http, "Results", 0) : Text(
+                http,
+                "ShowingRange",
+                (page - 1L) * pageSize + 1,
+                (page - 1L) * pageSize + cards.Length,
+                result.Total
+            ),
             ShowResultsLabel = Text(http, result.Total == 1 ? "ShowProduct" : "ShowProducts", result.Total),
             Total = result.Total,
             Page = page,
@@ -170,7 +158,12 @@ internal static class StorefrontListing
         {
             return json;
         }
-        var body = new StringBuilder(StorefrontPages.Breadcrumb(collection, http, searchPage ? "search" : offers ? "offers" : editorial ? "journal" : "shop", searchPage || offers ? heading : null));
+        var body = new StringBuilder(StorefrontPages.Breadcrumb(
+            collection,
+            http,
+            searchPage ? "search" : offers ? "offers" : editorial ? "journal" : "shop",
+            searchPage || offers ? heading : null
+        ));
         body.Append($"<section class='listing-heading'><h1>{E(heading)}</h1></section>");
         if (collection != null)
         {
@@ -180,14 +173,20 @@ internal static class StorefrontListing
         body.Append($"<div id='storefront-listing'><p role='status'>{T("UpdatingResults")}</p></div><script id='listing-data' type='application/json'>{json}</script>");
         http.Items["Fieldwork:HasSearch"] = true;
         http.Items["Fieldwork:SearchProvider"] = "Relewise";
-        return Layout(heading, body.ToString(), true, http, searchPage ? "search" : offers ? "offers" : editorial ? "journal" : "shop");
+        return Layout(
+            heading,
+            body.ToString(),
+            true,
+            http,
+            searchPage ? "search" : offers ? "offers" : editorial ? "journal" : "shop"
+        );
     }
 
     private static string Preview(HttpContext http, IPublishedContent? collection)
     {
         http.RequestServices.GetRequiredService<IVariationContextAccessor>().VariationContext = new VariationContext(DemoMarket.Current(http).Culture);
-        using var context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
-        var home = StorefrontPages.Home(http.RequestServices);
+        using UmbracoContextReference context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
+        IPublishedContent home = StorefrontPages.Home(http.RequestServices);
         bool editorial = http.Request.Query["type"] == "article";
         string heading = collection == null ? Text(http, editorial ? "Journal" : "Collection") : StorefrontPages.Title(collection);
         IEnumerable<IPublishedContent> pages = (collection?.ContentType.Alias == "brand" ? home : collection ?? home).Descendants()
@@ -196,7 +195,7 @@ internal static class StorefrontListing
         {
             pages = pages.Where(node => node.Value<IPublishedContent>("brand")?.Key == collection.Key);
         }
-        var access = http.RequestServices.GetRequiredService<Umbraco.Cms.Core.Services.IPublicAccessService>();
+        IPublicAccessService access = http.RequestServices.GetRequiredService<Umbraco.Cms.Core.Services.IPublicAccessService>();
         pages = pages.Where(node => !access.IsProtected(node.Path).Success);
         string body = StorefrontPages.Breadcrumb(collection, http, editorial ? "journal" : "shop") +
             $"<h1>{E(heading)}</h1><p>{E(Text(http, "ContentPreview"))}</p><div class='grid'>" +
@@ -209,7 +208,10 @@ internal static class StorefrontListing
         http.Response.StatusCode = StatusCodes.Status400BadRequest;
         if (json)
         {
-            return System.Text.Json.JsonSerializer.Serialize(new { error = message });
+            return System.Text.Json.JsonSerializer.Serialize(new
+            {
+                error = message
+            });
         }
         return Layout(Text(http, "Search"), "<p class='empty'>" + E(message) + "</p>", false, http, "shop");
     }

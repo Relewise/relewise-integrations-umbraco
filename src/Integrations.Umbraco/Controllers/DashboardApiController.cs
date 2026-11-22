@@ -57,7 +57,7 @@ public class DashboardApiController : RelewiseApiControllerBase
     [HttpPost]
     public async Task<IActionResult> ContentExport([FromQuery] bool permanentlyDelete, CancellationToken token)
     {
-        var exporter = _exportContent ?? _provider.GetService<IExportContentService>();
+        IExportContentService? exporter = _exportContent ?? _provider.GetService<IExportContentService>();
         if (exporter == null)
         {
             return Problem("Register the Umbraco integration before exporting.", statusCode: StatusCodes.Status409Conflict);
@@ -101,7 +101,9 @@ public class DashboardApiController : RelewiseApiControllerBase
             clientFactory = _provider.GetRequiredService<IRelewiseClientFactory>();
 
             if (!clientFactory.Contains<ITracker>(Constants.NamedClientName))
+            {
                 throw new InvalidOperationException("No clients registered.");
+            }
 
             integrationClients =
             [
@@ -158,7 +160,7 @@ public class DashboardApiController : RelewiseApiControllerBase
             // we'll just ignore this exception as it just means that there no default client has been configured, which is okay
         }
 
-        var result = DashboardConfigurationSnapshot.Create(configuration, clients, RelewiseContentMiddleware.IsEnabled);
+        ConfigurationViewModel result = DashboardConfigurationSnapshot.Create(configuration, clients, RelewiseContentMiddleware.IsEnabled);
         result.IntegrationClients = integrationClients;
         result.Connection = integrationClients[0].Options;
         return Ok(result);

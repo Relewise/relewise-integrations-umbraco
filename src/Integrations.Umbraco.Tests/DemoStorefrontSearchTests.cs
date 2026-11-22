@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Moq;
-using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core;
-using Umbraco.Cms.Core.Search.Querying;
+using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
 using Umbraco.Cms.Core.Search.Querying.Sorting;
 
@@ -20,7 +19,7 @@ public class DemoStorefrontSearchTests
         http.Request.Path = path;
         http.Request.QueryString = new QueryString("?price=low&price=high&available=true&sort=price-desc");
         var search = new StorefrontSearch(http.Request, editorial: false, offers: true);
-        var filters = search.Filters();
+        Filter[] filters = search.Filters();
 
         Assert.Contains(filters, filter => filter is KeywordFilter && filter.FieldName == "onSale_" + currency);
         Assert.Contains(filters, filter => filter is KeywordFilter && filter.FieldName == "inStock");
@@ -38,7 +37,7 @@ public class DemoStorefrontSearchTests
         Guid second = Guid.NewGuid();
         http.Request.QueryString = new QueryString($"?brand={first:D}&brand={second:D}");
         var search = new StorefrontSearch(http.Request, false, false);
-        var filter = Assert.IsType<KeywordFilter>(Assert.Single(search.Filters()));
+        KeywordFilter filter = Assert.IsType<KeywordFilter>(Assert.Single(search.Filters()));
         Assert.Equal("shopBrand", filter.FieldName);
         Assert.Equal(new[] { first.ToString("D"), second.ToString("D") }, filter.Values);
         Assert.Contains(search.Facets(), facet => facet.FieldName == "shopBrand");
@@ -86,15 +85,15 @@ public class DemoStorefrontSearchTests
     }
 
     [Fact]
-    public void ClearingFiltersRetainsSearchProviderSortAndCategoryPage()
+    public void ClearingFiltersRetainsQuerySortAndCategoryPage()
     {
         var http = new DefaultHttpContext();
         http.Request.Path = "/en/fieldwork-equipment/camping/";
-        http.Request.QueryString = new QueryString("?provider=offers&q=tent&sort=price-asc&price=low&available=true&page=3");
+        http.Request.QueryString = new QueryString("?q=tent&sort=price-asc&price=low&available=true&page=3");
         var search = new StorefrontSearch(http.Request, editorial: false, offers: true);
 
-        Assert.Equal("/en/fieldwork-equipment/camping/?provider=offers&q=tent&sort=price-asc", search.ResetUrl());
-        Assert.Equal("/en/fieldwork-equipment/camping/?provider=offers&sort=price-asc&price=low&available=true", search.ClearQueryUrl());
+        Assert.Equal("/en/fieldwork-equipment/camping/?q=tent&sort=price-asc", search.ResetUrl());
+        Assert.Equal("/en/fieldwork-equipment/camping/?sort=price-asc&price=low&available=true", search.ClearQueryUrl());
     }
 
     [Fact]
@@ -118,8 +117,8 @@ public class DemoStorefrontSearchTests
         var http = new DefaultHttpContext();
         http.Request.QueryString = new QueryString("?minPrice=25.50&maxPrice=100");
         var search = new StorefrontSearch(http.Request, editorial: false, offers: false);
-        var filter = Assert.IsType<DecimalRangeFilter>(Assert.Single(search.Filters()));
-        var range = Assert.Single(filter.Ranges);
+        DecimalRangeFilter filter = Assert.IsType<DecimalRangeFilter>(Assert.Single(search.Filters()));
+        DecimalRangeFilterRange range = Assert.Single(filter.Ranges);
         Assert.Equal(25.50m, range.MinValue);
         Assert.Equal(100.01m, range.MaxValue);
         Assert.True(search.HasFilters);
@@ -148,7 +147,7 @@ public class DemoStorefrontSearchTests
         http.Request.Path = "/en/store";
         http.Request.QueryString = new QueryString("?minPrice=50&maxPrice=50&sort=price-asc");
         var search = new StorefrontSearch(http.Request, editorial: false, offers: false);
-        var range = Assert.Single(Assert.IsType<DecimalRangeFilter>(Assert.Single(search.Filters())).Ranges);
+        DecimalRangeFilterRange range = Assert.Single(Assert.IsType<DecimalRangeFilter>(Assert.Single(search.Filters())).Ranges);
         Assert.Equal(50m, range.MinValue);
         Assert.Equal(50.01m, range.MaxValue);
     }
@@ -158,7 +157,7 @@ public class DemoStorefrontSearchTests
     {
         var http = new DefaultHttpContext();
         http.Request.QueryString = new QueryString("?minPrice=50");
-        var filter = Assert.IsType<DecimalRangeFilter>(Assert.Single(new StorefrontSearch(http.Request, false, false).Filters()));
+        DecimalRangeFilter filter = Assert.IsType<DecimalRangeFilter>(Assert.Single(new StorefrontSearch(http.Request, false, false).Filters()));
         Assert.Null(Assert.Single(filter.Ranges).MaxValue);
     }
 

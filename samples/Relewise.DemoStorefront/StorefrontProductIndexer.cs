@@ -1,7 +1,10 @@
 using System.Text.Json.Nodes;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search.Indexing;
 using Umbraco.Cms.Core.Services;
+
+namespace Relewise.DemoStorefront;
 
 // Typed search projection for Umbraco queries; business enrichment lives in DemoProductMapper.
 internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentIndexer
@@ -20,7 +23,7 @@ internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentI
 
         cancellationToken.ThrowIfCancellationRequested();
         // Resolve the primary parent through Umbraco's ID cache, not a content-service fetch per Product.
-        var parent = identities.GetKeyForId(product.ParentId, UmbracoObjectTypes.Document);
+        Attempt<Guid> parent = identities.GetKeyForId(product.ParentId, UmbracoObjectTypes.Document);
         var categories = new List<string>();
         if (parent.Success)
         {
@@ -31,19 +34,34 @@ internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentI
         {
             categories.AddRange((System.Text.Json.JsonSerializer.Deserialize<Guid[]>(additional) ?? []).Select(key => key.ToString("D")));
         }
-        fields.Add(new IndexField("shopCategory", new IndexValue { Keywords = categories.Distinct().ToArray() }, Culture: null, Segment: null));
+        fields.Add(new IndexField(
+            "shopCategory",
+            new IndexValue { Keywords = categories.Distinct().ToArray() },
+            Culture: null,
+            Segment: null
+        ));
 
         string? brandReference = product.GetValue<string>("brand", published: published);
-        if (!string.IsNullOrWhiteSpace(brandReference) && global::Umbraco.Cms.Core.UdiParser.TryParse(brandReference, out var brand) &&
+        if (!string.IsNullOrWhiteSpace(brandReference) && global::Umbraco.Cms.Core.UdiParser.TryParse(brandReference, out Udi? brand) &&
             brand is global::Umbraco.Cms.Core.GuidUdi brandId)
         {
-            fields.Add(new IndexField("shopBrand", new IndexValue { Keywords = [brandId.Guid.ToString("D")] }, Culture: null, Segment: null));
+            fields.Add(new IndexField(
+                "shopBrand",
+                new IndexValue { Keywords = [brandId.Guid.ToString("D")] },
+                Culture: null,
+                Segment: null
+            ));
         }
 
-        var sales = ReadPrices(product.GetValue<string>("salesPrice", published: published));
-        foreach (var (currency, amount) in sales)
+        Dictionary<string, decimal> sales = ReadPrices(product.GetValue<string>("salesPrice", published: published));
+        foreach ((string? currency, decimal amount) in sales)
         {
-            fields.Add(new IndexField("shopPrice" + currency, new IndexValue { Decimals = [amount] }, Culture: null, Segment: null));
+            fields.Add(new IndexField(
+                "shopPrice" + currency,
+                new IndexValue { Decimals = [amount] },
+                Culture: null,
+                Segment: null
+            ));
         }
 
         return Task.FromResult<IEnumerable<IndexField>>(fields);
@@ -59,7 +77,7 @@ internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentI
 
         foreach (JsonNode? block in JsonNode.Parse(json)?["contentData"]?.AsArray() ?? [])
         {
-            var values = block?["values"]?.AsArray();
+            JsonArray? values = block?["values"]?.AsArray();
             string? currencyJson = values?.FirstOrDefault(value => value?["alias"]?.GetValue<string>() == "currency")?["value"]?.GetValue<string>();
             decimal? amount = values?.FirstOrDefault(value => value?["alias"]?.GetValue<string>() == "amount")?["value"]?.GetValue<decimal>();
             string? currency = currencyJson == null ? null : JsonNode.Parse(currencyJson)?.AsArray().FirstOrDefault()?.GetValue<string>();

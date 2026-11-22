@@ -3,6 +3,8 @@ using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco;
 using Relewise.Integrations.Umbraco.Services;
 
+namespace Relewise.DemoStorefront;
+
 internal sealed class LegacyGuideMapper : IContentTypeMapping
 {
     public Task<ContentUpdate> Map(ContentMappingContext context, CancellationToken token)

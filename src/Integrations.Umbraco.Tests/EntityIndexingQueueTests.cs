@@ -65,7 +65,7 @@ public class EntityIndexingQueueTests
         var fixture = new Fixture();
         fixture.Operations.Setup(value => value.RebuildAsync(false, It.IsAny<CancellationToken>()))
             .Returns(() => fixture.Writer.ExportAsync([Guid.NewGuid()]));
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Writer.RebuildAsync())
+        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Writer.RebuildAsync())
             .WaitAsync(TimeSpan.FromSeconds(3));
         Assert.Contains("mapper", error.Message);
         fixture.Operations.Setup(value => value.RebuildAsync(false, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -114,7 +114,8 @@ public class EntityIndexingQueueTests
         }
         finally
         {
-            release.SetResult(); await earlier;
+            release.SetResult();
+            await earlier;
         }
         fixture.Operations.Verify(value => value.RebuildAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -316,7 +317,7 @@ public class EntityIndexingQueueTests
         fixture.Operations.Setup(value => value.RebuildAsync(false, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException("Transport timeout"));
         Task rebuild = fixture.Writer.RebuildAsync();
-        var error = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rebuild);
+        OperationCanceledException error = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rebuild);
         Assert.Equal("Transport timeout", error.Message);
         Assert.Contains(fixture.Logger.Invocations, invocation => invocation.Method.Name == "Log" && Equals(invocation.Arguments[0], LogLevel.Error));
         await fixture.DrainAsync();
@@ -347,7 +348,7 @@ public class EntityIndexingQueueTests
 
         internal Fixture(CancellationToken stopping = default)
         {
-            var queue = Queue;
+            Mock<IBackgroundTaskQueue> queue = Queue;
             queue.Setup(value => value.QueueBackgroundWorkItem(It.IsAny<Func<CancellationToken, Task>>()))
                 .Callback<Func<CancellationToken, Task>>(Scheduled.Enqueue);
             Operations.Setup(value => value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()))
@@ -366,7 +367,7 @@ public class EntityIndexingQueueTests
         internal async Task DrainAsync()
         {
             int count = 0;
-            while (Scheduled.TryDequeue(out var work))
+            while (Scheduled.TryDequeue(out Func<CancellationToken, Task>? work))
             {
                 Assert.True(++count < 100, "The queue did not become idle.");
                 await work(CancellationToken.None);

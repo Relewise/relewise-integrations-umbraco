@@ -1,20 +1,23 @@
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Services.OperationStatus;
+
+namespace Relewise.DemoStorefront;
 
 internal static class DemoDictionary
 {
     internal static async Task EnsureAsync(IServiceProvider services)
     {
-        var dictionaries = services.GetRequiredService<IDictionaryItemService>();
-        var languages = (await services.GetRequiredService<ILanguageService>().GetAllAsync()).ToArray();
-        foreach (var (key, english, danish) in Labels)
+        IDictionaryItemService dictionaries = services.GetRequiredService<IDictionaryItemService>();
+        ILanguage[] languages = (await services.GetRequiredService<ILanguageService>().GetAllAsync()).ToArray();
+        foreach ((string? key, string? english, string? danish) in Labels)
         {
             string dictionaryKey = "Fieldwork." + key;
             IDictionaryItem? existing = await dictionaries.GetAsync(dictionaryKey);
             IDictionaryItem item = existing ?? new DictionaryItem(dictionaryKey);
             var translations = item.Translations.ToList();
-            foreach (var (culture, text) in new[] { ("en-US", english), ("da-DK", danish) })
+            foreach ((string? culture, string? text) in new[] { ("en-US", english), ("da-DK", danish) })
             {
                 ILanguage language = languages.Single(language => language.IsoCode.Equals(culture, StringComparison.OrdinalIgnoreCase));
                 if (!translations.Any(translation => translation.LanguageIsoCode.Equals(culture, StringComparison.OrdinalIgnoreCase)))
@@ -29,7 +32,7 @@ internal static class DemoDictionary
             }
 
             item.Translations = translations;
-            var result = existing == null
+            Attempt<IDictionaryItem, DictionaryItemOperationStatus> result = existing == null
                 ? await dictionaries.CreateAsync(item, Constants.Security.SuperUserKey)
                 : await dictionaries.UpdateAsync(item, Constants.Security.SuperUserKey);
             if (!result.Success)
@@ -73,6 +76,12 @@ internal static class DemoDictionary
         ("UnitedStatesShort", "United States · USD", "USA · USD"),
         ("SearchResults", "Search results", "Søgeresultater"),
         ("Products", "Products", "Produkter"),
+        ("ShopAllProducts", "Shop all products", "Se alle produkter"),
+        ("FooterIntroduction", "Gear and inspiration for your next adventure.", "Udstyr og inspiration til dit næste eventyr."),
+        ("FooterNavigation", "Footer navigation", "Navigation i sidefoden"),
+        ("OurBrands", "Our brands", "Vores mærker"),
+        ("Explore", "Explore", "Gå på opdagelse"),
+        ("ChangeMarket", "Change market", "Skift marked"),
         ("DemoDetails", "Demo details", "Demodetaljer"),
         ("RelewiseConfigured", "Relewise configured", "Relewise konfigureret"),
         ("AddedToCart", "Added to your cart", "Lagt i din kurv"),
@@ -197,6 +206,10 @@ internal static class DemoDictionary
         ("EditorialIntro", "Find inspiration for your next adventure.", "Find inspiration til dit næste eventyr."),
         ("CollectionIntro", "Explore outdoor essentials for your next adventure.", "Find friluftsudstyr til dit næste eventyr."),
         ("OutdoorGoods", "Outdoor goods", "Friluftsudstyr"),
+        ("ClearSearch", "Clear search", "Ryd søgning"),
+        ("SuggestedSearches", "Suggested searches", "Søgeforslag"),
+        ("SuggestionsAvailable", "{0} search suggestions available", "{0} søgeforslag tilgængelige"),
+        ("RefineSuggestion", "Use {0} in the search field", "Brug {0} i søgefeltet"),
         ("SearchPlaceholder", "Try Trail, flask or camp", "Prøv Trail, termoflaske eller camping"),
         ("SearchProducts", "Search products", "Søg efter produkter"),
         ("SearchJournal", "Search the journal", "Søg i journalen"),

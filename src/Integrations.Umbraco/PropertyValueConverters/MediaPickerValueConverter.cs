@@ -39,7 +39,7 @@ public class MediaPickerValueConverter : IDefaultPropertyValueConverter, IRelewi
         {
             var value = new List<string>();
             IEnumerable<IPublishedContent> items = context.Property.GetValue<IEnumerable<IPublishedContent>>(context.Culture) ?? Array.Empty<IPublishedContent>();
-            foreach (var item in items)
+            foreach (IPublishedContent item in items)
             {
                 string? mediaObject = item.Url();
                 if (mediaObject != null)

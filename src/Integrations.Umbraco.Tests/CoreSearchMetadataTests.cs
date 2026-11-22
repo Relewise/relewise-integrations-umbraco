@@ -17,11 +17,11 @@ public class CoreSearchMetadataTests
              new("blocks", new() { Texts = ["Dansk tekst"], Keywords = ["dansk"] }, "da-DK", null)], null),
             ["en-US", "da-DK", "de-DE"]);
 
-        var text = content.Data![CoreSearchTranslation.Field("blocks", "text")]!.ValueAs<Multilingual>();
+        Multilingual text = content.Data![CoreSearchTranslation.Field("blocks", "text")]!.ValueAs<Multilingual>();
         Assert.Equal("Shared text English text", text.Values!.Single(value => value.Language.Value == "en-us").Text);
         Assert.Equal("Shared text Dansk tekst", text.Values!.Single(value => value.Language.Value == "da-dk").Text);
         Assert.Equal("Shared text", text.Values!.Single(value => value.Language.Value == "de-de").Text);
-        var keywords = content.Data[CoreSearchTranslation.Field("blocks", "keyword")]!.ValueAs<MultilingualCollection>();
+        MultilingualCollection keywords = content.Data[CoreSearchTranslation.Field("blocks", "keyword")]!.ValueAs<MultilingualCollection>();
         Assert.Equal(new[] { "shared", "dansk" }, keywords.Values!.Single(value => value.Language.Value == "da-dk").Values);
     }
 
@@ -36,7 +36,7 @@ public class CoreSearchMetadataTests
              new("body", new() { Texts = ["Private segment"] }, "en-US", "vip")], null));
         Assert.Equal("retained", content.Data["customerField"]!.ValueAs<string>());
         Assert.Equal(12.5d, content.Data[CoreSearchTranslation.Field("price", "decimalMin", "en-US")]!.ValueAs<double>());
-        var text = content.Data[CoreSearchTranslation.Field("body", "text")]!.ValueAs<Multilingual>();
+        Multilingual text = content.Data[CoreSearchTranslation.Field("body", "text")]!.ValueAs<Multilingual>();
         Assert.Equal("Default text", Assert.Single(text.Values!).Text);
     }
     [Fact]
@@ -60,7 +60,7 @@ public class CoreSearchMetadataTests
             options.SearchProviders.AddContent("articles");
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
-        using var provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
         var searcher = new MappedEntitySearcher(provider.GetRequiredService<RelewiseUmbracoConfiguration>(), null!, null!);
         await Assert.ThrowsAsync<NotSupportedException>(() => searcher.SearchAsync("articles", segment: "vip"));
     }

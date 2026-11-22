@@ -14,8 +14,8 @@ public class EntityMappingTests
         var property = new Mock<IPublishedProperty>();
         property.SetupGet(value => value.PropertyType).Returns(Mock.Of<IPublishedPropertyType>());
         property.Setup(value => value.GetValue(null, null)).Returns("Trail flask");
-        var source = Mock.Of<IPublishedContent>();
-        await using var services = new ServiceCollection().BuildServiceProvider();
+        IPublishedContent source = Mock.Of<IPublishedContent>();
+        await using ServiceProvider services = new ServiceCollection().BuildServiceProvider();
         await using var operation = new MappingOperation(services, default);
         var context = new PropertyMappingContext(
             source,
@@ -50,8 +50,8 @@ public class EntityMappingTests
         property.SetupGet(value => value.PropertyType).Returns(propertyType.Object);
         property.Setup(value => value.GetValue("en-US", null)).Returns("Across the seasons");
         property.Setup(value => value.GetValue("da-DK", null)).Returns("Gennem årstiderne");
-        var source = Mock.Of<IPublishedContent>();
-        await using var services = new ServiceCollection().BuildServiceProvider();
+        IPublishedContent source = Mock.Of<IPublishedContent>();
+        await using ServiceProvider services = new ServiceCollection().BuildServiceProvider();
         await using var operation = new MappingOperation(services, default);
         var context = new PropertyMappingContext(
             source,
@@ -63,7 +63,7 @@ public class EntityMappingTests
 
         Multilingual result = await BuiltInPropertyConversion.ConvertAsync<Multilingual>(context);
 
-        var name = Assert.Single(result.Values!);
+        Multilingual.Value name = Assert.Single(result.Values!);
         Assert.Equal("en-us", name.Language.Value);
         Assert.Equal("Across the seasons", name.Text);
     }
@@ -78,7 +78,7 @@ public class EntityMappingTests
         languages.Setup(value => value.GetDefaultIsoCodeAsync()).ReturnsAsync(defaultCulture);
         var services = new ServiceCollection();
         services.AddSingleton(languages.Object);
-        await using var root = services.BuildServiceProvider();
+        await using ServiceProvider root = services.BuildServiceProvider();
         await using var operation = new MappingOperation(root, default);
         var type = new Mock<IPublishedPropertyType>();
         type.SetupGet(value => value.Variations).Returns(global::Umbraco.Cms.Core.Models.ContentVariation.Culture);
@@ -86,7 +86,7 @@ public class EntityMappingTests
         property.SetupGet(value => value.PropertyType).Returns(type.Object);
         property.Setup(value => value.GetValue(It.IsAny<string?>(), It.IsAny<string?>()))
             .Returns((string? culture, string? _) => "Name: " + culture);
-        var source = Mock.Of<IPublishedContent>();
+        IPublishedContent source = Mock.Of<IPublishedContent>();
         var context = new PropertyMappingContext(source, source, property.Object, ["en-US", "da-DK"], nameof(Brand.DisplayName), operation);
 
         Assert.Equal("Name: " + expected, await BuiltInPropertyConversion.ConvertAsync<string>(context));
@@ -102,14 +102,14 @@ public class EntityMappingTests
         languages.Setup(value => value.GetDefaultIsoCodeAsync()).Returns(language.Task);
         var services = new ServiceCollection();
         services.AddSingleton(languages.Object);
-        await using var root = services.BuildServiceProvider();
+        await using ServiceProvider root = services.BuildServiceProvider();
         using var cancellation = new CancellationTokenSource();
         await using var operation = new MappingOperation(root, cancellation.Token);
         var type = new Mock<IPublishedPropertyType>();
         type.SetupGet(value => value.Variations).Returns(global::Umbraco.Cms.Core.Models.ContentVariation.Culture);
         var property = new Mock<IPublishedProperty>();
         property.SetupGet(value => value.PropertyType).Returns(type.Object);
-        var source = Mock.Of<IPublishedContent>();
+        IPublishedContent source = Mock.Of<IPublishedContent>();
         var context = new PropertyMappingContext(source, source, property.Object, ["en-US"], nameof(Brand.DisplayName), operation);
 
         Task<string> conversion = BuiltInPropertyConversion.ConvertAsync<string>(context).AsTask();
@@ -125,7 +125,7 @@ public class EntityMappingTests
     {
         Assert.Throws<InvalidOperationException>(() =>
         {
-            using var _ = Services(options =>
+            using ServiceProvider _ = Services(options =>
             {
                 DataMappingOptions? retained = null;
                 options.MapProduct("product", mapping => mapping.MapData("field", data => retained = data));
@@ -134,7 +134,7 @@ public class EntityMappingTests
         });
         Assert.Throws<InvalidOperationException>(() =>
         {
-            using var _ = Services(options =>
+            using ServiceProvider _ = Services(options =>
             {
                 DataMappingOptions? retained = null;
                 options.MapBrand("brand", mapping =>
@@ -154,7 +154,7 @@ public class EntityMappingTests
     {
         Assert.Throws<InvalidOperationException>(() =>
         {
-            using var _ = Services(options =>
+            using ServiceProvider _ = Services(options =>
             {
                 if (product)
                 {
@@ -190,8 +190,8 @@ public class EntityMappingTests
     [Fact]
     public void LegacyRegistrationRetainsMergingAndViewOnlyBehavior()
     {
-        using var services = Services(options => { options.AddContentType("article"); options.AddContentType("article", type => type.AutoMap()); options.AddContentType("viewOnly"); });
-        var configuration = services.GetRequiredService<RelewiseUmbracoConfiguration>();
+        using ServiceProvider services = Services(options => { options.AddContentType("article"); options.AddContentType("article", type => type.AutoMap()); options.AddContentType("viewOnly"); });
+        RelewiseUmbracoConfiguration configuration = services.GetRequiredService<RelewiseUmbracoConfiguration>();
         Assert.True(configuration.CanMap("article"));
         Assert.False(configuration.CanMap("viewOnly"));
         Assert.Throws<ArgumentException>(() => new RelewiseUmbracoOptionsBuilder().AddContentType("article").AddContentType("article", throwIfExists: true));
@@ -199,16 +199,16 @@ public class EntityMappingTests
     [Fact]
     public void DataAliasIsRequiredButDestinationConfigurationIsOptional()
     {
-        using var services = Services(options => options.MapContent("article", mapping => mapping.MapData("hero")));
-        var definition = services.GetRequiredService<RelewiseUmbracoConfiguration>().Mappings["article"];
+        using ServiceProvider services = Services(options => options.MapContent("article", mapping => mapping.MapData("hero")));
+        MappingDefinition definition = services.GetRequiredService<RelewiseUmbracoConfiguration>().Mappings["article"];
         Assert.Equal("hero", Assert.Single(definition.DataMappings).Options.DataKey);
         Assert.Throws<InvalidOperationException>(() => new RelewiseUmbracoOptionsBuilder().MapContent("article", mapping => mapping.MapData("foo", data => data.DataKey = "contentTypeAlias")));
     }
     [Fact]
     public void CanonicalIdOverrideIsSharedAndEmptyValuesFail()
     {
-        using var services = Services(options => options.MapBrand("brand", mapping => mapping.IdFromProperty("brandId")));
-        var config = services.GetRequiredService<RelewiseUmbracoConfiguration>();
+        using ServiceProvider services = Services(options => options.MapBrand("brand", mapping => mapping.IdFromProperty("brandId")));
+        RelewiseUmbracoConfiguration config = services.GetRequiredService<RelewiseUmbracoConfiguration>();
         var property = new Mock<IPublishedProperty>();
         property.SetupGet(p => p.PropertyType).Returns(Mock.Of<IPublishedPropertyType>());
         property.Setup(p => p.GetValue(null, null)).Returns("erp-brand");
@@ -233,10 +233,10 @@ public class EntityMappingTests
     {
         var services = new ServiceCollection();
         services.AddScoped<ScopedDependency>();
-        await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        await using ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         ScopedDependency dependency;
         AsyncConverter converter;
-        await using (var scope = provider.CreateAsyncScope())
+        await using (AsyncServiceScope scope = provider.CreateAsyncScope())
         {
             dependency = scope.ServiceProvider.GetRequiredService<ScopedDependency>();
             await using (var operation = new MappingOperation(scope.ServiceProvider, default))
@@ -253,33 +253,33 @@ public class EntityMappingTests
     [Fact]
     public void SupplementPreservesUnspecifiedFieldsAndCannotClearAndReplace()
     {
-        var product = Assert.IsType<Product>(EntityMapper.Create(typeof(Product), "sku"));
+        Product product = Assert.IsType<Product>(EntityMapper.Create(typeof(Product), "sku"));
         Assert.Null(product.Assortments);
         Assert.Null(product.CategoryPaths);
         Assert.Null(product.ListPrice);
         var mapped = new MappedEntity(Guid.NewGuid(), "product", "sku", product, false);
-        var update = Assert.IsType<ProductUpdate>(mapped.Update());
+        ProductUpdate update = Assert.IsType<ProductUpdate>(mapped.Update());
         Assert.False(update.ReplaceExistingVariants);
         Assert.Throws<InvalidOperationException>(() => mapped.Update(ContentUpdate.UpdateKind.ClearAndReplace));
     }
     [Fact]
     public void ProvidersValidateEntityTypeAndContentAliasSelection()
     {
-        Assert.Throws<InvalidOperationException>(() => { using var _ = Services(options => { options.MapContent("article"); options.SearchProviders.AddProduct("products"); }); });
-        Assert.Throws<InvalidOperationException>(() => { using var _ = Services(options => { options.MapContent("article"); options.SearchProviders.AddContent("articles", provider => provider.DocumentTypeAliases = ["missing"]); }); });
-        using var services = Services(options => { options.MapContent("article"); options.SearchProviders.AddContent("articles"); });
+        Assert.Throws<InvalidOperationException>(() => { using ServiceProvider _ = Services(options => { options.MapContent("article"); options.SearchProviders.AddProduct("products"); }); });
+        Assert.Throws<InvalidOperationException>(() => { using ServiceProvider _ = Services(options => { options.MapContent("article"); options.SearchProviders.AddContent("articles", provider => provider.DocumentTypeAliases = ["missing"]); }); });
+        using ServiceProvider services = Services(options => { options.MapContent("article"); options.SearchProviders.AddContent("articles"); });
         Assert.Null(services.GetRequiredService<RelewiseUmbracoConfiguration>().SearchProviders.DefaultPublishedContentProviderAlias);
     }
     [Fact]
     public void ParentExportAndTrackingSwitchesApplyToChildVariants()
     {
-        using var services = Services(options => options.MapProduct("product", mapping =>
+        using ServiceProvider services = Services(options => options.MapProduct("product", mapping =>
         {
             mapping.Export = false;
             mapping.TrackViews = false;
             mapping.VariantsFromChildren("variant");
         }));
-        var variant = services.GetRequiredService<RelewiseUmbracoConfiguration>().Mappings["variant"];
+        MappingDefinition variant = services.GetRequiredService<RelewiseUmbracoConfiguration>().Mappings["variant"];
         Assert.False(variant.Export);
         Assert.False(variant.TrackViews);
     }
@@ -288,7 +288,7 @@ public class EntityMappingTests
         var services = new ServiceCollection();
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) => configure(options));
         services.AddSingleton<RelewiseUmbracoConfiguration>();
-        var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         _ = provider.GetRequiredService<RelewiseUmbracoConfiguration>();
         return provider;
     }

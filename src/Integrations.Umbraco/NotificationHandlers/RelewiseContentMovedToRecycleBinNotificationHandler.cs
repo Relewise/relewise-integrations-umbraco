@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client;
@@ -26,7 +26,9 @@ internal class RelewiseContentMovedToRecycleBinNotificationHandler : INotificati
         ITracker? tracker = _exportContentService.GetTrackerOrNull();
 
         if (tracker == null)
+        {
             return;
+        }
 
         string[] ids = notification.MoveInfoCollection
             .Where(x => _configuration.CanMap(x.Entity))
@@ -34,7 +36,9 @@ internal class RelewiseContentMovedToRecycleBinNotificationHandler : INotificati
             .ToArray();
 
         if (ids.Length == 0)
+        {
             return;
+        }
 
         var action = new ContentAdministrativeAction(
             Language.Undefined,

@@ -91,7 +91,7 @@ public static class UmbracoBuilderExtensions
             }
             if (configuration.SearchProviders.DefaultPublishedContentProviderAlias != null)
             {
-                var original = indexes.GetContentIndexRegistration(global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent)
+                ContentIndexRegistration original = indexes.GetContentIndexRegistration(global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent)
                     ?? throw new InvalidOperationException("Umbraco's published-content search registration is required.");
                 // Preserve Examine's indexer and change strategy; only route published queries to Relewise.
                 typeof(UmbracoBuilderExtensions).GetMethod(nameof(UsePublishedSearcher), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!

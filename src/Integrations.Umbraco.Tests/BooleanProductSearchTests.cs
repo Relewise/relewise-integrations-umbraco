@@ -10,6 +10,7 @@ using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Search;
 using Relewise.Client.Responses.Search;
 using Relewise.Integrations.Umbraco.Search;
+using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
 
@@ -50,8 +51,8 @@ public class BooleanProductSearchTests
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();
-        await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
-        var result = await root.GetRequiredService<MappedEntitySearcher>().SearchAsync("products",
+        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        SearchResult result = await root.GetRequiredService<MappedEntitySearcher>().SearchAsync("products",
             filters: [new KeywordFilter("sale", ["true"], false)], facets: [new KeywordFacet("sale")], culture: "en-US", take: 0);
 
         Assert.Equal(2, sent.Count);
@@ -68,7 +69,7 @@ public class BooleanProductSearchTests
             Assert.Contains("rwUmbracoPublished", json);
             Assert.Contains("rwUmbracoSearchProtected", json);
         });
-        var facet = Assert.Single(result.Facets);
+        global::Umbraco.Cms.Core.Search.Querying.Faceting.FacetResult facet = Assert.Single(result.Facets);
         Assert.Equal("sale", facet.FieldName);
         Assert.Equal(3, Assert.Single(facet.Values.OfType<KeywordFacetValue>(), value => value.Key == "true").Count);
         Assert.Equal(7, Assert.Single(facet.Values.OfType<KeywordFacetValue>(), value => value.Key == "false").Count);
@@ -80,7 +81,7 @@ public class BooleanProductSearchTests
     [InlineData("true", true)]
     public void BooleanValuesAndNegationAreTyped(string value, bool negate)
     {
-        var filter = CoreSearchTranslation.MapFilter(new KeywordFilter("sale", [value], negate),
+        Client.Requests.Filters.Filter filter = CoreSearchTranslation.MapFilter(new KeywordFilter("sale", [value], negate),
             booleanDataFields: new Dictionary<string, string> { ["sale"] = "onSale_EUR" });
         string json = JsonConvert.SerializeObject(filter);
         Assert.Contains("onSale_EUR", json);

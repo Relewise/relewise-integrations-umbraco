@@ -4,15 +4,17 @@ using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Infrastructure.Scoping;
 
+namespace Relewise.DemoStorefront;
+
 internal static class DemoProductDetails
 {
     internal static async Task EnsureAsync(IServiceProvider services)
     {
-        var types = services.GetRequiredService<IContentTypeService>();
-        var type = types.Get("product")!;
-        var dataTypes = (await services.GetRequiredService<IDataTypeService>().GetAllAsync()).ToArray();
+        IContentTypeService types = services.GetRequiredService<IContentTypeService>();
+        IContentType type = types.Get("product")!;
+        IDataType[] dataTypes = (await services.GetRequiredService<IDataTypeService>().GetAllAsync()).ToArray();
         bool schemaChanged = false;
-        foreach (var (alias, name, editor) in new[] { ("weightGrams", "Weight (g)", "Numeric"), ("capacity", "Capacity", "Textstring") })
+        foreach ((string? alias, string? name, string? editor) in new[] { ("weightGrams", "Weight (g)", "Numeric"), ("capacity", "Capacity", "Textstring") })
         {
             if (!type.PropertyTypes.Any(property => property.Alias == alias))
             {
@@ -25,13 +27,18 @@ internal static class DemoProductDetails
             await types.UpdateAsync(type, Constants.Security.SuperUserKey);
         }
 
-        using var scope = services.GetRequiredService<IScopeProvider>().CreateScope();
+        using IScope scope = services.GetRequiredService<IScopeProvider>().CreateScope();
         scope.EagerWriteLock(Constants.Locks.ContentTree);
-        var content = services.GetRequiredService<IContentService>();
-        var nodes = content.GetRootContent().SelectMany(root => content.GetPagedDescendants(root.Id, 0, 1000, out _));
+        IContentService content = services.GetRequiredService<IContentService>();
+        IEnumerable<IContent> nodes = content.GetRootContent().SelectMany(root => content.GetPagedDescendants(
+            root.Id,
+            0,
+            1000,
+            out _
+        ));
         foreach (IContent product in nodes.Where(node => node.ContentType.Alias == "product"))
         {
-            if (!product.Published || product.Edited || !Details.TryGetValue(product.GetValue<string>("sku") ?? "", out var detail))
+            if (!product.Published || product.Edited || !Details.TryGetValue(product.GetValue<string>("sku") ?? "", out ProductDetail? detail))
             {
                 continue;
             }

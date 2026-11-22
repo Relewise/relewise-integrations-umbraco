@@ -38,7 +38,7 @@ public class RelewiseUmbracoConfiguration
 
         UseContentKeysAsIds = options.UseContentKeysAsIds;
         var mappings = new Dictionary<string, MappingDefinition>(options.EntityMappings, StringComparer.OrdinalIgnoreCase);
-        foreach (var content in options.ContentBuilders)
+        foreach (KeyValuePair<string, ContentTypeBuilder?> content in options.ContentBuilders)
         {
             MappingDefinition definition = content.Value?.Definition ?? new MappingDefinition(typeof(Relewise.Client.DataTypes.Content)) { AutomaticData = true };
             definition.DocumentTypeAlias = content.Key;
@@ -101,7 +101,7 @@ public class RelewiseUmbracoConfiguration
         ArgumentNullException.ThrowIfNull(content);
         if (Mappings.TryGetValue(content.ContentType?.Alias ?? string.Empty, out MappingDefinition? mapping) && mapping.IdPropertyAlias is { } alias)
         {
-            var property = content.GetProperty(alias) ?? throw new InvalidOperationException($"ID property '{alias}' does not exist on '{content.Key}'.");
+            IPublishedProperty property = content.GetProperty(alias) ?? throw new InvalidOperationException($"ID property '{alias}' does not exist on '{content.Key}'.");
             if (property.PropertyType.VariesByCulture() || property.PropertyType.VariesBySegment())
             {
                 throw new InvalidOperationException($"ID property '{alias}' must be culture and segment invariant.");

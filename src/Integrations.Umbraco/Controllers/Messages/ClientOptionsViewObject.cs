@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Relewise.Client.Extensions;
 
 namespace Relewise.Integrations.Umbraco.Controllers.Messages;

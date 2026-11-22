@@ -4,24 +4,38 @@ using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Infrastructure.Scoping;
 
+namespace Relewise.DemoStorefront;
+
 // Explicit catalogue classification: a chair is an alternative to another chair, not a camping table.
 internal static class DemoProductTypes
 {
     internal static async Task EnsureAsync(IServiceProvider services)
     {
-        var types = services.GetRequiredService<IContentTypeService>();
-        var productType = types.Get("product")!;
+        IContentTypeService types = services.GetRequiredService<IContentTypeService>();
+        IContentType productType = types.Get("product")!;
         if (!productType.PropertyTypes.Any(property => property.Alias == "productType"))
         {
-            var text = (await services.GetRequiredService<IDataTypeService>().GetAllAsync()).First(type => type.Name == "Textstring");
-            productType.AddPropertyType(new PropertyType(services.GetRequiredService<IShortStringHelper>(), text, "productType") { Name = "Product type" });
+            IDataType text = (await services.GetRequiredService<IDataTypeService>().GetAllAsync()).First(type => type.Name == "Textstring");
+            productType.AddPropertyType(new PropertyType(
+                services.GetRequiredService<IShortStringHelper>(),
+                text,
+                "productType"
+            )
+            {
+                Name = "Product type"
+            });
             await types.UpdateAsync(productType, Constants.Security.SuperUserKey);
         }
 
-        using var scope = services.GetRequiredService<IScopeProvider>().CreateScope();
+        using IScope scope = services.GetRequiredService<IScopeProvider>().CreateScope();
         scope.EagerWriteLock(Constants.Locks.ContentTree);
-        var content = services.GetRequiredService<IContentService>();
-        var products = content.GetRootContent().SelectMany(root => content.GetPagedDescendants(root.Id, 0, 1000, out _))
+        IContentService content = services.GetRequiredService<IContentService>();
+        IEnumerable<IContent> products = content.GetRootContent().SelectMany(root => content.GetPagedDescendants(
+            root.Id,
+            0,
+            1000,
+            out _
+        ))
             .Where(node => node.ContentType.Alias == "product");
         foreach (IContent product in products)
         {

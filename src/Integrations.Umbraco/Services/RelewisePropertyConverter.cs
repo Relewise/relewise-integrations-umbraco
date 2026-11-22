@@ -27,7 +27,7 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
             return (await ConvertPropertiesAsync(properties, cultures, null, null, null, cancellationToken, null)).Data;
         }
 
-        await using var scope = provider.CreateAsyncScope();
+        await using AsyncServiceScope scope = provider.CreateAsyncScope();
         return (await ConvertPropertiesAsync(properties, cultures, null, null, scope.ServiceProvider, cancellationToken, null)).Data;
     }
 
@@ -82,7 +82,7 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
                 IEnumerable<IGrouping<string, (string Lang, string Key, DataValue? Value)>> groupBy = valueTuples
                     .GroupBy(x => x.Key);
 
-                foreach (var values in groupBy)
+                foreach (IGrouping<string, (string Lang, string Key, DataValue? Value)> values in groupBy)
                 {
                     if (values.Count() > 1)
                     {
@@ -139,7 +139,7 @@ internal class RelewisePropertyConverter(IEnumerable<IRelewisePropertyValueConve
         }
         bool handled = false;
         bool customApplied = false;
-        var custom = (services?.GetServices<IAsyncRelewisePropertyValueConverter>() ?? [])
+        IAsyncRelewisePropertyValueConverter? custom = (services?.GetServices<IAsyncRelewisePropertyValueConverter>() ?? [])
             .Reverse().OrderBy(converter => converter is IDefaultPropertyValueConverter)
             .FirstOrDefault(converter => converter.CanHandle(context));
         foreach (IRelewisePropertyValueConverter converter in converters)

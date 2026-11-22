@@ -1,5 +1,7 @@
 using Relewise.Integrations.Umbraco;
 
+namespace Relewise.DemoStorefront;
+
 // Configuration visibility and upstream error presentation belong to the demo, not the package.
 internal static class DemoConnection
 {
@@ -20,7 +22,10 @@ internal static class DemoConnection
         string message = Storefront.Text(http, IsConfigured(http) ? "SearchNotEnabled" : "PreviewModeHelp");
         if (json)
         {
-            return System.Text.Json.JsonSerializer.Serialize(new { error = message });
+            return System.Text.Json.JsonSerializer.Serialize(new
+            {
+                error = message
+            });
         }
         string title = Storefront.Text(http, IsConfigured(http) ? "SearchDisabled" : "FeatureUnavailable");
         string body = $"<h1>{Storefront.E(title)}</h1>";
@@ -38,7 +43,11 @@ internal static class DemoConnection
             return null;
         }
         string body = Unavailable(http, json);
-        return Results.Content(body, json ? "application/json" : "text/html; charset=utf-8", statusCode: StatusCodes.Status503ServiceUnavailable);
+        return Results.Content(
+            body,
+            json ? "application/json" : "text/html; charset=utf-8",
+            statusCode: StatusCodes.Status503ServiceUnavailable
+        );
     }
 
     internal static bool IsConnectionFailure(Exception error, CancellationToken aborted)
@@ -71,12 +80,23 @@ internal static class DemoConnection
             if (http.Request.Path.Value?.EndsWith("/suggestions", StringComparison.Ordinal) == true ||
                 http.Request.Path.Value?.EndsWith("/results", StringComparison.Ordinal) == true)
             {
-                await http.Response.WriteAsJsonAsync(new { error = message }, http.RequestAborted);
+                await http.Response.WriteAsJsonAsync(new
+                {
+                    error = message
+                }, http.RequestAborted
+                );
                 return;
             }
             string body = $"<section class='notice notice-error' role='alert'><h1>{Storefront.E(Storefront.Text(http, "ConnectionProblem"))}</h1><p>{Storefront.E(message)}</p><a href='{SetupUrl}'>{Storefront.E(Storefront.Text(http, "ConfigureRelewise"))}</a></section>";
             http.Response.ContentType = "text/html; charset=utf-8";
-            await http.Response.WriteAsync(Storefront.Layout(Storefront.Text(http, "ConnectionProblem"), body, true, http, "shop"), http.RequestAborted);
+            await http.Response.WriteAsync(Storefront.Layout(
+                Storefront.Text(http, "ConnectionProblem"),
+                body,
+                true,
+                http,
+                "shop"
+            ), http.RequestAborted
+            );
         }
     }
 }

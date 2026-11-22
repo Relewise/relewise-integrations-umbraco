@@ -1,9 +1,14 @@
 using System.Globalization;
 using System.Net;
+using Relewise.Client.DataTypes;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Dictionary;
+using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
+
+namespace Relewise.DemoStorefront;
 
 public static class Storefront
 {
@@ -11,7 +16,7 @@ public static class Storefront
     {
         app.MapGet("/store/market", async Task<IResult> (HttpContext http, string? market, string? returnUrl) =>
         {
-            var selected = DemoMarket.All.FirstOrDefault(value => value.Id == market);
+            DemoMarket? selected = DemoMarket.All.FirstOrDefault(value => value.Id == market);
             if (selected == null)
             {
                 return Results.BadRequest("Unknown market.");
@@ -26,7 +31,11 @@ public static class Storefront
             {
                 http.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("StorefrontCart")
                     .LogError(error, "Unable to change the cart currency.");
-                StorefrontNavigation.Notify(http, DemoConnection.IsConnectionFailure(error, http.RequestAborted) ? "RelewiseActionFailed" : "CartFailed", true);
+                StorefrontNavigation.Notify(
+                    http,
+                    DemoConnection.IsConnectionFailure(error, http.RequestAborted) ? "RelewiseActionFailed" : "CartFailed",
+                    true
+                );
                 return Results.LocalRedirect(selected.ReturnUrl(returnUrl));
             }
 
@@ -38,15 +47,20 @@ public static class Storefront
                 IsEssential = true,
                 Path = "/",
                 MaxAge = TimeSpan.FromDays(30)
-            });
+            }
+            );
             string target = selected.ReturnUrl(returnUrl);
             // Resolve translated detail-page slugs through Umbraco, keeping the same content item.
-            if (!string.IsNullOrWhiteSpace(returnUrl) && Uri.TryCreate("http://localhost" + returnUrl, UriKind.Absolute, out var uri))
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Uri.TryCreate(
+                "http://localhost" + returnUrl,
+                UriKind.Absolute,
+                out Uri? uri
+            ))
             {
-                using var context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
-                var site = http.RequestServices.GetRequiredService<IContentService>().GetRootContent().Single(node => node.ContentType.Alias == "home");
-                var home = context.UmbracoContext.Content?.GetById(site.Key);
-                var page = home?.DescendantsOrSelf().FirstOrDefault(node =>
+                using UmbracoContextReference context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
+                IContent site = http.RequestServices.GetRequiredService<IContentService>().GetRootContent().Single(node => node.ContentType.Alias == "home");
+                IPublishedContent? home = context.UmbracoContext.Content?.GetById(site.Key);
+                IPublishedContent? page = home?.DescendantsOrSelf().FirstOrDefault(node =>
                     node.Url("en-US") == uri.AbsolutePath || node.Url("da-DK") == uri.AbsolutePath);
                 if (page != null)
                 {
@@ -64,21 +78,33 @@ public static class Storefront
             {
                 http.Response.Headers.CacheControl = "no-store";
                 IPublishedContent? collection = null;
-                if (http.Request.Query.TryGetValue("collection", out var selected))
+                if (http.Request.Query.TryGetValue("collection", out Microsoft.Extensions.Primitives.StringValues selected))
                 {
                     if (!Guid.TryParse(selected, out Guid key))
                     {
-                        return Results.BadRequest(new { error = "Invalid collection." });
+                        return Results.BadRequest(new
+                        {
+                            error = "Invalid collection."
+                        });
                     }
                     collection = StorefrontPages.Home(http.RequestServices).DescendantsOrSelf().FirstOrDefault(node =>
                         node.Key == key && node.ContentType.Alias is "brand" or "productCategory" or "folder");
                     if (collection == null)
                     {
-                        return Results.NotFound(new { error = "Unknown collection." });
+                        return Results.NotFound(new
+                        {
+                            error = "Unknown collection."
+                        });
                     }
                 }
                 bool suggestions = operation == "suggestions";
-                return Results.Content(await StorefrontListing.RenderAsync(http, collection, suggestionsOnly: suggestions, dataOnly: !suggestions), "application/json");
+                return Results.Content(await StorefrontListing.RenderAsync(
+                    http,
+                    collection,
+                    suggestionsOnly: suggestions,
+                    dataOnly: !suggestions
+                ), "application/json"
+                );
             });
         }
         foreach (string view in new[] { "store", "search", "offers" })
@@ -121,7 +147,7 @@ public static class Storefront
     public static string Prices(object? value, HttpContext http)
     {
         var market = DemoMarket.Current(http);
-        var price = PriceConverter.Read(value)?.Values?.SingleOrDefault(price => price.Currency.Value == market.Currency);
+        Money? price = PriceConverter.Read(value)?.Values?.SingleOrDefault(price => price.Currency.Value == market.Currency);
         return price == null
             ? E(Text(http, "PriceUnavailable", market.Currency))
             : E(market.Currency + " " + price.Amount.ToString("N2", CultureInfo.GetCultureInfo(market.Culture)));

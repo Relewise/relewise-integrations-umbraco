@@ -1,3 +1,5 @@
+namespace Relewise.DemoStorefront;
+
 internal sealed class RecommendationModel
 {
     public string Endpoint { get; init; } = "";

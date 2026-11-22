@@ -1,7 +1,8 @@
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco;
 using Umbraco.Cms.Core.Models.PublishedContent;
-using Umbraco.Extensions;
+
+namespace Relewise.DemoStorefront;
 
 /// <summary>Runs after declarative mappings and demonstrates application-level enrichment.</summary>
 internal sealed class EditorialMapper(IVariationContextAccessor variations) : IEntityMapper<Content>
@@ -24,14 +25,18 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
             {
                 string text => text,
                 Multilingual multilingual => multilingual.Values?
-                    .FirstOrDefault(localized => string.Equals(localized.Language.Value, culture, StringComparison.OrdinalIgnoreCase))?.Text ?? string.Empty,
+                    .FirstOrDefault(localized => string.Equals(
+                        localized.Language.Value,
+                        culture,
+                        StringComparison.OrdinalIgnoreCase
+                    ))?.Text ?? string.Empty,
                 _ => string.Empty
             };
         }
 
         string BlockText(string alias, string culture)
         {
-            var property = context.PublishedContent.GetProperty(alias);
+            IPublishedProperty? property = context.PublishedContent.GetProperty(alias);
             // An invariant outer block property can contain culture-varying elements.
             // Read those elements per culture rather than reusing the first culture's converted text.
             if (property != null &&
@@ -42,7 +47,8 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
                     property,
                     culture,
                     variations,
-                    cancellationToken);
+                    cancellationToken
+                );
             }
 
             return ConvertedText(alias, culture);

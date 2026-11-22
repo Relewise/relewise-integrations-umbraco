@@ -1,4 +1,4 @@
-﻿namespace Relewise.Integrations.Umbraco.Services;
+namespace Relewise.Integrations.Umbraco.Services;
 
 /// <summary>
 ///  Holds the result from a content export

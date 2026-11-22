@@ -1,6 +1,7 @@
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco;
-using Umbraco.Extensions;
+
+namespace Relewise.DemoStorefront;
 
 // Sale filters and facets bind directly to these SDK Product Data values.
 internal sealed class DemoProductMapper : IEntityMapper<Product>
@@ -16,8 +17,8 @@ internal sealed class DemoProductMapper : IEntityMapper<Product>
     {
         product.Data ??= new();
         product.Data["inStock"] = stock > 0;
-        var sales = Amounts(product.SalesPrice);
-        var list = Amounts(product.ListPrice);
+        Dictionary<string, decimal> sales = Amounts(product.SalesPrice);
+        Dictionary<string, decimal> list = Amounts(product.ListPrice);
         foreach (string currency in DemoMarket.All.Select(market => market.Currency).Concat(sales.Keys).Concat(list.Keys).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             product.Data["onSale_" + currency] = sales.TryGetValue(currency, out decimal amount) &&

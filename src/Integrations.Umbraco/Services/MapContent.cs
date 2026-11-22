@@ -1,4 +1,4 @@
-﻿using Relewise.Client.DataTypes;
+using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco.Services;

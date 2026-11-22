@@ -59,9 +59,9 @@ public class MappedEntitySearchTests
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();
-        await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         Guid principal = authenticated ? Guid.NewGuid() : Guid.Empty, group = Guid.NewGuid();
-        var access = bypass ? AccessContext.BypassProtection() : new AccessContext(principal, [group]);
+        AccessContext access = bypass ? AccessContext.BypassProtection() : new AccessContext(principal, [group]);
         await root.GetRequiredService<MappedEntitySearcher>().SearchAsync("profile", culture: "DA-dk", accessContext: access);
         string json = JsonConvert.SerializeObject(sent);
         Assert.Contains("protected-site", json);
@@ -138,9 +138,9 @@ public class MappedEntitySearchTests
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();
-        await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
-        var accessor = root.GetRequiredService<IHttpContextAccessor>();
-        await using var scope = root.CreateAsyncScope();
+        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        IHttpContextAccessor accessor = root.GetRequiredService<IHttpContextAccessor>();
+        await using AsyncServiceScope scope = root.CreateAsyncScope();
         accessor.HttpContext = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
         User expected = await scope.ServiceProvider.GetRequiredService<IRelewiseUserLocator>().GetUser();
         string alias = product ? "catalogue" : global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent;
@@ -235,9 +235,9 @@ public class MappedEntitySearchTests
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();
-        await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
-        await using var scope = root.CreateAsyncScope();
-        var accessor = root.GetRequiredService<IHttpContextAccessor>();
+        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        await using AsyncServiceScope scope = root.CreateAsyncScope();
+        IHttpContextAccessor accessor = root.GetRequiredService<IHttpContextAccessor>();
         accessor.HttpContext = new DefaultHttpContext { RequestServices = scope.ServiceProvider, RequestAborted = cancellation.Token };
         Guid principal = Guid.NewGuid();
         SearchResult result = await root.GetRequiredService<MappedEntitySearcher>().SearchAsync("profile", term,

@@ -38,9 +38,9 @@ public class ContentIdentityTests
     [InlineData("true", true)]
     public void EnvironmentConfigurationSelectsIdentityForPublishedAndUnpublishedContent(string? setting, bool useKeys)
     {
-        var configuration = Configuration(setting);
-        var published = PublishedContent(1234, SharedKey);
-        var editable = EditableContent(1234, SharedKey);
+        RelewiseUmbracoConfiguration configuration = Configuration(setting);
+        IPublishedContent published = PublishedContent(1234, SharedKey);
+        IContent editable = EditableContent(1234, SharedKey);
         string expected = useKeys ? SharedKey.ToString("D") : "1234";
 
         Assert.Equal(useKeys, configuration.UseContentKeysAsIds);
@@ -57,7 +57,7 @@ public class ContentIdentityTests
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(
             new Dictionary<string, string?> { ["Relewise:Umbraco:UseContentKeysAsIds"] = (!useKeys).ToString() }).Build());
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) => options.UseContentKeysAsIds = useKeys);
-        using var provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
 
         Assert.Equal(useKeys, new RelewiseUmbracoConfiguration(provider).UseContentKeysAsIds);
     }
@@ -65,10 +65,10 @@ public class ContentIdentityTests
     [Fact]
     public void SharedKeyMatchesAcrossDifferentLocalIdsOnlyWhenOptedIn()
     {
-        var first = PublishedContent(1234, SharedKey);
-        var second = PublishedContent(9876, SharedKey);
-        var keys = Configuration("true");
-        var numeric = Configuration(null);
+        IPublishedContent first = PublishedContent(1234, SharedKey);
+        IPublishedContent second = PublishedContent(9876, SharedKey);
+        RelewiseUmbracoConfiguration keys = Configuration("true");
+        RelewiseUmbracoConfiguration numeric = Configuration(null);
 
         Assert.Equal(keys.GetContentId(first), keys.GetContentId(second));
         Assert.NotEqual(numeric.GetContentId(first), numeric.GetContentId(second));
@@ -84,7 +84,7 @@ public class ContentIdentityTests
     [InlineData(true, "delete")]
     public async Task LifecycleActionsTargetConfiguredIdentityAndIgnoreUnregisteredTypes(bool useKeys, string operation)
     {
-        var configuration = Configuration(useKeys.ToString());
+        RelewiseUmbracoConfiguration configuration = Configuration(useKeys.ToString());
         var tracker = new Mock<ITracker>();
         ContentAdministrativeAction? captured = null;
         using var cancellation = new CancellationTokenSource();
@@ -154,7 +154,7 @@ public class ContentIdentityTests
         var userLocator = new Mock<IRelewiseUserLocator>();
         userLocator.Setup(x => x.GetUser()).ReturnsAsync(User.Anonymous());
         services.AddSingleton(userLocator.Object);
-        using var provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
         bool nextCalled = false;
         var middleware = new RelewiseContentMiddleware(_ => { nextCalled = true; return Task.CompletedTask; }, Configuration(useKeys.ToString()));
 
@@ -226,7 +226,7 @@ public class ContentIdentityTests
             options.SearchProviders.DefaultPublishedContentProviderAlias = "articles";
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
-        using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         var provider = new MappedEntitySearcher(root.GetRequiredService<RelewiseUmbracoConfiguration>(), root.GetRequiredService<IServiceScopeFactory>(), accessor);
         var middleware = new RelewiseContentMiddleware(_ => Task.CompletedTask, Configuration("true"));
         await Task.WhenAll(Enumerable.Range(0, 12).Select(async visitor =>
@@ -239,7 +239,7 @@ public class ContentIdentityTests
                     "authenticated" => User.ByAuthenticatedId($"customer-{visitor}", $"browser-{visitor}"),
                     _ => User.Anonymous()
                 };
-                using var scope = root.CreateScope();
+                using IServiceScope scope = root.CreateScope();
                 accessor.HttpContext = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
                 accessor.HttpContext.Items["User"] = currentUser;
                 await middleware.InvokeAsync(accessor.HttpContext);
@@ -248,7 +248,7 @@ public class ContentIdentityTests
                     facets: [new KeywordFacet("tag"), new IntegerRangeFacet("number", [new("low", 0, 10), new("high", 10, null)])],
                     culture: "en-US", accessContext: new AccessContext(Guid.NewGuid(), []));
                 Assert.Contains(views, view => ReferenceEquals(currentUser, view.User));
-                var visitorSearches = searches.Where(search => search.Term == query).ToArray();
+                ContentSearchRequest[] visitorSearches = searches.Where(search => search.Term == query).ToArray();
                 Assert.Equal(4, visitorSearches.Length); // Main search, keyword facet, two range buckets.
                 Assert.All(visitorSearches, search => Assert.Same(currentUser, search.User));
             }
@@ -259,7 +259,7 @@ public class ContentIdentityTests
         }));
         Assert.Equal(12, views.Count);
         Assert.Equal(12, locators.Count);
-        foreach (var locator in locators)
+        foreach (Mock<IRelewiseUserLocator> locator in locators)
         {
             locator.Verify(x => x.GetUser(), Times.Exactly(2)); // View + search; metadata must not identify a visitor.
             locator.As<IDisposable>().Verify(x => x.Dispose(), Times.Once);
@@ -271,7 +271,7 @@ public class ContentIdentityTests
     {
         var services = new ServiceCollection();
         services.AddScoped<IRelewiseUserLocator>(_ => throw new InvalidOperationException("Must only resolve during a request"));
-        using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         var builder = new Mock<IUmbracoApplicationBuilderContext>();
         builder.SetupGet(x => x.ApplicationServices).Returns(root);
         builder.SetupGet(x => x.AppBuilder).Returns(new ApplicationBuilder(root));
@@ -285,7 +285,7 @@ public class ContentIdentityTests
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(
             new Dictionary<string, string?> { ["Relewise:Umbraco:UseContentKeysAsIds"] = value }).Build());
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) => options.AddContentType("article", type => type.AutoMap()));
-        using var provider = services.BuildServiceProvider();
+        using ServiceProvider provider = services.BuildServiceProvider();
         return new RelewiseUmbracoConfiguration(provider);
     }
 

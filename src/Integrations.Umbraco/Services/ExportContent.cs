@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core.Models;
 

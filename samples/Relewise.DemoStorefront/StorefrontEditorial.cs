@@ -1,8 +1,10 @@
-using System.Text;
 using System.Net;
+using System.Text;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Strings;
+
+namespace Relewise.DemoStorefront;
 
 internal static class StorefrontEditorial
 {
@@ -29,7 +31,7 @@ internal static class StorefrontEditorial
             switch (blocks)
             {
                 case BlockListModel list:
-                    foreach (var item in list)
+                    foreach (BlockListItem item in list)
                     {
                         Visit(item);
                     }
@@ -39,7 +41,7 @@ internal static class StorefrontEditorial
                     Element(item.Content);
                     break;
                 case BlockGridModel grid:
-                    foreach (var item in grid)
+                    foreach (BlockGridItem item in grid)
                     {
                         Visit(item);
                     }
@@ -47,9 +49,9 @@ internal static class StorefrontEditorial
                     break;
                 case BlockGridItem item when item.Settings?.GetProperty("hide")?.GetValue(culture) is not true:
                     Element(item.Content);
-                    foreach (var area in item.Areas)
+                    foreach (BlockGridArea area in item.Areas)
                     {
-                        foreach (var child in area)
+                        foreach (BlockGridItem child in area)
                         {
                             Visit(child);
                         }

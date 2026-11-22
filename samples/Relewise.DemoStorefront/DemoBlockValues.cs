@@ -1,5 +1,8 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Umbraco.Cms.Core.Services;
+
+namespace Relewise.DemoStorefront;
 
 // Build the native editor values so the published models exercise the actual Umbraco converters.
 internal static class DemoBlockValues
@@ -14,7 +17,8 @@ internal static class DemoBlockValues
             [new { contentKey = key }],
             [Element(key, types.Get("editorialText")!.Key, Value("text", "Umbraco.RichText", RichText(markup)))],
             [],
-            [new { contentKey = key, culture = (string?)null, segment = (string?)null }]);
+            [new { contentKey = key, culture = (string?)null, segment = (string?)null }]
+        );
     }
 
     internal static string Prices(Guid priceType, params (string Currency, decimal Amount)[] prices)
@@ -27,7 +31,8 @@ internal static class DemoBlockValues
                 keys[index],
                 priceType,
                 Value("currency", "Umbraco.DropDown.Single", JsonSerializer.Serialize(new[] { price.Currency })),
-                Value("amount", "Umbraco.Decimal", price.Amount))).ToArray(),
+                Value("amount", "Umbraco.Decimal", price.Amount)
+            )).ToArray(),
             [],
             keys.Select(key => (object)new { contentKey = key, culture = (string?)null, segment = (string?)null }).ToArray());
     }
@@ -41,11 +46,25 @@ internal static class DemoBlockValues
         Guid nestedKey = Guid.NewGuid();
         object[] nestedValues = localized
             ? [Value("heading", "Umbraco.TextBox", "English nested heading", "en-US"),
-               Value("text", "Umbraco.RichText", RichText("<p>English <strong>woodland</strong> route &amp; picnic.</p>"), "en-US"),
+               Value(
+                   "text",
+                   "Umbraco.RichText",
+                   RichText("<p>English <strong>woodland</strong> route &amp; picnic.</p>"),
+                   "en-US"
+               ),
                Value("heading", "Umbraco.TextBox", "Dansk indlejret overskrift", "da-DK"),
-               Value("text", "Umbraco.RichText", RichText("<p>Dansk <strong>skovtur</strong> med kaffe &amp; madpakke.</p>"), "da-DK")]
+               Value(
+                   "text",
+                   "Umbraco.RichText",
+                   RichText("<p>Dansk <strong>skovtur</strong> med kaffe &amp; madpakke.</p>"),
+                   "da-DK"
+               )]
             : [Value("heading", "Umbraco.TextBox", "Nested trail advice"),
-               Value("text", "Umbraco.RichText", RichText("<p>Follow the <strong>woodland</strong> path &amp; refill your flask.</p>"))];
+               Value(
+                   "text",
+                   "Umbraco.RichText",
+                   RichText("<p>Follow the <strong>woodland</strong> path &amp; refill your flask.</p>")
+               )];
         object[] nestedExposure = (localized ? new[] { "en-US", "da-DK" } : new string?[] { null })
             .Select(culture => (object)new { contentKey = nestedKey, culture, segment = (string?)null }).ToArray();
         string nested = Serialize(
@@ -53,7 +72,8 @@ internal static class DemoBlockValues
             [new { contentKey = nestedKey }],
             [Element(nestedKey, nestedType, nestedValues)],
             [],
-            nestedExposure);
+            nestedExposure
+        );
         Guid textKey = Guid.NewGuid();
         Guid groupKey = Guid.NewGuid();
         Guid hiddenKey = Guid.NewGuid();
@@ -74,15 +94,22 @@ internal static class DemoBlockValues
         return Serialize(
             "Umbraco.BlockList",
             [new { contentKey = textKey }, new { contentKey = groupKey }, new { contentKey = hiddenKey, settingsKey }],
-            [Element(textKey, textType,
+            [Element(                textKey,                 textType,
                 Value("heading", "Umbraco.TextBox", "Ready for the outdoors"),
-                Value("text", "Umbraco.RichText", RichText("<p>Bring a <strong>reusable flask</strong> and enjoy the quiet outdoors.</p>"))),
+                Value(
+                    "text",
+                    "Umbraco.RichText",
+                    RichText("<p>Bring a <strong>reusable flask</strong> and enjoy the quiet outdoors.</p>")
+                )
+            ),
              Element(groupKey, groupType, groupValues),
-             Element(hiddenKey, textType,
-                Value("heading", "Umbraco.TextBox", "Hidden block example"),
-                Value("text", "Umbraco.RichText", RichText("<p>Hidden editorial marker: secret-list-note.</p>")))],
+             Element(                 hiddenKey,                  textType,
+                 Value("heading", "Umbraco.TextBox", "Hidden block example"),
+                 Value("text", "Umbraco.RichText", RichText("<p>Hidden editorial marker: secret-list-note.</p>"))
+             )],
             [Element(settingsKey, settingType, Value("hide", "Umbraco.TrueFalse", true))],
-            exposure);
+            exposure
+        );
     }
 
     internal static string Grid(IContentTypeService types)
@@ -98,11 +125,24 @@ internal static class DemoBlockValues
             "Umbraco.BlockGrid",
             [GridItem(parent, child), GridItem(hidden, hiddenChild, settings)],
             [Element(parent, groupType, Value("heading", "Umbraco.TextBox", "Grid adventure planner")),
-             Element(child, textType,
-                Value("heading", "Umbraco.TextBox", "Inside the Grid area"),
-                Value("text", "Umbraco.RichText", RichText("<p>Pack a <em>lightweight picnic</em> for the ridge trail.</p>"))),
+             Element(                 child,                  textType,
+                 Value("heading", "Umbraco.TextBox", "Inside the Grid area"),
+                 Value(
+                     "text",
+                     "Umbraco.RichText",
+                     RichText("<p>Pack a <em>lightweight picnic</em> for the ridge trail.</p>")
+                 )
+             ),
              Element(hidden, groupType, Value("heading", "Umbraco.TextBox", "Hidden Grid container")),
-             Element(hiddenChild, textType, Value("text", "Umbraco.RichText", RichText("<p>Hidden child marker: secret-grid-note.</p>")))],
+             Element(
+                 hiddenChild,
+                 textType,
+                 Value(
+                     "text",
+                     "Umbraco.RichText",
+                     RichText("<p>Hidden child marker: secret-grid-note.</p>")
+                 )
+             )],
             [Element(settings, types.Get("editorialVisibility")!.Key, Value("hide", "Umbraco.TrueFalse", true))],
             new[] { parent, child, hidden, hiddenChild }.Select(key => (object)new
             {
@@ -130,16 +170,16 @@ internal static class DemoBlockValues
             ["Hidden Grid container"] = "Skjult gitterbeholder",
             ["Hidden child marker: secret-grid-note."] = "Skjult undermarkør: secret-grid-note."
         };
-        var document = System.Text.Json.Nodes.JsonNode.Parse(json)!;
+        JsonNode document = System.Text.Json.Nodes.JsonNode.Parse(json)!;
         void Translate(System.Text.Json.Nodes.JsonNode node)
         {
             if (node is System.Text.Json.Nodes.JsonObject obj)
             {
-                foreach (var property in obj.ToArray())
+                foreach (KeyValuePair<string, JsonNode?> property in obj.ToArray())
                 {
                     if (property.Value is System.Text.Json.Nodes.JsonValue scalar && scalar.TryGetValue(out string? text))
                     {
-                        foreach (var translation in translations)
+                        foreach (KeyValuePair<string, string> translation in translations)
                         {
                             text = text.Replace(translation.Key, translation.Value, StringComparison.Ordinal);
                         }
@@ -160,7 +200,7 @@ internal static class DemoBlockValues
             }
             else if (node is System.Text.Json.Nodes.JsonArray array)
             {
-                foreach (var child in array)
+                foreach (JsonNode? child in array)
                 {
                     if (child != null)
                     {
@@ -190,7 +230,9 @@ internal static class DemoBlockValues
         markup,
         blocks = new
         {
-            layout = new { },
+            layout = new
+            {
+            },
             contentData = Array.Empty<object>(),
             settingsData = Array.Empty<object>(),
             expose = Array.Empty<object>()
@@ -199,7 +241,14 @@ internal static class DemoBlockValues
 
     private static object Element(Guid key, Guid type, params object[] values) => new { key, contentTypeKey = type, values };
     private static object Value(string alias, string editorAlias, object? value, string? culture = null)
-        => new { alias, editorAlias, value, culture, segment = (string?)null };
+        => new
+        {
+            alias,
+            editorAlias,
+            value,
+            culture,
+            segment = (string?)null
+        };
     private static string Serialize(string editor, object[] layout, object[] content, object[] settings, object[] expose)
         => JsonSerializer.Serialize(new
         {

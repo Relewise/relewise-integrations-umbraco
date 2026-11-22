@@ -1,3 +1,5 @@
+namespace Relewise.DemoStorefront;
+
 internal sealed class CartModel
 {
     public CartLineModel[] Lines { get; init; } = [];

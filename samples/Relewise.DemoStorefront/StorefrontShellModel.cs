@@ -1,3 +1,5 @@
+namespace Relewise.DemoStorefront;
+
 internal sealed class StorefrontShellModel
 {
     public Dictionary<string, string> Labels { get; init; } = [];
@@ -10,6 +12,10 @@ internal sealed class StorefrontShellModel
     public string MarketLabel { get; init; } = "";
     public StorefrontMarketOption[] Markets { get; init; } = [];
     public StorefrontLink[] Links { get; init; } = [];
+    public StorefrontLink[] ShopLinks { get; init; } = [];
+    public StorefrontLink[] BrandLinks { get; init; } = [];
+    public string JournalUrl { get; init; } = "";
+    public string? DatasetId { get; init; }
     public int Count { get; init; }
     public bool Checkout { get; init; }
     public bool SearchConfigured { get; init; }

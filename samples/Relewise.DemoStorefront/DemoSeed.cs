@@ -1,17 +1,22 @@
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Models.ContentEditing;
 using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Services.OperationStatus;
 using Umbraco.Cms.Core.Strings;
+using Umbraco.Cms.Infrastructure.Scoping;
+
+namespace Relewise.DemoStorefront;
 
 internal static class DemoSeed
 {
     internal static async Task InitializeAsync(IServiceProvider root)
     {
-        await using var scope = root.CreateAsyncScope();
+        await using AsyncServiceScope scope = root.CreateAsyncScope();
         IServiceProvider services = scope.ServiceProvider;
-        var contentTypes = services.GetRequiredService<IContentTypeService>();
+        IContentTypeService contentTypes = services.GetRequiredService<IContentTypeService>();
         if (contentTypes.Get("product") != null)
         {
             if (contentTypes.Get("currencyPrice") == null)
@@ -31,10 +36,12 @@ internal static class DemoSeed
         await Prepare(services.GetRequiredService<IContentTypeService>(), services.GetRequiredService<IDataTypeService>(),
             services.GetRequiredService<ITemplateService>(), services.GetRequiredService<IContentService>(), services.GetRequiredService<IShortStringHelper>(),
             services.GetRequiredService<IWebHostEnvironment>(), services.GetRequiredService<PropertyEditorCollection>(),
-            services.GetRequiredService<IConfigurationEditorJsonSerializer>(), services.GetRequiredService<ILanguageService>());
+            services.GetRequiredService<IConfigurationEditorJsonSerializer>(), services.GetRequiredService<ILanguageService>()
+        );
         await Run(services.GetRequiredService<IContentService>(), services.GetRequiredService<IContentTypeService>(),
             services.GetRequiredService<Umbraco.Cms.Infrastructure.Scoping.IScopeProvider>(), services.GetRequiredService<IDomainService>(),
-            services.GetRequiredService<IConfiguration>());
+            services.GetRequiredService<IConfiguration>()
+        );
         await DemoCatalogue.EnsureAsync(services);
         await DemoLocalization.EnsureAsync(services);
         await DemoProductDetails.EnsureAsync(services);
@@ -47,16 +54,16 @@ internal static class DemoSeed
         IContentService content, IShortStringHelper strings, IWebHostEnvironment environment,
         PropertyEditorCollection editors, IConfigurationEditorJsonSerializer serializer, ILanguageService languages)
     {
-        var available = (await dataTypes.GetAllAsync()).ToArray();
-        var text = available.First(type => type.Name == "Textstring");
-        var picker = available.First(type => type.EditorAlias == "Umbraco.ContentPicker");
-        var numeric = available.First(type => type.Name == "Numeric");
+        IDataType[] available = (await dataTypes.GetAllAsync()).ToArray();
+        IDataType text = available.First(type => type.Name == "Textstring");
+        IDataType picker = available.First(type => type.EditorAlias == "Umbraco.ContentPicker");
+        IDataType numeric = available.First(type => type.Name == "Numeric");
         if (await languages.GetAsync("da-DK") == null)
         {
             await languages.CreateAsync(new Language("da-DK", "Danish"), Constants.Security.SuperUserKey);
         }
 
-        var categories = available.FirstOrDefault(type => type.Name == "RFC category references");
+        IDataType? categories = available.FirstOrDefault(type => type.Name == "RFC category references");
         if (categories == null)
         {
             categories = new DataType(editors.Single(editor => editor.Alias == "Umbraco.DocumentPicker.Multiple"), serializer)
@@ -66,16 +73,29 @@ internal static class DemoSeed
             };
             await dataTypes.CreateAsync(categories, Constants.Security.SuperUserKey);
         }
-        var schema = await DemoEditorialSchema.Create(types, dataTypes, strings, editors, serializer);
-        var template = await templates.GetAsync("storefront");
+        (IDataType Blocks, IDataType Grid, IDataType Prices) schema = await DemoEditorialSchema.Create(
+            types,
+            dataTypes,
+            strings,
+            editors,
+            serializer
+        );
+        ITemplate? template = await templates.GetAsync("storefront");
         if (template == null)
         {
-            template = new Template(strings, "Storefront", "storefront") { Content = await System.IO.File.ReadAllTextAsync(Path.Combine(environment.ContentRootPath, "Views", "storefront.cshtml")) };
+            template = new Template(strings, "Storefront", "storefront")
+            {
+                Content = await System.IO.File.ReadAllTextAsync(Path.Combine(
+                    environment.ContentRootPath,
+                    "Views",
+                    "storefront.cshtml"
+                ))
+            };
             await templates.CreateAsync(template, Constants.Security.SuperUserKey);
         }
         foreach (string alias in new[] { "home", "article", "guide", "folder", "brand", "productCategory", "product", "productVariant" })
         {
-            var type = types.Get(alias);
+            IContentType? type = types.Get(alias);
             if (type == null)
             {
                 type = new ContentType(strings, -1) { Alias = alias, Name = alias, AllowedAsRoot = true };
@@ -142,21 +162,30 @@ internal static class DemoSeed
         Guid priceType = types.Get("currencyPrice")!.Key;
         IContent Node(string name, int parent, string type, Dictionary<string, string>? properties = null)
         {
-            using var scope = scopes.CreateScope();
+            using IScope scope = scopes.CreateScope();
             scope.EagerWriteLock(Constants.Locks.ContentTree);
-            var all = content.GetRootContent().SelectMany(root => new[] { root }.Concat(content.GetPagedDescendants(root.Id, 0, 1000, out _)));
-            var node = all.FirstOrDefault(node => node.Name == name && node.ContentType.Alias == type) ?? content.Create(name, parent, type);
+            IEnumerable<IContent> all = content.GetRootContent().SelectMany(root => new[] { root }.Concat(content.GetPagedDescendants(
+                root.Id,
+                0,
+                1000,
+                out _
+            )));
+            IContent node = all.FirstOrDefault(node => node.Name == name && node.ContentType.Alias == type) ?? content.Create(
+                name,
+                parent,
+                type
+            );
             node.TemplateId = templateId;
             node.SetValue("heading", name);
             node.SetValue("heroImage", "/images/" + (name.Contains("flask") ? "flask" : name.Contains("shelter") ? "shelter" : "daypack") + ".svg");
-            foreach (var field in properties ?? [])
+            foreach (KeyValuePair<string, string> field in properties ?? [])
             {
                 node.SetValue(field.Key, field.Value);
             }
 
             if (type == "product")
             {
-                var brand = content.GetRootContent().Single(node => node.ContentType.Alias == "brand");
+                IContent brand = content.GetRootContent().Single(node => node.ContentType.Alias == "brand");
                 node.SetValue("brand", Udi.Create(Constants.UdiEntityType.Document, brand.Key).ToString());
                 node.SetValue("stock", name.Contains("flask") ? 20 : name.Contains("shelter") ? 30 : 10);
             }
@@ -166,7 +195,7 @@ internal static class DemoSeed
                 node.SetValue("pageGrid", DemoBlockValues.Grid(types));
             }
             content.Save(node);
-            var published = content.Publish(node, ["*"]);
+            PublishResult published = content.Publish(node, ["*"]);
             if (!published.Success)
             {
                 throw new InvalidOperationException($"Failed publishing {name}: {published.Result}");
@@ -176,31 +205,36 @@ internal static class DemoSeed
             return node;
         }
         Node("Fieldwork storefront", -1, "home");
-        var brand = Node("Fieldwork", -1, "brand", new()
+        IContent brand = Node("Fieldwork", -1, "brand", new()
         {
             ["brandId"] = "U19-SMOKE-BRAND"
-        });
-        var adventures = Node("Fieldwork adventures", -1, "productCategory", new()
+        }
+        );
+        IContent adventures = Node("Fieldwork adventures", -1, "productCategory", new()
         {
             ["categoryId"] = "U19-SMOKE-ADVENTURES"
-        });
-        var folder = Node("Trail routes", adventures.Id, "folder");
-        var hikes = Node("Day hikes", folder.Id, "productCategory", new()
+        }
+        );
+        IContent folder = Node("Trail routes", adventures.Id, "folder");
+        IContent hikes = Node("Day hikes", folder.Id, "productCategory", new()
         {
             ["categoryId"] = "U19-SMOKE-DAYHIKES"
-        });
-        var category = Node("Fieldwork equipment", -1, "productCategory", new()
+        }
+        );
+        IContent category = Node("Fieldwork equipment", -1, "productCategory", new()
         {
             ["categoryId"] = "U19-SMOKE-EQUIPMENT"
-        });
-        var pack = Node("Trail daypack", category.Id, "product", new()
+        }
+        );
+        IContent pack = Node("Trail daypack", category.Id, "product", new()
         {
             ["sku"] = "U19-SMOKE-PACK",
             ["listPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 899m), ("EUR", 119.95m), ("USD", 129.95m)),
             ["salesPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 699m), ("EUR", 94.95m), ("USD", 99.95m)),
             ["bodyText"] = "A lightweight daypack for trails, city commutes and everything between."
-        });
-        using (var scope = scopes.CreateScope())
+        }
+        );
+        using (IScope scope = scopes.CreateScope())
         {
             scope.EagerWriteLock(Constants.Locks.ContentTree);
             pack.SetValue("extraCategories", System.Text.Json.JsonSerializer.Serialize(new[] { category.Key, hikes.Key, hikes.Key }));
@@ -217,43 +251,54 @@ internal static class DemoSeed
             ["sku"] = "U19-SMOKE-PACK-FOREST",
             ["color"] = "Forest",
             ["bodyText"] = "The forest green edition of our everyday daypack."
-        });
+        }
+        );
         Node("Trail daypack Sand", pack.Id, "productVariant", new()
         {
             ["sku"] = "U19-SMOKE-PACK-SAND",
             ["color"] = "Sand",
             ["bodyText"] = "A warm sand finish, made for all seasons."
-        });
+        }
+        );
         Node("Trail flask", category.Id, "product", new()
         {
             ["sku"] = "U19-SMOKE-FLASK",
             ["listPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 299m), ("EUR", 39.95m), ("USD", 44.95m)),
             ["salesPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 249m), ("EUR", 34.95m), ("USD", 36.95m)),
             ["bodyText"] = "Keep your coffee warm and your water cool, from first light to late evening."
-        });
+        }
+        );
         Node("Camp shelter", category.Id, "product", new()
         {
             ["sku"] = "U19-SMOKE-SHELTER",
             ["listPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 1999m), ("EUR", 269.95m), ("USD", 289.95m)),
             ["salesPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 1599m), ("EUR", 214.95m), ("USD", 229.95m)),
             ["bodyText"] = "Simple shelter, thoughtful details. A place to pause on your next adventure."
-        });
-        var article = Node("Finding your trail", -1, "article", new()
+        }
+        );
+        IContent article = Node("Finding your trail", -1, "article", new()
         {
             ["bodyText"] = "Our field guide to getting outdoors. Choose your route, pack lightly and leave no trace."
-        });
+        }
+        );
         Node("A slower kind of weekend", -1, "article", new()
         {
             ["bodyText"] = "Good coffee, a quiet campsite and time to explore. The essentials for a weekend outside."
-        });
+        }
+        );
         Node("Packing for your first camp", article.Id, "guide", new()
         {
             ["bodyText"] = "A practical packing checklist from the Fieldwork team."
-        });
-        using (var scope = scopes.CreateScope())
+        }
+        );
+        using (IScope scope = scopes.CreateScope())
         {
             scope.EagerWriteLock(Constants.Locks.ContentTree);
-            var localized = content.GetRootContent().FirstOrDefault(node => node.ContentType.Alias == "localizedArticle") ?? content.Create("Across the seasons", -1, "localizedArticle");
+            IContent localized = content.GetRootContent().FirstOrDefault(node => node.ContentType.Alias == "localizedArticle") ?? content.Create(
+                "Across the seasons",
+                -1,
+                "localizedArticle"
+            );
             localized.TemplateId = templateId;
             localized.SetCultureName("Across the seasons", "en-US");
             localized.SetCultureName("Gennem årstiderne", "da-DK");
@@ -273,12 +318,13 @@ internal static class DemoSeed
 
             scope.Complete();
         }
-        var localizedRoot = content.GetRootContent().Single(node => node.ContentType.Alias == "localizedArticle");
-        var domainResult = await domains.UpdateDomainsAsync(localizedRoot.Key, new Umbraco.Cms.Core.Models.ContentEditing.DomainsUpdateModel
+        IContent localizedRoot = content.GetRootContent().Single(node => node.ContentType.Alias == "localizedArticle");
+        Attempt<DomainUpdateResult, DomainOperationStatus> domainResult = await domains.UpdateDomainsAsync(localizedRoot.Key, new Umbraco.Cms.Core.Models.ContentEditing.DomainsUpdateModel
         {
             DefaultIsoCode = "en-US",
             Domains = [new() { DomainName = configuration["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!.TrimEnd('/') + "/en", IsoCode = "en-US" }, new() { DomainName = configuration["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!.TrimEnd('/') + "/da", IsoCode = "da-DK" }]
-        });
+        }
+        );
         if (!domainResult.Success)
         {
             throw new InvalidOperationException($"Failed configuring localized storefront routes: {domainResult.Status}.");

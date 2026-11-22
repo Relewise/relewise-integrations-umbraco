@@ -73,7 +73,7 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
 
         var options = new PropertyMappingOptions<TValue>();
         configure?.Invoke(options);
-        var value = Expression.Parameter(typeof(TValue), "value");
+        ParameterExpression value = Expression.Parameter(typeof(TValue), "value");
         Action<TEntity, TValue> assign = Expression.Lambda<Action<TEntity, TValue>>(
             Expression.Assign(destinationProperty.Body, value), destinationProperty.Parameters[0], value).Compile();
         Definition.AddProperty(property.Name, new PropertyMapping<TEntity, TValue>(sourcePropertyAlias, property.Name, assign, options.Converter, options.ConverterType));

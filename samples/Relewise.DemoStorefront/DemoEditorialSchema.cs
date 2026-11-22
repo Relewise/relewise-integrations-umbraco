@@ -5,6 +5,8 @@ using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 
+namespace Relewise.DemoStorefront;
+
 internal static class DemoEditorialSchema
 {
     internal static readonly Guid GridAreaKey = Guid.Parse("79296d5c-10c4-4053-bc78-f1ea40602050");
@@ -23,7 +25,7 @@ internal static class DemoEditorialSchema
 
         async Task<IDataType> Data(string name, string editor, Dictionary<string, object> configuration)
         {
-            var existing = available.FirstOrDefault(type => type.Name == name);
+            IDataType? existing = available.FirstOrDefault(type => type.Name == name);
             if (existing != null)
             {
                 return existing;
@@ -48,7 +50,7 @@ internal static class DemoEditorialSchema
 
         async Task<IContentType> Element(string alias, string name, IDataType body, bool localized = false)
         {
-            var existing = types.Get(alias);
+            IContentType? existing = types.Get(alias);
             if (existing != null)
             {
                 return existing;
@@ -70,12 +72,20 @@ internal static class DemoEditorialSchema
         IDataType currencies = await Data(
             "Demo currencies",
             "Umbraco.DropDown.Single",
-            new() { ["items"] = new[] { "DKK", "EUR", "USD" } });
+            new()
+            {
+                ["items"] = new[] { "DKK", "EUR", "USD" }
+            }
+        );
         IDataType amount = await Data(
             "Demo price amount",
             Constants.PropertyEditors.Aliases.Decimal,
-            new() { ["step"] = 0.01d });
-        var price = types.Get("currencyPrice");
+            new()
+            {
+                ["step"] = 0.01d
+            }
+        );
+        IContentType? price = types.Get("currencyPrice");
         if (price == null)
         {
             price = new ContentType(strings, -1) { Alias = "currencyPrice", Name = "Currency price", IsElement = true };
@@ -87,13 +97,19 @@ internal static class DemoEditorialSchema
         IDataType prices = await Data("Demo multi-currency prices", "Umbraco.BlockList", new()
         {
             ["blocks"] = new[] { new { contentElementTypeKey = price.Key, label = "{=currency} {=amount}" } }
-        });
+        }
+        );
 
         IContentType editorial = await Element("editorialText", "Editorial rich text", richText);
-        IContentType localizedText = await Element("localizedEditorialText", "Localized editorial text", richText, true);
+        IContentType localizedText = await Element(
+            "localizedEditorialText",
+            "Localized editorial text",
+            richText,
+            true
+        );
         IContentType group = await Element("editorialGroup", "Editorial group", text);
         IContentType localizedGroup = await Element("localizedEditorialGroup", "Localized editorial group", text, true);
-        var visibility = types.Get("editorialVisibility");
+        IContentType? visibility = types.Get("editorialVisibility");
         if (visibility == null)
         {
             visibility = new ContentType(strings, -1) { Alias = "editorialVisibility", Name = "Editorial visibility", IsElement = true };
@@ -111,7 +127,7 @@ internal static class DemoEditorialSchema
             }).ToArray()
         });
 
-        foreach (var container in new[] { group, localizedGroup })
+        foreach (IContentType? container in new[] { group, localizedGroup })
         {
             if (!container.PropertyTypes.Any(property => property.Alias == "items"))
             {

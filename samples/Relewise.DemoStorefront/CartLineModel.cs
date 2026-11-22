@@ -1,3 +1,5 @@
+namespace Relewise.DemoStorefront;
+
 internal sealed record CartLineModel
 {
     public Guid ProductKey { get; init; }

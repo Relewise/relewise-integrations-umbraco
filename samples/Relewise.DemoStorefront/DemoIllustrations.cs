@@ -1,5 +1,6 @@
 using Umbraco.Cms.Core.Models.PublishedContent;
-using Umbraco.Extensions;
+
+namespace Relewise.DemoStorefront;
 
 internal static class DemoIllustrations
 {

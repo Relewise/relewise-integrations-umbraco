@@ -17,7 +17,7 @@ public class AsyncConversionTests
     [InlineData(true, true)]
     public async Task AutoMapRetainsSingleAndMultipleCultureShapes(bool asynchronous, bool text)
     {
-        var property = Property("value", "Custom.Demo", culture => text ? culture + " text" : culture == "en-US" ? 10 : 20);
+        IPublishedProperty property = Property("value", "Custom.Demo", culture => text ? culture + " text" : culture == "en-US" ? 10 : 20);
         var services = new ServiceCollection();
         if (asynchronous)
         {
@@ -29,11 +29,11 @@ public class AsyncConversionTests
         }
 
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
-        await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
-        var converter = root.GetRequiredService<IRelewisePropertyConverter>();
-        var single = await converter.ConvertAsync([property], ["en-US"]);
+        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        IRelewisePropertyConverter converter = root.GetRequiredService<IRelewisePropertyConverter>();
+        IReadOnlyDictionary<string, DataValue?> single = await converter.ConvertAsync([property], ["en-US"]);
         Assert.Equal(text ? DataValue.DataValueTypes.String : DataValue.DataValueTypes.Double, single["value"]!.Type);
-        var multiple = await converter.ConvertAsync([property], ["en-US", "da-DK"]);
+        IReadOnlyDictionary<string, DataValue?> multiple = await converter.ConvertAsync([property], ["en-US", "da-DK"]);
         if (text)
         {
             Assert.Equal(2, multiple["value"]!.ValueAs<Multilingual>().Values!.Count);
@@ -65,8 +65,8 @@ public class AsyncConversionTests
         }
 
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
-        await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
-        var result = await root.GetRequiredService<IRelewisePropertyConverter>().ConvertAsync([Property("value", "Umbraco.TextBox", _ => "original")], ["en-US"]);
+        await using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        IReadOnlyDictionary<string, DataValue?> result = await root.GetRequiredService<IRelewisePropertyConverter>().ConvertAsync([Property("value", "Umbraco.TextBox", _ => "original")], ["en-US"]);
         Assert.Equal("override", result["value"]!.ValueAs<string>());
         Assert.NotNull(observed);
         Assert.True(observed.Disposed);

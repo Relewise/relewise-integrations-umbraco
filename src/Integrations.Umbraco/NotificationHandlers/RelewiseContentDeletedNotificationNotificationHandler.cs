@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client;
@@ -26,7 +26,9 @@ internal class RelewiseContentDeletedNotificationNotificationHandler : INotifica
         ITracker? tracker = _exportContentService.GetTrackerOrNull();
 
         if (tracker == null)
+        {
             return;
+        }
 
         string[] ids = notification.DeletedEntities
             .Where(x => _configuration.CanMap(x))
@@ -34,7 +36,9 @@ internal class RelewiseContentDeletedNotificationNotificationHandler : INotifica
             .ToArray();
 
         if (ids.Length == 0)
+        {
             return;
+        }
 
         var action = new ContentAdministrativeAction(
             Language.Undefined,

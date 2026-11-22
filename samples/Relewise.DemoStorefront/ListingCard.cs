@@ -1,3 +1,5 @@
+namespace Relewise.DemoStorefront;
+
 internal sealed record ListingCard(
     Guid Key,
     string EntityId,

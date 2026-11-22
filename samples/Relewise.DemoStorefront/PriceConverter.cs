@@ -3,6 +3,8 @@ using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco;
 using Umbraco.Cms.Core.Models.Blocks;
 
+namespace Relewise.DemoStorefront;
+
 internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>, IDisposable
 {
     private bool _disposed;
@@ -29,7 +31,7 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
 
         var values = new List<Money>();
         var currencies = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var entry in entries)
+        foreach (BlockListItem entry in entries)
         {
             cancellationToken.ThrowIfCancellationRequested();
             string? code = entry.Content.GetProperty("currency")?.GetValue()?.ToString()?.Trim().ToUpperInvariant();

@@ -32,7 +32,7 @@ public class EntityIndexingServiceTests
         await fixture.Writer.ApplyChangesAsync([
             ContentChange.Document(removed, ChangeImpact.Remove, ContentState.Draft),
             ContentChange.Document(draft, ChangeImpact.Refresh, ContentState.Draft)], CancellationToken.None);
-        var cleanup = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+        ContentAdministrativeAction cleanup = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
         string filters = JsonConvert.SerializeObject(cleanup.Filters);
         Assert.Contains(removed.ToString("D"), filters);
         Assert.DoesNotContain(draft.ToString("D"), filters);
@@ -52,7 +52,7 @@ public class EntityIndexingServiceTests
         Trackable action = Assert.Single(Assert.Single(fixture.Tracked));
         if (product)
         {
-            var update = Assert.IsType<ProductUpdate>(action);
+            ProductUpdate update = Assert.IsType<ProductUpdate>(action);
             Assert.Null(update.Product.Assortments);
             Assert.Null(update.Product.CategoryPaths);
             Assert.False(update.ReplaceExistingVariants);
@@ -60,7 +60,7 @@ public class EntityIndexingServiceTests
         }
         else
         {
-            var update = Assert.IsType<ContentUpdate>(action);
+            ContentUpdate update = Assert.IsType<ContentUpdate>(action);
             Assert.Null(update.Content.Assortments);
             Assert.Null(update.Content.CategoryPaths);
             Assert.Equal("rwUmbracoPublished", Assert.Single(update.Content.Data!).Key);
@@ -108,7 +108,7 @@ public class EntityIndexingServiceTests
     {
         await using var fixture = new Fixture();
         await fixture.Writer.DeleteAsync([new DeletedEntity(typeof(Relewise.Client.DataTypes.Content), "external-id", Guid.NewGuid(), true)], CancellationToken.None);
-        var action = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+        ContentAdministrativeAction action = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
         Assert.Equal(ContentAdministrativeAction.UpdateKind.Delete, action.Kind);
         Assert.Contains("external-id", JsonConvert.SerializeObject(action.Filters));
         fixture.Reader.Verify(value => value.QueryAsync(It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -130,7 +130,7 @@ public class EntityIndexingServiceTests
     {
         await using var fixture = new Fixture();
         await fixture.Writer.RebuildAsync();
-        var cleanup = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+        ContentAdministrativeAction cleanup = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
         Assert.Equal(ContentAdministrativeAction.UpdateKind.Disable, cleanup.Kind);
         string json = JsonConvert.SerializeObject(cleanup.Filters);
         Assert.Contains("test-installation", json);
@@ -182,7 +182,7 @@ public class EntityIndexingServiceTests
         await using var fixture = new Fixture();
         Guid key = Guid.NewGuid();
         await fixture.Writer.ExportAsync([key]);
-        var action = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+        ContentAdministrativeAction action = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
         Assert.Equal(ContentAdministrativeAction.UpdateKind.Delete, action.Kind);
         Assert.Contains(key.ToString("D"), JsonConvert.SerializeObject(action.Filters));
     }
@@ -210,7 +210,7 @@ public class EntityIndexingServiceTests
         public T? GetEnlisted<T>(string key) => _items.TryGetValue(key, out object? value) ? (T?)value : default;
         public void ScopeExit(bool completed)
         {
-            foreach (var action in _actions.Values)
+            foreach (Action<bool> action in _actions.Values)
             {
                 action(completed);
             }
@@ -230,7 +230,7 @@ public class EntityIndexingServiceTests
             var tracker = new Mock<ITracker>();
             tracker.Setup(value => value.TrackAsync(It.IsAny<IEnumerable<Trackable>>(), It.IsAny<CancellationToken>()))
                 .Callback<IEnumerable<Trackable>, CancellationToken>((items, _) => Tracked.Add(items.ToArray())).Returns(Task.CompletedTask);
-            var reader = Reader;
+            Mock<IDataAccessor> reader = Reader;
             reader.Setup(value => value.QueryAsync(It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ContentDetailsCollectionResponse([], 0));
             var clients = new Mock<IRelewiseClientFactory>();

@@ -2,16 +2,18 @@ using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.ContentEditing;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Services.OperationStatus;
 using Umbraco.Cms.Infrastructure.Scoping;
-using Umbraco.Extensions;
+
+namespace Relewise.DemoStorefront;
 
 internal static class DemoLocalization
 {
     internal static async Task EnsureAsync(IServiceProvider services)
     {
-        var content = services.GetRequiredService<IContentService>();
-        var types = services.GetRequiredService<IContentTypeService>();
-        var nodes = content.GetRootContent()
+        IContentService content = services.GetRequiredService<IContentService>();
+        IContentTypeService types = services.GetRequiredService<IContentTypeService>();
+        IContent[] nodes = content.GetRootContent()
             .SelectMany(root => new[] { root }.Concat(content.GetPagedDescendants(root.Id, 0, 1000, out _)))
             .ToArray();
 
@@ -41,7 +43,7 @@ internal static class DemoLocalization
             await types.UpdateAsync(type, Constants.Security.SuperUserKey);
         }
 
-        foreach (var (parent, children) in new (string Parent, string[] Children)[]
+        foreach ((string? parent, string[]? children) in new (string Parent, string[] Children)[]
         {
             ("home", ["article", "localizedArticle", "guide", "folder", "brand", "productCategory"]),
             ("folder", ["article", "localizedArticle", "guide", "folder", "productCategory"]),
@@ -67,20 +69,20 @@ internal static class DemoLocalization
             }
         }
 
-        var domains = services.GetRequiredService<IDomainService>();
+        IDomainService domains = services.GetRequiredService<IDomainService>();
         IContent home = content.GetById(nodes.Single(node => node.ContentType.Alias == "home").Key)!;
         IContent story = nodes.Single(node => node.ContentType.Alias == "localizedArticle");
         // One site root gives every entity the same native culture-aware URL hierarchy.
         if (story.ParentId == -1)
         {
-            var removed = await domains.UpdateDomainsAsync(story.Key, new DomainsUpdateModel { DefaultIsoCode = "en-US", Domains = [] });
+            Attempt<DomainUpdateResult, DomainOperationStatus> removed = await domains.UpdateDomainsAsync(story.Key, new DomainsUpdateModel { DefaultIsoCode = "en-US", Domains = [] });
             if (!removed.Success)
             {
                 throw new InvalidOperationException($"Failed removing the old story domains: {removed.Status}.");
             }
         }
 
-        using (var scope = services.GetRequiredService<IScopeProvider>().CreateScope())
+        using (IScope scope = services.GetRequiredService<IScopeProvider>().CreateScope())
         {
             scope.EagerWriteLock(Constants.Locks.ContentTree);
             foreach (IContent original in nodes.OrderBy(node => node.Level))
@@ -88,13 +90,13 @@ internal static class DemoLocalization
                 IContent node = content.GetById(original.Key)!;
                 bool changed = false;
                 bool publish = original.Published && !original.Edited;
-                if (snapshots.TryGetValue(node.Key, out var snapshot))
+                if (snapshots.TryGetValue(node.Key, out (string? Name, bool Invariant, Dictionary<string, object?> Values) snapshot))
                 {
                     if (snapshot.Invariant)
                     {
                         node.SetCultureName(snapshot.Name, "en-US");
                     }
-                    foreach (var value in snapshot.Values)
+                    foreach (KeyValuePair<string, object?> value in snapshot.Values)
                     {
                         node.SetValue(value.Key, value.Value, "en-US");
                     }
@@ -104,7 +106,7 @@ internal static class DemoLocalization
 
                 if (publish && !node.AvailableCultures.Contains("da-DK", StringComparer.OrdinalIgnoreCase))
                 {
-                    var translation = Translate(node, content);
+                    (string Name, string Body)? translation = Translate(node, content);
                     // Authored content may remain English-only; only known seed items receive automatic translations.
                     if (translation != null)
                     {
@@ -124,7 +126,7 @@ internal static class DemoLocalization
                 }
 
                 if (node.AvailableCultures.Contains("da-DK", StringComparer.OrdinalIgnoreCase) &&
-                    snapshots.TryGetValue(node.Key, out var blocks))
+                    snapshots.TryGetValue(node.Key, out (string? Name, bool Invariant, Dictionary<string, object?> Values) blocks))
                 {
                     foreach (string alias in new[] { "contentRows", "pageGrid" })
                     {
@@ -138,7 +140,7 @@ internal static class DemoLocalization
                 if (changed)
                 {
                     content.Save(node);
-                    var result = publish ? content.Publish(node, node.AvailableCultures.ToArray()) : null;
+                    PublishResult? result = publish ? content.Publish(node, node.AvailableCultures.ToArray()) : null;
                     if (result is { Success: false })
                     {
                         throw new InvalidOperationException($"Failed publishing translations for '{node.Name}': {result.Result}.");
@@ -147,7 +149,7 @@ internal static class DemoLocalization
 
                 if (node.ParentId == -1 && node.Id != home.Id && Translate(node, content) != null)
                 {
-                    var moved = content.Move(node, home.Id);
+                    OperationResult moved = content.Move(node, home.Id);
                     if (!moved.Success)
                     {
                         throw new InvalidOperationException($"Failed moving '{node.Name}' below the site root: {moved.Result}.");
@@ -159,7 +161,7 @@ internal static class DemoLocalization
         }
 
         string baseUrl = services.GetRequiredService<IConfiguration>()["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!.TrimEnd('/');
-        var resultDomains = await domains.UpdateDomainsAsync(home.Key, new DomainsUpdateModel
+        Attempt<DomainUpdateResult, DomainOperationStatus> resultDomains = await domains.UpdateDomainsAsync(home.Key, new DomainsUpdateModel
         {
             DefaultIsoCode = "en-US",
             Domains =
@@ -167,7 +169,8 @@ internal static class DemoLocalization
                 new() { DomainName = baseUrl + "/en", IsoCode = "en-US" },
                 new() { DomainName = baseUrl + "/da", IsoCode = "da-DK" }
             ]
-        });
+        }
+        );
         if (!resultDomains.Success)
         {
             throw new InvalidOperationException($"Failed configuring the bilingual site: {resultDomains.Status}.");
@@ -182,7 +185,7 @@ internal static class DemoLocalization
         if (node.ContentType.Alias == "productVariant")
         {
             IContent parent = content.GetById(node.ParentId)!;
-            if (!Products.TryGetValue(parent.GetValue<string>("sku") ?? "", out var product))
+            if (!Products.TryGetValue(parent.GetValue<string>("sku") ?? "", out (string Name, string Body) product))
             {
                 return null;
             }
@@ -199,7 +202,7 @@ internal static class DemoLocalization
             return (product.Name + " " + option, product.Body + " Fås i " + option.ToLowerInvariant() + ".");
         }
 
-        if (sku != null && Products.TryGetValue(sku, out var translated))
+        if (sku != null && Products.TryGetValue(sku, out (string Name, string Body) translated))
         {
             return translated;
         }

@@ -14,10 +14,10 @@ public class DemoEditorialMappingTests
     [Fact]
     public void ReadingInvariantBlocksSetsTheAmbientCultureAndRestoresIt()
     {
-        var variations = Variations();
+        IVariationContextAccessor variations = Variations();
         var previous = new VariationContext("en-US");
         variations.VariationContext = previous;
-        var property = Property("contentRows", _ =>
+        IPublishedProperty property = Property("contentRows", _ =>
             variations.VariationContext?.Culture == "da-DK"
                 ? Blocks(Property("text", _ => "Dansk blok"))
                 : throw new InvalidOperationException("Localized blocks require an ambient culture."));
@@ -29,10 +29,10 @@ public class DemoEditorialMappingTests
     [Fact]
     public void AFailedBlockReadRestoresTheAmbientCulture()
     {
-        var variations = Variations();
+        IVariationContextAccessor variations = Variations();
         var previous = new VariationContext("en-US");
         variations.VariationContext = previous;
-        var property = Property("contentRows", _ => throw new InvalidOperationException("Conversion failed."));
+        IPublishedProperty property = Property("contentRows", _ => throw new InvalidOperationException("Conversion failed."));
 
         Assert.Throws<InvalidOperationException>(() => EditorialBlockText.ExtractProperty(property, "da-DK", variations));
         Assert.Same(previous, variations.VariationContext);
@@ -43,13 +43,13 @@ public class DemoEditorialMappingTests
     [InlineData(true)]
     public async Task LocalizedBlocksAndConvertedBodyStayInTheirOwnCultures(bool outerPropertyVaries)
     {
-        var blocks = Blocks(Property("text", culture => culture == "da-DK" ? "Dansk blok" : "English block", true));
-        var property = Property("contentRows", _ => blocks, outerPropertyVaries, "Umbraco.BlockList");
-        var source = Source(property);
+        BlockListModel blocks = Blocks(Property("text", culture => culture == "da-DK" ? "Dansk blok" : "English block", true));
+        IPublishedProperty property = Property("contentRows", _ => blocks, outerPropertyVaries, "Umbraco.BlockList");
+        IPublishedContent source = Source(property);
         string[] cultures = ["en-US", "da-DK"];
         await using var operation = new MappingOperation(Mock.Of<IServiceProvider>(), default);
         var converter = new RelewisePropertyConverter([]);
-        var converted = await converter.ConvertPropertyAsync(
+        PropertyConversion converted = await converter.ConvertPropertyAsync(
             source, source, property, cultures, operation, new EditorialBlocksConverter(Variations()));
         var entity = new Content("article")
         {
@@ -62,15 +62,15 @@ public class DemoEditorialMappingTests
                 ["unrelated"] = "Keep me"
             }
         };
-        foreach (var field in converted.Data)
+        foreach (KeyValuePair<string, DataValue?> field in converted.Data)
         {
             entity.Data.Add(field.Key, field.Value);
         }
 
-        var displayName = entity.DisplayName;
+        Multilingual displayName = entity.DisplayName;
         await new EditorialMapper(Variations()).MapAsync(new EntityMappingContext<Content>(source, entity, cultures, operation), default);
 
-        var values = entity.Data["searchText"]!.ValueAs<Multilingual>().Values!;
+        List<Multilingual.Value> values = entity.Data["searchText"]!.ValueAs<Multilingual>().Values!;
         Assert.Equal("English body\nEnglish block", values.Single(value => string.Equals(value.Language.Value, "en-US", StringComparison.OrdinalIgnoreCase)).Text);
         Assert.Equal("Dansk brødtekst\nDansk blok", values.Single(value => string.Equals(value.Language.Value, "da-DK", StringComparison.OrdinalIgnoreCase)).Text);
         Assert.Equal("article", entity.Id);
@@ -81,9 +81,9 @@ public class DemoEditorialMappingTests
     [Fact]
     public async Task APartialCultureExportDoesNotReadOrEmitAnotherCulture()
     {
-        var text = Property("text", culture => culture == "da-DK" ? "Dansk blok" : throw new InvalidOperationException("Unrequested culture"), true);
-        var property = Property("contentRows", _ => Blocks(text));
-        var source = Source(property);
+        IPublishedProperty text = Property("text", culture => culture == "da-DK" ? "Dansk blok" : throw new InvalidOperationException("Unrequested culture"), true);
+        IPublishedProperty property = Property("contentRows", _ => Blocks(text));
+        IPublishedContent source = Source(property);
         var entity = new Content("article") { Data = new() { ["bodyText"] = "Dansk brødtekst" } };
         await using var operation = new MappingOperation(Mock.Of<IServiceProvider>(), default);
 
@@ -95,7 +95,7 @@ public class DemoEditorialMappingTests
     [Fact]
     public async Task RemovingAllEditorialTextOverwritesTheEarlierSearchText()
     {
-        var source = Source(Property("contentRows", _ => new BlockListModel([])));
+        IPublishedContent source = Source(Property("contentRows", _ => new BlockListModel([])));
         var entity = new Content("article") { Data = new() { ["bodyText"] = "", ["contentRows"] = "", ["searchText"] = "Old text" } };
         await using var operation = new MappingOperation(Mock.Of<IServiceProvider>(), default);
 
@@ -107,9 +107,9 @@ public class DemoEditorialMappingTests
     [Fact]
     public void NestedBlocksExcludeHiddenContentAndStripNonEditorialHtml()
     {
-        var nested = Blocks(Property("text", _ => new HtmlEncodedString("<p>Nested text</p><script>secret()</script>")));
-        var outer = Element(Property("heading", _ => "Heading"), Property("items", _ => nested));
-        var hidden = Element(Property("hide", _ => true));
+        BlockListModel nested = Blocks(Property("text", _ => new HtmlEncodedString("<p>Nested text</p><script>secret()</script>")));
+        IPublishedElement outer = Element(Property("heading", _ => "Heading"), Property("items", _ => nested));
+        IPublishedElement hidden = Element(Property("hide", _ => true));
         var blocks = new BlockListModel([
             new BlockListItem(Guid.NewGuid(), outer, null, null),
             new BlockListItem(Guid.NewGuid(), Element(Property("text", _ => "Hidden text")), Guid.NewGuid(), hidden)
@@ -126,7 +126,7 @@ public class DemoEditorialMappingTests
         {
             Areas = [new BlockGridArea([child], "main", 12, 1)]
         };
-        var source = Source(Property("pageGrid", _ => new BlockGridModel([parent], 12)));
+        IPublishedContent source = Source(Property("pageGrid", _ => new BlockGridModel([parent], 12)));
         var entity = new Content("article") { Data = new() { ["bodyText"] = "Body" } };
         await using var operation = new MappingOperation(Mock.Of<IServiceProvider>(), default);
 
@@ -140,7 +140,7 @@ public class DemoEditorialMappingTests
     {
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
-        var property = Property("contentRows", _ => null, editor: "Umbraco.BlockList");
+        IPublishedProperty property = Property("contentRows", _ => null, editor: "Umbraco.BlockList");
         var context = new RelewisePropertyConverterContext(property, "en-US", new());
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
             await new EditorialBlocksConverter(Variations()).ConvertAsync(context, cancellation.Token));
@@ -152,9 +152,9 @@ public class DemoEditorialMappingTests
     [Fact]
     public void StorefrontRenderingKeepsRichTextAndHidesWholeContainers()
     {
-        var visible = Element(Property("heading", _ => "A <quiet> place"),
+        IPublishedElement visible = Element(Property("heading", _ => "A <quiet> place"),
             Property("text", _ => new HtmlEncodedString("<p>Take a <strong>break</strong>.</p>")));
-        var hidden = Element(Property("hide", _ => true));
+        IPublishedElement hidden = Element(Property("hide", _ => true));
         var child = new BlockGridItem(Guid.NewGuid(), Element(Property("text", _ => new HtmlEncodedString("Secret child"))), null, null);
         var container = new BlockGridItem(Guid.NewGuid(), visible, Guid.NewGuid(), hidden)
         {
@@ -174,7 +174,7 @@ public class DemoEditorialMappingTests
     [InlineData("da-DK", "Dansk fortælling")]
     public void StorefrontRenderingUsesTheRequestedBlockLanguage(string culture, string expected)
     {
-        var blocks = Blocks(Property("text", language => new HtmlEncodedString(
+        BlockListModel blocks = Blocks(Property("text", language => new HtmlEncodedString(
             language == "da-DK" ? "<p>Dansk fortælling</p>" : "<p>English story</p>"), true));
 
         Assert.Equal("<p>" + expected + "</p>", StorefrontEditorial.Render(blocks, culture));

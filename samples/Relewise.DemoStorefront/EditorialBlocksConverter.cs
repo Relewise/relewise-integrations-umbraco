@@ -1,6 +1,8 @@
 using Relewise.Integrations.Umbraco;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
+namespace Relewise.DemoStorefront;
+
 /// <summary>Extracts selected editorial text from Block List/Grid values, including nested elements.</summary>
 internal sealed class EditorialBlocksConverter(IVariationContextAccessor variations) : IAsyncRelewisePropertyValueConverter
 {
@@ -10,7 +12,13 @@ internal sealed class EditorialBlocksConverter(IVariationContextAccessor variati
     public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        context.Add(context.Property.Alias, EditorialBlockText.ExtractProperty(context.Property, context.Culture, variations, cancellationToken));
+        context.Add(context.Property.Alias, EditorialBlockText.ExtractProperty(
+            context.Property,
+            context.Culture,
+            variations,
+            cancellationToken
+        )
+        );
         return default;
     }
 }

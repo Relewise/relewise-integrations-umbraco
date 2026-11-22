@@ -13,6 +13,7 @@ using Relewise.Client.Requests;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
 using Relewise.Client.Requests.Queries;
+using Relewise.Client.Responses;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Models;
@@ -59,8 +60,8 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
         await _writer.WaitAsync(token);
         try
         {
-            await using var scope = scopeFactory.CreateAsyncScope();
-            var clients = scope.ServiceProvider.GetRequiredService<IRelewiseClientFactory>();
+            await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
+            IRelewiseClientFactory clients = scope.ServiceProvider.GetRequiredService<IRelewiseClientFactory>();
             ITracker tracker = clients.GetClient<ITracker>(Constants.NamedClientName);
             var actions = new List<Trackable>();
             foreach (DeletedEntity entity in snapshots)
@@ -100,13 +101,13 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
         await _writer.WaitAsync(token);
         try
         {
-            await using var scope = scopeFactory.CreateAsyncScope();
+            await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
             IServiceProvider services = scope.ServiceProvider;
             string site = SiteId(services);
-            var clients = services.GetRequiredService<IRelewiseClientFactory>();
+            IRelewiseClientFactory clients = services.GetRequiredService<IRelewiseClientFactory>();
             ITracker tracker = clients.GetClient<ITracker>(Constants.NamedClientName);
-            using var context = services.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
-            var strategy = services.GetRequiredService<IPublishedContentChangeStrategy>();
+            using global::Umbraco.Cms.Core.UmbracoContextReference context = services.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
+            IPublishedContentChangeStrategy strategy = services.GetRequiredService<IPublishedContentChangeStrategy>();
             var collected = new IndexingKeyCollector();
             var requested = keys.ToHashSet();
             var aggregateChildren = new HashSet<Guid>();
@@ -133,8 +134,8 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
                 IPublishedContent? parent;
                 if (node == null)
                 {
-                    var editable = services.GetRequiredService<IContentService>().GetById(key);
-                    if (editable == null || !configuration.Mappings.TryGetValue(editable.ContentType.Alias, out var removedMapping) || removedMapping.EntityType != typeof(ProductVariant))
+                    IContent? editable = services.GetRequiredService<IContentService>().GetById(key);
+                    if (editable == null || !configuration.Mappings.TryGetValue(editable.ContentType.Alias, out MappingDefinition? removedMapping) || removedMapping.EntityType != typeof(ProductVariant))
                     {
                         continue;
                     }
@@ -143,7 +144,7 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
                 }
                 else
                 {
-                    if (!configuration.Mappings.TryGetValue(node.ContentType.Alias, out var mapping) || mapping.EntityType != typeof(ProductVariant))
+                    if (!configuration.Mappings.TryGetValue(node.ContentType.Alias, out MappingDefinition? mapping) || mapping.EntityType != typeof(ProductVariant))
                     {
                         continue;
                     }
@@ -165,7 +166,7 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
             var desired = new List<MappedEntity>();
             var claims = new HashSet<string>(StringComparer.Ordinal);
             var unmapped = new HashSet<Guid>();
-            foreach (var entry in collected.Documents)
+            foreach (KeyValuePair<Guid, CoreSearchDocument> entry in collected.Documents)
             {
                 token.ThrowIfCancellationRequested();
                 IPublishedContent? source = context.UmbracoContext.Content?.GetById(entry.Key);
@@ -174,7 +175,7 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
                     continue;
                 }
 
-                if (!configuration.Mappings.TryGetValue(source.ContentType.Alias, out var mapping) || !mapping.Export)
+                if (!configuration.Mappings.TryGetValue(source.ContentType.Alias, out MappingDefinition? mapping) || !mapping.Export)
                 {
                     unmapped.Add(entry.Key);
                     continue;
@@ -229,13 +230,13 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
             if (rebuild || unavailable.Length > 0)
             {
                 var cleanup = new List<Trackable>();
-                var removals = rebuild ? new[] { (Keys: unavailable, Delete: permanentlyDelete) }
+                (Guid[] Keys, bool Delete)[] removals = rebuild ? new[] { (Keys: unavailable, Delete: permanentlyDelete) }
                     : unavailable.GroupBy(key => services.GetRequiredService<IContentService>().GetById(key) == null)
                         .Select(group => (Keys: group.ToArray(), Delete: group.Key)).ToArray();
-                foreach (var group in configuration.Mappings.Values.Where(mapping => mapping.Export && mapping.EntityType != typeof(ProductVariant)).GroupBy(mapping => (mapping.EntityType, mapping.AdministrativeActions.Enabled)))
+                foreach (IGrouping<(Type EntityType, bool Enabled), MappingDefinition> group in configuration.Mappings.Values.Where(mapping => mapping.Export && mapping.EntityType != typeof(ProductVariant)).GroupBy(mapping => (mapping.EntityType, mapping.AdministrativeActions.Enabled)))
                 {
                     Type type = group.Key.EntityType;
-                    foreach (var removal in removals)
+                    foreach ((Guid[] Keys, bool Delete) removal in removals)
                     {
                         var filters = new FilterCollection(DataFilter(type, "rwUmbracoSite", new EqualsCondition(site)),
                             new OrFilter(group.Select(mapping => DataFilter(type, "contentTypeAlias", new EqualsCondition(mapping.DocumentTypeAlias))).ToArray()));
@@ -279,8 +280,8 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
             };
             do
             {
-                var response = await reader.QueryAsync(query, token);
-                foreach (var product in response.Products ?? [])
+                ProductDetailsCollectionResponse response = await reader.QueryAsync(query, token);
+                foreach (ProductResultDetails? product in response.Products ?? [])
                 {
                     updates.Add(new ProductUpdate(new Product(product.ProductId) { Assortments = null, CategoryPaths = null, Data = new() { ["rwUmbracoPublished"] = false } }, ProductUpdate.UpdateKind.ReplaceProvidedProperties));
                 }
@@ -293,8 +294,8 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
             var query = new ContentQuery(filters, 500) { IncludeDisabledContents = true };
             while (true)
             {
-                var response = await reader.QueryAsync(query, token);
-                foreach (var content in response.Contents ?? [])
+                ContentDetailsCollectionResponse response = await reader.QueryAsync(query, token);
+                foreach (ContentResultDetails? content in response.Contents ?? [])
                 {
                     updates.Add(new ContentUpdate(new Content(content.ContentId) { Assortments = null, CategoryPaths = null, Data = new() { ["rwUmbracoPublished"] = false } }, ContentUpdate.UpdateKind.ReplaceProvidedProperties));
                 }

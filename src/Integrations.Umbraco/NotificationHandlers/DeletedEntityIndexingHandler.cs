@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core.Events;
+using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Services;
@@ -18,16 +19,16 @@ internal sealed class DeletedEntityIndexingHandler(RelewiseUmbracoConfiguration 
     public void Handle(ContentDeletedNotification notification)
     {
         var work = new RemovalWork();
-        foreach (var deleted in notification.DeletedEntities)
+        foreach (IContent deleted in notification.DeletedEntities)
         {
-            if (!configuration.Mappings.TryGetValue(deleted.ContentType.Alias, out var mapping) || !mapping.Export)
+            if (!configuration.Mappings.TryGetValue(deleted.ContentType.Alias, out MappingDefinition? mapping) || !mapping.Export)
             {
                 continue;
             }
 
             if (mapping.EntityType == typeof(ProductVariant))
             {
-                var parent = content.GetById(deleted.ParentId);
+                IContent? parent = content.GetById(deleted.ParentId);
                 if (parent != null)
                 {
                     work.Parents.Add(parent.Key);
@@ -52,7 +53,7 @@ internal sealed class DeletedEntityIndexingHandler(RelewiseUmbracoConfiguration 
 
         if (scopes.Context is { } context)
         {
-            var pending = context.Enlist("Relewise:DeletedSources", () => new RemovalWork(),
+            RemovalWork? pending = context.Enlist("Relewise:DeletedSources", () => new RemovalWork(),
                 (completed, items) => { if (completed && items != null) { Queue(items); } });
             pending!.Entities.AddRange(work.Entities);
             pending.Parents.UnionWith(work.Parents);

@@ -4,7 +4,8 @@ using HtmlAgilityPack;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Strings;
-using Umbraco.Extensions;
+
+namespace Relewise.DemoStorefront;
 
 internal static class EditorialBlockText
 {
@@ -16,7 +17,7 @@ internal static class EditorialBlockText
     {
         token.ThrowIfCancellationRequested();
         // Umbraco uses the ambient culture when deciding which localized blocks are exposed.
-        var previous = variations.VariationContext;
+        VariationContext? previous = variations.VariationContext;
         try
         {
             variations.VariationContext = new VariationContext(culture);
@@ -41,7 +42,7 @@ internal static class EditorialBlockText
         switch (value)
         {
             case BlockListModel list:
-                foreach (var item in list)
+                foreach (BlockListItem item in list)
                 {
                     Visit(item, culture, fragments, token);
                 }
@@ -55,7 +56,7 @@ internal static class EditorialBlockText
 
                 break;
             case BlockGridModel grid:
-                foreach (var item in grid)
+                foreach (BlockGridItem item in grid)
                 {
                     VisitGridItem(item, culture, fragments, token);
                 }
@@ -76,9 +77,9 @@ internal static class EditorialBlockText
         }
 
         VisitElement(item.Content, culture, fragments, token);
-        foreach (var area in item.Areas)
+        foreach (BlockGridArea area in item.Areas)
         {
-            foreach (var child in area)
+            foreach (BlockGridItem child in area)
             {
                 VisitGridItem(child, culture, fragments, token);
             }
@@ -116,14 +117,14 @@ internal static class EditorialBlockText
     {
         var document = new HtmlDocument();
         document.LoadHtml(html);
-        foreach (var node in document.DocumentNode.SelectNodes("//script|//style|//template")?.ToArray()
+        foreach (HtmlNode? node in document.DocumentNode.SelectNodes("//script|//style|//template")?.ToArray()
                              ?? Array.Empty<HtmlNode>())
         {
             node.Remove();
         }
 
         // Separate text nodes so adjacent paragraphs do not become a single word.
-        var textNodes = document.DocumentNode.SelectNodes("//text()");
+        HtmlNodeCollection? textNodes = document.DocumentNode.SelectNodes("//text()");
         return textNodes is null ? string.Empty : WebUtility.HtmlDecode(
             string.Join(" ", textNodes.Select(node => node.InnerText)));
     }

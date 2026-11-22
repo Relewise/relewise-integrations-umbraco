@@ -42,7 +42,7 @@ public class SearchProviderOptions
             throw new InvalidOperationException($"Default search provider '{DefaultPublishedContentProviderAlias}' is not registered.");
         }
 
-        foreach (var registration in Providers)
+        foreach (KeyValuePair<string, SearchProviderDefinition> registration in Providers)
         {
             UnsupportedSegmentBehavior? behavior = registration.Value.Options switch
             {
