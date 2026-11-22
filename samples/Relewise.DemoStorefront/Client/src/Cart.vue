@@ -1,6 +1,7 @@
 <script setup>
-import { ref, shallowRef } from 'vue';
+import { nextTick, ref, shallowRef } from 'vue';
 import { sendCart } from './shopState';
+import Recommendations from './Recommendations.vue';
 
 const props = defineProps({ initial: { type: Object, required: true } });
 const cart = shallowRef(props.initial);
@@ -9,6 +10,7 @@ const error = ref('');
 const message = ref('');
 const emptyDialog = ref();
 const region = ref();
+const emptyHeading = ref();
 async function mutate(action, line, quantity) {
     if (busy.value) return;
     busy.value = true;
@@ -24,6 +26,10 @@ async function mutate(action, line, quantity) {
         cart.value = (await sendCart(cart.value.cartUrl + '/' + action, fields)).cart;
         message.value = cart.value.labels.CartUpdated;
         if (emptyDialog.value?.open) emptyDialog.value.close();
+        if (!cart.value.lines.length) {
+            await nextTick();
+            emptyHeading.value?.focus();
+        }
     } catch (failure) {
         error.value = failure instanceof SyntaxError || failure instanceof TypeError ? cart.value.labels.PurchaseFailed : failure.message;
         message.value = '';
@@ -58,6 +64,7 @@ async function proceed(event) {
 <template>
     <p v-if="error" class="notice notice-error" role="alert">{{ error }}</p>
     <p class="visually-hidden" role="status">{{ message }}</p>
+    <p v-if="cart.lines.length" class="cart-intro">{{ cart.labels.CartIntro }}</p>
     <div v-if="cart.lines.length" ref="region" class="cart-layout" :aria-busy="busy">
         <section class="cart-items" :aria-label="cart.labels.CartItems">
             <article v-for="line in cart.lines" :key="line.productKey + '/' + line.variantKey" class="cart-row" :data-entity="line.productId">
@@ -82,7 +89,22 @@ async function proceed(event) {
             <p v-else role="alert">{{ cart.labels.CartUnavailable }}</p>
         </aside>
     </div>
-    <section v-else class="empty-cart-page"><p>{{ cart.labels.CartEmpty }}</p><a class="button" :href="cart.continueUrl">{{ cart.labels.ContinueShopping }}</a></section>
+    <template v-else>
+        <section class="empty-cart-page" aria-labelledby="empty-cart-heading">
+            <svg class="empty-cart-illustration" viewBox="0 0 180 140" fill="none" aria-hidden="true">
+                <circle cx="90" cy="70" r="64" fill="#e4ebdd" />
+                <path d="M38 105L67 65L87 88L111 51L144 105" stroke="#94a28a" stroke-width="3" stroke-linejoin="round" />
+                <path d="M64 59H116L122 119H58L64 59Z" fill="#fafaf6" stroke="#254c37" stroke-width="3" stroke-linejoin="round" />
+                <path d="M78 67V47C78 31 102 31 102 47V67" stroke="#254c37" stroke-width="3" stroke-linecap="round" />
+                <path d="M79 96L90 81L101 96H79Z" fill="#94a28a" />
+            </svg>
+            <h2 id="empty-cart-heading" ref="emptyHeading" tabindex="-1">{{ cart.labels.EmptyCartHeading }}</h2>
+            <p>{{ cart.labels.EmptyCartDescription }}</p>
+            <a class="button" :href="cart.shopUrl">{{ cart.labels.ExploreCollection }}</a>
+            <a class="text-link empty-cart-offers" :href="cart.offersUrl">{{ cart.labels.BrowseOffers }}</a>
+        </section>
+        <Recommendations v-if="cart.recommendations" :initial="cart.recommendations" />
+    </template>
     <dialog ref="emptyDialog" class="confirm-dialog" aria-labelledby="empty-cart-title">
         <h2 id="empty-cart-title">{{ cart.labels.EmptyCartConfirm }}</h2>
         <p v-if="error" role="alert">{{ error }}</p>

@@ -24,6 +24,7 @@ internal static class DemoSeed
             await DemoProductDetails.EnsureAsync(services);
             await DemoVariantDetails.EnsureAsync(services);
             DemoEditorial.Ensure(services);
+            await DemoProductTypes.EnsureAsync(services);
             return;
         }
 
@@ -39,6 +40,7 @@ internal static class DemoSeed
         await DemoProductDetails.EnsureAsync(services);
         await DemoVariantDetails.EnsureAsync(services);
         DemoEditorial.Ensure(services);
+        await DemoProductTypes.EnsureAsync(services);
     }
 
     private static async Task Prepare(IContentTypeService types, IDataTypeService dataTypes, ITemplateService templates,

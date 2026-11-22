@@ -349,7 +349,7 @@ internal static class StorefrontCart
             }
             string path = DemoMarket.Current(http).LanguagePath;
             var html = new StringBuilder(checkout ? "" : StorefrontPages.Breadcrumb(null, http, "shop", Storefront.Text(http, key)));
-            html.Append($"<section class='hero'><h1>{T(http, checkout ? "ReviewOrder" : "Cart")}</h1><p>{T(http, checkout ? "ReviewIntro" : "CartIntro")}</p></section>");
+            html.Append($"<section class='hero'><h1>{T(http, checkout ? "ReviewOrder" : "Cart")}</h1>{(checkout ? $"<p>{T(http, "ReviewIntro")}</p>" : "")}</section>");
             List<Line> lines = Read(http);
             PricedLine[] priced = Price(lines, context.UmbracoContext.Content!, http, availableOnly: true)!;
             bool unavailable = priced.Length != lines.Count;
@@ -545,7 +545,7 @@ internal static class StorefrontCart
     {
         string path = DemoMarket.Current(http).LanguagePath;
         var token = http.RequestServices.GetRequiredService<IAntiforgery>().GetAndStoreTokens(http);
-        string[] labels = ["CartEmpty", "ContinueShopping", "CartItems", "Quantity", "Each", "Total", "OrderSummary", "Checkout", "RemoveCart", "ChangeQuantity",
+        string[] labels = ["CartIntro", "EmptyCartHeading", "EmptyCartDescription", "ExploreCollection", "BrowseOffers", "CartEmpty", "ContinueShopping", "CartItems", "Quantity", "Each", "Total", "OrderSummary", "Checkout", "RemoveCart", "ChangeQuantity",
             "EmptyCartAction", "EmptyCartConfirm", "Cancel", "CartUpdating", "CartUpdated", "CartUnavailable", "UnavailableItem", "UnavailableTotal", "PurchaseFailed", "Close"];
         return new CartModel
         {
@@ -554,6 +554,9 @@ internal static class StorefrontCart
             CartUrl = path + "/cart",
             CheckoutUrl = path + "/checkout",
             ContinueUrl = StorefrontNavigation.ShoppingUrl(http),
+            ShopUrl = path + "/store",
+            OffersUrl = path + "/offers",
+            Recommendations = StorefrontRecommendations.Configuration(StorefrontPages.Home(http.RequestServices), http, emptyCart: true),
             AntiforgeryField = token.FormFieldName,
             AntiforgeryToken = token.RequestToken ?? "",
             Count = lines.Sum(line => line.Quantity),

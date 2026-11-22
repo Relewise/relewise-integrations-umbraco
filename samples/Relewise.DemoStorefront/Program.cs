@@ -77,4 +77,5 @@ app.UseUmbraco().WithMiddleware(umbraco =>
 app.MapGet("/", (HttpContext http) => Results.Redirect(DemoMarket.Current(http).HomeUrl));
 app.MapStorefront();
 app.MapCart();
+app.MapRecommendations();
 await app.RunAsync();

@@ -15,7 +15,7 @@ The browser opens the homepage at `/en/` by default (Europe, English, EUR).
 `/da/` opens the Danish homepage; `/en/store` and `/da/store` open the shop. With no Relewise configuration,
 the storefront runs in **Content preview** mode. Published pages, seeded images,
 prices, Variants and market/language selection can be explored. Search, facets,
-predictions, Offers, cart and checkout require Relewise and are disabled without it,
+predictions, recommendations, Offers, cart and checkout require Relewise and are disabled without it,
 including direct backend requests. A prominent notice links to setup guidance;
 **Demo details** in the footer shows configuration state. Shop, category, Brand and
 Journal pages show a small CMS-only preview, without search or filtering.
@@ -31,7 +31,7 @@ The site contains 13 Journal stories plus one guide, all bilingual and seeded
 automatically. Ten additional articles cover packing, camping, outdoor routines
 and caring for equipment, using editable native Block List rich text.
 
-The catalogue contains 80 Products and 222 color/size Variants across packs,
+The catalogue contains 92 Products and 256 color/size Variants across packs,
 drinkware, camping and accessories. Products, Variants, categories and editorial
 content have English and Danish language variants. Names, descriptions, option
 labels and editorial text are translated; IDs, images, relationships and prices
@@ -242,7 +242,7 @@ Product listings display 24 items per page. Mobile shows the active-filter count
 beside the filter control. A **Show products** link inside mobile filters closes
 the panel and focuses the already updated results;
 it does not apply filters or send another search. The displayed range, such as
-**Showing 25–48 of 80**, appears in the result toolbar and pagination.
+**Showing 25–48 of 92**, appears in the result toolbar and pagination.
 Desktop has a filter sidebar; mobile uses a compact listing header,
 a sticky Filter/Sort toolbar and a collapsible
 native disclosure. Product names and prices precede secondary card information. Applied-filter chips remove individual
@@ -353,6 +353,73 @@ Variant facets through its SDK; the current Umbraco bridge addresses document
 fields, and does not express a Variant target or automatically aggregate child
 fields onto Product documents. This needs an explicit bridge/indexing design.
 
+## Product recommendations
+
+Product pages show **Similar products**, followed by **You recently viewed**.
+The homepage shows **Popular products**, **Popular categories** and recently viewed Products.
+The empty cart shows recently viewed Products, or a separately labelled Popular products
+section when no displayable history remains. Recommendations load asynchronously through
+[StorefrontRecommendations.cs](StorefrontRecommendations.cs), which calls the C#
+Recommender SDK and returns the existing card model to
+[Recommendations.vue](Client/src/Recommendations.vue). Search continues through
+Umbraco's search abstraction; recommendations do not add package configuration APIs.
+The SDK Recommender uses the default connection configured in `Relewise` settings.
+Credentials remain on the server.
+
+Similar Products must share the source Product's editable **Product type** and
+primary category and be in stock. The example weights names, capacity, weight and
+prices, without rewarding generic shared metadata or Brand membership. Types such
+as Daypack, Trekking backpack and Camera backpack prevent a broad category from
+turning complements into alternatives. Product type is a business classification;
+all Products still use the same Umbraco Product Document Type.
+[DemoProductTypes.cs](DemoProductTypes.cs)
+fills missing classifications for known sample SKUs. It preserves nonempty
+authored classifications, drafts and partial publication. Set Product type on
+authored Products to enable similar recommendations. Products without a type still support recently viewed.
+
+The catalogue includes alternative headlamps, gloves, first-aid kits, camping
+chairs, dry bags and binoculars, with English/Danish descriptions and prices in
+all three currencies. Their differences are normal, editable CMS data.
+
+Recently viewed comes from Relewise tracking using the same `IRelewiseUserLocator`
+as views, search, Cart and Order events. It preserves the returned order and may
+include out-of-stock Products, with availability shown. The current Product and
+its Variants are excluded on Product pages. Fill and replacement of recently shown
+recommendations are disabled; popular results are never labelled as browsing history.
+Popular Products use views from the last 30 days, with in-stock and current-market
+checks. Popular Categories use Category and Product views over the same period,
+restricted to this site's published browsing categories. Category tiles link to
+normal category landing pages and use an available Product as their illustration.
+No activity is manufactured during seeding; a fresh Dataset can return no popular
+results, in which case the sections remain hidden. Normal category navigation stays
+available in the header. Without Relewise, the homepage retains its static catalogue
+preview instead of recommendation sections.
+
+Product-page requests are batched into one SDK call. On the homepage, Product
+requests are batched, followed by one Category request. The empty cart requests
+popular Products only when visible viewing history is empty. Each purpose has its
+own analytics location. Up to four cards appear per
+section, with fewer when appropriate. No extra API request is made per card.
+
+Requests restrict results to this site's published, public Products and selected
+language. Each result is checked again against Umbraco's current published cache,
+canonical identity, protection and selected-currency price before rendering. This
+keeps stale/unpublished pages out of cards. The server resolves visitor identity
+through the existing locator; request parameters cannot supply a different User
+or credentials. The JSON response is not cached. Recommendations use a five-second
+SDK timeout linked to request cancellation. Empty or failed sections stay hidden.
+A recommendation-only failure leaves
+the rendered Product and purchase controls usable; views and shopping tracking
+follow the connection-error behavior described above. Without a
+Relewise connection, recommendation controls are absent and their endpoint returns
+HTTP 503.
+
+The clearly named sections and existing image/name/price/availability cards follow
+Baymard's guidance on [distinguishing alternatives from complements](https://baymard.com/research-articles/product-page-suggestions)
+and [providing enough information to assess recommendations](https://baymard.com/research-articles/product-page-suggestions-information).
+The responsive grids have no automatic carousel or additional Add-to-cart flow;
+visitors open a Product to choose its Variant.
+
 ## Shopping and checkout
 
 The homepage leads into category collections, the Shop and the Journal. Category,
@@ -376,6 +443,13 @@ with an order summary and primary Checkout action. Empty cart is a secondary
 action beneath the items and requires confirmation. Checkout is disabled during
 updates and validates unsaved quantity edits before normal navigation. Continue shopping retains
 the previous collection or search/Offers view, query, filters and sorting.
+
+The empty cart replaces the checkout introduction and order summary with an outdoor
+illustration, a collection link and a secondary Offers link. Recently viewed Products
+appear below when Relewise returns real browsing history. Otherwise, Popular
+products provide a clearly labelled fallback when available. Empty or failed
+recommendations leave the shopping links usable. Removing the final item moves
+keyboard focus to the empty-state heading.
 
 Add requests use a command ID that remains stable across network retries. The
 server serializes basket writes and remembers the latest 16 completed add
@@ -448,7 +522,7 @@ leave Umbraco's own query provider registered is unchanged; the demo does not us
 
 Configuration switches exercise the same application:
 
-- `Demo:Search=false`: no named Relewise providers; indexing and tracking still work.
+- `Demo:Search=false`: no named Relewise search providers; indexing, tracking and SDK recommendations still work.
 - `Demo:DefaultSearch=false`: named Relewise providers exist; the storefront rejects default-alias searches instead of falling back.
 - `Demo:DefaultProvider=catalogue`: default published-content searches use Product search.
 - `Demo:ProductPolicy=None`: preserve externally controlled Product state and register

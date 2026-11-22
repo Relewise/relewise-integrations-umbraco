@@ -157,12 +157,13 @@ custom references and guidance on switching an existing installation.
 Explore the integration in a running Umbraco site. The demo includes seeded Content,
 Products, Variants, Brands and Categories, plus examples of custom mapping,
 converters, multilingual search and behavioral tracking. Its Vue shopping UI
-includes reactive filters, market-specific Offers, an asynchronous cart and a
-demo checkout.
+includes reactive filters, market-specific Offers, Similar Products, Popular Products
+and Categories, Recently Viewed recommendations, an asynchronous cart and a demo checkout.
 
 Set **Relewise.DemoStorefront** as the startup project and press **F5**. It runs with
 seeded content preview out of the box. Connect a local Relewise Dataset to enable
-search, facets, predictions, export and tracked shopping; the demo has no search fallback.
+search, facets, predictions, recommendations, export and tracked shopping;
+the demo has no search fallback.
 
 [Run the demo and explore the examples →](samples/Relewise.DemoStorefront/README.md)
 

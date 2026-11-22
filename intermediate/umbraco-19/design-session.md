@@ -365,6 +365,10 @@ and `onSale_USD` Boolean Data after price mapping, including `false` for no disc
 to Boolean Product Data; the key defaults to the query field name. Stock and sale filters
 and facets share these business values without an additional indexed projection.
 `StorefrontProductIndexer` supplies the remaining typed query projection.
+The sample also demonstrates server-side SDK recommendations: type/category-scoped
+Similar Products on Product pages and genuine Recently Viewed Products on Product
+pages and the homepage. These reuse canonical IDs, visitor identity, published
+Umbraco cards and market selection; they add no integration configuration surface.
 Opt-in diagnostics support the shared acceptance tests, including publish/edit/
 unpublish with no Relewise query providers registered.
 
@@ -414,8 +418,8 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | Screenshot | Review focus |
 | --- | --- |
 | [Product search](images/01-storefront-product-search.jpg) | Product results and storefront. |
-| [Product page](images/02-product-detail.jpg) | Product identity on a CMS-rendered page. |
-| [Variant page](images/03-variant-detail.jpg) | Variant identity with its parent Product. |
+| [Product recommendations](images/02-product-recommendations-desktop.jpg) | Specific alternatives and genuine browsing history with prices and availability. |
+| [Recommendations on mobile](images/03-product-recommendations-mobile.jpg) | Responsive cards and distinct Similar Products/Recently Viewed sections. |
 | [Content search](images/04-content-search.jpg) | Content query results. |
 | [Product in My Relewise](images/05-my-relewise-product.jpg) | Ingested Product fields. |
 | [Variants in My Relewise](images/06-my-relewise-variants.jpg) | Child Variant ingestion. |
@@ -448,7 +452,7 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | [Checkout](images/35-storefront-checkout.jpg) | Focused review with a clear demo disclaimer and no shopping navigation. |
 | [Mobile checkout](images/36-storefront-mobile-checkout.jpg) | Stacked review and summary with the same order flow. |
 | [Product specifications](images/40-storefront-product-specifications.jpg) | Representative illustration and editable native CMS specification fields. |
-| [Mobile filter chips](images/41-storefront-mobile-filter-chips.jpg) | Reactive mobile filtering, result counts and removable chips; no separate Apply/Sort step. |
+| [Popular discovery](images/41-storefront-popular-discovery.jpg) | Views-based Product recommendations and Category tiles link into the catalogue. |
 | [Global search](images/42-storefront-global-search.jpg) | Dedicated results page with Product and Journal scopes, independent of the previous collection or Offers filter. |
 | [Offers](images/43-storefront-offers.jpg) | Dedicated landing page, active navigation and sale prices for the selected market. |
 | [Added to cart](images/44-storefront-added-to-cart.jpg) | Confirmation drawer with authoritative item, quantity and basket total. |
@@ -457,5 +461,5 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | [Mobile shopping filters](images/47-storefront-price-facet-mobile.jpg) | Multiple Brand selections alongside price and Show only filters. |
 | [Meaningful Variant capacity](images/48-storefront-variant-capacity.jpg) | Editable capacity labels and specifications while canonical Variant IDs remain unchanged. |
 | [Empty cart confirmation](images/49-storefront-empty-cart-confirmation.jpg) | Secondary action requires confirmation before removing all items. |
-| [Market confirmation](images/50-storefront-market-confirmation.jpg) | Danish language/currency feedback after selecting Denmark. |
+| [Empty cart](images/50-storefront-empty-cart.jpg) | Responsive empty state, clear shopping routes and genuine viewing history. |
 | [Demo without Relewise](images/51-storefront-without-relewise.jpg) | Content preview notice, disabled controls and configuration guidance. |

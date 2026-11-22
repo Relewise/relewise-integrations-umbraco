@@ -247,6 +247,18 @@ internal static class DemoLocalization
 
     private static readonly Dictionary<string, (string Name, string Body)> Products = new(StringComparer.Ordinal)
     {
+        ["FIELDWORK-COMPACT-HEADLAMP"] = ("Kompakt pandelampe til turen", "En kompakt pandelampe med 200 lumen giver frie hænder på aftenture."),
+        ["FIELDWORK-HIGH-OUTPUT-HEADLAMP"] = ("Kraftig pandelampe til vandring", "En genopladelig pandelampe med 600 lumen og en lang lysstråle til mørke stier."),
+        ["FIELDWORK-INSULATED-GLOVES"] = ("Isolerede vinterhandsker", "Isolerede vandrehandsker holder hænderne varme på kolde vinterture og giver et godt greb om stavene."),
+        ["FIELDWORK-WATERPROOF-GLOVES"] = ("Vandtætte vandrehandsker", "Vandtætte handsker beskytter hænderne mod vind og regn med fleksible fingre og et sikkert greb."),
+        ["FIELDWORK-COMPACT-FIRST-AID"] = ("Kompakt førstehjælpssæt", "Et lille førstehjælpssæt til dagsture med tydelige rum til forbindinger og basisudstyr."),
+        ["FIELDWORK-FAMILY-FIRST-AID"] = ("Førstehjælpssæt til familien", "Et rummeligt førstehjælpssæt til familiens teltture med plads til ekstra forbindinger og personligt udstyr."),
+        ["FIELDWORK-LIGHT-CAMP-CHAIR"] = ("Ultralet trekkingstol", "En let foldbar campingstol med rygstøtte som pakkes i en lille taske til vandreture og lejraftener."),
+        ["FIELDWORK-RECLINING-CHAIR"] = ("Campingstol med justerbart ryglæn", "En komfortabel foldestol med justerbart ryglæn og polstret sæde til rolige aftener i lejren."),
+        ["FIELDWORK-LIGHT-DRY-BAG"] = ("Let vandtæt rullepose", "En let vandtæt pose på 10 liter med rullelukning holder skiftetøjet tørt i rygsækken."),
+        ["FIELDWORK-EXPEDITION-DRY-BAG"] = ("Vandtæt ekspeditionspose", "En robust vandtæt pose på 30 liter med forstærket rullelukning til kanoture og vådt campingudstyr."),
+        ["FIELDWORK-POCKET-BINOCULARS"] = ("Let lommekikkert", "En kompakt kikkert med 8 gange forstørrelse og 25 mm linser til fugle og dyreliv på dagsturen."),
+        ["FIELDWORK-WATERPROOF-BINOCULARS"] = ("Vandtæt trekkingkikkert", "En vandtæt kikkert med 10 gange forstørrelse og 42 mm linser til dyreliv i regn og svagt lys."),
         ["U19-SMOKE-PACK"] = ("Trail dagtursrygsæk", "En let rygsæk til vandrestier, ture gennem byen og alt derimellem."),
         ["FIELDWORK-SUMMIT-PACK"] = ("Summit vandrerygsæk", "En rummelig vandrerygsæk med et støttende hoftebælte til hele dage i bjergene."),
         ["FIELDWORK-RIDGE-PACK"] = ("Ridge rejserygsæk", "En alsidig rejserygsæk med praktiske rum til weekendture."),

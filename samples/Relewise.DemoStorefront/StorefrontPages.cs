@@ -158,9 +158,10 @@ internal static class StorefrontPages
         var access = http.RequestServices.GetRequiredService<IPublicAccessService>();
         var nodes = home.Descendants().Where(node => !access.IsProtected(node.Path).Success).ToArray();
         return $"<section class='welcome'><div><p class='eyebrow'>Fieldwork {T(http, "OutdoorGoods")}</p><h1>{Storefront.E(Title(home))}</h1><p class='lead'>{Storefront.E(home.Value<string>("bodyText"))}</p><div class='actions'><a class='button' href='{market.StoreUrl}'>{T(http, "ExploreCollection")}</a><a class='button secondary' href='{market.StoreUrl}?type=article'>{T(http, "ExploreJournal")}</a></div></div><div class='illustration'>{Storefront.Icon()}</div></section>" +
+            (DemoConnection.IsConfigured(http) ? StorefrontRecommendations.Placeholder(home, http) :
             $"<section class='page-section'><h2>{T(http, "ShopByCategory")}</h2>{CategoryLinks(home, http)}</section>" +
             $"<section class='page-section'><div class='section-heading'><h2>{T(http, "FromCollection")}</h2><a href='{market.StoreUrl}'>{T(http, "ViewAllProducts")}</a></div><div class='grid'>" +
-            string.Concat(nodes.Where(node => node.ContentType.Alias == "product").OrderBy(Title).Take(3).Select(node => Card(node, http))) + "</div></section>" +
+            string.Concat(nodes.Where(node => node.ContentType.Alias == "product").OrderBy(Title).Take(3).Select(node => Card(node, http))) + "</div></section>") +
             $"<section class='page-section'><div class='section-heading'><h2>{T(http, "Journal")}</h2><a href='{market.StoreUrl}?type=article'>{T(http, "ViewAllStories")}</a></div><div class='grid'>" +
             string.Concat(nodes.Where(node => node.ContentType.Alias is "article" or "localizedArticle").OrderByDescending(node => node.CreateDate).ThenBy(Title).Take(3).Select(node => Card(node, http))) + "</div></section>";
     }
@@ -237,6 +238,7 @@ internal static class StorefrontPages
         }
 
         html.Append("</div></section>");
+        html.Append(StorefrontRecommendations.Placeholder(page, http));
         html.Append(DeveloperDetails(page, http));
         return html.ToString();
     }

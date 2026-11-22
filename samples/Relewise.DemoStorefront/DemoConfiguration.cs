@@ -54,6 +54,7 @@ internal static class DemoConfiguration
             mapping.BrandFrom("brand");
             mapping.AdditionalCategoriesFrom("extraCategories");
             mapping.MapData("stock");
+            mapping.MapData("productType"); // Editable classification for genuine alternatives.
             mapping.MapData("weightGrams");
             mapping.MapData("capacity");
             mapping.MapData("sizeGuide");

@@ -6,9 +6,9 @@ import Cart from './Cart.vue';
 import SearchBox from './SearchBox.vue';
 import { shop } from './shopState';
 
-const labels = Object.fromEntries(['Cart', 'Search', 'SearchProducts', 'SearchJournal', 'Close', 'Checkout', 'ViewCart', 'ContinueShopping', 'Quantity', 'Total', 'AddCart', 'AddingToCart', 'PurchaseFailed', 'CartUpdated', 'CartUpdating', 'CartEmpty', 'CartItems', 'OrderSummary', 'RemoveCart', 'EmptyCartAction', 'EmptyCartConfirm', 'Cancel', 'Menu', 'ChooseMarket', 'Apply', 'AddedToCart', 'EditCart'].map(key => [key, key]));
+const labels = Object.fromEntries(['Cart', 'Search', 'SearchProducts', 'SearchJournal', 'Close', 'Checkout', 'ViewCart', 'ContinueShopping', 'Quantity', 'Total', 'AddCart', 'AddingToCart', 'PurchaseFailed', 'CartUpdated', 'CartUpdating', 'CartEmpty', 'CartIntro', 'EmptyCartHeading', 'EmptyCartDescription', 'ExploreCollection', 'BrowseOffers', 'CartItems', 'OrderSummary', 'RemoveCart', 'EmptyCartAction', 'EmptyCartConfirm', 'Cancel', 'Menu', 'ChooseMarket', 'Apply', 'AddedToCart', 'EditCart'].map(key => [key, key]));
 const item = { productKey: '11111111-1111-1111-1111-111111111111', variantKey: '22222222-2222-2222-2222-222222222222', productId: 'PRODUCT', variantId: 'FOREST', name: 'Trail flask Forest', quantity: 1, maximum: 5, unitPrice: 'EUR 34.95', lineTotal: 'EUR 34.95', imageHtml: '<svg></svg>', url: '/en/flask/forest/', available: true };
-const basket = (count = 1) => ({ labels, lines: count ? [{ ...item, quantity: count }] : [], count, total: 'EUR ' + (count * 34.95).toFixed(2), ready: count > 0, cartUrl: '/en/cart', checkoutUrl: '/en/checkout', continueUrl: '/en/store', antiforgeryField: '__RequestVerificationToken', antiforgeryToken: 'test-token' });
+const basket = (count = 1) => ({ labels, lines: count ? [{ ...item, quantity: count }] : [], count, total: 'EUR ' + (count * 34.95).toFixed(2), ready: count > 0, cartUrl: '/en/cart', checkoutUrl: '/en/checkout', continueUrl: '/en/store?brand=old', shopUrl: '/en/store', offersUrl: '/en/offers', antiforgeryField: '__RequestVerificationToken', antiforgeryToken: 'test-token' });
 const shell = (checkout = false) => ({ labels, count: 0, checkout, searchConfigured: true, shoppingConfigured: true, query: '', searchScope: 'product', searchPage: false, homeUrl: '/en/', cartUrl: '/en/cart', searchUrl: '/en/search', suggestionsUrl: '/en/store/suggestions', marketUrl: '/store/market', market: 'eu', marketLabel: 'Europe · EUR', markets: [{ id: 'eu', label: 'Europe' }], links: [{ url: '/en/store', label: 'Shop', active: false }, { url: '/en/offers', label: 'Offers', active: true }] });
 const purchase = () => ({ labels, url: '/en/cart/add', maximum: 5, fields: { product: item.productKey, variant: item.variantKey, __RequestVerificationToken: 'test-token' } });
 const response = (data, ok = true) => ({ ok, json: async () => data });
@@ -148,9 +148,42 @@ describe('shopping shell and cart interactions', () => {
         await flush();
         expect(shop.count).toBe(0);
         expect(document.querySelector('.cart-layout')).toBeNull();
-        expect(document.querySelector('.empty-cart-page').textContent).toContain('CartEmpty');
+        expect(document.querySelector('.empty-cart-page').textContent).toContain('EmptyCartHeading');
+        expect(document.querySelector('.cart-intro')).toBeNull();
+        expect(document.activeElement.id).toBe('empty-cart-heading');
         expect(document.querySelector('dialog').open).toBe(false);
     });
+    it('shows a focused shopping route and genuine history only while empty', async () => {
+        const initial = basket();
+        initial.recommendations = { endpoint: '/en/recommendations/home', labels: { RecentlyViewedProducts: 'You recently viewed' } };
+        fetch.mockResolvedValueOnce(response({ cart: { ...initial, lines: [], count: 0 } }))
+            .mockResolvedValueOnce(response({ similar: [], recentlyViewed: [{ key: 'seen', entityId: 'seen', title: 'Viewed flask', product: true, url: '/en/flask', price: 'EUR 40' }] }));
+        mount(Cart, initial);
+        expect(fetch).not.toHaveBeenCalled();
+        expect(document.querySelector('.cart-intro')).not.toBeNull();
+        document.querySelector('.remove-item').click();
+        await flush();
+        await flush();
+        expect(fetch).toHaveBeenCalledTimes(2);
+        expect(fetch.mock.calls[1][0]).toBe('/en/recommendations/home');
+        expect(document.querySelector('.empty-cart-page .button').getAttribute('href')).toBe('/en/store');
+        expect(document.querySelector('.empty-cart-offers').getAttribute('href')).toBe('/en/offers');
+        expect(document.querySelector('.basket-summary')).toBeNull();
+        expect(document.querySelector('.cart-intro')).toBeNull();
+        expect(document.querySelector('.product-recommendations').textContent).toContain('Viewed flask');
+    });
+
+    it('keeps the empty cart usable when recommendations fail', async () => {
+        const initial = basket(0);
+        initial.recommendations = { endpoint: '/en/recommendations/home', labels: {} };
+        fetch.mockRejectedValue(new TypeError('Unavailable'));
+        mount(Cart, initial);
+        await flush();
+        expect(document.querySelector('.empty-cart-page .button').textContent).toBe('ExploreCollection');
+        expect(document.querySelector('.product-recommendations')).toBeNull();
+        expect(document.querySelector('[role=alert]')).toBeNull();
+    });
+
     it('validates a draft quantity before checkout and saves valid edits before navigating', async () => {
         const assign = vi.spyOn(location, 'assign').mockImplementation(() => {});
         fetch.mockResolvedValue(response({ cart: basket(2) }));
