@@ -7,12 +7,14 @@ using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions;
 using Relewise.Client.Requests;
+using Relewise.Client.Requests.Conditions;
+using Relewise.Client.Requests.Filters;
 using Relewise.Client.Requests.Queries;
 using Relewise.Client.Responses;
 using Relewise.Integrations.Umbraco.Indexing;
+using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core;
-using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.HostedServices;
 using Umbraco.Cms.Core.Models;
@@ -193,7 +195,7 @@ public class EntityIndexingServiceTests
     }
 
     [Fact]
-    public async Task RebuildWithoutLocalRecordsScopesReconciliationToItsSiteAndSource()
+    public async Task RebuildWithoutLocalRecordsScopesReconciliationToMappedSources()
     {
         await using var fixture = new Fixture();
 
@@ -206,9 +208,12 @@ public class EntityIndexingServiceTests
 
         string json = JsonConvert.SerializeObject(cleanup.Filters);
 
-        Assert.Contains("test-installation", json);
+        Assert.DoesNotContain("rwUmbracoSite", json);
+        Assert.Contains("rwUmbracoNodeKey", json);
+        Assert.Contains("HasValueCondition", json);
         Assert.Contains("article", json);
-        Assert.Contains("rwUmbracoExportGeneration", json);
+        Assert.Contains("UmbracoVersionId", json);
+        Assert.DoesNotContain("rwUmbracoExportGeneration", json);
         Assert.Null(fixture.Services.GetService<IKeyValueService>());
     }
 
@@ -225,6 +230,103 @@ public class EntityIndexingServiceTests
             .Returns(Task.CompletedTask);
         await fixture.Writer.RebuildAsync().WaitAsync(TimeSpan.FromSeconds(3));
         Assert.Single(fixture.Tracked);
+    }
+
+    [Fact]
+    public async Task FullExportsUseDistinctNumericVersionsWhenTheClockDoesNotAdvance()
+    {
+        var time = DateTimeOffset.FromUnixTimeMilliseconds(1800000000000);
+        await using var fixture = new Fixture(clock: new FrozenClock(time));
+
+        await fixture.Writer.RebuildAsync();
+        await fixture.Writer.RebuildAsync();
+
+        var versions = new List<double>();
+
+        foreach (Trackable[] batch in fixture.Tracked)
+        {
+            var action = Assert.IsType<ContentAdministrativeAction>(Assert.Single(batch));
+            DataFilter version = action.Filters!.Items!.OfType<DataFilter>()
+                .Single(filter => filter.Key == "UmbracoVersionId");
+            var condition = Assert.IsType<EqualsCondition>(Assert.Single(version.Conditions!.Items!));
+
+            Assert.True(condition.Negated);
+            Assert.False(version.FilterOutIfKeyIsNotFound);
+            versions.Add(condition.Value.ValueAs<double>());
+        }
+
+        Assert.Equal(new[] { (double)time.ToUnixTimeMilliseconds(), time.ToUnixTimeMilliseconds() + 1d }, versions);
+    }
+
+    [Fact]
+    public async Task CancelledFullExportDoesNotRunVersionReconciliation()
+    {
+        await using var fixture = new Fixture();
+        using var cancellation = new CancellationTokenSource();
+
+        fixture.Strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
+            .Callback(() => cancellation.Cancel())
+            .Returns(Task.CompletedTask);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            fixture.Writer.RebuildAsync(cancellationToken: cancellation.Token));
+
+        Assert.Empty(fixture.Tracked);
+        fixture.Reader.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task FullExportDoesNotReuseThePrecedingExplicitDeltaVersion()
+    {
+        var time = DateTimeOffset.FromUnixTimeMilliseconds(1800000000000);
+        await using var fixture = new Fixture(clock: new FrozenClock(time));
+
+        await fixture.Writer.ExportAsync([], feedVersion: time.ToUnixTimeMilliseconds());
+        await fixture.Writer.RebuildAsync();
+
+        var action = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+        DataFilter version = action.Filters!.Items!.OfType<DataFilter>()
+            .Single(filter => filter.Key == "UmbracoVersionId");
+        var condition = Assert.IsType<EqualsCondition>(Assert.Single(version.Conditions!.Items!));
+
+        Assert.Equal(time.ToUnixTimeMilliseconds() + 1d, condition.Value.ValueAs<double>());
+    }
+
+    [Fact]
+    public async Task RebuildRespectsExportAndAdministrativePoliciesWithinMappingScope()
+    {
+        await using var fixture = new Fixture(options =>
+        {
+            options.MapContent("article");
+            options.MapContent("excluded", mapping => mapping.Export = false);
+            options.MapProduct("product", mapping => mapping.AdministrativeActions = AdministrativeActionPolicy.None());
+        });
+
+        fixture.Reader.Setup(value => value.QueryAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProductDetailsCollectionResponse([new ProductResultDetails("commerce-product")], 1));
+
+        await fixture.Writer.RebuildAsync();
+
+        Trackable[] actions = [.. fixture.Tracked.SelectMany(batch => batch)];
+        var update = Assert.Single(actions.OfType<ProductUpdate>());
+
+        Assert.Equal("commerce-product", update.Product.Id);
+        Assert.False(update.Product.Data![RelewiseDataKeys.Published]!.ValueAs<bool>());
+        Assert.Empty(actions.OfType<ProductAdministrativeAction>());
+        Assert.Single(actions.OfType<ContentAdministrativeAction>());
+
+        foreach (IInvocation invocation in fixture.Reader.Invocations)
+        {
+            string query = JsonConvert.SerializeObject(invocation.Arguments[0]);
+
+            Assert.Contains("rwUmbracoNodeKey", query);
+            Assert.Contains("HasValueCondition", query);
+            Assert.Contains("contentTypeAlias", query);
+            Assert.Contains("UmbracoVersionId", query);
+            Assert.DoesNotContain("rwUmbracoExportGeneration", query);
+            Assert.DoesNotContain("excluded", query);
+            Assert.DoesNotContain("rwUmbracoSite", query);
+        }
     }
 
     [Fact]
@@ -327,7 +429,7 @@ public class EntityIndexingServiceTests
         public Mock<IDataAccessor> Reader { get; } = new();
         public List<Trackable[]> Tracked { get; } = [];
 
-        public Fixture()
+        public Fixture(Action<RelewiseUmbracoOptionsBuilder>? configure = null, TimeProvider? clock = null)
         {
             var tracker = new Mock<ITracker>();
 
@@ -365,10 +467,9 @@ public class EntityIndexingServiceTests
             var services = new ServiceCollection();
 
             services.AddLogging();
-            services.Configure<GlobalSettings>(options =>
-                options.Id = "test-installation");
+            services.AddSingleton(clock ?? TimeProvider.System);
             services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
-                options.MapContent("article", mapping => mapping.AutoMap()));
+                (configure ?? (builder => builder.MapContent("article", mapping => mapping.AutoMap())))(options));
             services.AddSingleton<RelewiseUmbracoConfiguration>();
             services.AddSingleton(clients.Object);
             services.AddSingleton(contexts.Object);
@@ -385,6 +486,14 @@ public class EntityIndexingServiceTests
         public ValueTask DisposeAsync()
         {
             return Services.DisposeAsync();
+        }
+    }
+
+    private sealed class FrozenClock(DateTimeOffset time) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow()
+        {
+            return time;
         }
     }
 }

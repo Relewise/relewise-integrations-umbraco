@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions;
@@ -19,7 +18,6 @@ using Relewise.Client.Responses;
 using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core;
-using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Search.Indexing;
@@ -35,18 +33,12 @@ namespace Relewise.Integrations.Umbraco.Indexing;
 internal sealed class EntityIndexingService(
     IServiceScopeFactory scopeFactory,
     RelewiseUmbracoConfiguration configuration,
-    ILogger<EntityIndexingService> logger) : IEntityIndexingOperations
+    ILogger<EntityIndexingService> logger,
+    TimeProvider? clock = null) : IEntityIndexingOperations
 {
     internal const string IndexAlias = "Relewise_MappedEntities";
-
-    internal static string SiteId(IServiceProvider services)
-    {
-        string id = services.GetRequiredService<IOptions<GlobalSettings>>().Value.Id;
-
-        return !string.IsNullOrWhiteSpace(id)
-            ? id
-            : throw new InvalidOperationException("Umbraco's installation ID must be configured before indexing.");
-    }
+    private long _lastAutomaticVersion;
+    private long _lastExportVersion;
 
     public Task ExportAsync(
         IEnumerable<Guid> keys,
@@ -99,11 +91,7 @@ internal sealed class EntityIndexingService(
                     DataFilter(
                         entity.EntityType,
                         RelewiseDataKeys.NodeKey,
-                        new EqualsCondition(entity.NodeKey.ToString("D"))),
-                    DataFilter(
-                        entity.EntityType,
-                        RelewiseDataKeys.Site,
-                        new EqualsCondition(SiteId(scope.ServiceProvider))));
+                        new EqualsCondition(entity.NodeKey.ToString("D"))));
 
                 await MarkUnavailableAsync(
                     clients.GetClient<IDataAccessor>(Constants.ClientNames.Integration),
@@ -151,8 +139,6 @@ internal sealed class EntityIndexingService(
             var clients = services.GetRequiredService<IRelewiseClientFactory>();
             var tracker = clients.GetClient<ITracker>(Constants.ClientNames.Integration);
             var strategy = services.GetRequiredService<IPublishedContentChangeStrategy>();
-
-            string site = SiteId(services);
 
             var collected = new IndexingKeyCollector();
             HashSet<Guid> requested = [.. keys];
@@ -236,8 +222,8 @@ internal sealed class EntityIndexingService(
             await using var operation = new MappingOperation(services, token);
             var mapper = new EntityMapper(configuration);
 
-            var generation = Guid.NewGuid().ToString("N");
-            long version = feedVersion ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long version = feedVersion ?? NextVersion();
+            _lastExportVersion = version;
 
             string[] siteCultures = (await services.GetRequiredService<ILanguageService>().GetAllAsync())
                 .Select(language => language.IsoCode)
@@ -287,7 +273,6 @@ internal sealed class EntityIndexingService(
                     source,
                     mapping,
                     operation,
-                    site,
                     version,
                     contentUpdateKind: contentUpdateKind,
                     publishedCultures: cultures);
@@ -305,7 +290,6 @@ internal sealed class EntityIndexingService(
                     CoreSearchMetadata.Apply(mapped, entry.Value, siteCultures);
                 }
 
-                EntityMapper.Data(mapped.Entity)[RelewiseDataKeys.ExportGeneration] = generation;
                 desired.Add(mapped);
             }
 
@@ -327,7 +311,10 @@ internal sealed class EntityIndexingService(
                                     entity.Entity.GetType(),
                                     RelewiseDataKeys.NodeKey,
                                     new EqualsCondition(entity.NodeKey.ToString("D"))),
-                                DataFilter(entity.Entity.GetType(), RelewiseDataKeys.Site, new EqualsCondition(site))),
+                                DataFilter(
+                                    entity.Entity.GetType(),
+                                    RelewiseDataKeys.DocumentTypeAlias,
+                                    new EqualsCondition(entity.DocumentTypeAlias))),
                             false,
                             true));
                 }
@@ -340,7 +327,7 @@ internal sealed class EntityIndexingService(
 
             token.ThrowIfCancellationRequested();
 
-            // Only a completed full export may reconcile entities missing from its generation.
+            // Only a completed full export may reconcile entities missing from its version.
             Guid[] unavailable =
             [
                 .. requested.Except(desired.Select(entity => entity.NodeKey))
@@ -368,8 +355,9 @@ internal sealed class EntityIndexingService(
 
                     foreach ((Guid[] Keys, bool Delete) removal in removals)
                     {
+                        // Only mapped source entities participate; a matching business alias alone is insufficient.
                         var filters = new FilterCollection(
-                            DataFilter(type, RelewiseDataKeys.Site, new EqualsCondition(site)),
+                            DataFilter(type, RelewiseDataKeys.NodeKey, new HasValueCondition()),
                             new OrFilter(
                             [
                                 .. group.Select(mapping => DataFilter(
@@ -382,8 +370,8 @@ internal sealed class EntityIndexingService(
                             rebuild
                                 ? DataFilter(
                                     type,
-                                    RelewiseDataKeys.ExportGeneration,
-                                    new EqualsCondition(generation, true),
+                                    RelewiseDataKeys.Version,
+                                    new EqualsCondition(version, true),
                                     false)
                                 : new OrFilter(
                                 [
@@ -427,6 +415,21 @@ internal sealed class EntityIndexingService(
                 mappedCount,
                 Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
+    }
+
+    private long NextVersion()
+    {
+        long now = (clock ?? TimeProvider.System).GetUtcNow().ToUnixTimeMilliseconds();
+
+        // The shared writer serializes operations; clock resolution must not reuse an export marker.
+        _lastAutomaticVersion = Math.Max(now, _lastAutomaticVersion + 1);
+
+        if (_lastAutomaticVersion == _lastExportVersion)
+        {
+            _lastAutomaticVersion++;
+        }
+
+        return _lastAutomaticVersion;
     }
 
     private static async Task MarkUnavailableAsync(

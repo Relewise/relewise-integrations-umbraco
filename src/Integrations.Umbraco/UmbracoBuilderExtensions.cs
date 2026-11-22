@@ -88,6 +88,7 @@ public static class UmbracoBuilderExtensions
         builder.Services.TryAddSingleton<IEntityIndexingOperations>(services =>
             services.GetRequiredService<EntityIndexingService>());
         builder.Services.TryAddSingleton<EntityIndexingQueue>();
+        builder.Services.TryAddSingleton<IndexMetadataService>();
         builder.Services.TryAddTransient<MappedEntityIndexer>();
         builder.Services.TryAddTransient<MappedEntityChangeStrategy>();
         builder.Services.TryAddTransient<MappedEntitySearcher>();

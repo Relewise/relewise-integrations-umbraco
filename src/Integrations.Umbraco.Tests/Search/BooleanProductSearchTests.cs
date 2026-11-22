@@ -10,7 +10,6 @@ using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Search;
 using Relewise.Client.Responses.Search;
 using Relewise.Integrations.Umbraco.Search;
-using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
@@ -60,8 +59,6 @@ public class BooleanProductSearchTests
 
         var services = new ServiceCollection();
 
-        services.Configure<GlobalSettings>(options =>
-            options.Id = "boolean-site");
         services.AddSingleton(factory.Object);
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         services.AddScoped<IRelewiseUserLocator, Visitor>();
@@ -99,7 +96,7 @@ public class BooleanProductSearchTests
             {
                 string json = JsonConvert.SerializeObject(request.Filters);
 
-                Assert.Contains("boolean-site", json);
+                Assert.DoesNotContain("rwUmbracoSite", json);
                 Assert.Contains("rwUmbracoPublished", json);
                 Assert.Contains("rwUmbracoSearchProtected", json);
             });

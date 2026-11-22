@@ -11,10 +11,8 @@ using Relewise.Client.Requests.Search;
 using Relewise.Client.Requests.Search.Settings;
 using Relewise.Client.Responses.Search;
 using Relewise.Integrations.Umbraco.Search;
-using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
-using Umbraco.Cms.Core.Services;
 using UmbracoConstants = Umbraco.Cms.Core.Constants;
 
 namespace Relewise.Integrations.Umbraco.Tests.Search;
@@ -28,7 +26,7 @@ public class MappedEntitySearchTests
     [InlineData(true, false, false)]
     [InlineData(true, false, true)]
     [InlineData(true, true, false)]
-    public async Task ProtectionRequiresAPrincipalAndBypassRetainsSiteMembership(
+    public async Task ProtectionRequiresAPrincipalAndBypassRetainsMappingMembership(
         bool product,
         bool bypass,
         bool authenticated)
@@ -48,16 +46,9 @@ public class MappedEntitySearchTests
         factory.Setup(value => value.GetClient<Relewise.Client.Search.ISearcher>(It.IsAny<string>()))
             .Returns(sdk.Object);
 
-        var store = new Mock<IKeyValueService>();
-
-        store.Setup(value => value.GetValue("Relewise:SiteId")).Returns("protected-site");
-
         var services = new ServiceCollection();
 
-        services.Configure<GlobalSettings>(settings =>
-            settings.Id = "protected-site");
         services.AddSingleton(factory.Object);
-        services.AddSingleton(store.Object);
         services.AddScoped<IRelewiseUserLocator, ScopedVisitor>();
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
@@ -87,7 +78,8 @@ public class MappedEntitySearchTests
 
         string json = JsonConvert.SerializeObject(sent);
 
-        Assert.Contains("protected-site", json);
+        Assert.DoesNotContain("rwUmbracoSite", json);
+        Assert.Contains("contentTypeAlias", json);
         Assert.Contains("rwUmbracoPublished", json);
         Assert.Contains(product ? "product" : "article", json);
         Assert.Contains("da-dk", json);
@@ -124,16 +116,9 @@ public class MappedEntitySearchTests
         clients.Setup(factory => factory.GetClient<Relewise.Client.Search.ISearcher>(It.IsAny<string>()))
             .Returns(searcher.Object);
 
-        var store = new Mock<IKeyValueService>();
-
-        store.Setup(service => service.GetValue("Relewise:SiteId")).Returns("test-site");
-
         var services = new ServiceCollection();
 
-        services.Configure<GlobalSettings>(settings =>
-            settings.Id = "test-site");
         services.AddSingleton(clients.Object);
-        services.AddSingleton(store.Object);
         services.AddScoped<IRelewiseUserLocator, ScopedVisitor>();
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
@@ -226,7 +211,7 @@ public class MappedEntitySearchTests
                 Assert.Same(expected, request.User);
                 Assert.False(string.IsNullOrWhiteSpace(request.DisplayedAtLocation));
                 Assert.NotNull(request.Filters);
-                Assert.True(request.Filters.Items!.Count >= 5);
+                Assert.True(request.Filters.Items!.Count >= 3);
 
                 DataFilter[] predicates = [.. request.Filters.Items.SelectMany(DataFilters)];
 
@@ -236,7 +221,7 @@ public class MappedEntitySearchTests
 
                 foreach (string key in new[]
                          {
-                             "rwUmbracoSite", "contentTypeAlias", "rwUmbracoSearchCulture", "rwUmbracoSearchSegments",
+                             "contentTypeAlias", "rwUmbracoSearchCulture",
                              "rwUmbracoSearchProtected"
                          })
                 {
@@ -307,8 +292,6 @@ public class MappedEntitySearchTests
 
         var services = new ServiceCollection();
 
-        services.Configure<GlobalSettings>(settings =>
-            settings.Id = "prediction-site");
         services.AddSingleton(clients.Object);
         services.AddScoped<IRelewiseUserLocator, ScopedVisitor>();
         services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
@@ -397,7 +380,7 @@ public class MappedEntitySearchTests
 
         string json = JsonConvert.SerializeObject(prediction.Filters);
 
-        Assert.Contains("prediction-site", json);
+        Assert.DoesNotContain("rwUmbracoSite", json);
         Assert.Contains("rwUmbracoPublished", json);
         Assert.Contains("rwUmbracoSearchProtected", json);
         Assert.Contains(principal.ToString("D"), json);

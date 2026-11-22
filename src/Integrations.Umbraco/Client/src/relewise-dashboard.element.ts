@@ -119,7 +119,7 @@ export class RelewiseDashboardElement extends UmbLitElement {
         try {
             await umbConfirmModal(this, {
                 headline: 'Export and permanently delete missing entities?',
-                content: html`<p>This exports all mapped published data, then permanently deletes missing entities previously exported by this site through the eligible document types below.</p>
+                content: html`<p>This exports all mapped published data, then permanently deletes missing entities with source-node metadata and an eligible mapping listed below.</p>
                     <p>Eligible document types: <strong>${this.cleanupMappings().map(mapping => mapping.documentTypeAlias).join(', ')}</strong>.</p>
                     <p>Externally managed entities are retained. Child Variants are refreshed with their Product.</p>
                     <p>Deletion in Relewise cannot be undone through Umbraco's Recycle Bin.</p>`,
@@ -322,9 +322,10 @@ export class RelewiseDashboardElement extends UmbLitElement {
             <aside class="index-statistics-note" role="note" aria-label="Index statistics in Umbraco">
                 <uui-icon name="icon-info" aria-hidden="true"></uui-icon>
                 <div>
-                    <p>Please note: Umbraco's Search dashboard does not receive live index statistics from Relewise.
-                        The Relewise status (“Unknown”) and document count (0) are placeholders.
-                        They do not indicate that your Dataset is empty or that an export has failed.</p>
+                    <p>Please note: Umbraco's Search dashboard shows stored entity counts for the configured mappings,
+                        including disabled entities. Variants are included in their Product, and translations are counted once.
+                        Counts are cached for 30 seconds. “Healthy” confirms read access, not export freshness or search readiness.
+                        If metadata cannot be read, the status is “Unknown” and the count is 0; this does not indicate an empty Dataset.</p>
                     <a href="/umbraco/section/settings/workspace/search-root">Open Umbraco Search dashboard</a>
                 </div>
             </aside>
@@ -342,7 +343,7 @@ export class RelewiseDashboardElement extends UmbLitElement {
             ${this.exportError ? html`<p role="alert" class="error">${this.exportError}</p>` : ''}
             ${!this.configuration?.mappings.some(mapping => mapping.export) ? html`<p>Configure an exported entity mapping to enable export.</p>` : ''}
             <details><summary>Maintenance</summary>
-                <p>Run a full export and permanently delete entities missing from the published data. Cleanup only applies to entities previously exported by this site through the eligible document types below; it does not clear the Dataset.</p>
+                <p>Run a full export and permanently delete entities missing from the published data. Cleanup only applies to entities with source-node metadata and an eligible mapping listed below; it does not clear the Dataset.</p>
                 ${this.cleanupMappings().length ? html`<p>Eligible document types: <code>${this.cleanupMappings().map(mapping => mapping.documentTypeAlias).join(', ')}</code>.</p>` : html`<p>No exported mappings permit permanent deletion.</p>`}
                 ${this.externallyManagedMappings().length ? html`<p>Retained under external control: <code>${this.externallyManagedMappings().map(mapping => mapping.documentTypeAlias).join(', ')}</code>.</p>` : ''}
                 <uui-button look="secondary" color="danger" label="Export and permanently delete missing entities" .state=${this.exportOperation === 'cleanup' ? 'waiting' : undefined} ?disabled=${!this.canExport || !this.cleanupMappings().length} @click=${() => this.confirmCleanup()}>Export and permanently delete missing entities</uui-button>

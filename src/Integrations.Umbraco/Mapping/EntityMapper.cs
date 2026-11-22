@@ -23,7 +23,6 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         IPublishedContent source,
         MappingDefinition definition,
         MappingOperation operation,
-        string siteId,
         long version,
         bool parentAdministrativeActions = true,
         ContentUpdate.UpdateKind? contentUpdateKind = null,
@@ -261,7 +260,6 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                     child,
                     variantMapping,
                     operation,
-                    siteId,
                     version,
                     synchronize,
                     publishedCultures: effective);
@@ -292,7 +290,6 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
 
         data[RelewiseDataKeys.DocumentTypeAlias] = source.ContentType.Alias;
         data[RelewiseDataKeys.NodeKey] = source.Key.ToString("D");
-        data[RelewiseDataKeys.Site] = siteId;
         data[RelewiseDataKeys.Published] = true;
         data[RelewiseDataKeys.Version] = version;
 

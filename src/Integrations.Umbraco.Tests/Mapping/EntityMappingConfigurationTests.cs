@@ -1,12 +1,44 @@
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Mapping;
+using Umbraco.Cms.Core.Models.PublishedContent;
 using Content = Relewise.Client.DataTypes.Content;
 
 namespace Relewise.Integrations.Umbraco.Tests.Mapping;
 
 public class EntityMappingConfigurationTests
 {
+    [Fact]
+    public async Task ExportsSourceMetadataWithoutAnInstallationIdentifier()
+    {
+        using ServiceProvider services = MappingTestServices.Create(options =>
+            options.MapBrand("brand", mapping => mapping.AdministrativeActions = AdministrativeActionPolicy.None()));
+        var source = new Mock<IPublishedContent>();
+
+        source.SetupGet(value => value.ContentType.Alias).Returns("brand");
+        source.SetupGet(value => value.Id).Returns(42);
+        source.SetupGet(value => value.Key).Returns(Guid.NewGuid());
+
+        var configuration = services.GetRequiredService<RelewiseUmbracoConfiguration>();
+        var mapper = new EntityMapper(configuration);
+
+        await using var operation = new MappingOperation(services, CancellationToken.None);
+        MappedEntity mapped = await mapper.MapAsync(
+            source.Object,
+            configuration.Mappings["brand"],
+            operation,
+            1,
+            publishedCultures: ["en-US"]);
+        Dictionary<string, DataValue?> data = EntityMapper.Data(mapped.Entity);
+
+        Assert.Equal("brand", data[RelewiseDataKeys.DocumentTypeAlias]!.ValueAs<string>());
+        Assert.Equal(source.Object.Key.ToString("D"), data[RelewiseDataKeys.NodeKey]!.ValueAs<string>());
+        Assert.DoesNotContain("rwUmbracoSite", data.Keys);
+        Assert.DoesNotContain("rwUmbracoExportGeneration", data.Keys);
+        Assert.Equal(1d, data["UmbracoVersionId"]!.ValueAs<double>());
+    }
+
     [Fact]
     public void FinalConfigurationRejectsConflictingOrReservedDataKeysAfterRegistration()
     {
@@ -17,7 +49,7 @@ public class EntityMappingConfigurationTests
                 DataMappingOptions? retained = null;
 
                 options.MapProduct("product", mapping => mapping.MapData("field", data => retained = data));
-                retained!.DataKey = "rwUmbracoSite";
+                retained!.DataKey = "rwUmbracoNodeKey";
             });
         });
         Assert.Throws<InvalidOperationException>(() =>

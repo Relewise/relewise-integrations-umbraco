@@ -90,12 +90,30 @@ public class CoreSearchMetadataTests
         CoreSearchMetadata.Apply(
             mapped,
             new CoreSearchDocument(
-                [new Variation(null, null), new Variation("da-DK", null)],
+                [new Variation(null, null), new Variation("da-DK", null), new Variation("en-US", "vip")],
                 [],
                 new ContentProtection([group])));
         Assert.True(product.Data![RelewiseDataKeys.Search.Protected]!.ValueAs<bool>());
         Assert.Contains(group.ToString("D"), product.Data[RelewiseDataKeys.Search.Access]!.ValueAsListOf<string>());
         Assert.Equal(new[] { "", "da-dk" }, product.Data[RelewiseDataKeys.Search.Culture]!.ValueAsListOf<string>());
+        Assert.DoesNotContain("rwUmbracoSearchSegments", product.Data.Keys);
+    }
+
+    [Fact]
+    public void SegmentOnlyVariationsDoNotBecomeDefaultSegmentResults()
+    {
+        var content = new Content("article");
+        var mapped = new MappedEntity(Guid.NewGuid(), "article", "article", content, true);
+
+        CoreSearchMetadata.Apply(
+            mapped,
+            new CoreSearchDocument(
+                [new Variation("en-US", "vip")],
+                [new IndexField("body", new IndexValue { Texts = ["Segment text"] }, "en-US", "vip")],
+                null));
+
+        Assert.Empty(content.Data![RelewiseDataKeys.Search.Culture]!.ValueAsListOf<string>());
+        Assert.DoesNotContain(CoreSearchTranslation.Field("body", "text"), content.Data.Keys);
     }
 
     [Fact]

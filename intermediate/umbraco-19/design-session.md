@@ -153,8 +153,9 @@ explicit fields; either can be combined with one final custom entity mapper.
   The existing `AddContentType` merging contract remains supported. Its bare
   registration is tracking-only; bare `MapContent` enables export by default.
 - Every exported entity has one scalar `contentTypeAlias`, maintained regardless of
-  search configuration. Node-key and site metadata support result resolution and
-  membership. `rwUmbracoPublished` records source-page availability, independently
+  search configuration. Node-key metadata supports result resolution and identifies earlier
+  exports. The Dataset has no installation partition; entity types and Document Type aliases
+  define mapping scope. `rwUmbracoPublished` records source-page availability, independently
   of the Relewise Product's enabled state; it is maintained under both administrative-action policies.
 - Automatic views derive their SDK event from the mapping target. A Variant view
   includes its parent Product ID; Category views use mapped Category ancestors.
@@ -281,9 +282,10 @@ the node disappears and queues removal after commit through the same writer.
 Deleted Variants refresh their parent. If an unpublished draft changed its ID,
 a rebuild reconciles any former identity left behind.
 
-A completed full export reconciles missing entities by its unique export generation,
-source scope and administrative policy; failures do not trigger final cleanup.
-Unrelated Dataset entities remain intact. Delta updates need not refresh other
+A completed full export reconciles missing entities by its export version,
+configured entity types, Document Type aliases and administrative policy; failures do not trigger final cleanup.
+Cleanup requires source-node metadata. Entities outside that scope remain intact; installations
+sharing the same Dataset and mappings are not isolated. Delta updates need not refresh other
 Products referencing changed Brands/Categories; re-export those Products or rebuild.
 A changed canonical ID can leave its former entity until rebuilding. Previously
 contributed business fields are not automatically withdrawn. Interrupted background
@@ -326,7 +328,7 @@ types are exposed. Content aliases become a source-metadata filter before paging
 and facets; Product providers use the one Product mapping.
 
 Each execution, including facet queries, creates a fresh typed SDK request. The
-callback gets `Services`, `User` and `Culture`; mandatory site/mapping/access,
+callback gets `Services`, `User` and `Culture`; mandatory mapping/access,
 request user, language, caller query, paging and the default Relewise index remain enforced. Language
 follows the query culture with the site's default as the SDK-language fallback;
 a null query culture selects invariant documents only. There is no installation-wide
@@ -346,7 +348,7 @@ options.SearchProviders.AddProduct("commerceCatalogue", provider =>
 ```
 
 This omits only the `rwUmbracoPublished` filter. The metadata is always maintained;
-site, mapping, access and culture restrictions remain. Content providers always
+mapping, access and culture restrictions remain. Content providers always
 require a published page. This option neither enables a disabled Product nor adds
 unmapped commerce Products. Results remain Umbraco document IDs; callers disabling
 the requirement handle unavailable pages and commerce destinations themselves.
@@ -394,11 +396,15 @@ and 200 publications into 16, with no remote entity reads during publication.
 Batch counts depend on callback arrival timing; these small measurements do not
 establish large-site capacity. Full rebuild collection remains in memory.
 
-Umbraco's core indexing dashboard requires a numeric document count. The provider
-returns its required placeholder `0` and `Unknown` health; Relewise statistics are
-unavailable through this integration. A notice in the existing Relewise dashboard
-explains that zero does not indicate an empty Dataset. No counter, extra SDK queries
-or replacement of Umbraco's standard statistics UI is introduced.
+Umbraco's Search dashboard reads stored-entity totals through the Data Accessor, scoped
+to the configured entity types and Document Type mappings. Named aliases restrict the count to
+their entity type and Document Types. Disabled entities are included; embedded Variants
+and translations do not add to the count. Query callbacks and shopper visibility filters
+are not executed. Results, including failures, are cached for 30 seconds per alias and
+concurrent refreshes are shared. A refresh has a three-second cancellation timeout.
+`Healthy` confirms read access, not search readiness or export freshness. Failed or
+unavailable reads return `Unknown` with the required numeric placeholder `0`. No persisted
+counters or replacement of Umbraco's statistics UI are introduced.
 The maintained [mapping](../../docs/entity-mapping.md) and
 [search](../../docs/search.md) guides describe supported behavior. This
 intermediate document retains implementation-review context and smoke-test evidence.
@@ -453,7 +459,7 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | [Custom mapper details](images/26-dashboard-mapper-names-and-publication.png) | Mapper type names and publication/removal behavior. |
 | [Export and Maintenance](images/29-dashboard-export-and-maintenance.png) | Full export and scoped permanent-deletion controls. |
 | [Connection details](images/30-dashboard-connection-details.png) | Current separate default/named tables and usage explanations. |
-| [Final dashboard provider review](images/32-dashboard-final-review.png) | Current Content/Product provider details and index-statistics notice. |
+| [Stored entity counts](images/32-dashboard-final-review.png) | Umbraco Search reports Healthy and 116 stored entities matching the configured mappings from the local Dataset. |
 | [Brand filters](images/33-storefront-brand-filters.jpg) | Multiple Brand selections, counts, removable chips and actual Brand labels on Product cards. |
 | [Brand page](images/37-storefront-brand-page.jpg) | Ridgeway's fixed Brand scope retains other facets and omits redundant Brand selection. |
 | [Shopping on desktop](images/38-storefront-shopping-desktop.jpg) | Shared search header, separate navigation row, compact introduction and reactive listings. |

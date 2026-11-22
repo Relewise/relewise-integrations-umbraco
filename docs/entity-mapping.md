@@ -177,7 +177,7 @@ or credentials check.
 Use **Export all mapped entities** to export published data and reconcile missing
 entities according to the configured lifecycle policies. **Maintenance → Export and
 permanently delete missing entities** additionally permits permanent deletion for synchronized
-mappings within this site's scope. Mappings using `None()` retain their entities.
+mappings within the configured entity types and Document Type aliases. Mappings using `None()` retain their entities.
 Child Variants are updated with their parent Product. Completion messages describe
 the current dashboard visit; no export history is persisted by the integration.
 
@@ -187,7 +187,10 @@ source metadata identifies earlier exports after unpublication, including proper
 IDs. Umbraco deletion notifications capture the configured ID and queue removal after
 commit through the same writer; deleted Variants refresh their parent. A draft-only
 ID change can leave its previously exported identity until a full export. A successful full export reconciles missing entities within its
-configured scope and administrative policy; it does not clear the Dataset.
+configured scope and administrative policy; it does not clear the Dataset. Reconciliation
+requires source-node metadata as well as a matching entity type and Document Type alias.
+There is no installation partition within a Dataset: installations sharing these mappings
+also share reconciliation scope.
 
 Changed Brand/Category references are not automatically propagated to other entities.
 Re-export the affected Product or rebuild. Changed canonical IDs can leave an earlier

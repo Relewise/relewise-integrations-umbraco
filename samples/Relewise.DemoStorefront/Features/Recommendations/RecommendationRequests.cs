@@ -16,7 +16,6 @@ internal static class RecommendationRequests
     internal static ProductRecommendationRequestCollection CreateRequests(
         User user,
         DemoMarket market,
-        string site,
         string productId,
         string? variantId,
         string categoryId,
@@ -55,7 +54,7 @@ internal static class RecommendationRequests
         similar.Filters.Add(new ProductDataFilter(DataKeys.ProductType, new EqualsCondition(productType)));
         similar.Filters.Add(new ProductCategoryIdFilter(categoryId, CategoryScope.ImmediateParent));
         similar.Filters.Add(new ProductDataFilter(DataKeys.InStock, new EqualsCondition(true)));
-        ConfigureRequest(similar, market, site, productId);
+        ConfigureRequest(similar, market, productId);
 
         // The sections serve different purposes; an actual recently viewed item may also be a similar Product.
         return new ProductRecommendationRequestCollection(
@@ -64,7 +63,6 @@ internal static class RecommendationRequests
             CreateRecentlyViewed(
                 user,
                 market,
-                site,
                 productId
             )
         );
@@ -73,7 +71,6 @@ internal static class RecommendationRequests
     internal static RecentlyViewedProductsRequest CreateRecentlyViewed(
         User user,
         DemoMarket market,
-        string site,
         string? excludedProductId = null,
         string? displayedAtLocation = null)
     {
@@ -86,7 +83,7 @@ internal static class RecommendationRequests
             user
         );
 
-        ConfigureRequest(request, market, site, excludedProductId);
+        ConfigureRequest(request, market, excludedProductId);
 
         return request;
     }
@@ -94,7 +91,6 @@ internal static class RecommendationRequests
     internal static PopularProductsRequest CreatePopularProducts(
         User user,
         DemoMarket market,
-        string site,
         bool emptyCart = false)
     {
         var request = new PopularProductsRequest(
@@ -106,7 +102,7 @@ internal static class RecommendationRequests
             TimeSpan.FromDays(30)
         );
 
-        ConfigureRequest(request, market, site, null);
+        ConfigureRequest(request, market, null);
         request.Filters.Add(new ProductDataFilter(DataKeys.InStock, new EqualsCondition(true)));
 
         return request;
@@ -138,7 +134,6 @@ internal static class RecommendationRequests
     private static void ConfigureRequest(
         ProductRecommendationRequest request,
         DemoMarket market,
-        string site,
         string? excludedProductId)
     {
         if (excludedProductId != null)
@@ -147,7 +142,6 @@ internal static class RecommendationRequests
             request.Filters.Add(new ProductIdFilter(excludedProductId, true));
         }
 
-        request.Filters.Add(new ProductDataFilter(RelewiseDataKeys.Site, new EqualsCondition(site)));
         request.Filters.Add(
             new ProductDataFilter(
                 RelewiseDataKeys.DocumentTypeAlias,

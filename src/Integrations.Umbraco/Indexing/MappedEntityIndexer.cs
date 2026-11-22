@@ -7,7 +7,7 @@ using Umbraco.Cms.Core.Search.Indexing;
 
 namespace Relewise.Integrations.Umbraco.Indexing;
 
-internal sealed class MappedEntityIndexer(EntityIndexingQueue indexing) : IIndexer
+internal sealed class MappedEntityIndexer(EntityIndexingQueue indexing, IndexMetadataService metadata) : IIndexer
 {
     public Task AddOrUpdateAsync(
         string indexAlias,
@@ -33,6 +33,6 @@ internal sealed class MappedEntityIndexer(EntityIndexingQueue indexing) : IIndex
 
     public Task<IndexMetadata> GetMetadataAsync(string indexAlias)
     {
-        return Task.FromResult(new IndexMetadata(0, HealthStatus.Unknown, "Relewise"));
+        return metadata.GetMetadataAsync(indexAlias);
     }
 }

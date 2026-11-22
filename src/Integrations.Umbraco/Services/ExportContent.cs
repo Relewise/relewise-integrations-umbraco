@@ -31,7 +31,8 @@ public class ExportContent
     public ContentUpdate.UpdateKind UpdateKind { get; }
 
     /// <summary>
-    /// Feed version for enabling and disabling content
+    /// Numeric version written to exported entities. A supplied value is preserved; otherwise a current
+    /// Unix-millisecond timestamp is returned.
     /// </summary>
     public long Version => _version ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 }

@@ -96,3 +96,9 @@ rebuilds and explicit exports. Relewise search-provider registration is optional
 Queries through Umbraco's default published-content provider retain their existing
 search implementation unless `DefaultPublishedContentProviderAlias` is configured. See the
 [search guide](search.md) for provider registration and query behavior.
+
+Run a full export after upgrading to populate the source-node and search metadata on
+published entities. Reconciliation only removes or disables entities with source-node
+metadata and matching configured mappings. Stale entities from earlier releases that are
+no longer published and lack that metadata require deliberate cleanup; the integration
+does not infer their ownership from a Document Type alias alone.

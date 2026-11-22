@@ -70,13 +70,13 @@ The example always supplies `searchText`, including an empty string when all rel
 When changing field names or data types, plan an explicit migration. A full export
 continues to replace only provided properties; **permanently delete** does not
 clear omitted fields from retained entities. After successful ingestion, it deletes
-missing entities identified by their export generation, limited to this site's
-configured Document Types and mappings that allow administrative actions. A full
+missing entities identified by a different export version, restricted to configured entity types
+and Document Types with source-node metadata and permitted administrative actions. A full
 export without permanent deletion disables those entities instead.
 Mappings with `AdministrativeActionPolicy.None()` retain their entities and business
 fields. Content/Product page-availability metadata is still updated.
 
-Review the site ID, mapped Document Types and administrative-action policies before
+Review the mapped entity types, Document Types and administrative-action policies before
 permanent deletion, especially in a shared Dataset.
 Use a test Dataset for schema experiments. See the [export service](../src/Integrations.Umbraco/Services/ExportContentService.cs)
 and [shared indexing writer](../src/Integrations.Umbraco/Indexing/EntityIndexingService.cs).

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions;
@@ -11,7 +10,6 @@ using Relewise.DemoStorefront.Setup;
 using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
 using Umbraco.Cms.Core;
-using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Services;
@@ -79,7 +77,6 @@ internal static class StorefrontRecommendations
         }
 
         User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUserAsync();
-        string site = http.RequestServices.GetRequiredService<IOptions<GlobalSettings>>().Value.Id;
 
         var productType = product.Value<string>(PropertyAliases.ProductType);
         bool emptyCart = isHome && http.Request.Query["placement"] == "cart";
@@ -91,7 +88,6 @@ internal static class StorefrontRecommendations
                 CreateRecentlyViewed(
                     user,
                     market,
-                    site,
                     isHome ? null : Id(product),
                     emptyCart ? "Empty cart: Recently viewed" : null
                 )
@@ -99,7 +95,6 @@ internal static class StorefrontRecommendations
             : CreateRequests(
                 user,
                 market,
-                site,
                 Id(product),
                 page == product ? null : Id(page),
                 Id(category!),
@@ -110,8 +105,8 @@ internal static class StorefrontRecommendations
         {
             batch = new ProductRecommendationRequestCollection(
                 false,
-                CreateRecentlyViewed(user, market, site),
-                CreatePopularProducts(user, market, site)
+                CreateRecentlyViewed(user, market),
+                CreatePopularProducts(user, market)
             );
         }
 
@@ -190,7 +185,6 @@ internal static class StorefrontRecommendations
                     CreatePopularProducts(
                         user,
                         market,
-                        site,
                         true
                     ),
                     timeout.Token

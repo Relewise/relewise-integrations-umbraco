@@ -75,6 +75,6 @@ validate it in a separate Dataset, and explicitly decide how to re-export conten
 and handle the old entities/history. Do not assume that old numeric history will
 move to the GUID entity. The dashboard's **explicit full export** retains its existing
 stale-entity cleanup: within the configured source scope, it disables entities not
-carrying the completed export generation, or deletes them if permanent deletion is
+carrying the completed export version, or deletes them if permanent deletion is
 selected. Review that operation before using it on an existing or shared Dataset;
 it is not a GUID migration tool.

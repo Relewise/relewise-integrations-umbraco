@@ -64,7 +64,7 @@ options.SearchProviders.AddProduct("commerceCatalogue", provider =>
 from whether the Relewise Product is enabled. The integration maintains this
 metadata regardless of whether a provider filters on it, including when
 commerce contributes other Product fields. This option only omits that query
-filter; site, mapping, access and culture restrictions remain. Content providers
+filter; mapping, access and culture restrictions remain. Content providers
 always require a published page. Results still contain Umbraco document IDs;
 callers must handle unavailable pages and any commerce destinations themselves.
 `AdministrativeActions` is configured independently; this option does not enable
@@ -72,8 +72,34 @@ a disabled Product.
 
 For application-level SDK filters and selected Data fields, use the supported metadata
 constants in [RelewiseDataKeys](../src/Integrations.Umbraco/RelewiseDataKeys.cs). These
-cover source identity, site, document type, publication, culture and protection;
+cover source identity, document type, publication, culture and protection;
 export bookkeeping and search projection keys remain internal.
+
+The integration does not partition a Dataset by Umbraco installation. Entity IDs and
+Document Type mappings share the Dataset's scope; independent installations with overlapping
+mappings must use separate Datasets if they require isolation.
+
+Integration metadata supports the following behavior:
+
+| Data key | Purpose |
+| --- | --- |
+| `rwUmbracoNodeKey` | Resolve overridden entity IDs back to Umbraco documents and identify earlier exports. |
+| `rwUmbracoPublished` | Source-page availability, independently of entity administrative state. |
+| `UmbracoVersionId` | Existing numeric export version; reconcile missing exports after a full export completes successfully. |
+| `rwUmbracoSearchCulture` | Published cultures available in the default segment. |
+| `rwUmbracoSearchProtected`, `rwUmbracoSearchAccess` | Apply Umbraco access restrictions before paging and facets. |
+| `rwUmbracoField_*` | Typed projections for core filters, sorting and facets; business Data remains unchanged. |
+
+Keyword/text projections retain matching values and a scalar sort value. Numeric/date
+projections retain exact facet values, object values for range matching and minimum/maximum
+sort values. Culture-varying numeric/date fields use culture-specific keys. Segment-specific
+values are not projected; no separate segment metadata is written.
+
+Full exports stamp one numeric `UmbracoVersionId` on their entities and reconcile matching
+source entities with a different version only after successful ingestion. The comparison
+is inequality, not chronological ordering. Automatically generated versions increase within
+the shared writer even when the clock does not advance; explicit delta-export versions
+remain caller-supplied. Coordinate writers across processes sharing the same mapping scope.
 
 `AddRelewise` registers **one indexing pipeline**, using Umbraco's published-content
 change and rebuild flow. It exports the configured entities whether or not query
@@ -133,7 +159,7 @@ installation-wide language setting in the integration. Searchable fields and
 relevance follow the Dataset's Relewise configuration; mapping a Data key does not automatically change its search settings.
 
 `ConfigureRequest` receives a fresh, typed SDK request and runtime context with
-`Services`, `User`, and `Culture`. Mandatory site/mapping membership, access control,
+`Services`, `User`, and `Culture`. Mandatory mapping membership, access control,
 request user, language, query, paging, and the default Relewise index remain enforced. A blank
 `DisplayedAtLocation` falls back to the configured value, then
 `Umbraco search: {providerAlias}`. Keep this label stable across visitors and queries.
@@ -167,7 +193,7 @@ result resolution, lifecycle actions, and tracking share ID mapping.
 `AccessContext` describes authorization, not behavioral identity. Protection and
 member/group permissions apply before paging and facet counting. An empty principal
 cannot gain access through supplied group IDs. Explicit protection bypass still
-retains site and mapping restrictions.
+retains mapping restrictions.
 
 ## Behavior and limitations
 
@@ -187,7 +213,7 @@ retains site and mapping restrictions.
 - For a nonblank query, `maxSuggestions > 0` adds one Relewise prediction request.
   `SearchResult.Suggestions` contains the returned terms, restricted to the provider's
   Content or Product target, language, visitor and configured filters, including
-  site membership, access protection and publication requirements. Post-filters
+  mapping membership, access protection and publication requirements. Post-filters
   also constrain predictions. No prediction request is sent for a blank query.
 - Numeric Data uses doubles and dates use UTC milliseconds. Higher numeric or
   sub-millisecond precision is not retained in these core filter representations.
@@ -202,9 +228,27 @@ retains site and mapping restrictions.
   canonical identities across application instances externally. The integration stores
   no identity/dependency records or leases in Umbraco.
 
-Umbraco's indexing dashboard shows a required document-count placeholder of `0`
-and `Unknown` health for Relewise. Counts and health are unavailable; zero does not
-indicate an empty Dataset. The Relewise dashboard includes this explanation.
+Umbraco's Search dashboard reads Relewise metadata through the Data Accessor, independently
+of search-provider registration. `Relewise_MappedEntities` counts stored top-level entities
+matching the exported entity types and Document Type mappings, including disabled
+entities. Translations and embedded Variants do not add to the count. Named provider aliases
+count only their configured entity type and Document Types. These are stored-entity counts,
+not shopper-visible result counts: publication requirements, culture, access restrictions
+and request callbacks are not applied. Entities outside the configured mapping types and
+Document Type aliases are excluded.
+
+Metadata is cached in memory for 30 seconds per alias, including failed reads. Concurrent
+requests for the same alias share one refresh. Each refresh has a three-second cancellation
+timeout and makes one total-count query per mapped entity type. The Product query also
+fetches one Product because its supported constructor requires a positive page size.
+
+`Healthy` confirms that the configured credentials can read the relevant backing data;
+it does not verify search configuration, export freshness or write permissions. If a read
+fails, a total is missing or no exported mappings exist, the status is `Unknown`. Umbraco
+requires a numeric count, so unavailable metadata is represented by `0`; this is not evidence
+of an empty Dataset. Failures are logged, and the next refresh retries after cache expiry.
+Metadata requires Data Accessor read permission; credentials that only permit tracking may
+still export successfully while metadata remains unavailable.
 
 In **Settings → Relewise Dashboard → Search providers**, open **Details** beside a
 provider to review its source Document Type aliases, published-page requirement, analytics

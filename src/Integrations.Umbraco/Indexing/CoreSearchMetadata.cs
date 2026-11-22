@@ -17,11 +17,11 @@ internal static class CoreSearchMetadata
     {
         Dictionary<string, DataValue?> data = EntityMapper.Data(entity.Entity);
 
+        // Only default-segment variations are searchable; their cultures also establish result membership.
         data[RelewiseDataKeys.Search.Culture] = new DataValue(
-            document.Variations.Select(v => v.Culture?.ToLowerInvariant() ?? string.Empty)
+            document.Variations.Where(variation => variation.Segment == null)
+                .Select(variation => variation.Culture?.ToLowerInvariant() ?? string.Empty)
                 .Distinct());
-        data[RelewiseDataKeys.Search.Segments] = new DataValue(
-            document.Variations.Select(v => v.Segment ?? string.Empty).Distinct());
         data[RelewiseDataKeys.Search.Protected] = document.Protection != null;
         data[RelewiseDataKeys.Search.Access] = new DataValue(
             document.Protection?.AccessIds.Select(id => id.ToString("D")) ?? []);

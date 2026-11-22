@@ -7,7 +7,6 @@ public static class RelewiseDataKeys
     internal const string Url = "url";
     internal const string CreatedAt = "createdAt";
     internal const string Version = "UmbracoVersionId";
-    internal const string ExportGeneration = "rwUmbracoExportGeneration";
 
     /// <summary>The alias of the Umbraco document type that supplied the entity.</summary>
     public const string DocumentTypeAlias = "contentTypeAlias";
@@ -15,21 +14,18 @@ public static class RelewiseDataKeys
     /// <summary>The source Umbraco node's GUID key, independently of its configured Relewise entity ID.</summary>
     public const string NodeKey = "rwUmbracoNodeKey";
 
-    /// <summary>The exporting Umbraco site's identifier.</summary>
-    public const string Site = "rwUmbracoSite";
-
     /// <summary>Whether the source Umbraco page is published, independently of the entity's enabled state.</summary>
     public const string Published = "rwUmbracoPublished";
 
     /// <summary>Source-page metadata used when filtering search and recommendation results.</summary>
     public static class Search
     {
-        internal const string Segments = "rwUmbracoSearchSegments";
         internal const string Access = "rwUmbracoSearchAccess";
         internal const string FieldPrefix = "rwUmbracoField_";
 
         /// <summary>
-        /// The searchable culture codes, normalized to lowercase; an empty value denotes invariant content.
+        /// The searchable default-segment culture codes, normalized to lowercase; an empty value denotes
+        /// invariant content.
         /// </summary>
         public const string Culture = "rwUmbracoSearchCulture";
 

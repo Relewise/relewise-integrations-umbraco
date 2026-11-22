@@ -19,7 +19,6 @@ using Relewise.Client.Requests.Search.Settings;
 using Relewise.Client.Requests.Shared;
 using Relewise.Client.Responses.Search;
 using Relewise.Client.Search;
-using Relewise.Integrations.Umbraco.Indexing;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
@@ -97,7 +96,6 @@ internal sealed class MappedEntitySearcher(
         User user = await services.GetRequiredService<IRelewiseUserLocator>().GetUserAsync();
         string language = culture ?? await services.GetRequiredService<ILanguageService>().GetDefaultIsoCodeAsync();
         var context = new SearchRequestContext(services, user, language);
-        string site = EntityIndexingService.SiteId(services);
 
         UFilter[] supplied = filters?.ToArray() ?? [];
         UFacet[] selectedFacets = facets?.ToArray() ?? [];
@@ -157,8 +155,6 @@ internal sealed class MappedEntitySearcher(
                 }
             };
 
-            request.Filters!.Add(Equal(RelewiseDataKeys.Site, site));
-
             if (requirePublishedPage)
             {
                 request.Filters.Add(Equal(RelewiseDataKeys.Published, true));
@@ -172,8 +168,6 @@ internal sealed class MappedEntitySearcher(
                     .. (culture == null ? new[] { "" } : ["", culture.ToLowerInvariant()]).Select(value =>
                         (RFilter)new ContentDataFilter(RelewiseDataKeys.Search.Culture, new ContainsCondition(value)))
                 ]));
-            // Segment-specific queries either throw above or use only the invariant segment.
-            request.Filters!.Add(new ContentDataFilter(RelewiseDataKeys.Search.Segments, new ContainsCondition("")));
 
             if (accessContext?.Bypass != true)
             {

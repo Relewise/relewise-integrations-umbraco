@@ -201,6 +201,8 @@ internal static class CoreSearchTranslation
             return;
         }
 
+        // Exact facets use string buckets; object values preserve same-value range matching.
+        // Min/Max provide the scalar values required for ascending/descending collection sorting.
         data[Field(field, kind + "Exact")] = new DataValue(values.Select(NumberString));
         data[Field(field, kind + "Values")] =
             new DataValue(values.Select(v => new DataObject(new Dictionary<string, DataValue?> { ["value"] = v })));
