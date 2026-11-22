@@ -1,6 +1,8 @@
 namespace Relewise.DemoStorefront.Features.Recommendations;
 
-/// <summary>A recommendation endpoint and localized component labels.</summary>
+/// <summary>
+/// A recommendation endpoint and localized component labels.
+/// </summary>
 public sealed class RecommendationModel
 {
     public string Endpoint { get; init; } = "";

@@ -11,7 +11,9 @@ namespace Relewise.Integrations.Umbraco;
 /// </summary>
 public interface IRelewiseUserLocator
 {
-    /// <summary>Resolve the current request's Relewise user.</summary>
+    /// <summary>
+    /// Resolve the current request's Relewise user.
+    /// </summary>
     /// <returns>The user identity used for search, recommendations and behavioral tracking.</returns>
     /// <remarks>Implement this method for new locators. Existing locators may implement only GetUser.</remarks>
     /// <exception cref="InvalidOperationException">Neither user-resolution method is implemented.</exception>
@@ -27,7 +29,9 @@ public interface IRelewiseUserLocator
 #pragma warning restore CS0618
     }
 
-    /// <summary>Compatibility entry point forwarding to GetUserAsync for new implementations.</summary>
+    /// <summary>
+    /// Compatibility entry point forwarding to GetUserAsync for new implementations.
+    /// </summary>
     /// <returns>The current request's Relewise user.</returns>
     /// <exception cref="InvalidOperationException">Neither user-resolution method is implemented.</exception>
     [Obsolete("Use GetUserAsync instead. This member will be removed in the next major version.")]

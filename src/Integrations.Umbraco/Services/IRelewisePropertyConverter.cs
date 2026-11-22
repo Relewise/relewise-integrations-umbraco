@@ -12,8 +12,10 @@ namespace Relewise.Integrations.Umbraco.Services;
 /// </summary>
 public interface IRelewisePropertyConverter
 {
-    /// <summary>Convert contextual properties asynchronously, retaining the owning document and service
-    /// scope.</summary>
+    /// <summary>
+    /// Convert contextual properties asynchronously, retaining the owning document and service
+    /// scope.
+    /// </summary>
     Task<IReadOnlyDictionary<string, DataValue?>> ConvertAsync(
         IPublishedContent publishedContent,
         IPublishedElement sourceElement,
@@ -30,8 +32,10 @@ public interface IRelewisePropertyConverter
                 cancellationToken));
     }
 
-    /// <summary>Convert properties asynchronously. Existing aggregate implementations retain their synchronous
-    /// behavior.</summary>
+    /// <summary>
+    /// Convert properties asynchronously. Existing aggregate implementations retain their synchronous
+    /// behavior.
+    /// </summary>
     Task<IReadOnlyDictionary<string, DataValue?>> ConvertAsync(
         IEnumerable<IPublishedProperty> properties,
         string[] cultures,
@@ -40,7 +44,9 @@ public interface IRelewisePropertyConverter
         return Task.FromResult(Convert(properties, cultures));
     }
 
-    /// <summary>Convert an element while retaining its owning document and the current service scope.</summary>
+    /// <summary>
+    /// Convert an element while retaining its owning document and the current service scope.
+    /// </summary>
     /// <remarks>The default implementation preserves compatibility with custom aggregate converters implementing only
     /// the property-based API.</remarks>
     IReadOnlyDictionary<string, DataValue?> Convert(

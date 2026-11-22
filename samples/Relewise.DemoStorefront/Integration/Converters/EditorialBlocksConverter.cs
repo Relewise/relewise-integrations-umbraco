@@ -3,7 +3,9 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.DemoStorefront.Integration.Converters;
 
-/// <summary>Extracts selected editorial text from Block List/Grid values, including nested elements.</summary>
+/// <summary>
+/// Extracts selected editorial text from Block List/Grid values, including nested elements.
+/// </summary>
 internal sealed class EditorialBlocksConverter(IVariationContextAccessor variations)
     : IAsyncRelewisePropertyValueConverter
 {

@@ -1,6 +1,8 @@
 namespace Relewise.DemoStorefront.Features.Browsing;
 
-/// <summary>Search results, facets and labels shared with the listing component.</summary>
+/// <summary>
+/// Search results, facets and labels shared with the listing component.
+/// </summary>
 public sealed class ListingModel
 {
     public string View { get; init; } = "store";

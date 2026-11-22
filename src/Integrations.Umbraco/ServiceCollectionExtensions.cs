@@ -11,7 +11,9 @@ namespace Relewise.Integrations.Umbraco;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
-    /// <summary>Register an asynchronous Data converter in the export operation's service scope.</summary>
+    /// <summary>
+    /// Register an asynchronous Data converter in the export operation's service scope.
+    /// </summary>
     /// <typeparam name="T">The contextual converter implementation.</typeparam>
     /// <param name="services">Application services.</param>
     /// <returns>The service collection.</returns>
@@ -24,7 +26,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>Register a legacy synchronous Data converter with its original singleton lifetime.</summary>
+    /// <summary>
+    /// Register a legacy synchronous Data converter with its original singleton lifetime.
+    /// </summary>
     /// <typeparam name="T">The legacy converter implementation.</typeparam>
     /// <param name="services">Application services.</param>
     /// <returns>The service collection.</returns>

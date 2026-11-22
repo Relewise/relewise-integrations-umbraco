@@ -5,7 +5,9 @@ using Relewise.Integrations.Umbraco.Mapping;
 
 namespace Relewise.Integrations.Umbraco.Search;
 
-/// <summary>Named query providers, independently configured from indexing.</summary>
+/// <summary>
+/// Named query providers, independently configured from indexing.
+/// </summary>
 public class SearchProviderOptions
 {
     internal SearchProviderOptions()
@@ -14,11 +16,15 @@ public class SearchProviderOptions
 
     internal Dictionary<string, SearchProviderDefinition> Providers { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Provider selected for ordinary Umbraco published-content queries. Null preserves the existing
-    /// provider.</summary>
+    /// <summary>
+    /// Provider selected for ordinary Umbraco published-content queries. Null preserves the existing
+    /// provider.
+    /// </summary>
     public string? DefaultPublishedContentProviderAlias { get; set; }
 
-    /// <summary>Register a Content search with optional Document Type selection.</summary>
+    /// <summary>
+    /// Register a Content search with optional Document Type selection.
+    /// </summary>
     public void AddContent(string providerAlias, Action<ContentSearchProviderOptions>? configure = null)
     {
         var options = new ContentSearchProviderOptions();
@@ -27,7 +33,9 @@ public class SearchProviderOptions
         Add(providerAlias, new SearchProviderDefinition(options, options));
     }
 
-    /// <summary>Register a query over the single Product mapping.</summary>
+    /// <summary>
+    /// Register a query over the single Product mapping.
+    /// </summary>
     public void AddProduct(string providerAlias, Action<ProductSearchProviderOptions>? configure = null)
     {
         var options = new ProductSearchProviderOptions();

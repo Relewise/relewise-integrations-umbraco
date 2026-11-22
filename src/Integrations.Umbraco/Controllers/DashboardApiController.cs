@@ -28,7 +28,9 @@ public class DashboardApiController : RelewiseApiControllerBase
     private readonly IServiceProvider _provider;
     private readonly RelewiseUmbracoConfiguration? _configuration;
 
-    /// <summary>Creates the dashboard even when the integration has not been registered.</summary>
+    /// <summary>
+    /// Creates the dashboard even when the integration has not been registered.
+    /// </summary>
     /// <param name="provider">The request service provider.</param>
     [ActivatorUtilitiesConstructor]
     public DashboardApiController(IServiceProvider provider)

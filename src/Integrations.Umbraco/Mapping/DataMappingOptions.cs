@@ -2,7 +2,9 @@ using System;
 
 namespace Relewise.Integrations.Umbraco.Mapping;
 
-/// <summary>Destination key and optional converter for an explicitly mapped Data field.</summary>
+/// <summary>
+/// Destination key and optional converter for an explicitly mapped Data field.
+/// </summary>
 public class DataMappingOptions
 {
     internal Type? ConverterType { get; private set; }
@@ -12,11 +14,15 @@ public class DataMappingOptions
         DataKey = sourcePropertyAlias;
     }
 
-    /// <summary>The destination Data key; defaults to the source property alias.</summary>
+    /// <summary>
+    /// The destination Data key; defaults to the source property alias.
+    /// </summary>
     public string DataKey { get; set; }
 
-    /// <summary>Select a single Data converter for this field without adding it to global converter
-    /// selection.</summary>
+    /// <summary>
+    /// Select a single Data converter for this field without adding it to global converter
+    /// selection.
+    /// </summary>
     public void UseConverter<TConverter>() where TConverter : class, IAsyncRelewisePropertyValueConverter
     {
         if (ConverterType != null)

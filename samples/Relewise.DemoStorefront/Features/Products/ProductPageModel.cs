@@ -4,7 +4,9 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.DemoStorefront.Features.Products;
 
-/// <summary>Presentation data for a product or variant detail page.</summary>
+/// <summary>
+/// Presentation data for a product or variant detail page.
+/// </summary>
 public sealed class ProductPageModel
 {
     public required IPublishedContent Page { get; init; }

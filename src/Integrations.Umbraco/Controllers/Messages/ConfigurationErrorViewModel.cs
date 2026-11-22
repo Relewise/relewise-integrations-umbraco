@@ -10,7 +10,9 @@ public class ConfigurationErrorViewModel(string errorMessage)
     /// </summary>
     public bool FactoryFailed { get; } = true;
 
-    /// <summary>Whether the Umbraco integration registration is present.</summary>
+    /// <summary>
+    /// Whether the Umbraco integration registration is present.
+    /// </summary>
     public bool IntegrationRegistered { get; internal set; } = true;
 
     /// <summary>

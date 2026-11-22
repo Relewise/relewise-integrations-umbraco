@@ -2,7 +2,9 @@ using Relewise.DemoStorefront.Features.Recommendations;
 
 namespace Relewise.DemoStorefront.Features.Cart;
 
-/// <summary>A cart snapshot and labels shared with the cart component.</summary>
+/// <summary>
+/// A cart snapshot and labels shared with the cart component.
+/// </summary>
 public sealed class CartModel
 {
     public CartLineModel[] Lines { get; init; } = [];

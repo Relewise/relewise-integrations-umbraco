@@ -32,7 +32,9 @@ public class NamedOptionsViewObject
     /// </summary>
     public string Name { get; }
 
-    /// <summary>Whether this represents SDK defaults instead of a named registration.</summary>
+    /// <summary>
+    /// Whether this represents SDK defaults instead of a named registration.
+    /// </summary>
     public bool IsDefault { get; internal set; }
 
     /// <summary>

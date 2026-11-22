@@ -46,6 +46,10 @@ resharper_csharp_use_roslyn_logic_for_evident_types = false
 csharp_style_implicit_object_creation_when_type_is_apparent = true
 dotnet_style_prefer_collection_expression = when_types_exactly_match:suggestion
 csharp_style_namespace_declarations = file_scoped:suggestion
+# Preserve the multiline XML summaries required by AGENTS.md, without expanding inline XML tags.
+resharper_xmldoc_keep_user_linebreaks = true
+resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements = true
+resharper_xmldoc_linebreak_before_multiline_elements = true
 dotnet_diagnostic.IDE0007.severity = none
 # ReSharper owns type-style enforcement: Roslyn classifies generic factory calls differently.
 dotnet_diagnostic.IDE0008.severity = none

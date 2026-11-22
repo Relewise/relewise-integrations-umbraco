@@ -22,7 +22,9 @@ public static class UmbracoApplicationBuilderContextExtensions
         builder.TrackEntityViews();
     }
 
-    /// <summary>Tracks views using the entity type and canonical ID configured for the current document.</summary>
+    /// <summary>
+    /// Tracks views using the entity type and canonical ID configured for the current document.
+    /// </summary>
     /// <param name="builder">The Umbraco middleware builder.</param>
     public static void TrackEntityViews(this IUmbracoApplicationBuilderContext builder)
     {

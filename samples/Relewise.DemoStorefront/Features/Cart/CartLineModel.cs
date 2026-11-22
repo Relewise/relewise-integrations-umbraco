@@ -1,6 +1,8 @@
 namespace Relewise.DemoStorefront.Features.Cart;
 
-/// <summary>Display values and canonical identities for one cart line.</summary>
+/// <summary>
+/// Display values and canonical identities for one cart line.
+/// </summary>
 public sealed record CartLineModel
 {
     public Guid ProductKey { get; init; }

@@ -6,7 +6,9 @@ using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Integration.Mapping;
 
-/// <summary>Runs after declarative mappings and demonstrates application-level enrichment.</summary>
+/// <summary>
+/// Runs after declarative mappings and demonstrates application-level enrichment.
+/// </summary>
 internal sealed class EditorialMapper(IVariationContextAccessor variations) : IEntityMapper<Content>
 {
     private static readonly string[] BlockFields = [PropertyAliases.ContentRows, PropertyAliases.PageGrid];

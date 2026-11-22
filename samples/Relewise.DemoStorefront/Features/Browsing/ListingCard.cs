@@ -1,6 +1,8 @@
 namespace Relewise.DemoStorefront.Features.Browsing;
 
-/// <summary>Display values for a product or editorial card.</summary>
+/// <summary>
+/// Display values for a product or editorial card.
+/// </summary>
 public sealed record ListingCard(
     Guid Key,
     string EntityId,

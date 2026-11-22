@@ -3,7 +3,9 @@ using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Integration.Converters;
 
-/// <summary>Globally converts the demo's relative image paths into URLs usable by a separate frontend.</summary>
+/// <summary>
+/// Globally converts the demo's relative image paths into URLs usable by a separate frontend.
+/// </summary>
 internal sealed class ImageUrlConverter(IConfiguration configuration) : IAsyncRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)

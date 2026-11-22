@@ -5,7 +5,9 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.DemoStorefront.Features.Home;
 
-/// <summary>Published cards, categories and recommendation placement for the homepage.</summary>
+/// <summary>
+/// Published cards, categories and recommendation placement for the homepage.
+/// </summary>
 public sealed record HomePageModel(
     IPublishedContent Page,
     ListingCard[] Products,

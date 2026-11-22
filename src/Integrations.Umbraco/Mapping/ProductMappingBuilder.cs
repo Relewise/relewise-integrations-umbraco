@@ -5,14 +5,18 @@ using Relewise.Client.DataTypes;
 
 namespace Relewise.Integrations.Umbraco.Mapping;
 
-/// <summary>Maps a Product and its directly nested Variant documents.</summary>
+/// <summary>
+/// Maps a Product and its directly nested Variant documents.
+/// </summary>
 public class ProductMappingBuilder : EntityMappingBuilder<Product>
 {
     internal ProductMappingBuilder()
     {
     }
 
-    /// <summary>Resolve a single Brand picker through the referenced Brand mapping.</summary>
+    /// <summary>
+    /// Resolve a single Brand picker through the referenced Brand mapping.
+    /// </summary>
     public void BrandFrom(string sourcePropertyAlias)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePropertyAlias);
@@ -25,7 +29,9 @@ public class ProductMappingBuilder : EntityMappingBuilder<Product>
         Definition.BrandPropertyAlias = sourcePropertyAlias;
     }
 
-    /// <summary>Add category paths from a multiple picker, alongside mapped category ancestors.</summary>
+    /// <summary>
+    /// Add category paths from a multiple picker, alongside mapped category ancestors.
+    /// </summary>
     public void AdditionalCategoriesFrom(string sourcePropertyAlias)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePropertyAlias);
@@ -38,7 +44,9 @@ public class ProductMappingBuilder : EntityMappingBuilder<Product>
         Definition.CategoryPropertyAlias = sourcePropertyAlias;
     }
 
-    /// <summary>Map direct child documents as Variants within this Product.</summary>
+    /// <summary>
+    /// Map direct child documents as Variants within this Product.
+    /// </summary>
     public void VariantsFromChildren(
         string documentTypeAlias,
         Action<EntityMappingBuilder<ProductVariant>>? configure = null)

@@ -6,7 +6,9 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco.Mapping;
 
-/// <summary>Read-only source information for conversion of a built-in destination property.</summary>
+/// <summary>
+/// Read-only source information for conversion of a built-in destination property.
+/// </summary>
 public class PropertyMappingContext
 {
     private readonly MappingOperation _operation;
@@ -27,26 +29,40 @@ public class PropertyMappingContext
         _operation = operation;
     }
 
-    /// <summary>The owning published document, retained when converting nested elements.</summary>
+    /// <summary>
+    /// The owning published document, retained when converting nested elements.
+    /// </summary>
     public IPublishedContent PublishedContent { get; }
 
-    /// <summary>The element containing the source property.</summary>
+    /// <summary>
+    /// The element containing the source property.
+    /// </summary>
     public IPublishedElement SourceElement { get; }
 
-    /// <summary>The source property, including its editor and localized values.</summary>
+    /// <summary>
+    /// The source property, including its editor and localized values.
+    /// </summary>
     public IPublishedProperty Property { get; }
 
-    /// <summary>The published cultures to include in the destination value, or the site's languages for invariant
-    /// content.</summary>
+    /// <summary>
+    /// The published cultures to include in the destination value, or the site's languages for invariant
+    /// content.
+    /// </summary>
     public IReadOnlyList<string> CulturesToPublish { get; }
 
-    /// <summary>The selected built-in destination property.</summary>
+    /// <summary>
+    /// The selected built-in destination property.
+    /// </summary>
     public string DestinationProperty { get; }
 
-    /// <summary>Services belonging to the current export operation.</summary>
+    /// <summary>
+    /// Services belonging to the current export operation.
+    /// </summary>
     public IServiceProvider Services => _operation.Services;
 
-    /// <summary>Cancellation of the current export operation.</summary>
+    /// <summary>
+    /// Cancellation of the current export operation.
+    /// </summary>
     public CancellationToken CancellationToken => _operation.CancellationToken;
 
     internal T Resolve<T>() where T : class

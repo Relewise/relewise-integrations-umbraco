@@ -22,10 +22,14 @@ public class RelewiseUmbracoOptionsBuilder
     internal Dictionary<string, ContentTypeBuilder?> ContentBuilders { get; } = new(StringComparer.OrdinalIgnoreCase);
     internal Dictionary<string, MappingDefinition> EntityMappings { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Named Content and Product query providers; registration does not add indexing pipelines.</summary>
+    /// <summary>
+    /// Named Content and Product query providers; registration does not add indexing pipelines.
+    /// </summary>
     public SearchProviderOptions SearchProviders { get; } = new();
 
-    /// <summary>Map a distinct Document Type to Relewise Content.</summary>
+    /// <summary>
+    /// Map a distinct Document Type to Relewise Content.
+    /// </summary>
     public RelewiseUmbracoOptionsBuilder MapContent(
         string documentTypeAlias,
         Action<ContentTypeBuilder>? configure = null)
@@ -47,7 +51,9 @@ public class RelewiseUmbracoOptionsBuilder
         return this;
     }
 
-    /// <summary>Register the single Product Document Type.</summary>
+    /// <summary>
+    /// Register the single Product Document Type.
+    /// </summary>
     public RelewiseUmbracoOptionsBuilder MapProduct(
         string documentTypeAlias,
         Action<ProductMappingBuilder>? configure = null)
@@ -60,7 +66,9 @@ public class RelewiseUmbracoOptionsBuilder
         return this;
     }
 
-    /// <summary>Register the single Brand Document Type.</summary>
+    /// <summary>
+    /// Register the single Brand Document Type.
+    /// </summary>
     public RelewiseUmbracoOptionsBuilder MapBrand(
         string documentTypeAlias,
         Action<EntityMappingBuilder<Brand>>? configure = null)
@@ -68,7 +76,9 @@ public class RelewiseUmbracoOptionsBuilder
         return RegisterEntity(documentTypeAlias, configure);
     }
 
-    /// <summary>Register the single Product Category Document Type.</summary>
+    /// <summary>
+    /// Register the single Product Category Document Type.
+    /// </summary>
     public RelewiseUmbracoOptionsBuilder MapProductCategory(
         string documentTypeAlias,
         Action<EntityMappingBuilder<ProductCategory>>? configure = null)
@@ -76,7 +86,9 @@ public class RelewiseUmbracoOptionsBuilder
         return RegisterEntity(documentTypeAlias, configure);
     }
 
-    /// <summary>Register the single Content Category Document Type.</summary>
+    /// <summary>
+    /// Register the single Content Category Document Type.
+    /// </summary>
     public RelewiseUmbracoOptionsBuilder MapContentCategory(
         string documentTypeAlias,
         Action<EntityMappingBuilder<ContentCategory>>? configure = null)

@@ -7,7 +7,9 @@ using System.Reflection;
 
 namespace Relewise.Integrations.Umbraco.Mapping;
 
-/// <summary>Defines source identity, built-in properties, and Data fields for an entity mapping.</summary>
+/// <summary>
+/// Defines source identity, built-in properties, and Data fields for an entity mapping.
+/// </summary>
 /// <typeparam name="TEntity">The Relewise entity type.</typeparam>
 public class EntityMappingBuilder<TEntity> where TEntity : class
 {
@@ -17,29 +19,37 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
 
     internal MappingDefinition Definition { get; } = new(typeof(TEntity));
 
-    /// <summary>Whether this mapping exports data. View-only mappings can set this to false.</summary>
+    /// <summary>
+    /// Whether this mapping exports data. View-only mappings can set this to false.
+    /// </summary>
     public bool Export
     {
         get => Definition.Export;
         set => Definition.Export = value;
     }
 
-    /// <summary>Whether automatic view tracking applies to this mapping.</summary>
+    /// <summary>
+    /// Whether automatic view tracking applies to this mapping.
+    /// </summary>
     public bool TrackViews
     {
         get => Definition.TrackViews;
         set => Definition.TrackViews = value;
     }
 
-    /// <summary>Administrative actions allowed for this mapping. Defaults to synchronization.</summary>
+    /// <summary>
+    /// Administrative actions allowed for this mapping. Defaults to synchronization.
+    /// </summary>
     public AdministrativeActionPolicy AdministrativeActions
     {
         get => Definition.AdministrativeActions;
         set => Definition.AdministrativeActions = value ?? throw new ArgumentNullException(nameof(value));
     }
 
-    /// <summary>Run a scoped mapper after declarative fields and configured relationships, allowing final
-    /// application-field customization.</summary>
+    /// <summary>
+    /// Run a scoped mapper after declarative fields and configured relationships, allowing final
+    /// application-field customization.
+    /// </summary>
     public void UseMapper<TMapper>() where TMapper : class, IEntityMapper<TEntity>
     {
         if (Definition.Mapper != null)
@@ -66,7 +76,9 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
         };
     }
 
-    /// <summary>Use a source property as the canonical ID instead of the configured Umbraco node ID/key.</summary>
+    /// <summary>
+    /// Use a source property as the canonical ID instead of the configured Umbraco node ID/key.
+    /// </summary>
     public void IdFromProperty(string sourcePropertyAlias)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePropertyAlias);
@@ -79,7 +91,9 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
         Definition.IdPropertyAlias = sourcePropertyAlias;
     }
 
-    /// <summary>Map a supported built-in value property, optionally selecting a strongly typed converter.</summary>
+    /// <summary>
+    /// Map a supported built-in value property, optionally selecting a strongly typed converter.
+    /// </summary>
     public void Map<TValue>(
         Expression<Func<TEntity, TValue>> destinationProperty,
         string sourcePropertyAlias,
@@ -122,7 +136,9 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
                 options.ConverterType));
     }
 
-    /// <summary>Map an Umbraco property to Data, defaulting the destination key to its source alias.</summary>
+    /// <summary>
+    /// Map an Umbraco property to Data, defaulting the destination key to its source alias.
+    /// </summary>
     public void MapData(string sourcePropertyAlias, Action<DataMappingOptions>? configure = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePropertyAlias);

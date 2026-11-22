@@ -39,17 +39,25 @@ public class RelewisePropertyConverterContext
         CancellationToken = cancellationToken;
     }
 
-    /// <summary>The owning document, when supplied by contextual export. Legacy property-only calls have no
-    /// owner.</summary>
+    /// <summary>
+    /// The owning document, when supplied by contextual export. Legacy property-only calls have no
+    /// owner.
+    /// </summary>
     public IPublishedContent? PublishedContent { get; }
 
-    /// <summary>The document or nested element containing the source property.</summary>
+    /// <summary>
+    /// The document or nested element containing the source property.
+    /// </summary>
     public IPublishedElement? SourceElement { get; }
 
-    /// <summary>Services for this conversion operation, when contextual conversion is used.</summary>
+    /// <summary>
+    /// Services for this conversion operation, when contextual conversion is used.
+    /// </summary>
     public IServiceProvider? Services { get; }
 
-    /// <summary>Cancellation for the export operation.</summary>
+    /// <summary>
+    /// Cancellation for the export operation.
+    /// </summary>
     public CancellationToken CancellationToken { get; }
 
     /// <summary>
