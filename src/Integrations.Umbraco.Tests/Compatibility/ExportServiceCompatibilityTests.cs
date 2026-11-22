@@ -3,7 +3,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Newtonsoft.Json;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Indexing;
@@ -13,26 +12,8 @@ using Umbraco.Cms.Core.Models;
 
 namespace Relewise.Integrations.Umbraco.Tests.Compatibility;
 
-public class AsyncApiCompatibilityTests
+public class ExportServiceCompatibilityTests
 {
-    [Fact]
-    public async Task ExistingUserLocatorSupportsTheAsyncEntryPointWithoutResolvingTwice()
-    {
-        var completion = new TaskCompletionSource<User>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var implementation = new LegacyUserLocator(completion.Task);
-        IRelewiseUserLocator locator = implementation;
-
-        Task<User> pending = locator.GetUserAsync();
-
-        Assert.False(pending.IsCompleted);
-        Assert.Equal(1, implementation.Calls);
-
-        User expected = User.ByTemporaryId("existing-browser");
-        completion.SetResult(expected);
-
-        Assert.Same(expected, await pending);
-    }
-
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -121,92 +102,6 @@ public class AsyncApiCompatibilityTests
         Assert.Single(operations.Invocations);
     }
 
-    [Fact]
-    public async Task DefaultUserLocatorRetainsItsLegacyEntryPoint()
-    {
-        IRelewiseUserLocator locator = new DefaultAnonymousUserLocator();
-
-        Assert.Equal(
-            JsonConvert.SerializeObject(await locator.GetUserAsync()),
-            JsonConvert.SerializeObject(await locator.GetUser()));
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task AsyncOnlyUserLocatorSupportsBothEntryPoints(bool legacy)
-    {
-        var completion = new TaskCompletionSource<User>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var implementation = new AsyncOnlyUserLocator(completion.Task);
-        IRelewiseUserLocator locator = implementation;
-
-        Task<User> pending = legacy ? locator.GetUser() : locator.GetUserAsync();
-
-        Assert.Same(completion.Task, pending);
-        Assert.Equal(1, implementation.Calls);
-
-        User expected = User.ByTemporaryId("async-browser");
-        completion.SetResult(expected);
-
-        Assert.Same(expected, await pending);
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task ExplicitAndInheritedLegacyUserLocatorsSupportTheAsyncEntryPoint(bool explicitImplementation)
-    {
-        User expected = User.ByTemporaryId("existing-browser");
-        Task<User> result = Task.FromResult(expected);
-        IRelewiseUserLocator locator = explicitImplementation
-            ? new ExplicitLegacyUserLocator(result)
-            : new InheritedLegacyUserLocator(result);
-
-        Assert.Same(expected, await locator.GetUserAsync());
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task UserLocatorCompatibilityPreservesFailureAndCancellation(bool cancelled)
-    {
-        var failure = new InvalidOperationException("Identity resolution failed.");
-        Task<User> result = cancelled
-            ? Task.FromCanceled<User>(new CancellationToken(true))
-            : Task.FromException<User>(failure);
-        IRelewiseUserLocator oldImplementation = new LegacyUserLocator(result);
-        IRelewiseUserLocator newImplementation = new AsyncOnlyUserLocator(result);
-
-        foreach (Task<User> pending in new[] { oldImplementation.GetUserAsync(), newImplementation.GetUser() })
-        {
-            Assert.Same(result, pending);
-
-            if (cancelled)
-            {
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
-            }
-            else
-            {
-                Assert.Same(failure, await Assert.ThrowsAsync<InvalidOperationException>(() => pending));
-            }
-        }
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task MissingUserLocatorImplementationFailsClearlyFromEitherEntryPoint(bool legacy)
-    {
-        IRelewiseUserLocator locator = new MissingUserLocator();
-
-        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            legacy ? locator.GetUser() : locator.GetUserAsync());
-
-        Assert.Contains(nameof(MissingUserLocator), error.Message);
-        Assert.Contains(nameof(IRelewiseUserLocator.GetUserAsync), error.Message);
-        Assert.Contains(nameof(IRelewiseUserLocator.GetUser), error.Message);
-    }
-
     [Theory]
     [InlineData(false, false)]
     [InlineData(false, true)]
@@ -283,19 +178,96 @@ public class AsyncApiCompatibilityTests
         Assert.Contains(nameof(IExportContentService.ExportAllAsync), error.Message);
     }
 
-    private class LegacyUserLocator(Task<User> result) : IRelewiseUserLocator
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LegacyExportImplementationsCanBeInheritedOrExplicit(bool explicitImplementation)
     {
-        internal int Calls { get; private set; }
+        LegacyExportService implementation = explicitImplementation
+            ? new ExplicitLegacyExportService()
+            : new InheritedLegacyExportService();
+        IExportContentService service = implementation;
+        using var cancellation = new CancellationTokenSource();
+        var content = new ExportContent([], ContentUpdate.UpdateKind.ReplaceProvidedProperties);
+        var rebuild = new ExportAllContent(true);
 
-        public Task<User> GetUser()
+        Assert.Same(implementation.Result, await service.ExportAsync(content, cancellation.Token));
+        Assert.Same(implementation.AllResult, await service.ExportAllAsync(rebuild, cancellation.Token));
+        Assert.Same(content, implementation.Request);
+        Assert.Same(rebuild, implementation.AllRequest);
+        Assert.Equal(cancellation.Token, implementation.Token);
+        Assert.Equal(2, implementation.Calls);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AsyncExportImplementationsCanBeInheritedOrExplicit(bool explicitImplementation)
+    {
+        AsyncOnlyExportService implementation = explicitImplementation
+            ? new ExplicitAsyncExportService()
+            : new InheritedAsyncExportService();
+        IExportContentService service = implementation;
+        using var cancellation = new CancellationTokenSource();
+        var content = new ExportContent([], ContentUpdate.UpdateKind.ReplaceProvidedProperties);
+        var rebuild = new ExportAllContent(true);
+
+        Assert.Same(implementation.Result, await service.Export(content, cancellation.Token));
+        Assert.Same(implementation.AllResult, await service.ExportAll(rebuild, cancellation.Token));
+        Assert.Same(content, implementation.Request);
+        Assert.Same(rebuild, implementation.AllRequest);
+        Assert.Equal(cancellation.Token, implementation.Token);
+        Assert.Equal(2, implementation.Calls);
+    }
+
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public async Task ExportDefaultsPreserveFailureAndCancellation(bool all, bool asyncOnly, bool cancelled)
+    {
+        var failure = new InvalidOperationException("Export failed.");
+        IExportContentService service = asyncOnly
+            ? new FailingAsyncExportService(failure, cancelled)
+            : new FailingLegacyExportService(failure, cancelled);
+        using var cancellation = new CancellationTokenSource();
+
+        if (cancelled)
         {
-            Calls++;
+            cancellation.Cancel();
+        }
 
-            return result;
+        var content = new ExportContent([], ContentUpdate.UpdateKind.ReplaceProvidedProperties);
+        var rebuild = new ExportAllContent(false);
+        Task pending = (all, asyncOnly) switch
+        {
+            (true, true) => service.ExportAll(rebuild, cancellation.Token),
+            (true, false) => service.ExportAllAsync(rebuild, cancellation.Token),
+            (false, true) => service.Export(content, cancellation.Token),
+            (false, false) => service.ExportAsync(content, cancellation.Token)
+        };
+
+        if (cancelled)
+        {
+            OperationCanceledException error =
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
+
+            Assert.Equal(cancellation.Token, error.CancellationToken);
+            Assert.True(pending.IsCanceled);
+        }
+        else
+        {
+            Assert.Same(failure, await Assert.ThrowsAsync<InvalidOperationException>(() => pending));
+            Assert.True(pending.IsFaulted);
         }
     }
 
-    private sealed class LegacyExportService : IExportContentService
+    private class LegacyExportService : IExportContentService
     {
         internal ExportContentResult Result { get; } = new();
         internal ExportAllContentResult AllResult { get; } = new();
@@ -328,35 +300,7 @@ public class AsyncApiCompatibilityTests
         }
     }
 
-    private sealed class AsyncOnlyUserLocator(Task<User> result) : IRelewiseUserLocator
-    {
-        internal int Calls { get; private set; }
-
-        public Task<User> GetUserAsync()
-        {
-            Calls++;
-
-            return result;
-        }
-    }
-
-    private sealed class ExplicitLegacyUserLocator(Task<User> result) : IRelewiseUserLocator
-    {
-        Task<User> IRelewiseUserLocator.GetUser()
-        {
-            return result;
-        }
-    }
-
-    private sealed class InheritedLegacyUserLocator(Task<User> result) : LegacyUserLocator(result)
-    {
-    }
-
-    private sealed class MissingUserLocator : IRelewiseUserLocator
-    {
-    }
-
-    private sealed class AsyncOnlyExportService : IExportContentService
+    private class AsyncOnlyExportService : IExportContentService
     {
         internal ExportContentResult Result { get; } = new();
         internal ExportAllContentResult AllResult { get; } = new();
@@ -412,4 +356,85 @@ public class AsyncApiCompatibilityTests
         }
     }
 
+    private sealed class InheritedLegacyExportService : LegacyExportService
+    {
+    }
+
+    private sealed class ExplicitLegacyExportService : LegacyExportService, IExportContentService
+    {
+        Task<ExportContentResult> IExportContentService.Export(ExportContent content, CancellationToken token)
+        {
+            return Export(content, token);
+        }
+
+        Task<ExportAllContentResult> IExportContentService.ExportAll(ExportAllContent content, CancellationToken token)
+        {
+            return ExportAll(content, token);
+        }
+    }
+
+    private sealed class InheritedAsyncExportService : AsyncOnlyExportService
+    {
+    }
+
+    private sealed class ExplicitAsyncExportService : AsyncOnlyExportService, IExportContentService
+    {
+        Task<ExportContentResult> IExportContentService.ExportAsync(ExportContent content, CancellationToken token)
+        {
+            return ExportAsync(content, token);
+        }
+
+        Task<ExportAllContentResult> IExportContentService.ExportAllAsync(
+            ExportAllContent content,
+            CancellationToken token)
+        {
+            return ExportAllAsync(content, token);
+        }
+    }
+
+    private sealed class FailingLegacyExportService(Exception failure, bool cancelled) : IExportContentService
+    {
+        public Task<ExportContentResult> Export(ExportContent content, CancellationToken token)
+        {
+            return cancelled
+                ? Task.FromCanceled<ExportContentResult>(token)
+                : Task.FromException<ExportContentResult>(failure);
+        }
+
+        public Task<ExportAllContentResult> ExportAll(ExportAllContent content, CancellationToken token)
+        {
+            return cancelled
+                ? Task.FromCanceled<ExportAllContentResult>(token)
+                : Task.FromException<ExportAllContentResult>(failure);
+        }
+
+        public ITracker? GetTrackerOrNull()
+        {
+            return null;
+        }
+    }
+
+    private sealed class FailingAsyncExportService(Exception failure, bool cancelled) : IExportContentService
+    {
+        public Task<ExportContentResult> ExportAsync(ExportContent content, CancellationToken cancellationToken)
+        {
+            return cancelled
+                ? Task.FromCanceled<ExportContentResult>(cancellationToken)
+                : Task.FromException<ExportContentResult>(failure);
+        }
+
+        public Task<ExportAllContentResult> ExportAllAsync(
+            ExportAllContent content,
+            CancellationToken cancellationToken)
+        {
+            return cancelled
+                ? Task.FromCanceled<ExportAllContentResult>(cancellationToken)
+                : Task.FromException<ExportAllContentResult>(failure);
+        }
+
+        public ITracker? GetTrackerOrNull()
+        {
+            return null;
+        }
+    }
 }

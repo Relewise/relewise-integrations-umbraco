@@ -18,7 +18,7 @@ public interface IExportContentService
     Task<ExportContentResult> ExportAsync(ExportContent exportContent, CancellationToken cancellationToken)
     {
 #pragma warning disable CS0618 // Bridge existing custom service implementations without changing their contract.
-        AsyncApiCompatibility.RequireLegacyImplementation<IExportContentService>(
+        AsyncApiCompatibility.RequireLegacyImplementation(
             this,
             nameof(Export),
             nameof(ExportAsync));
@@ -38,7 +38,7 @@ public interface IExportContentService
         CancellationToken cancellationToken)
     {
 #pragma warning disable CS0618 // Bridge existing custom service implementations without changing their contract.
-        AsyncApiCompatibility.RequireLegacyImplementation<IExportContentService>(
+        AsyncApiCompatibility.RequireLegacyImplementation(
             this,
             nameof(ExportAll),
             nameof(ExportAllAsync));

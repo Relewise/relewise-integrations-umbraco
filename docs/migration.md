@@ -82,7 +82,9 @@ shows an async-only implementation.
 
 Existing custom implementations using the old names continue to work through the
 interfaces' default methods. Legacy interface calls also reach async-only
-implementations. Each requested operation must implement either its async or its
+implementations. These default members are available through interface references,
+such as services resolved from DI; they are not inherited concrete-class methods.
+Each requested operation must implement either its async or its
 legacy member; otherwise its first invocation throws an `InvalidOperationException`
 identifying the implementation type and the missing operation. Partial export
 implementations are checked per operation. HTTP routes are unchanged.

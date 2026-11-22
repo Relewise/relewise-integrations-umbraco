@@ -18,7 +18,7 @@ public interface IRelewiseUserLocator
     Task<User> GetUserAsync()
     {
 #pragma warning disable CS0618 // Keep existing custom user locators usable through the new async entry point.
-        AsyncApiCompatibility.RequireLegacyImplementation<IRelewiseUserLocator>(
+        AsyncApiCompatibility.RequireLegacyImplementation(
             this,
             nameof(GetUser),
             nameof(GetUserAsync));

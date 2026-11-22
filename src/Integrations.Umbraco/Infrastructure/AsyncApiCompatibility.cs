@@ -3,8 +3,9 @@ using System.Reflection;
 
 namespace Relewise.Integrations.Umbraco.Infrastructure;
 
-// Inspect the actual interface implementation, including explicit and inherited members.
-// This runs only on the legacy fallback path; never invoke methods through reflection.
+// Without an override, the two default methods would call each other. Check the actual
+// interface map so explicit and inherited implementations count. Only the legacy fallback
+// uses reflection; method invocation still uses normal interface dispatch.
 internal static class AsyncApiCompatibility
 {
     internal static void RequireLegacyImplementation<TContract>(
