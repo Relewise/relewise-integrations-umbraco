@@ -44,11 +44,21 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
                 throw new InvalidOperationException($"Currency '{code}' is entered more than once for this price field.");
             }
 
-            values.Add(new Money(code, System.Convert.ToDecimal(amount, CultureInfo.InvariantCulture)));
+            decimal value = System.Convert.ToDecimal(amount, CultureInfo.InvariantCulture);
+            ValidateAmount(value);
+            values.Add(new Money(code, value));
         }
 
         return new MultiCurrency(values);
     }
 
     public void Dispose() => _disposed = true;
+
+    internal static void ValidateAmount(decimal amount)
+    {
+        if (amount < 0 || decimal.Round(amount, 2) != amount)
+        {
+            throw new InvalidOperationException("Demo prices require a nonnegative amount with at most two decimal places.");
+        }
+    }
 }

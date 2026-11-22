@@ -77,6 +77,28 @@ published-content provider keep their existing search implementation. Setting it
 replaces query resolution for that alias; Examine's indexer and change strategy remain registered. Draft content, media,
 members, and elements retain their existing search providers.
 
+## Boolean Product Data
+
+Bind a keyword query field to Boolean Data already written by an entity mapper:
+
+```csharp
+options.SearchProviders.AddProduct("catalogue", provider =>
+{
+    provider.MapBooleanData("onSale_EUR"); // Data key defaults to the query field name.
+    provider.MapBooleanData("available", "inStock"); // Optional different Data key.
+});
+```
+
+An Umbraco `KeywordFilter` with value `"true"` or `"false"` becomes a native Boolean
+Product Data filter. `KeywordFacet` uses the same Data key and returns keyword
+buckets `"true"` and `"false"` with native Boolean facet counts. Missing Data matches
+neither positive value; negation includes missing values. Keep writing `false`
+when a previously true condition stops applying.
+
+This is query configuration, not export mapping. Other filter/facet types and
+sorting on a bound field are rejected. Unbound fields retain the standard typed
+index-field translation.
+
 ## Querying
 
 Inject `Umbraco.Cms.Core.Search.ISearcherResolver`:
@@ -152,7 +174,12 @@ retains site and mapping restrictions.
 - Keyword/text filters, numeric/date exact and range filters, sorting, and facets
   are translated from core fields. A range includes its lower bound and excludes
   its upper bound. Facets omit filters on their own field; range buckets require
-  separate count requests. Requests with `maxSuggestions > 0` fail explicitly; use the SDK prediction API directly.
+  separate count requests.
+- For a nonblank query, `maxSuggestions > 0` adds one Relewise prediction request.
+  `SearchResult.Suggestions` contains the returned terms, restricted to the provider's
+  Content or Product target, language, visitor and configured filters, including
+  site membership, access protection and publication requirements. Post-filters
+  also constrain predictions. No prediction request is sent for a blank query.
 - Numeric Data uses doubles and dates use UTC milliseconds. Higher numeric or
   sub-millisecond precision is not retained in these core filter representations.
 - Culture-specific numeric/date filters, sorters and facets use internal culture-specific

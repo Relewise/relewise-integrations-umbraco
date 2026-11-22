@@ -26,8 +26,19 @@ internal static class CoreSearchTranslation
     internal const string SegmentsKey = "rwUmbracoSearchSegments";
     internal const string AccessKey = "rwUmbracoSearchAccess";
     internal const string ProtectedKey = "rwUmbracoSearchProtected";
-    internal static RFilter MapFilter(UFilter filter, string? culture = null)
+    internal static RFilter MapFilter(UFilter filter, string? culture = null, IReadOnlyDictionary<string, string>? booleanDataFields = null)
     {
+        if (booleanDataFields != null && booleanDataFields.TryGetValue(filter.FieldName, out string? key))
+        {
+            if (filter is not KeywordFilter keyword)
+            {
+                throw new NotSupportedException($"Boolean Data binding '{filter.FieldName}' requires a KeywordFilter.");
+            }
+            RFilter boolean = Any(keyword.Values.Select(value =>
+                bool.TryParse(value, out bool parsed) ? new ContentDataFilter(key, new EqualsCondition(parsed), filterOutIfKeyIsNotFound: true)
+                    : throw new ArgumentException($"Boolean query field '{filter.FieldName}' requires true or false values.")));
+            return filter.Negate ? Negate(boolean) : boolean;
+        }
         RFilter result = filter switch
         {
             KeywordFilter f => Any(f.Values.Select(v => Contains(Field(f.FieldName, "keyword"), v))),

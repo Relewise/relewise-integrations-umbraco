@@ -180,6 +180,99 @@ public class MappedEntitySearchTests
         Assert.Equal(2, sent.Count(request => request.Skip == 0 && request.Take == 0));
         Assert.All(sent, request => Assert.Equal(product ? "Umbraco search: catalogue" : "Umbraco search: articles", request.DisplayedAtLocation));
     }
+    [Theory]
+    [InlineData(false, "tra", 4)]
+    [InlineData(true, "tra", 4)]
+    [InlineData(true, "tra", 1)]
+    [InlineData(true, "   ", 4)]
+    [InlineData(false, "tra", 0)]
+    public async Task PredictionsRetainConfiguredScopeIdentityAndCancellation(bool product, string term, int maximum)
+    {
+        SearchRequest? sent = null;
+        SearchTermPredictionRequest? prediction = null;
+        var sdk = new Mock<Relewise.Client.Search.ISearcher>();
+        sdk.Setup(client => client.SearchAsync(It.IsAny<ContentSearchRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<ContentSearchRequest, CancellationToken>((request, _) => sent = request)
+            .ReturnsAsync(new ContentSearchResponse { Hits = 0, Results = [], Facets = new() });
+        sdk.Setup(client => client.SearchAsync(It.IsAny<ProductSearchRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<ProductSearchRequest, CancellationToken>((request, _) => sent = request)
+            .ReturnsAsync(new ProductSearchResponse { Hits = 0, Results = [], Facets = new() });
+        using var cancellation = new CancellationTokenSource();
+        sdk.Setup(client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), cancellation.Token))
+            .Callback<SearchTermPredictionRequest, CancellationToken>((request, _) => prediction = request)
+            .ReturnsAsync(new SearchTermPredictionResponse
+            {
+                Predictions = [new() { Term = "Trail" }, new() { Term = "trail" }, new() { Term = "Travel" }, new() { Term = " " }]
+            });
+        var clients = new Mock<IRelewiseClientFactory>();
+        clients.Setup(factory => factory.GetClient<Relewise.Client.Search.ISearcher>(It.IsAny<string>())).Returns(sdk.Object);
+        var services = new ServiceCollection();
+        services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(settings => settings.Id = "prediction-site");
+        services.AddSingleton(clients.Object);
+        services.AddScoped<IRelewiseUserLocator, ScopedVisitor>();
+        services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
+        {
+            if (product)
+            {
+                options.MapProduct("product");
+                options.SearchProviders.AddProduct("profile", provider => provider.ConfigureRequest((request, _) =>
+                {
+                    request.Currency = new Currency("DKK");
+                    request.Filters!.Add(new ProductDataFilter("offer", new Relewise.Client.Requests.Conditions.EqualsCondition(true)));
+                    request.PostFilters = new FilterCollection(new ProductDataFilter("stock", new Relewise.Client.Requests.Conditions.EqualsCondition(true)));
+                }));
+            }
+            else
+            {
+                options.MapContent("article");
+                options.SearchProviders.AddContent("profile", provider => provider.ConfigureRequest((request, _) =>
+                {
+                    request.Currency = new Currency("DKK");
+                    request.Filters!.Add(new ContentDataFilter("offer", new Relewise.Client.Requests.Conditions.EqualsCondition(true)));
+                }));
+            }
+        });
+        services.AddSingleton<RelewiseUmbracoConfiguration>();
+        services.AddTransient<MappedEntitySearcher>();
+        await using var root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        await using var scope = root.CreateAsyncScope();
+        var accessor = root.GetRequiredService<IHttpContextAccessor>();
+        accessor.HttpContext = new DefaultHttpContext { RequestServices = scope.ServiceProvider, RequestAborted = cancellation.Token };
+        Guid principal = Guid.NewGuid();
+        SearchResult result = await root.GetRequiredService<MappedEntitySearcher>().SearchAsync("profile", term,
+            culture: "da-DK", accessContext: new AccessContext(principal, []), maxSuggestions: maximum);
+        if (maximum == 0 || string.IsNullOrWhiteSpace(term))
+        {
+            Assert.Null(prediction);
+            Assert.Empty(result.Suggestions!);
+            return;
+        }
+
+        Assert.NotNull(prediction);
+        Assert.Equal(new[] { "Trail", "Travel" }.Take(maximum), result.Suggestions);
+        Assert.Equal(term, prediction.Term);
+        Assert.Equal(maximum, prediction.Take);
+        Assert.Same(sent!.User, prediction.User);
+        Assert.Equal(sent.Currency, prediction.Currency);
+        Assert.Equal(sent.Language, prediction.Language);
+        Assert.Equal(sent.DisplayedAtLocation, prediction.DisplayedAtLocation);
+        Assert.Equal(product ? EntityType.Product : EntityType.Content, Assert.Single(prediction.Settings!.TargetEntityTypes!));
+        Assert.Null(prediction.IndexSelector);
+        string json = JsonConvert.SerializeObject(prediction.Filters);
+        Assert.Contains("prediction-site", json);
+        Assert.Contains("rwUmbracoPublished", json);
+        Assert.Contains("rwUmbracoSearchProtected", json);
+        Assert.Contains(principal.ToString("D"), json);
+        Assert.Contains("da-dk", json);
+        Assert.Contains("offer", json);
+        if (product)
+        {
+            Assert.Contains("stock", json);
+        }
+        sdk.Verify(client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), cancellation.Token), Times.Once);
+    }
+
     private static IEnumerable<DataFilter> DataFilters(Filter filter) => filter switch
     {
         DataFilter data => [data],

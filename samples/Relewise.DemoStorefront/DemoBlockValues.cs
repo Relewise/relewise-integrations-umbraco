@@ -4,6 +4,19 @@ using Umbraco.Cms.Core.Services;
 // Build the native editor values so the published models exercise the actual Umbraco converters.
 internal static class DemoBlockValues
 {
+    internal static string Story(IContentTypeService types, string body)
+    {
+        Guid key = Guid.NewGuid();
+        string markup = string.Concat(body.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(paragraph => "<p>" + System.Net.WebUtility.HtmlEncode(paragraph) + "</p>"));
+        return Serialize(
+            "Umbraco.BlockList",
+            [new { contentKey = key }],
+            [Element(key, types.Get("editorialText")!.Key, Value("text", "Umbraco.RichText", RichText(markup)))],
+            [],
+            [new { contentKey = key, culture = (string?)null, segment = (string?)null }]);
+    }
+
     internal static string Prices(Guid priceType, params (string Currency, decimal Amount)[] prices)
     {
         Guid[] keys = prices.Select(_ => Guid.NewGuid()).ToArray();
@@ -97,6 +110,68 @@ internal static class DemoBlockValues
                 culture = (string?)null,
                 segment = (string?)null
             }).ToArray());
+    }
+
+    // Only seed copy is translated here; the stored Block List/Grid values remain editable native Umbraco content.
+    internal static string InDanish(string json)
+    {
+        var translations = new Dictionary<string, string>
+        {
+            ["Ready for the outdoors"] = "Klar til friluftslivet",
+            ["Bring a <strong>reusable flask</strong> and enjoy the quiet outdoors."] = "Tag en <strong>genanvendelig flaske</strong> med, og nyd roen i det fri.",
+            ["Nested trail advice"] = "Gode råd til vandreturen",
+            ["Follow the <strong>woodland</strong> path &amp; refill your flask."] = "Følg stien gennem <strong>skoven</strong>, og fyld din flaske.",
+            ["Nested editorial content"] = "Indlejret redaktionelt indhold",
+            ["Hidden block example"] = "Eksempel på skjult blok",
+            ["Hidden editorial marker: secret-list-note."] = "Skjult tekstmarkør: secret-list-note.",
+            ["Grid adventure planner"] = "Planlæg dit næste eventyr",
+            ["Inside the Grid area"] = "Inspiration til turen",
+            ["Pack a <em>lightweight picnic</em> for the ridge trail."] = "Pak en <em>let madkurv</em> til turen langs højderyggen.",
+            ["Hidden Grid container"] = "Skjult gitterbeholder",
+            ["Hidden child marker: secret-grid-note."] = "Skjult undermarkør: secret-grid-note."
+        };
+        var document = System.Text.Json.Nodes.JsonNode.Parse(json)!;
+        void Translate(System.Text.Json.Nodes.JsonNode node)
+        {
+            if (node is System.Text.Json.Nodes.JsonObject obj)
+            {
+                foreach (var property in obj.ToArray())
+                {
+                    if (property.Value is System.Text.Json.Nodes.JsonValue scalar && scalar.TryGetValue(out string? text))
+                    {
+                        foreach (var translation in translations)
+                        {
+                            text = text.Replace(translation.Key, translation.Value, StringComparison.Ordinal);
+                        }
+
+                        // Nested Block Lists can be stored as JSON strings by older editor versions.
+                        if (text.StartsWith('{') && text.Contains("contentData"))
+                        {
+                            text = InDanish(text);
+                        }
+
+                        obj[property.Key] = text;
+                    }
+                    else if (property.Value != null)
+                    {
+                        Translate(property.Value);
+                    }
+                }
+            }
+            else if (node is System.Text.Json.Nodes.JsonArray array)
+            {
+                foreach (var child in array)
+                {
+                    if (child != null)
+                    {
+                        Translate(child);
+                    }
+                }
+            }
+        }
+
+        Translate(document);
+        return document.ToJsonString();
     }
 
     private static object GridItem(Guid key, Guid? child = null, Guid? settingsKey = null) => new

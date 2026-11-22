@@ -23,3 +23,7 @@ jobs:
 
       - name: Test with dotnet
         run: dotnet test Relewise.Integrations.Umbraco.slnx --configuration Debug
+
+      - name: Test DemoStorefront frontend
+        working-directory: samples/Relewise.DemoStorefront/Client
+        run: npm test

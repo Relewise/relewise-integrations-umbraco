@@ -54,18 +54,26 @@ internal static class DemoConfiguration
             mapping.BrandFrom("brand");
             mapping.AdditionalCategoriesFrom("extraCategories");
             mapping.MapData("stock");
+            mapping.MapData("weightGrams");
+            mapping.MapData("capacity");
+            mapping.MapData("sizeGuide");
+            mapping.UseMapper<DemoProductMapper>(); // Enrich the SDK Product after built-in properties are mapped.
             mapping.VariantsFromChildren("productVariant", variant =>
             {
                 variant.IdFromProperty("sku");
                 variant.Map(variant => variant.DisplayName, "heading");
+                variant.MapData("bodyText");
                 variant.MapData("color");
+                variant.MapData("size");
+                variant.MapData("optionLabel");
+                variant.MapData("capacity");
             });
         });
         if (connected && configuration.GetValue<bool?>("Demo:Search") != false)
         {
             options.SearchProviders.AddContent("articles", provider =>
             {
-                provider.DocumentTypeAliases = ["article"];
+                provider.DocumentTypeAliases = ["article", "localizedArticle"];
                 provider.ConfigureRequest((request, context) => request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency));
             });
             options.SearchProviders.AddContent("guides", provider =>
@@ -83,27 +91,43 @@ internal static class DemoConfiguration
                 provider.UnsupportedSegmentBehavior = UnsupportedSegmentBehavior.Ignore();
                 provider.ConfigureRequest((request, context) => request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency));
             });
-            options.SearchProviders.AddProduct("catalogue", provider => provider.ConfigureRequest((request, context) => request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency)));
+            options.SearchProviders.AddProduct("catalogue", ConfigureProductSearch);
             if (configuration["Demo:ProductPolicy"] == "None")
             {
                 options.SearchProviders.AddProduct("commerceCatalogue", provider =>
                 {
+                    ConfigureProductSearch(provider);
                     provider.RequirePublishedPage = false; // The application handles Products without a published CMS page.
-                    provider.ConfigureRequest((request, context) => request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency));
                 });
             }
 
-            options.SearchProviders.AddProduct("offers", provider => provider.ConfigureRequest((request, context) =>
+            options.SearchProviders.AddProduct("offers", provider =>
             {
-                request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency);
-                request.DisplayedAtLocation = "Local storefront offers";
-                request.Filters ??= new Relewise.Client.Requests.Filters.FilterCollection();
-                request.Filters.Add(new Relewise.Client.Requests.Filters.ProductIdFilter("U19-SMOKE-PACK"));
-            }));
+                ConfigureProductSearch(provider);
+                provider.DisplayedAtLocation = "Local storefront offers";
+            });
             if (configuration.GetValue<bool?>("Demo:DefaultSearch") != false)
             {
                 options.SearchProviders.DefaultPublishedContentProviderAlias = configuration["Demo:DefaultProvider"] ?? "articles";
             }
         }
+    }
+
+    private static void ConfigureProductSearch(ProductSearchProviderOptions provider)
+    {
+        provider.MapBooleanData("inStock"); // Query the same business value written by DemoProductMapper.
+        foreach (var market in DemoMarket.All)
+        {
+            provider.MapBooleanData("onSale_" + market.Currency);
+        }
+
+        provider.ConfigureRequest((request, context) =>
+        {
+            request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency);
+            // Match translated colour/size Variants while keeping one card per Product.
+            request.Settings ??= new();
+            request.Settings.VariantRequestSettings ??= new();
+            request.Settings.VariantRequestSettings.MaxVariantsPerProduct = 1;
+        });
     }
 }

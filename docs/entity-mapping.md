@@ -80,6 +80,8 @@ must asynchronously return the SDK property's `MultiCurrency?` type. A converter
 Content/Product/Category DisplayName returns `Multilingual`; Brand.DisplayName uses
 `string`.
 Built-in conversion accepts compatible published values; it does not guess currency.
+Invariant content shares its multilingual values across all configured site languages.
+Culture-varying content exports only its published cultures, preserving translation boundaries.
 For a localized source mapped to a single-string destination such as Brand.DisplayName,
 it selects Umbraco's default language when published, otherwise the first published
 culture in case-insensitive ordinal order. A typed converter can override that selection.

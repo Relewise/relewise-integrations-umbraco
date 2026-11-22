@@ -1,0 +1,23 @@
+{
+  "name": "relewise-demo-storefront",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run",
+    "watch": "vite build --watch"
+  },
+  "engines": {
+    "node": ">=24.13",
+    "npm": ">=11"
+  },
+  "dependencies": {
+    "vue": "^3.5.46"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.11",
+    "happy-dom": "^21.0.4",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}

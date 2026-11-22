@@ -155,7 +155,8 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         };
         if (entity is Product && definition.Variant is { Export: true } variantMapping)
         {
-            foreach (IPublishedContent child in source.Children())
+            // Background exports must include published Variants in every language, independent of a request culture.
+            foreach (IPublishedContent child in source.Children(culture: "*"))
             {
                 if (!child.ContentType.Alias.Equals(variantMapping.DocumentTypeAlias, StringComparison.OrdinalIgnoreCase))
                 {

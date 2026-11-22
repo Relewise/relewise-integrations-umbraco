@@ -8,6 +8,66 @@ namespace Relewise.Integrations.Umbraco.Tests;
 
 public class EntityMappingTests
 {
+    [Fact]
+    public async Task InvariantNameIsSharedAcrossTheExportLanguages()
+    {
+        var property = new Mock<IPublishedProperty>();
+        property.SetupGet(value => value.PropertyType).Returns(Mock.Of<IPublishedPropertyType>());
+        property.Setup(value => value.GetValue(null, null)).Returns("Trail flask");
+        var source = Mock.Of<IPublishedContent>();
+        await using var services = new ServiceCollection().BuildServiceProvider();
+        await using var operation = new MappingOperation(services, default);
+        var context = new PropertyMappingContext(
+            source,
+            source,
+            property.Object,
+            ["en-US", "da-DK"],
+            nameof(Product.DisplayName),
+            operation);
+
+        Multilingual result = await BuiltInPropertyConversion.ConvertAsync<Multilingual>(context);
+
+        Assert.Collection(
+            result.Values!,
+            value =>
+            {
+                Assert.Equal("en-us", value.Language.Value);
+                Assert.Equal("Trail flask", value.Text);
+            },
+            value =>
+            {
+                Assert.Equal("da-dk", value.Language.Value);
+                Assert.Equal("Trail flask", value.Text);
+            });
+    }
+
+    [Fact]
+    public async Task LocalizedNameDoesNotExportAnUnpublishedTranslation()
+    {
+        var propertyType = new Mock<IPublishedPropertyType>();
+        propertyType.SetupGet(value => value.Variations).Returns(global::Umbraco.Cms.Core.Models.ContentVariation.Culture);
+        var property = new Mock<IPublishedProperty>();
+        property.SetupGet(value => value.PropertyType).Returns(propertyType.Object);
+        property.Setup(value => value.GetValue("en-US", null)).Returns("Across the seasons");
+        property.Setup(value => value.GetValue("da-DK", null)).Returns("Gennem årstiderne");
+        var source = Mock.Of<IPublishedContent>();
+        await using var services = new ServiceCollection().BuildServiceProvider();
+        await using var operation = new MappingOperation(services, default);
+        var context = new PropertyMappingContext(
+            source,
+            source,
+            property.Object,
+            ["en-US"],
+            nameof(Relewise.Client.DataTypes.Content.DisplayName),
+            operation);
+
+        Multilingual result = await BuiltInPropertyConversion.ConvertAsync<Multilingual>(context);
+
+        var name = Assert.Single(result.Values!);
+        Assert.Equal("en-us", name.Language.Value);
+        Assert.Equal("Across the seasons", name.Text);
+    }
+
     [Theory]
     [InlineData("en-US", "en-US")]
     [InlineData("DA-dk", "da-DK")]

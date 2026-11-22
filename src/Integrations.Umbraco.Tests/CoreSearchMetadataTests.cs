@@ -51,13 +51,6 @@ public class CoreSearchMetadataTests
         Assert.Equal(new[] { "", "da-dk" }, product.Data[CoreSearchTranslation.CultureKey]!.ValueAsListOf<string>());
     }
     [Fact]
-    public async Task UnsupportedSuggestionsFailBeforeIssuingSdkRequests()
-    {
-        var searcher = new MappedEntitySearcher(null!, null!, null!);
-        await Assert.ThrowsAsync<NotSupportedException>(() => searcher.SearchAsync("articles", maxSuggestions: 1));
-    }
-
-    [Fact]
     public async Task SegmentQueriesFailBeforeAnySdkRequest()
     {
         var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();

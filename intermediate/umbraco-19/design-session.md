@@ -345,8 +345,9 @@ Culture-specific numeric/date queries select internal culture-specific fields fo
 filtering, sorting and facets. AutoMap output is unaffected. Segment-specific
 indexing is unsupported: the provider policy offers `Throw()` (default) or
 `Ignore()`, which executes the query without its segment argument.
-Suggestions requested through Umbraco fail explicitly. Use SDK predictions directly
-when needed; the application must apply its own result-membership and access rules.
+Suggestions requested through Umbraco use Relewise predictions with the same
+provider target, language, visitor, membership and access filters as the search.
+A nonblank query with `maxSuggestions > 0` adds one prediction request.
 Empty Brand pickers retain the existing relationship under SDK partial updates.
 
 The maintained [Relewise.DemoStorefront](../../samples/Relewise.DemoStorefront/README.md)
@@ -354,11 +355,20 @@ centralizes runnable mapping, converter, search and tracking examples. F5 create
 SQLite database and seeds content, blocks, languages and bundled images. Valid
 local Relewise settings in an ignored
 `local.settings.json` connect the demo to an existing local Dataset; without those
-settings, Examine serves the site.
+settings, the demo exposes published CMS content preview with setup guidance.
+Search, facets, predictions, Offers, cart and checkout require Relewise; disabled
+features are also rejected by their backend routes. Invalid credentials remain an
+explicit connection failure. The demo does not substitute another search provider.
+`DemoProductMapper` writes `inStock` and per-currency `onSale_EUR`, `onSale_DKK`
+and `onSale_USD` Boolean Data after price mapping, including `false` for no discount.
+`provider.MapBooleanData(fieldName, dataKey)` binds an Umbraco keyword filter/facet
+to Boolean Product Data; the key defaults to the query field name. Stock and sale filters
+and facets share these business values without an additional indexed projection.
+`StorefrontProductIndexer` supplies the remaining typed query projection.
 Opt-in diagnostics support the shared acceptance tests, including publish/edit/
 unpublish with no Relewise query providers registered.
 
-Installed-package testing covers the indexing-only/Examine combination, named
+Package-level installed testing covers the indexing-only/Examine combination, named
 providers with either query default, publication/draft/edit/removal, child Variants,
 culture membership, ID changes, commerce contributions and shared tracking IDs.
 Scope validation and converter disposal/cancellation have regression coverage.
@@ -376,6 +386,23 @@ or replacement of Umbraco's standard statistics UI is introduced.
 The maintained [mapping](../../docs/entity-mapping.md) and
 [search](../../docs/search.md) guides describe supported behavior. This
 intermediate document retains implementation-review context and smoke-test evidence.
+
+The demo uses server-rendered Umbraco pages with Vue components for the shared
+header, listings and cart. Global search opens a dedicated results page, while
+Offers has its own sale-filtered route and navigation state. The same server query
+supplies initial data and reactive filter/sort/page updates. Cart changes use
+asynchronous requests and server-authoritative validation; checkout uses a focused
+review page and native order submission. Expandable footer details show the active
+provider and configuration without interrupting shopping. SDK requests, canonical
+IDs and tracking remain on the server. See the
+[demo guide](../../samples/Relewise.DemoStorefront/README.md) for build and interaction details.
+
+Local review covers desktop and mobile navigation, Product/Journal search, Offers,
+market changes, asynchronous cart updates and checkout with a local Relewise
+Dataset, plus content preview and backend feature gates without credentials. Concurrent add retries, shared stock across
+Variants, CSRF rejection, canonical tracking IDs and repeated checkout submissions
+are also exercised. Invalid credentials return an explicit error without switching
+providers. These checks do not constitute external usability certification.
 
 ## 9. Screenshots for review
 
@@ -396,7 +423,7 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | [Danish search](images/09-multilingual-search.jpg) | Multilingual Content search. |
 | [SDK identity correlation](images/10-storefront-identity-correlation.jpg) | Shared visitor and canonical entity IDs. |
 | [Received view events](images/11-my-relewise-all-view-types.jpg) | Content/Product/Variant/Brand/Category events and Category paths. |
-| [F5 without Relewise credentials](images/12-f5-examine-storefront.jpg) | Seeded storefront and bundled images, with Examine handling searches. |
+| [F5 without Relewise credentials](images/12-f5-content-preview.jpg) | Seeded CMS content preview with disabled search and shopping and a setup link. |
 | [Installed Product search](images/13-installed-product-search.jpg) | Named Product provider in the maintained storefront. |
 | [Installed Variant page](images/14-installed-variant-view.jpg) | Canonical Variant ID with its parent Product. |
 | [Installed tracking correlation](images/15-installed-identity-correlation.jpg) | One visitor across searches and all supported view events. |
@@ -413,3 +440,22 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | [Export and Maintenance](images/29-dashboard-export-and-maintenance.png) | Full export and scoped permanent-deletion controls. |
 | [Connection details](images/30-dashboard-connection-details.png) | Current separate default/named tables and usage explanations. |
 | [Final dashboard provider review](images/32-dashboard-final-review.png) | Current Content/Product provider details and index-statistics notice. |
+| [Brand filters](images/33-storefront-brand-filters.jpg) | Multiple Brand selections, counts, removable chips and actual Brand labels on Product cards. |
+| [Brand page](images/37-storefront-brand-page.jpg) | Ridgeway's fixed Brand scope retains other facets and omits redundant Brand selection. |
+| [Shopping on desktop](images/38-storefront-shopping-desktop.jpg) | Shared search header, separate navigation row, compact introduction and reactive listings. |
+| [Shopping on mobile](images/39-storefront-shopping-mobile.jpg) | Active-filter count, removable chips and market-specific savings badges. |
+| [Cart](images/34-storefront-cart.jpg) | Asynchronous quantity/removal controls and separate order summary. |
+| [Checkout](images/35-storefront-checkout.jpg) | Focused review with a clear demo disclaimer and no shopping navigation. |
+| [Mobile checkout](images/36-storefront-mobile-checkout.jpg) | Stacked review and summary with the same order flow. |
+| [Product specifications](images/40-storefront-product-specifications.jpg) | Representative illustration and editable native CMS specification fields. |
+| [Mobile filter chips](images/41-storefront-mobile-filter-chips.jpg) | Reactive mobile filtering, result counts and removable chips; no separate Apply/Sort step. |
+| [Global search](images/42-storefront-global-search.jpg) | Dedicated results page with Product and Journal scopes, independent of the previous collection or Offers filter. |
+| [Offers](images/43-storefront-offers.jpg) | Dedicated landing page, active navigation and sale prices for the selected market. |
+| [Added to cart](images/44-storefront-added-to-cart.jpg) | Confirmation drawer with authoritative item, quantity and basket total. |
+| [Market selection](images/45-storefront-market-selection.jpg) | Compact header control opens language/currency choices. |
+| [Desktop shopping filters](images/46-storefront-price-facet-desktop.jpg) | Inclusive custom price range combined with market-specific On sale filtering. |
+| [Mobile shopping filters](images/47-storefront-price-facet-mobile.jpg) | Multiple Brand selections alongside price and Show only filters. |
+| [Meaningful Variant capacity](images/48-storefront-variant-capacity.jpg) | Editable capacity labels and specifications while canonical Variant IDs remain unchanged. |
+| [Empty cart confirmation](images/49-storefront-empty-cart-confirmation.jpg) | Secondary action requires confirmation before removing all items. |
+| [Market confirmation](images/50-storefront-market-confirmation.jpg) | Danish language/currency feedback after selecting Denmark. |
+| [Demo without Relewise](images/51-storefront-without-relewise.jpg) | Content preview notice, disabled controls and configuration guidance. |

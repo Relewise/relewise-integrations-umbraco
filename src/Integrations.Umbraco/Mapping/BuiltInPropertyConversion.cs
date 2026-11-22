@@ -18,7 +18,7 @@ internal static class BuiltInPropertyConversion
             var values = new List<Multilingual.Value>();
             foreach (string publishedCulture in context.CulturesToPublish)
             {
-                object? raw = context.Property.GetValue(publishedCulture);
+                object? raw = context.Property.GetValue(context.Property.PropertyType.VariesByCulture() ? publishedCulture : null);
                 if (raw != null)
                 {
                     values.Add(new Multilingual.Value(publishedCulture, System.Convert.ToString(raw, CultureInfo.InvariantCulture)));
@@ -32,7 +32,7 @@ internal static class BuiltInPropertyConversion
             context.CancellationToken.ThrowIfCancellationRequested();
         }
 
-        object? value = context.Property.GetValue(culture);
+        object? value = context.Property.GetValue(context.Property.PropertyType.VariesByCulture() ? culture : null);
         if (value is TValue typed)
         {
             return typed;

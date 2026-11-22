@@ -3,7 +3,7 @@
     "Relewise.DemoStorefront": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "store",
+      "launchUrl": "",
       "applicationUrl": "http://localhost:5521",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

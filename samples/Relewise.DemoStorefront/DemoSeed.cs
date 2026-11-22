@@ -7,7 +7,7 @@ using Umbraco.Cms.Core.Strings;
 
 internal static class DemoSeed
 {
-    internal static async Task<bool> InitializeAsync(IServiceProvider root)
+    internal static async Task InitializeAsync(IServiceProvider root)
     {
         await using var scope = root.CreateAsyncScope();
         IServiceProvider services = scope.ServiceProvider;
@@ -18,7 +18,13 @@ internal static class DemoSeed
             {
                 throw new InvalidOperationException("This demo database uses an earlier schema. Stop the site and move its ignored umbraco/Data directory aside to seed the updated examples.");
             }
-            return false;
+
+            await DemoCatalogue.EnsureAsync(services);
+            await DemoLocalization.EnsureAsync(services);
+            await DemoProductDetails.EnsureAsync(services);
+            await DemoVariantDetails.EnsureAsync(services);
+            DemoEditorial.Ensure(services);
+            return;
         }
 
         await Prepare(services.GetRequiredService<IContentTypeService>(), services.GetRequiredService<IDataTypeService>(),
@@ -28,7 +34,11 @@ internal static class DemoSeed
         await Run(services.GetRequiredService<IContentService>(), services.GetRequiredService<IContentTypeService>(),
             services.GetRequiredService<Umbraco.Cms.Infrastructure.Scoping.IScopeProvider>(), services.GetRequiredService<IDomainService>(),
             services.GetRequiredService<IConfiguration>());
-        return true;
+        await DemoCatalogue.EnsureAsync(services);
+        await DemoLocalization.EnsureAsync(services);
+        await DemoProductDetails.EnsureAsync(services);
+        await DemoVariantDetails.EnsureAsync(services);
+        DemoEditorial.Ensure(services);
     }
 
     private static async Task Prepare(IContentTypeService types, IDataTypeService dataTypes, ITemplateService templates,

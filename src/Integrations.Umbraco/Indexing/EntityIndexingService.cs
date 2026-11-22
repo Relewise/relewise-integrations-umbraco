@@ -186,6 +186,12 @@ internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, R
 
                 string[]? cultures = entry.Value.Variations.Any(value => value.Culture == null) ? null
                     : entry.Value.Variations.Select(value => value.Culture!).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+                // Invariant values are shared across the site's languages, rather than belonging only to its default language.
+                if (!source.ContentType.VariesByCulture())
+                {
+                    cultures = siteCultures;
+                }
+
                 MappedEntity mapped = await mapper.MapAsync(source, mapping, operation, site, version, contentUpdateKind: contentUpdateKind, publishedCultures: cultures);
                 string claim = mapping.EntityType.Name + ":" + (mapping.EntityType == typeof(Brand) ? mapped.Id.ToLowerInvariant() : mapped.Id);
                 if (!claims.Add(claim))

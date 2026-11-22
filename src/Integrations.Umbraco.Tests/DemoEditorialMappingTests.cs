@@ -149,6 +149,37 @@ public class DemoEditorialMappingTests
             new EntityMappingContext<Content>(Source(property), new Content("article"), ["en-US"], operation), cancellation.Token));
     }
 
+    [Fact]
+    public void StorefrontRenderingKeepsRichTextAndHidesWholeContainers()
+    {
+        var visible = Element(Property("heading", _ => "A <quiet> place"),
+            Property("text", _ => new HtmlEncodedString("<p>Take a <strong>break</strong>.</p>")));
+        var hidden = Element(Property("hide", _ => true));
+        var child = new BlockGridItem(Guid.NewGuid(), Element(Property("text", _ => new HtmlEncodedString("Secret child"))), null, null);
+        var container = new BlockGridItem(Guid.NewGuid(), visible, Guid.NewGuid(), hidden)
+        {
+            Areas = [new BlockGridArea([child], "main", 12, 1)]
+        };
+        var blocks = new BlockListModel([new BlockListItem(Guid.NewGuid(), visible, null, null)]);
+
+        string html = StorefrontEditorial.Render(blocks, "en-US");
+
+        Assert.Contains("A &lt;quiet&gt; place", html);
+        Assert.Contains("<p>Take a <strong>break</strong>.</p>", html);
+        Assert.Equal("", StorefrontEditorial.Render(new BlockGridModel([container], 12), "en-US"));
+    }
+
+    [Theory]
+    [InlineData("en-US", "English story")]
+    [InlineData("da-DK", "Dansk fortælling")]
+    public void StorefrontRenderingUsesTheRequestedBlockLanguage(string culture, string expected)
+    {
+        var blocks = Blocks(Property("text", language => new HtmlEncodedString(
+            language == "da-DK" ? "<p>Dansk fortælling</p>" : "<p>English story</p>"), true));
+
+        Assert.Equal("<p>" + expected + "</p>", StorefrontEditorial.Render(blocks, culture));
+    }
+
     private static IVariationContextAccessor Variations()
     {
         var accessor = new Mock<IVariationContextAccessor>();
