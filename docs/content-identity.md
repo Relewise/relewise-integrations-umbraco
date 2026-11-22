@@ -74,7 +74,9 @@ Before switching, plan the transition for every writer and consumer, preferably
 validate it in a separate Dataset, and explicitly decide how to re-export content
 and handle the old entities/history. Do not assume that old numeric history will
 move to the GUID entity. The dashboard's **explicit full export** retains its existing
-stale-entity cleanup: within the configured source scope, it disables entities not
-carrying the completed export version, or deletes them if permanent deletion is
-selected. Review that operation before using it on an existing or shared Dataset;
-it is not a GUID migration tool.
+stale-entity cleanup: for configured entity types and Document Types with source-node
+metadata, it disables entities not carrying the completed export version, or deletes
+them if permanent deletion is selected. Older exports without source-node metadata
+require deliberate cleanup; see [migration](migration.md#indexing-and-search).
+Review that operation before using it on an existing or shared Dataset; it is not
+a GUID migration tool.
