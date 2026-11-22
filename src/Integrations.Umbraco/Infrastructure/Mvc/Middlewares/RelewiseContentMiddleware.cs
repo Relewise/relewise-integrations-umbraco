@@ -155,7 +155,7 @@ internal class RelewiseContentMiddleware
         try
         {
             return context.RequestServices.GetRequiredService<IRelewiseClientFactory>()
-                .GetClient<ITracker>(Constants.NamedClientName);
+                .GetClient<ITracker>(Constants.ClientNames.Integration);
         }
         catch (Exception ex)
         {

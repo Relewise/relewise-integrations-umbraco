@@ -9,6 +9,7 @@ using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Search;
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Web;
+using static Relewise.DemoStorefront.DemoConstants;
 using static Relewise.DemoStorefront.Site.Storefront;
 
 namespace Relewise.DemoStorefront.Features.Browsing;
@@ -60,7 +61,9 @@ internal static class StorefrontListing
 
         string requestedType =
             !offersPage && request.Query["type"].FirstOrDefault() == "article" ? "article" : "product";
-        string alias = offersPage ? "offers" : requestedType == "article" ? "articles" : "catalogue";
+        string alias = offersPage
+            ? SearchProviders.Offers
+            : requestedType == "article" ? SearchProviders.Articles : SearchProviders.Catalogue;
         bool offers = offersPage;
 
         string? query = request.Query["q"];
@@ -127,7 +130,7 @@ internal static class StorefrontListing
 
         if (collection != null)
         {
-            heading = collection.Value<string>("heading") ?? collection.Name;
+            heading = collection.Value<string>(PropertyAliases.Heading) ?? collection.Name;
         }
 
         using UmbracoContextReference context = contexts.EnsureUmbracoContext();

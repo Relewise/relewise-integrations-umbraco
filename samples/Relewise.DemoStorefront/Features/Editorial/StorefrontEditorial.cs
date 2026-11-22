@@ -1,6 +1,7 @@
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Strings;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Features.Editorial;
 
@@ -14,15 +15,15 @@ internal static class StorefrontEditorial
 
         void Element(IPublishedElement content)
         {
-            var heading = content.GetProperty("heading")?.GetValue(culture) as string;
-            var text = content.GetProperty("text")?.GetValue(culture) as IHtmlEncodedString;
+            var heading = content.GetProperty(PropertyAliases.Heading)?.GetValue(culture) as string;
+            var text = content.GetProperty(PropertyAliases.Text)?.GetValue(culture) as IHtmlEncodedString;
 
             if (!string.IsNullOrWhiteSpace(heading) || text != null)
             {
                 sections.Add(new EditorialSection(heading, text));
             }
 
-            Visit(content.GetProperty("items")?.GetValue(culture));
+            Visit(content.GetProperty(PropertyAliases.Items)?.GetValue(culture));
         }
 
         void Visit(object? blocks)
@@ -36,7 +37,8 @@ internal static class StorefrontEditorial
                     }
 
                     break;
-                case BlockListItem item when item.Settings?.GetProperty("hide")?.GetValue(culture) is not true:
+                case BlockListItem item when item.Settings?.GetProperty(
+                    PropertyAliases.Hide)?.GetValue(culture) is not true:
                     Element(item.Content);
                     break;
                 case BlockGridModel grid:
@@ -46,7 +48,8 @@ internal static class StorefrontEditorial
                     }
 
                     break;
-                case BlockGridItem item when item.Settings?.GetProperty("hide")?.GetValue(culture) is not true:
+                case BlockGridItem item when item.Settings?.GetProperty(
+                    PropertyAliases.Hide)?.GetValue(culture) is not true:
                     Element(item.Content);
                     foreach (BlockGridArea area in item.Areas)
                     {

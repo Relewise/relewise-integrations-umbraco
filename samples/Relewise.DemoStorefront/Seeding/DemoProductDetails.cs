@@ -3,6 +3,7 @@ using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Infrastructure.Scoping;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Seeding;
 
@@ -11,12 +12,15 @@ internal static class DemoProductDetails
     internal static async Task EnsureAsync(IServiceProvider services)
     {
         var types = services.GetRequiredService<IContentTypeService>();
-        IContentType type = types.Get("product")!;
+        IContentType type = types.Get(DocumentTypeAliases.Product)!;
         IDataType[] dataTypes = [.. (await services.GetRequiredService<IDataTypeService>().GetAllAsync())];
         var schemaChanged = false;
 
         foreach ((string alias, string name, string editor) in new[]
-                     { ("weightGrams", "Weight (g)", "Numeric"), ("capacity", "Capacity", "Textstring") })
+                     {
+                         (PropertyAliases.WeightGrams, "Weight (g)", "Numeric"),
+                         (PropertyAliases.Capacity, "Capacity", "Textstring")
+                     })
         {
             if (!type.PropertyTypes.Any(property => property.Alias == alias))
             {
@@ -48,29 +52,29 @@ internal static class DemoProductDetails
                 out _
             ));
 
-        foreach (IContent product in nodes.Where(node => node.ContentType.Alias == "product"))
+        foreach (IContent product in nodes.Where(node => node.ContentType.Alias == DocumentTypeAliases.Product))
         {
             if (!product.Published || product.Edited ||
-                !Details.TryGetValue(product.GetValue<string>("sku") ?? "", out ProductDetail? detail))
+                !Details.TryGetValue(product.GetValue<string>(PropertyAliases.Sku) ?? "", out ProductDetail? detail))
             {
                 continue;
             }
 
             var changed = false;
 
-            if (product.GetValue("weightGrams") == null)
+            if (product.GetValue(PropertyAliases.WeightGrams) == null)
             {
-                product.SetValue("weightGrams", detail.WeightGrams);
-                product.SetValue("capacity", detail.Capacity);
+                product.SetValue(PropertyAliases.WeightGrams, detail.WeightGrams);
+                product.SetValue(PropertyAliases.Capacity, detail.Capacity);
                 changed = true;
             }
 
             string previous = "/images/" + detail.PreviousIllustration + ".svg";
             string illustration = "/images/" + detail.Illustration + ".svg";
 
-            if (previous != illustration && product.GetValue<string>("heroImage") == previous)
+            if (previous != illustration && product.GetValue<string>(PropertyAliases.HeroImage) == previous)
             {
-                product.SetValue("heroImage", illustration);
+                product.SetValue(PropertyAliases.HeroImage, illustration);
                 changed = true;
             }
 

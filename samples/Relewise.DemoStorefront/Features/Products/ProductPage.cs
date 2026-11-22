@@ -1,6 +1,7 @@
 using Relewise.DemoStorefront.Features.Recommendations;
 using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Features.Products;
 
@@ -10,16 +11,18 @@ internal static class ProductPage
         IPublishedContent page,
         HttpContext http)
     {
-        IPublishedContent product = page.ContentType.Alias == "productVariant" ? page.Parent()! : page;
-        var brand = product.Value<IPublishedContent>("brand");
+        IPublishedContent product = page.ContentType.Alias == DocumentTypeAliases.ProductVariant
+            ? page.Parent()!
+            : page;
+        var brand = product.Value<IPublishedContent>(PropertyAliases.Brand);
 
         (string Sale, string? List, string? Savings) prices = ProductPrices.Display(product, http);
         IPublishedContent[] variants =
-            [.. product.Children().Where(node => node.ContentType.Alias == "productVariant")];
+            [.. product.Children().Where(node => node.ContentType.Alias == DocumentTypeAliases.ProductVariant)];
 
-        string lead = page.Value<string>("bodyText") ?? "";
-        string parentLead = product.Value<string>("bodyText") ?? "";
-        var rawOption = page.Value<string>("size");
+        string lead = page.Value<string>(PropertyAliases.BodyText) ?? "";
+        string parentLead = product.Value<string>(PropertyAliases.BodyText) ?? "";
+        var rawOption = page.Value<string>(PropertyAliases.Size);
 
         if (page != product && !string.IsNullOrWhiteSpace(rawOption) &&
             (lead == parentLead + " Available in " + rawOption + "." ||
@@ -32,15 +35,15 @@ internal static class ProductPage
 
         if (string.IsNullOrWhiteSpace(option))
         {
-            option = variants.Any(variant => !string.IsNullOrWhiteSpace(variant.Value<string>("color")))
+            option = variants.Any(variant => !string.IsNullOrWhiteSpace(variant.Value<string>(PropertyAliases.Color)))
                 ? "colour"
-                : "size";
+                : PropertyAliases.Size;
         }
 
         string optionLabel = option switch
         {
             "colour" => "ChooseColour",
-            "capacity" => "ChooseCapacity",
+            PropertyAliases.Capacity => "ChooseCapacity",
             "dimensions" => "ChooseDimensions",
             "occupancy" => "ChooseOccupancy",
             "pack" => "ChoosePackSize",
@@ -60,9 +63,9 @@ internal static class ProductPage
                     new StorefrontLink(ProductOptions.Label(variant), variant.Url(), page.Key == variant.Key))
             ],
             OptionLabel = optionLabel,
-            SizeGuide = product.Value<string>("sizeGuide"),
-            Weight = product.Value<int>("weightGrams"),
-            Capacity = page.Value<string>("capacity") ?? product.Value<string>("capacity"),
+            SizeGuide = product.Value<string>(PropertyAliases.SizeGuide),
+            Weight = product.Value<int>(PropertyAliases.WeightGrams),
+            Capacity = page.Value<string>(PropertyAliases.Capacity) ?? product.Value<string>(PropertyAliases.Capacity),
             Purchase = PurchaseControls.Create(page, product, http),
             Recommendations = RecommendationPlacement.Configuration(page, http)
         };

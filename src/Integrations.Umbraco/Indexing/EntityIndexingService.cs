@@ -83,7 +83,7 @@ internal sealed class EntityIndexingService(
         await using AsyncServiceScope scope = scopeFactory.CreateAsyncScope();
 
         var clients = scope.ServiceProvider.GetRequiredService<IRelewiseClientFactory>();
-        var tracker = clients.GetClient<ITracker>(Constants.NamedClientName);
+        var tracker = clients.GetClient<ITracker>(Constants.ClientNames.Integration);
 
         var actions = new List<Trackable>();
 
@@ -98,15 +98,15 @@ internal sealed class EntityIndexingService(
                 var filters = new FilterCollection(
                     DataFilter(
                         entity.EntityType,
-                        "rwUmbracoNodeKey",
+                        RelewiseDataKeys.NodeKey,
                         new EqualsCondition(entity.NodeKey.ToString("D"))),
                     DataFilter(
                         entity.EntityType,
-                        "rwUmbracoSite",
+                        RelewiseDataKeys.Site,
                         new EqualsCondition(SiteId(scope.ServiceProvider))));
 
                 await MarkUnavailableAsync(
-                    clients.GetClient<IDataAccessor>(Constants.NamedClientName),
+                    clients.GetClient<IDataAccessor>(Constants.ClientNames.Integration),
                     tracker,
                     entity.EntityType,
                     filters,
@@ -149,7 +149,7 @@ internal sealed class EntityIndexingService(
                 .EnsureUmbracoContext();
 
             var clients = services.GetRequiredService<IRelewiseClientFactory>();
-            var tracker = clients.GetClient<ITracker>(Constants.NamedClientName);
+            var tracker = clients.GetClient<ITracker>(Constants.ClientNames.Integration);
             var strategy = services.GetRequiredService<IPublishedContentChangeStrategy>();
 
             string site = SiteId(services);
@@ -305,7 +305,7 @@ internal sealed class EntityIndexingService(
                     CoreSearchMetadata.Apply(mapped, entry.Value, siteCultures);
                 }
 
-                EntityMapper.Data(mapped.Entity)["rwUmbracoExportGeneration"] = generation;
+                EntityMapper.Data(mapped.Entity)[RelewiseDataKeys.ExportGeneration] = generation;
                 desired.Add(mapped);
             }
 
@@ -325,9 +325,9 @@ internal sealed class EntityIndexingService(
                             new FilterCollection(
                                 DataFilter(
                                     entity.Entity.GetType(),
-                                    "rwUmbracoNodeKey",
+                                    RelewiseDataKeys.NodeKey,
                                     new EqualsCondition(entity.NodeKey.ToString("D"))),
-                                DataFilter(entity.Entity.GetType(), "rwUmbracoSite", new EqualsCondition(site))),
+                                DataFilter(entity.Entity.GetType(), RelewiseDataKeys.Site, new EqualsCondition(site))),
                             false,
                             true));
                 }
@@ -369,12 +369,12 @@ internal sealed class EntityIndexingService(
                     foreach ((Guid[] Keys, bool Delete) removal in removals)
                     {
                         var filters = new FilterCollection(
-                            DataFilter(type, "rwUmbracoSite", new EqualsCondition(site)),
+                            DataFilter(type, RelewiseDataKeys.Site, new EqualsCondition(site)),
                             new OrFilter(
                             [
                                 .. group.Select(mapping => DataFilter(
                                     type,
-                                    "contentTypeAlias",
+                                    RelewiseDataKeys.DocumentTypeAlias,
                                     new EqualsCondition(mapping.DocumentTypeAlias)))
                             ]));
 
@@ -382,7 +382,7 @@ internal sealed class EntityIndexingService(
                             rebuild
                                 ? DataFilter(
                                     type,
-                                    "rwUmbracoExportGeneration",
+                                    RelewiseDataKeys.ExportGeneration,
                                     new EqualsCondition(generation, true),
                                     false)
                                 : new OrFilter(
@@ -391,14 +391,14 @@ internal sealed class EntityIndexingService(
                                         .Select(key =>
                                             DataFilter(
                                                 type,
-                                                "rwUmbracoNodeKey",
+                                                RelewiseDataKeys.NodeKey,
                                                 new EqualsCondition(key.ToString("D"))))
                                 ]));
 
                         if (type == typeof(Content) || type == typeof(Product))
                         {
                             await MarkUnavailableAsync(
-                                clients.GetClient<IDataAccessor>(Constants.NamedClientName),
+                                clients.GetClient<IDataAccessor>(Constants.ClientNames.Integration),
                                 tracker,
                                 type,
                                 filters,
@@ -460,7 +460,7 @@ internal sealed class EntityIndexingService(
                             {
                                 Assortments = null,
                                 CategoryPaths = null,
-                                Data = new Dictionary<string, DataValue?> { ["rwUmbracoPublished"] = false }
+                                Data = new Dictionary<string, DataValue?> { [RelewiseDataKeys.Published] = false }
                             },
                             ProductUpdate.UpdateKind.ReplaceProvidedProperties));
                 }
@@ -484,7 +484,7 @@ internal sealed class EntityIndexingService(
                             {
                                 Assortments = null,
                                 CategoryPaths = null,
-                                Data = new Dictionary<string, DataValue?> { ["rwUmbracoPublished"] = false }
+                                Data = new Dictionary<string, DataValue?> { [RelewiseDataKeys.Published] = false }
                             },
                             ContentUpdate.UpdateKind.ReplaceProvidedProperties));
                 }

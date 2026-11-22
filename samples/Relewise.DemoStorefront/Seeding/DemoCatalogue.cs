@@ -5,6 +5,7 @@ using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Infrastructure.Scoping;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Seeding;
 
@@ -14,9 +15,9 @@ internal static class DemoCatalogue
     {
         var content = services.GetRequiredService<IContentService>();
         var types = services.GetRequiredService<IContentTypeService>();
-        IContentType variantType = types.Get("productVariant")!;
+        IContentType variantType = types.Get(DocumentTypeAliases.ProductVariant)!;
 
-        if (!variantType.PropertyTypes.Any(property => property.Alias == "size"))
+        if (!variantType.PropertyTypes.Any(property => property.Alias == PropertyAliases.Size))
         {
             var dataTypes = services.GetRequiredService<IDataTypeService>();
             IDataType text = (await dataTypes.GetAllAsync()).First(type => type.Name == "Textstring");
@@ -25,7 +26,7 @@ internal static class DemoCatalogue
                 new PropertyType(
                     services.GetRequiredService<IShortStringHelper>(),
                     text,
-                    "size"
+                    PropertyAliases.Size
                 )
                 {
                     Name = "Size"
@@ -43,11 +44,12 @@ internal static class DemoCatalogue
                 .SelectMany(root => new[] { root }.Concat(content.GetPagedDescendants(root.Id, 0, 1000, out _)))
         ];
         IContent equipment = nodes.Single(node =>
-            node.ContentType.Alias == "productCategory" &&
-            node.GetValue<string>("categoryId") == "U19-SMOKE-EQUIPMENT");
+            node.ContentType.Alias == DocumentTypeAliases.ProductCategory &&
+            node.GetValue<string>(PropertyAliases.CategoryId) == "U19-SMOKE-EQUIPMENT");
         IContent brand = nodes.Single(node =>
-            node.ContentType.Alias == "brand" && node.GetValue<string>("brandId") == "U19-SMOKE-BRAND");
-        int template = types.Get("product")!.AllowedTemplates!.Single().Id;
+            node.ContentType.Alias == DocumentTypeAliases.Brand
+                && node.GetValue<string>(PropertyAliases.BrandId) == "U19-SMOKE-BRAND");
+        int template = types.Get(DocumentTypeAliases.Product)!.AllowedTemplates!.Single().Id;
         Guid prices = types.Get("currencyPrice")!.Key;
 
         void Publish(IContent node)
@@ -71,8 +73,9 @@ internal static class DemoCatalogue
         }
 
         var brands = new Dictionary<string, IContent> { ["U19-SMOKE-BRAND"] = brand };
-        bool distributeExisting = !nodes.Any(node => node.ContentType.Alias == "brand" &&
-                                                     node.GetValue<string>("brandId") is "FIELDWORK-RIDGEWAY"
+        bool distributeExisting = !nodes.Any(node => node.ContentType.Alias == DocumentTypeAliases.Brand &&
+                                                     node.GetValue<string>(
+                                                         PropertyAliases.BrandId) is "FIELDWORK-RIDGEWAY"
                                                          or "FIELDWORK-EMBERCAMP");
 
         foreach ((string id, string name, string description) in new[]
@@ -82,15 +85,16 @@ internal static class DemoCatalogue
                  })
         {
             IContent? additionalBrand = nodes.FirstOrDefault(node =>
-                node.ContentType.Alias == "brand" && node.GetValue<string>("brandId") == id);
+                node.ContentType.Alias == DocumentTypeAliases.Brand
+                    && node.GetValue<string>(PropertyAliases.BrandId) == id);
 
             if (additionalBrand == null)
             {
-                additionalBrand = content.Create(name, brand.ParentId, "brand");
+                additionalBrand = content.Create(name, brand.ParentId, DocumentTypeAliases.Brand);
                 additionalBrand.TemplateId = brand.TemplateId;
-                additionalBrand.SetValue("brandId", id);
-                SetText(additionalBrand, "heading", name);
-                SetText(additionalBrand, "bodyText", description);
+                additionalBrand.SetValue(PropertyAliases.BrandId, id);
+                SetText(additionalBrand, PropertyAliases.Heading, name);
+                SetText(additionalBrand, PropertyAliases.BodyText, description);
                 Publish(additionalBrand);
             }
 
@@ -107,14 +111,15 @@ internal static class DemoCatalogue
         {
             string id = "FIELDWORK-" + code.ToUpperInvariant();
             IContent? category = nodes.FirstOrDefault(node =>
-                node.ContentType.Alias == "productCategory" && node.GetValue<string>("categoryId") == id);
+                node.ContentType.Alias == DocumentTypeAliases.ProductCategory
+                    && node.GetValue<string>(PropertyAliases.CategoryId) == id);
 
             if (category == null)
             {
-                category = content.Create(name, equipment.Id, "productCategory");
+                category = content.Create(name, equipment.Id, DocumentTypeAliases.ProductCategory);
                 category.TemplateId = template;
-                SetText(category, "heading", name);
-                category.SetValue("categoryId", id);
+                SetText(category, PropertyAliases.Heading, name);
+                category.SetValue(PropertyAliases.CategoryId, id);
                 Publish(category);
             }
 
@@ -124,30 +129,31 @@ internal static class DemoCatalogue
         foreach (ProductSeed item in Products)
         {
             IContent? product = nodes.FirstOrDefault(node =>
-                node.ContentType.Alias == "product" && node.GetValue<string>("sku") == item.Sku);
+                node.ContentType.Alias == DocumentTypeAliases.Product
+                    && node.GetValue<string>(PropertyAliases.Sku) == item.Sku);
 
             if (product == null)
             {
-                product = content.Create(item.Name, categories[item.Category].Id, "product");
+                product = content.Create(item.Name, categories[item.Category].Id, DocumentTypeAliases.Product);
                 product.TemplateId = template;
-                SetText(product, "heading", item.Name);
-                product.SetValue("sku", item.Sku);
-                SetText(product, "bodyText", item.Description);
-                product.SetValue("heroImage", "/images/" + item.Image + ".svg");
+                SetText(product, PropertyAliases.Heading, item.Name);
+                product.SetValue(PropertyAliases.Sku, item.Sku);
+                SetText(product, PropertyAliases.BodyText, item.Description);
+                product.SetValue(PropertyAliases.HeroImage, "/images/" + item.Image + ".svg");
                 product.SetValue(
-                    "brand",
+                    PropertyAliases.Brand,
                     Udi.Create(Constants.UdiEntityType.Document, brands[BrandIdForSku(item.Sku)].Key).ToString());
-                product.SetValue("stock", item.Stock ?? 10 + categories[item.Category].Level * 5);
+                product.SetValue(PropertyAliases.Stock, item.Stock ?? 10 + categories[item.Category].Level * 5);
 
                 if (item.AdditionalCategory != null)
                 {
                     product.SetValue(
-                        "extraCategories",
+                        PropertyAliases.ExtraCategories,
                         JsonSerializer.Serialize(new[] { categories[item.AdditionalCategory].Key }));
                 }
 
                 product.SetValue(
-                    "listPrice",
+                    PropertyAliases.ListPrice,
                     DemoBlockValues.Prices(
                         prices,
                         ("DKK", item.Dkk),
@@ -156,7 +162,7 @@ internal static class DemoCatalogue
                     )
                 );
                 product.SetValue(
-                    "salesPrice",
+                    PropertyAliases.SalesPrice,
                     DemoBlockValues.Prices(
                         prices,
                         ("DKK", SalesPrice(item, "DKK", item.Dkk)),
@@ -170,12 +176,12 @@ internal static class DemoCatalogue
             // Upgrade the original single-Brand seed once. Never publish drafts or replace a custom Brand choice.
             if (distributeExisting && product.Published && !product.Edited &&
                 product.AvailableCultures.All(culture => product.PublishedCultures.Contains(culture)) &&
-                product.GetValue<string>("brand") ==
+                product.GetValue<string>(PropertyAliases.Brand) ==
                 Udi.Create(Constants.UdiEntityType.Document, brand.Key).ToString() &&
                 BrandIdForSku(item.Sku) != "U19-SMOKE-BRAND")
             {
                 product.SetValue(
-                    "brand",
+                    PropertyAliases.Brand,
                     Udi.Create(Constants.UdiEntityType.Document, brands[BrandIdForSku(item.Sku)].Key).ToString());
                 Publish(product);
             }
@@ -196,14 +202,14 @@ internal static class DemoCatalogue
                     or "FIELDWORK-LANTERN")
             {
                 Dictionary<string, decimal> currentPrices =
-                    StoredPriceReader.Read(product.GetValue<string>("salesPrice"));
+                    StoredPriceReader.Read(product.GetValue<string>(PropertyAliases.SalesPrice));
 
                 if (currentPrices.GetValueOrDefault("DKK") == item.Dkk &&
                     currentPrices.GetValueOrDefault("EUR") == item.Eur &&
                     currentPrices.GetValueOrDefault("USD") == item.Usd)
                 {
                     product.SetValue(
-                        "salesPrice",
+                        PropertyAliases.SalesPrice,
                         DemoBlockValues.Prices(
                             prices,
                             ("DKK", decimal.Round(item.Dkk * .8m, 2)),
@@ -221,19 +227,23 @@ internal static class DemoCatalogue
                 string sku = item.Sku + "-" + option.Label.Replace(' ', '-').ToUpperInvariant();
 
                 if (nodes.Any(node =>
-                        node.ContentType.Alias == "productVariant" && node.GetValue<string>("sku") == sku))
+                        node.ContentType.Alias == DocumentTypeAliases.ProductVariant
+                            && node.GetValue<string>(PropertyAliases.Sku) == sku))
                 {
                     continue;
                 }
 
-                IContent variant = content.Create(item.Name + " " + option.Label, product.Id, "productVariant");
+                IContent variant = content.Create(
+                    item.Name + " " + option.Label,
+                    product.Id,
+                    DocumentTypeAliases.ProductVariant);
 
                 variant.TemplateId = template;
-                SetText(variant, "heading", item.Name + " " + option.Label);
-                variant.SetValue("sku", sku);
-                SetText(variant, "bodyText", item.Description + " Available in " + option.Label + ".");
-                SetText(variant, "color", option.Color);
-                SetText(variant, "size", option.Size);
+                SetText(variant, PropertyAliases.Heading, item.Name + " " + option.Label);
+                variant.SetValue(PropertyAliases.Sku, sku);
+                SetText(variant, PropertyAliases.BodyText, item.Description + " Available in " + option.Label + ".");
+                SetText(variant, PropertyAliases.Color, option.Color);
+                SetText(variant, PropertyAliases.Size, option.Size);
                 Publish(variant);
             }
         }

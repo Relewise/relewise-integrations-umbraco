@@ -3,6 +3,7 @@ using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Infrastructure.Scoping;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Seeding;
 
@@ -12,9 +13,9 @@ internal static class DemoProductTypes
     internal static async Task EnsureAsync(IServiceProvider services)
     {
         var types = services.GetRequiredService<IContentTypeService>();
-        IContentType productType = types.Get("product")!;
+        IContentType productType = types.Get(DocumentTypeAliases.Product)!;
 
-        if (!productType.PropertyTypes.Any(property => property.Alias == "productType"))
+        if (!productType.PropertyTypes.Any(property => property.Alias == PropertyAliases.ProductType))
         {
             IDataType text =
                 (await services.GetRequiredService<IDataTypeService>().GetAllAsync()).First(type =>
@@ -24,7 +25,7 @@ internal static class DemoProductTypes
                 new PropertyType(
                     services.GetRequiredService<IShortStringHelper>(),
                     text,
-                    "productType"
+                    PropertyAliases.ProductType
                 )
                 {
                     Name = "Product type"
@@ -44,19 +45,19 @@ internal static class DemoProductTypes
                 1000,
                 out _
             ))
-            .Where(node => node.ContentType.Alias == "product");
+            .Where(node => node.ContentType.Alias == DocumentTypeAliases.Product);
 
         foreach (IContent product in products)
         {
             if (!product.Published || product.Edited ||
                 !product.AvailableCultures.All(culture => product.PublishedCultures.Contains(culture)) ||
-                !string.IsNullOrWhiteSpace(product.GetValue<string>("productType")) ||
-                !Types.TryGetValue(product.GetValue<string>("sku") ?? "", out string? type))
+                !string.IsNullOrWhiteSpace(product.GetValue<string>(PropertyAliases.ProductType)) ||
+                !Types.TryGetValue(product.GetValue<string>(PropertyAliases.Sku) ?? "", out string? type))
             {
                 continue;
             }
 
-            product.SetValue("productType", type);
+            product.SetValue(PropertyAliases.ProductType, type);
             content.Save(product);
 
             if (!content.Publish(product, [.. product.PublishedCultures]).Success)

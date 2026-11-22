@@ -1,3 +1,4 @@
+using static Relewise.DemoStorefront.DemoConstants;
 namespace Relewise.DemoStorefront.Site;
 
 // Application preferences: these are not integration configuration or Dataset boundaries.
@@ -7,8 +8,6 @@ internal sealed record DemoMarket(
     string Culture,
     string Currency)
 {
-    internal const string CookieName = "storefront-market";
-
     internal static readonly DemoMarket[] All =
     [
         new("eu", "Europe", "en-US", "EUR"),
@@ -23,7 +22,7 @@ internal sealed record DemoMarket(
             return selected;
         }
 
-        DemoMarket? saved = All.FirstOrDefault(market => market.Id == context?.Request.Cookies[CookieName]);
+        DemoMarket? saved = All.FirstOrDefault(market => market.Id == context?.Request.Cookies[Cookies.Market]);
         string? prefix = context?.Request.Path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault();
 

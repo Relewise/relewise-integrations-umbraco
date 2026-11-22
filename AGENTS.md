@@ -15,6 +15,7 @@
 - ReSharper inspections are local IDE checks and must not run in CI/CD. Keep local inspections free of warnings and errors. Fix real findings rather than disabling inspections. For genuine indirect property usage in presentation contracts and public callback contexts, use the narrow shared `.editorconfig` scopes; do not add per-model JetBrains annotations or dependencies just to silence usage warnings. Keep private-member and application-code inspections enabled. Preserve the shared ReSharper code-style settings.
 - Keep the public surface small. Document public contracts with useful XML comments matching the existing package, and preserve compatibility unless a breaking change is explicitly agreed.
 - Do not rename existing public members as part of formatting or file organization.
+- Keep integration metadata in `RelewiseDataKeys` and internal runtime names in `Constants`; keep sample schema/business names in `DemoConstants`. Separate source property aliases from exported Data keys, centralize dynamic key construction, and prefer constants owned by the supplying framework when available. Keep single-owner keys near their owner and preserve literal contract expectations in relevant tests.
 
 ## Examples, tests and local material
 
@@ -22,5 +23,6 @@
 - Organize the DemoStorefront by feature, with package examples in `Integration`, shared site presentation/context in `Site`, installation in `Setup` and seeded schema/content in `Seeding`. Match namespaces to folders; keep HTTP adapters separate from shopping operations and rendering. Keep Vue components grouped by feature under `Client/src`.
 - Render storefront pages and shared presentation in strongly typed Razor views/partials. C# prepares view models and handles application behavior; do not build page markup with HTML strings. Preserve Vue payload contracts and use encoded framework helpers for any small HTML fragments those contracts require.
 - Keep credentials, generated Umbraco databases, ad hoc smoke-test tooling and raw execution reports in ignored local files. Do not publish them with the package.
+- Keep one backend test project. Group package tests under `Mapping`, `Indexing`, `Search`, `Dashboard`, `Tracking` and `Compatibility`; keep sample tests under `DemoStorefront`. Match namespaces to folders, keep each test class focused on one responsibility, and extract shared setup only when multiple test classes need it.
 - Keep permanent backend tests focused on observable behavior, regressions and compatibility. The DemoStorefront deliberately has no frontend test suite; verify its UI in a browser. Build affected projects and run relevant backend tests after code changes.
 - Build the dashboard with `npm run build` in `src/Integrations.Umbraco/Client` when changing frontend code.

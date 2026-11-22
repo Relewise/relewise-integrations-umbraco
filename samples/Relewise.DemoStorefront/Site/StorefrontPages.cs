@@ -3,6 +3,7 @@ using Relewise.DemoStorefront.Features.Editorial;
 using Relewise.DemoStorefront.Features.Home;
 using Relewise.DemoStorefront.Features.Products;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Site;
 
@@ -10,22 +11,24 @@ internal static class StorefrontPages
 {
     internal static async Task<StorefrontPage?> CreateAsync(IPublishedContent page, HttpContext http)
     {
-        string section = page.ContentType.Alias is "article" or "localizedArticle" or "guide" ? "journal" :
-            page.ContentType.Alias == "home" ? "home" : "shop";
+        string section = page.ContentType.Alias is DocumentTypeAliases.Article or DocumentTypeAliases.LocalizedArticle
+            or DocumentTypeAliases.Guide ? "journal" :
+            page.ContentType.Alias == DocumentTypeAliases.Home ? "home" : "shop";
 
-        if (page.ContentType.Alias is "productCategory" or "folder" or "brand")
+        if (page.ContentType.Alias is DocumentTypeAliases.ProductCategory or DocumentTypeAliases.Folder
+            or DocumentTypeAliases.Brand)
         {
             return (await StorefrontListing.GetAsync(http, page)).Page;
         }
 
         return page.ContentType.Alias switch
         {
-            "home" => new StorefrontPage(
+            DocumentTypeAliases.Home => new StorefrontPage(
                 SiteContent.Title(page),
                 section,
                 "/Views/Home/Index.cshtml",
                 HomePage.Create(page, http)),
-            "product" or "productVariant" => new StorefrontPage(
+            DocumentTypeAliases.Product or DocumentTypeAliases.ProductVariant => new StorefrontPage(
                 SiteContent.Title(page),
                 section,
                 "/Views/Products/Detail.cshtml",

@@ -131,7 +131,7 @@ internal sealed class MappedEntitySearcher(
                 .Select(mapping => mapping.DocumentTypeAlias)
         ];
         var client = services.GetRequiredService<IRelewiseClientFactory>()
-            .GetClient<ISearcher>(Constants.NamedClientName);
+            .GetClient<ISearcher>(Constants.ClientNames.Integration);
 
         ContentSearchRequest Create(
             IEnumerable<UFilter> selected,
@@ -153,37 +153,40 @@ internal sealed class MappedEntitySearcher(
                 Settings = new ContentSearchSettings
                 {
                     SelectedContentProperties = new SelectedContentPropertiesSettings
-                    { DataKeys = ["rwUmbracoNodeKey"] }
+                    { DataKeys = [RelewiseDataKeys.NodeKey] }
                 }
             };
 
-            request.Filters!.Add(Equal("rwUmbracoSite", site));
+            request.Filters!.Add(Equal(RelewiseDataKeys.Site, site));
 
             if (requirePublishedPage)
             {
-                request.Filters.Add(Equal("rwUmbracoPublished", true));
+                request.Filters.Add(Equal(RelewiseDataKeys.Published, true));
             }
 
             request.Filters!.Add(
-                new OrFilter([.. sourceAliases.Select(a => (RFilter)Equal("contentTypeAlias", a))]));
+                new OrFilter([.. sourceAliases.Select(a => (RFilter)Equal(RelewiseDataKeys.DocumentTypeAlias, a))]));
             request.Filters!.Add(
                 new OrFilter(
                 [
                     .. (culture == null ? new[] { "" } : ["", culture.ToLowerInvariant()]).Select(value =>
-                        (RFilter)new ContentDataFilter(CultureKey, new ContainsCondition(value)))
+                        (RFilter)new ContentDataFilter(RelewiseDataKeys.Search.Culture, new ContainsCondition(value)))
                 ]));
             // Segment-specific queries either throw above or use only the invariant segment.
-            request.Filters!.Add(new ContentDataFilter(SegmentsKey, new ContainsCondition("")));
+            request.Filters!.Add(new ContentDataFilter(RelewiseDataKeys.Search.Segments, new ContainsCondition("")));
 
             if (accessContext?.Bypass != true)
             {
-                var allowed = new List<RFilter> { Equal(ProtectedKey, false) };
+                var allowed = new List<RFilter> { Equal(RelewiseDataKeys.Search.Protected, false) };
 
                 if (accessContext != null && accessContext.PrincipalId != Guid.Empty)
                 {
                     allowed.AddRange(
                         (accessContext.GroupIds ?? []).Append(accessContext.PrincipalId)
-                        .Select(id => new ContentDataFilter(AccessKey, new ContainsCondition(id.ToString("D")))));
+                        .Select(
+                            id => new ContentDataFilter(
+                                RelewiseDataKeys.Search.Access,
+                                new ContainsCondition(id.ToString("D")))));
                 }
 
                 request.Filters!.Add(new OrFilter([.. allowed]));
@@ -223,7 +226,7 @@ internal sealed class MappedEntitySearcher(
                     Settings = new ContentSearchSettings
                     {
                         SelectedContentProperties = new SelectedContentPropertiesSettings
-                        { DataKeys = ["rwUmbracoNodeKey"] }
+                        { DataKeys = [RelewiseDataKeys.NodeKey] }
                     }
                 };
 
@@ -240,7 +243,7 @@ internal sealed class MappedEntitySearcher(
                 outgoing.Settings.SelectedContentProperties ??= new SelectedContentPropertiesSettings();
                 outgoing.Settings.SelectedContentProperties.DataKeys =
                 [
-                    .. (outgoing.Settings.SelectedContentProperties.DataKeys ?? []).Append("rwUmbracoNodeKey")
+                    .. (outgoing.Settings.SelectedContentProperties.DataKeys ?? []).Append(RelewiseDataKeys.NodeKey)
                     .Distinct()
                 ];
 
@@ -268,7 +271,7 @@ internal sealed class MappedEntitySearcher(
                 Settings = new ProductSearchSettings
                 {
                     SelectedProductProperties = new SelectedProductPropertiesSettings
-                    { DataKeys = ["rwUmbracoNodeKey"] },
+                    { DataKeys = [RelewiseDataKeys.NodeKey] },
                     VariantRequestSettings = new VariantSearchRequestSettings { MaxVariantsPerProduct = 0 }
                 }
             };
@@ -316,7 +319,10 @@ internal sealed class MappedEntitySearcher(
             target.Settings.VariantRequestSettings.MaxVariantsPerProduct ??= 0;
             target.Settings.SelectedProductProperties ??= new SelectedProductPropertiesSettings();
             target.Settings.SelectedProductProperties.DataKeys =
-                [.. (target.Settings.SelectedProductProperties.DataKeys ?? []).Append("rwUmbracoNodeKey").Distinct()];
+                [
+                    .. (target.Settings.SelectedProductProperties.DataKeys ?? []).Append(
+                        RelewiseDataKeys.NodeKey).Distinct()
+                ];
 
             if (string.IsNullOrWhiteSpace(target.DisplayedAtLocation))
             {
@@ -430,7 +436,9 @@ internal sealed class MappedEntitySearcher(
             take == 0
                 ? []
                 : (result.Results ?? []).Select(r =>
-                    new Document(Guid.Parse(r.Data["rwUmbracoNodeKey"].ValueAs<string>()), UmbracoObjectTypes.Document))
+                    new Document(
+                        Guid.Parse(r.Data[RelewiseDataKeys.NodeKey].ValueAs<string>()),
+                        UmbracoObjectTypes.Document))
                 .ToArray(),
             facetResults,
             suggestions);

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Web;
+using static Relewise.DemoStorefront.DemoConstants;
 using static Relewise.DemoStorefront.Site.SiteContent;
 
 namespace Relewise.DemoStorefront.Site;
@@ -11,6 +12,9 @@ namespace Relewise.DemoStorefront.Site;
 internal static class StorefrontNavigation
 {
     private const string NoticeKey = "Fieldwork.Notice";
+    private const string ListingViewKey = "fieldwork-listing-view";
+    private const string ListingCollectionKey = "fieldwork-listing-collection";
+    private const string ListingQueryKey = "fieldwork-listing-query";
 
     internal static void Notify(
         HttpContext http,
@@ -53,10 +57,10 @@ internal static class StorefrontNavigation
         QueryString? query = null)
     {
         await http.Session.LoadAsync(http.RequestAborted);
-        http.Session.SetString("fieldwork-listing-collection", collection?.ToString("D") ?? "");
-        http.Session.SetString("fieldwork-listing-view", view);
+        http.Session.SetString(ListingCollectionKey, collection?.ToString("D") ?? "");
+        http.Session.SetString(ListingViewKey, view);
         http.Session.SetString(
-            "fieldwork-listing-query",
+            ListingQueryKey,
             (query ?? QueryString.Create(http.Request.Query.Where(pair => pair.Key is not ("collection" or "view"))))
             .Value ?? "");
     }
@@ -64,10 +68,10 @@ internal static class StorefrontNavigation
     internal static string ShoppingUrl(HttpContext http)
     {
         DemoMarket market = DemoMarket.Current(http);
-        string view = http.Session.GetString("fieldwork-listing-view") ?? "store";
+        string view = http.Session.GetString(ListingViewKey) ?? "store";
         string path = market.LanguagePath + (view is "search" or "offers" ? "/" + view : "/store");
 
-        if (Guid.TryParse(http.Session.GetString("fieldwork-listing-collection"), out Guid key))
+        if (Guid.TryParse(http.Session.GetString(ListingCollectionKey), out Guid key))
         {
             IPublishedContentCache cache = http.RequestServices.GetRequiredService<IUmbracoContextAccessor>()
                 .GetRequiredUmbracoContext()
@@ -80,7 +84,7 @@ internal static class StorefrontNavigation
             }
         }
 
-        return path + http.Session.GetString("fieldwork-listing-query");
+        return path + http.Session.GetString(ListingQueryKey);
     }
 
     private sealed record Notice(string Key, bool Error, string[] Values);
@@ -124,11 +128,11 @@ internal static class StorefrontNavigation
             crumbs.AddRange(
                 page.Ancestors()
                     .Reverse()
-                    .Where(node => node.ContentType.Alias == "productCategory" &&
-                                   node.Value<string>("categoryId") != "U19-SMOKE-EQUIPMENT")
+                    .Where(node => node.ContentType.Alias == DocumentTypeAliases.ProductCategory &&
+                                   node.Value<string>(PropertyAliases.CategoryId) != "U19-SMOKE-EQUIPMENT")
                     .Select(node => (Title(node), (string?)node.Url())));
 
-            if (page.ContentType.Alias == "productVariant" && page.Parent() is { } parent)
+            if (page.ContentType.Alias == DocumentTypeAliases.ProductVariant && page.Parent() is { } parent)
             {
                 crumbs.Add((Title(parent), parent.Url()));
             }

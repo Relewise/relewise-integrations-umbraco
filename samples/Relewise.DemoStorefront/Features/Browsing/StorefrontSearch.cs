@@ -7,6 +7,7 @@ using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
 using Umbraco.Cms.Core.Search.Querying.Sorting;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Features.Browsing;
 
@@ -18,10 +19,11 @@ internal sealed class StorefrontSearch(
     string? listingPath = null)
 {
     private string ListingPath => request.PathBase + (listingPath ?? request.Path.Value);
-    private bool FixedCategory => collection?.ContentType.Alias is "productCategory" or "folder";
-    private bool FixedBrand => collection?.ContentType.Alias == "brand";
-    private string PriceField => "shopPrice" + DemoMarket.Current(request.HttpContext).Currency;
-    private string SaleField => "onSale_" + DemoMarket.Current(request.HttpContext).Currency;
+    private bool FixedCategory => collection?.ContentType.Alias is DocumentTypeAliases.ProductCategory
+        or DocumentTypeAliases.Folder;
+    private bool FixedBrand => collection?.ContentType.Alias == DocumentTypeAliases.Brand;
+    private string PriceField => SearchFields.Price(DemoMarket.Current(request.HttpContext).Currency);
+    private string SaleField => DataKeys.OnSale(DemoMarket.Current(request.HttpContext).Currency);
 
     private DecimalRangeFacetRange[] PriceRanges => DemoMarket.Current(request.HttpContext).Currency == "DKK"
         ?
@@ -46,19 +48,19 @@ internal sealed class StorefrontSearch(
 
         if (collection != null)
         {
-            if (collection.ContentType.Alias == "brand")
+            if (collection.ContentType.Alias == DocumentTypeAliases.Brand)
             {
-                filters.Add(new KeywordFilter("shopBrand", [collection.Key.ToString("D")], false));
+                filters.Add(new KeywordFilter(SearchFields.Brand, [collection.Key.ToString("D")], false));
             }
             else
             {
                 string[] scopeCategories = collection.DescendantsOrSelf()
-                    .Where(node => node.ContentType.Alias == "productCategory")
+                    .Where(node => node.ContentType.Alias == DocumentTypeAliases.ProductCategory)
                     .Select(node => node.Key.ToString("D"))
                     .DefaultIfEmpty(collection.Key.ToString("D"))
                     .ToArray();
 
-                filters.Add(new KeywordFilter("shopCategory", scopeCategories, false));
+                filters.Add(new KeywordFilter(SearchFields.Category, scopeCategories, false));
             }
         }
 
@@ -78,7 +80,7 @@ internal sealed class StorefrontSearch(
 
         if (categories.Length > 0)
         {
-            filters.Add(new KeywordFilter("shopCategory", categories, false));
+            filters.Add(new KeywordFilter(SearchFields.Category, categories, false));
         }
 
         string[] brands = request.Query["brand"]
@@ -91,12 +93,12 @@ internal sealed class StorefrontSearch(
 
         if (brands.Length > 0)
         {
-            filters.Add(new KeywordFilter("shopBrand", brands, false));
+            filters.Add(new KeywordFilter(SearchFields.Brand, brands, false));
         }
 
         if (request.Query["available"] == "true")
         {
-            filters.Add(new KeywordFilter("inStock", ["true"], false));
+            filters.Add(new KeywordFilter(DataKeys.InStock, ["true"], false));
         }
 
         bool validMinimum = TryBudget("minPrice", out decimal? minimum);
@@ -139,15 +141,15 @@ internal sealed class StorefrontSearch(
 
         if (!FixedCategory)
         {
-            facets.Add(new KeywordFacet("shopCategory"));
+            facets.Add(new KeywordFacet(SearchFields.Category));
         }
 
         if (!FixedBrand)
         {
-            facets.Add(new KeywordFacet("shopBrand"));
+            facets.Add(new KeywordFacet(SearchFields.Brand));
         }
 
-        facets.Add(new KeywordFacet("inStock"));
+        facets.Add(new KeywordFacet(DataKeys.InStock));
         facets.Add(new DecimalRangeFacet(PriceField, PriceRanges));
 
         if (!offers)
@@ -190,7 +192,8 @@ internal sealed class StorefrontSearch(
 
         if (!FixedCategory)
         {
-            Dictionary<string, long> counts = (result.Facets.FirstOrDefault(facet => facet.FieldName == "shopCategory")
+            Dictionary<string, long> counts = (result.Facets.FirstOrDefault(
+                facet => facet.FieldName == SearchFields.Category)
                     ?.Values
                     .OfType<KeywordFacetValue>() ?? [])
                 .ToDictionary(value => value.Key, value => value.Count);
@@ -213,7 +216,8 @@ internal sealed class StorefrontSearch(
 
         if (!FixedBrand)
         {
-            Dictionary<string, long> counts = (result.Facets.FirstOrDefault(facet => facet.FieldName == "shopBrand")
+            Dictionary<string, long> counts = (result.Facets.FirstOrDefault(
+                facet => facet.FieldName == SearchFields.Brand)
                     ?.Values
                     .OfType<KeywordFacetValue>() ?? [])
                 .ToDictionary(value => value.Key, value => value.Count);
@@ -249,7 +253,7 @@ internal sealed class StorefrontSearch(
                     ))
                 ]));
 
-        long available = result.Facets.FirstOrDefault(facet => facet.FieldName == "inStock")
+        long available = result.Facets.FirstOrDefault(facet => facet.FieldName == DataKeys.InStock)
             ?.Values
             .OfType<KeywordFacetValue>()
             .FirstOrDefault(value => value.Key == "true")

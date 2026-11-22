@@ -3,6 +3,7 @@ using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Infrastructure.Scoping;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Seeding;
 
@@ -15,10 +16,10 @@ internal static class DemoVariantDetails
             (await services.GetRequiredService<IDataTypeService>().GetAllAsync()).First(type =>
                 type.Name == "Textstring");
         var strings = services.GetRequiredService<IShortStringHelper>();
-        IContentType productType = types.Get("product")!;
+        IContentType productType = types.Get(DocumentTypeAliases.Product)!;
         var productSchemaChanged = false;
 
-        foreach (string alias in new[] { "optionType", "sizeGuide" })
+        foreach (string alias in new[] { "optionType", PropertyAliases.SizeGuide })
         {
             if (!productType.PropertyTypes.Any(property => property.Alias == alias))
             {
@@ -26,7 +27,9 @@ internal static class DemoVariantDetails
                     new PropertyType(strings, text, alias)
                     {
                         Name = alias == "optionType" ? "Variant option type" : "Size guide",
-                        Variations = alias == "sizeGuide" ? ContentVariation.Culture : ContentVariation.Nothing
+                        Variations = alias == PropertyAliases.SizeGuide
+                            ? ContentVariation.Culture
+                            : ContentVariation.Nothing
                     });
                 productSchemaChanged = true;
             }
@@ -37,18 +40,20 @@ internal static class DemoVariantDetails
             await types.UpdateAsync(productType, Constants.Security.SuperUserKey);
         }
 
-        IContentType variantType = types.Get("productVariant")!;
+        IContentType variantType = types.Get(DocumentTypeAliases.ProductVariant)!;
         var schemaChanged = false;
 
-        foreach (string alias in new[] { "optionLabel", "capacity" })
+        foreach (string alias in new[] { PropertyAliases.OptionLabel, PropertyAliases.Capacity })
         {
             if (!variantType.PropertyTypes.Any(property => property.Alias == alias))
             {
                 variantType.AddPropertyType(
                     new PropertyType(strings, text, alias)
                     {
-                        Name = alias == "optionLabel" ? "Option label" : "Capacity",
-                        Variations = alias == "optionLabel" ? ContentVariation.Culture : ContentVariation.Nothing
+                        Name = alias == PropertyAliases.OptionLabel ? "Option label" : "Capacity",
+                        Variations = alias == PropertyAliases.OptionLabel
+                            ? ContentVariation.Culture
+                            : ContentVariation.Nothing
                     });
                 schemaChanged = true;
             }
@@ -76,9 +81,11 @@ internal static class DemoVariantDetails
         ];
 
         foreach (IContent product in nodes.Where(node =>
-                     node.ContentType.Alias == "product" && node.Published && !node.Edited))
+                     node.ContentType.Alias == DocumentTypeAliases.Product && node.Published && !node.Edited))
         {
-            if (!Specifications.TryGetValue(product.GetValue<string>("sku") ?? "", out Specification? spec))
+            if (!Specifications.TryGetValue(
+                product.GetValue<string>(PropertyAliases.Sku) ?? "",
+                out Specification? spec))
             {
                 continue;
             }
@@ -91,23 +98,24 @@ internal static class DemoVariantDetails
                 productChanged = true;
             }
 
-            if (spec.Kind == "capacity" && (string.IsNullOrWhiteSpace(product.GetValue<string>("capacity")) ||
-                                            (product.GetValue<string>("sku") == "FIELDWORK-COOKING-POT" &&
-                                             product.GetValue<string>("capacity") == "1.5 L")))
+            if (spec.Kind == PropertyAliases.Capacity && (string.IsNullOrWhiteSpace(
+                product.GetValue<string>(PropertyAliases.Capacity)) ||
+                                            (product.GetValue<string>(PropertyAliases.Sku) == "FIELDWORK-COOKING-POT" &&
+                                             product.GetValue<string>(PropertyAliases.Capacity) == "1.5 L")))
             {
-                product.SetValue("capacity", string.Join(" / ", spec.English));
+                product.SetValue(PropertyAliases.Capacity, string.Join(" / ", spec.English));
                 productChanged = true;
             }
 
-            if (product.GetValue<string>("sku") == "FIELDWORK-HIKING-GLOVES")
+            if (product.GetValue<string>(PropertyAliases.Sku) == "FIELDWORK-HIKING-GLOVES")
             {
                 foreach (string culture in product.PublishedCultures)
                 {
                     if (culture is "en-US" or "da-DK" &&
-                        string.IsNullOrWhiteSpace(product.GetValue<string>("sizeGuide", culture)))
+                        string.IsNullOrWhiteSpace(product.GetValue<string>(PropertyAliases.SizeGuide, culture)))
                     {
                         product.SetValue(
-                            "sizeGuide",
+                            PropertyAliases.SizeGuide,
                             culture == "en-US"
                                 ? "Measure around your palm at its widest point, excluding your thumb. " +
                                   "The options show " +
@@ -130,17 +138,19 @@ internal static class DemoVariantDetails
             }
 
             IEnumerable<IContent> children = nodes.Where(node =>
-                node.ParentId == product.Id && node.ContentType.Alias == "productVariant");
+                node.ParentId == product.Id && node.ContentType.Alias == DocumentTypeAliases.ProductVariant);
             string[] suffixes = spec.English.Length == 3
                 ? ["SMALL", "MEDIUM", "LARGE"]
-                : product.GetValue<string>("sku") is "FIELDWORK-REPAIR-KIT" or "FIELDWORK-PACK-COVER"
+                : product.GetValue<string>(PropertyAliases.Sku) is "FIELDWORK-REPAIR-KIT" or "FIELDWORK-PACK-COVER"
                     ? ["SMALL", "LARGE"]
                     : ["SOLO", "DUO"];
 
             foreach (IContent variant in children.Where(node => node.Published && !node.Edited))
             {
-                string sku = variant.GetValue<string>("sku") ?? "";
-                int index = Array.FindIndex(suffixes, suffix => sku == product.GetValue<string>("sku") + "-" + suffix);
+                string sku = variant.GetValue<string>(PropertyAliases.Sku) ?? "";
+                int index = Array.FindIndex(
+                    suffixes,
+                    suffix => sku == product.GetValue<string>(PropertyAliases.Sku) + "-" + suffix);
 
                 if (index < 0)
                 {
@@ -156,22 +166,25 @@ internal static class DemoVariantDetails
                         continue;
                     }
 
-                    var label = variant.GetValue<string>("optionLabel", culture);
+                    var label = variant.GetValue<string>(PropertyAliases.OptionLabel, culture);
 
                     if (string.IsNullOrWhiteSpace(label))
                     {
                         label = culture == "en-US" ? spec.English[index] : spec.Danish[index];
-                        variant.SetValue("optionLabel", label, culture);
+                        variant.SetValue(PropertyAliases.OptionLabel, label, culture);
                         changed = true;
                     }
 
                     string parentName = product.GetCultureName(culture) ?? product.Name ?? string.Empty;
-                    string previousHeading = parentName + " " + variant.GetValue<string>("size", culture);
-                    string heading = (product.GetValue<string>("heading", culture) ?? parentName) + " · " + label;
+                    string previousHeading = parentName + " " + variant.GetValue<string>(PropertyAliases.Size, culture);
+                    string heading = (product.GetValue<string>(
+                        PropertyAliases.Heading,
+                        culture) ?? parentName) + " · " + label;
 
-                    if (variant.GetValue<string>("heading", culture) == previousHeading && heading != previousHeading)
+                    if (variant.GetValue<string>(PropertyAliases.Heading, culture) == previousHeading
+                        && heading != previousHeading)
                     {
-                        variant.SetValue("heading", heading, culture);
+                        variant.SetValue(PropertyAliases.Heading, heading, culture);
                         changed = true;
                     }
                 }
@@ -181,9 +194,10 @@ internal static class DemoVariantDetails
                     continue;
                 }
 
-                if (spec.Kind == "capacity" && string.IsNullOrWhiteSpace(variant.GetValue<string>("capacity")))
+                if (spec.Kind == PropertyAliases.Capacity
+                    && string.IsNullOrWhiteSpace(variant.GetValue<string>(PropertyAliases.Capacity)))
                 {
-                    variant.SetValue("capacity", spec.English[index]);
+                    variant.SetValue(PropertyAliases.Capacity, spec.English[index]);
                 }
 
                 Publish(variant);
@@ -206,12 +220,21 @@ internal static class DemoVariantDetails
     private static readonly Dictionary<string, Specification> Specifications = new(StringComparer.Ordinal)
     {
         ["FIELDWORK-HYDRATION-RESERVOIR"] =
-            new Specification("capacity", ["1.5 L", "2 L", "3 L"], ["1.5 L", "2 L", "3 L"]),
-        ["FIELDWORK-PACKING-CUBES"] = new Specification("capacity", ["3 L", "6 L", "10 L"], ["3 L", "6 L", "10 L"]),
+            new Specification(PropertyAliases.Capacity, ["1.5 L", "2 L", "3 L"], ["1.5 L", "2 L", "3 L"]),
+        ["FIELDWORK-PACKING-CUBES"] = new Specification(
+            PropertyAliases.Capacity,
+            ["3 L", "6 L", "10 L"],
+            ["3 L", "6 L", "10 L"]),
         ["FIELDWORK-COMPRESSION-SACK"] =
-            new Specification("capacity", ["5 L", "10 L", "15 L"], ["5 L", "10 L", "15 L"]),
-        ["FIELDWORK-FRAME-BAG"] = new Specification("capacity", ["2 L", "3 L", "4 L"], ["2 L", "3 L", "4 L"]),
-        ["FIELDWORK-WATER-CARRIER"] = new Specification("capacity", ["5 L", "10 L", "15 L"], ["5 L", "10 L", "15 L"]),
+            new Specification(PropertyAliases.Capacity, ["5 L", "10 L", "15 L"], ["5 L", "10 L", "15 L"]),
+        ["FIELDWORK-FRAME-BAG"] = new Specification(
+            PropertyAliases.Capacity,
+            ["2 L", "3 L", "4 L"],
+            ["2 L", "3 L", "4 L"]),
+        ["FIELDWORK-WATER-CARRIER"] = new Specification(
+            PropertyAliases.Capacity,
+            ["5 L", "10 L", "15 L"],
+            ["5 L", "10 L", "15 L"]),
         ["FIELDWORK-MAP-POUCH"] = new Specification(
             "dimensions",
             ["A6 · 10.5 × 14.8 cm", "A5 · 14.8 × 21 cm", "A4 · 21 × 29.7 cm"],
@@ -237,21 +260,21 @@ internal static class DemoVariantDetails
         ["FIELDWORK-GEAR-STRAPS"] =
             new Specification("length", ["30 cm", "45 cm", "60 cm"], ["30 cm", "45 cm", "60 cm"]),
         ["FIELDWORK-SOCKS"] = new Specification(
-            "size",
+            PropertyAliases.Size,
             ["EU 36–39", "EU 40–43", "EU 44–47"],
             ["EU 36–39", "EU 40–43", "EU 44–47"]),
         ["FIELDWORK-RAIN-GAITERS"] = new Specification(
-            "size",
+            PropertyAliases.Size,
             ["EU 36–39", "EU 40–43", "EU 44–47"],
             ["EU 36–39", "EU 40–43", "EU 44–47"]
         ),
         ["FIELDWORK-HIKING-GLOVES"] = new Specification(
-            "size",
+            PropertyAliases.Size,
             ["S · 18–19 cm", "M · 20–21 cm", "L · 22–23 cm"],
             ["S · 18–19 cm", "M · 20–21 cm", "L · 22–23 cm"]
         ),
         ["FIELDWORK-PHONE-POUCH"] = new Specification(
-            "size",
+            PropertyAliases.Size,
             ["≤ 6.1 in", "≤ 6.7 in", "≤ 7.0 in"],
             ["≤ 6.1 in", "≤ 6.7 in", "≤ 7.0 in"]
         ),
@@ -268,7 +291,10 @@ internal static class DemoVariantDetails
             ["6 pløkker", "10 pløkker", "16 pløkker"]
         ),
         ["FIELDWORK-REPAIR-KIT"] = new Specification("pack", ["4 pieces", "8 pieces"], ["4 dele", "8 dele"]),
-        ["FIELDWORK-PACK-COVER"] = new Specification("capacity", ["20–35 L", "45–65 L"], ["20–35 L", "45–65 L"]),
+        ["FIELDWORK-PACK-COVER"] = new Specification(
+            PropertyAliases.Capacity,
+            ["20–35 L", "45–65 L"],
+            ["20–35 L", "45–65 L"]),
         ["FIELDWORK-TREKKING-TENT"] =
             new Specification("occupancy", ["1 person", "2 people"], ["1 person", "2 personer"]),
         ["FIELDWORK-CAMP-HAMMOCK"] =
@@ -276,7 +302,7 @@ internal static class DemoVariantDetails
         ["FIELDWORK-TENT-FOOTPRINT"] =
             new Specification("occupancy", ["1 person", "2 people"], ["1 person", "2 personer"]),
         ["FIELDWORK-CAMP-STOVE"] = new Specification("pack", ["1 burner", "2 burners"], ["1 blus", "2 blus"]),
-        ["FIELDWORK-COOKING-POT"] = new Specification("capacity", ["1.2 L", "2 L"], ["1.2 L", "2 L"]),
+        ["FIELDWORK-COOKING-POT"] = new Specification(PropertyAliases.Capacity, ["1.2 L", "2 L"], ["1.2 L", "2 L"]),
         ["FIELDWORK-COOKWARE"] = new Specification("occupancy", ["1 person", "2 people"], ["1 person", "2 personer"])
     };
 

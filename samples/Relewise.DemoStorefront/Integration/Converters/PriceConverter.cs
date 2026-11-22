@@ -2,6 +2,7 @@ using System.Globalization;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Mapping;
 using Umbraco.Cms.Core.Models.Blocks;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Integration.Converters;
 
@@ -40,8 +41,9 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            string? code = entry.Content.GetProperty("currency")?.GetValue()?.ToString()?.Trim().ToUpperInvariant();
-            object? amount = entry.Content.GetProperty("amount")?.GetValue();
+            string? code = entry.Content.GetProperty(
+                PropertyAliases.Currency)?.GetValue()?.ToString()?.Trim().ToUpperInvariant();
+            object? amount = entry.Content.GetProperty(PropertyAliases.Amount)?.GetValue();
 
             if (code is not { Length: 3 } || !code.All(char.IsAsciiLetterUpper) || amount == null)
             {

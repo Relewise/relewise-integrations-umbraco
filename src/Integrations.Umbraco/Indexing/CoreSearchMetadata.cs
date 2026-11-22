@@ -17,12 +17,14 @@ internal static class CoreSearchMetadata
     {
         Dictionary<string, DataValue?> data = EntityMapper.Data(entity.Entity);
 
-        data[CultureKey] = new DataValue(
+        data[RelewiseDataKeys.Search.Culture] = new DataValue(
             document.Variations.Select(v => v.Culture?.ToLowerInvariant() ?? string.Empty)
                 .Distinct());
-        data[SegmentsKey] = new DataValue(document.Variations.Select(v => v.Segment ?? string.Empty).Distinct());
-        data[ProtectedKey] = document.Protection != null;
-        data[AccessKey] = new DataValue(document.Protection?.AccessIds.Select(id => id.ToString("D")) ?? []);
+        data[RelewiseDataKeys.Search.Segments] = new DataValue(
+            document.Variations.Select(v => v.Segment ?? string.Empty).Distinct());
+        data[RelewiseDataKeys.Search.Protected] = document.Protection != null;
+        data[RelewiseDataKeys.Search.Access] = new DataValue(
+            document.Protection?.AccessIds.Select(id => id.ToString("D")) ?? []);
 
         // Retain supported default-segment metadata without blocking business-data export.
         foreach (IGrouping<string, IndexField> group in document.Fields.GroupBy(field => field.FieldName))

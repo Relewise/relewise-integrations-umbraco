@@ -4,6 +4,7 @@ using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Web;
+using static Relewise.DemoStorefront.DemoConstants;
 using static Relewise.DemoStorefront.Features.Cart.CartHttp;
 using static Relewise.DemoStorefront.Features.Cart.CartModelBuilder;
 using static Relewise.DemoStorefront.Features.Cart.CartPricing;
@@ -217,9 +218,13 @@ internal static class CartOperations
             if (!removing && !InStock(updated))
             {
                 IGrouping<Guid, PricedCartLine> exceeded = updated.GroupBy(line => line.Product.Key)
-                    .First(group => group.Sum(line => line.Line.Quantity) > group.First().Product.Value<int>("stock"));
+                    .First(
+                        group => group.Sum(
+                            line => line.Line.Quantity) > group.First().Product.Value<int>(PropertyAliases.Stock));
                 IPublishedContent product = exceeded.First().Product;
-                var stock = Math.Max(0, product.Value<int>("stock")).ToString(CultureInfo.InvariantCulture);
+                var stock = Math.Max(
+                    0,
+                    product.Value<int>(PropertyAliases.Stock)).ToString(CultureInfo.InvariantCulture);
 
                 return Error(http, "CartStockLimit", product.Name, stock);
             }

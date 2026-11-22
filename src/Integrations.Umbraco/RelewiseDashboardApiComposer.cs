@@ -20,7 +20,7 @@ public class RelewiseDashboardApiComposer : IComposer
     public void Compose(IUmbracoBuilder builder)
     {
         builder.AddBackOfficeOpenApiDocument(
-            Constants.ApiName,
+            Constants.Api.Name,
             document => document
                 .WithTitle("Relewise Dashboard Backoffice API")
                 .WithBackOfficeAuthentication()

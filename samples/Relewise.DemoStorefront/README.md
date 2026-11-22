@@ -54,6 +54,9 @@ so seeded language domains use the same host and port.
 
 [DemoConfiguration.cs](Integration/DemoConfiguration.cs) is the starting point for the fixed C#
 registration and named Content/Product search providers.
+[DemoConstants.cs](DemoConstants.cs) groups the sample's document types, property aliases,
+business Data keys and provider names. Currency-specific sale and price fields use
+shared key-building methods; package metadata uses the integration's `RelewiseDataKeys`.
 
 | Example | What it demonstrates | Source |
 | --- | --- | --- |
@@ -132,5 +135,6 @@ image payload uses a small, encoded `TagBuilder` adapter rather than page templa
 Run `npm run build` in `Client` after frontend changes, or use `npm run watch` while
 editing. The sample intentionally has no frontend test suite; verify shopping flows,
 keyboard interactions and responsive layouts in a browser against a local Dataset.
-Backend regression tests focus on the package contracts and the converters' important
-behavior. Run `dotnet test Relewise.Integrations.Umbraco.slnx` from the repository root.
+[Storefront regression tests](../../src/Integrations.Umbraco.Tests/DemoStorefront) cover
+mapping, shopping/search rules and Razor encoding within the shared backend test project.
+Run `dotnet test Relewise.Integrations.Umbraco.slnx` from the repository root.

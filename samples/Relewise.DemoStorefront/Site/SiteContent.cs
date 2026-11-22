@@ -2,6 +2,7 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Site;
 
@@ -15,7 +16,7 @@ internal static class SiteContent
             .Content;
 
         // Rendering needs published content only, not a lookup through the editing/content service.
-        if (!navigation.TryGetRootKeysOfType("home", out IEnumerable<Guid> keys))
+        if (!navigation.TryGetRootKeysOfType(DocumentTypeAliases.Home, out IEnumerable<Guid> keys))
         {
             throw new InvalidOperationException("The published demo home page could not be found.");
         }
@@ -27,21 +28,21 @@ internal static class SiteContent
     {
         IPublishedContent? equipment = home.Descendants()
             .FirstOrDefault(node =>
-                node.ContentType.Alias == "productCategory" &&
-                node.Value<string>("categoryId") == "U19-SMOKE-EQUIPMENT");
+                node.ContentType.Alias == DocumentTypeAliases.ProductCategory &&
+                node.Value<string>(PropertyAliases.CategoryId) == "U19-SMOKE-EQUIPMENT");
 
-        return equipment?.Children().Where(node => node.ContentType.Alias == "productCategory") ?? [];
+        return equipment?.Children().Where(node => node.ContentType.Alias == DocumentTypeAliases.ProductCategory) ?? [];
     }
 
     internal static IEnumerable<IPublishedContent> ShoppingBrands(IPublishedContent home)
     {
         return home.Descendants()
-            .Where(node => node.ContentType.Alias == "brand")
+            .Where(node => node.ContentType.Alias == DocumentTypeAliases.Brand)
             .OrderBy(Title, StringComparer.CurrentCultureIgnoreCase);
     }
 
     internal static string Title(IPublishedContent page)
     {
-        return page.Value<string>("heading") ?? page.Name;
+        return page.Value<string>(PropertyAliases.Heading) ?? page.Name;
     }
 }

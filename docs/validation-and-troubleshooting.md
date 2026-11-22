@@ -14,6 +14,21 @@ The [demo storefront](../samples/Relewise.DemoStorefront/README.md) contains the
 buildable examples and local acceptance-test setup. Building requires no Dataset;
 live Relewise checks require local connection settings.
 
+## Repository regression tests
+
+The [backend test project](../src/Integrations.Umbraco.Tests) contains tests grouped
+under `Mapping`, `Indexing`, `Search`, `Dashboard`, `Tracking` and `Compatibility`.
+[DemoStorefront tests](../src/Integrations.Umbraco.Tests/DemoStorefront) cover the sample's
+mapping, shopping/search rules and Razor encoding. Run them from the repository root:
+
+```powershell
+dotnet test Relewise.Integrations.Umbraco.slnx
+```
+
+These isolated and in-process tests require no running Umbraco site or Relewise API.
+They complement local storefront smoke testing; they do not replace verification
+of installation, live ingestion, search and tracking against a local Dataset.
+
 ## Connection settings
 
 The Relewise dashboard's **Connection details** section lists default and named

@@ -47,11 +47,11 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
 
         if (synchronize)
         {
-            data["url"] = new Multilingual(
+            data[RelewiseDataKeys.Url] = new Multilingual(
                 cultures
                     .Select(culture => new Multilingual.Value(culture, source.Url(culture, UrlMode.Absolute)))
                     .ToList());
-            data["createdAt"] = new DateTimeOffset(source.CreateDate).ToUnixTimeSeconds();
+            data[RelewiseDataKeys.CreatedAt] = new DateTimeOffset(source.CreateDate).ToUnixTimeSeconds();
         }
 
         ContentUpdate.UpdateKind? mappedContentKind = contentUpdateKind;
@@ -85,11 +85,11 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
             if (synchronize)
             {
                 // Legacy mappers may replace Content/Data; these fields were historically appended afterward.
-                data["url"] = new Multilingual(
+                data[RelewiseDataKeys.Url] = new Multilingual(
                     cultures.Select(culture =>
                             new Multilingual.Value(culture, source.Url(culture, UrlMode.Absolute)))
                         .ToList());
-                data["createdAt"] = new DateTimeOffset(source.CreateDate).ToUnixTimeSeconds();
+                data[RelewiseDataKeys.CreatedAt] = new DateTimeOffset(source.CreateDate).ToUnixTimeSeconds();
             }
         }
         else
@@ -290,11 +290,11 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
             data = Data(entity);
         }
 
-        data["contentTypeAlias"] = source.ContentType.Alias;
-        data["rwUmbracoNodeKey"] = source.Key.ToString("D");
-        data["rwUmbracoSite"] = siteId;
-        data["rwUmbracoPublished"] = true;
-        data[Constants.VersionKey] = version;
+        data[RelewiseDataKeys.DocumentTypeAlias] = source.ContentType.Alias;
+        data[RelewiseDataKeys.NodeKey] = source.Key.ToString("D");
+        data[RelewiseDataKeys.Site] = siteId;
+        data[RelewiseDataKeys.Published] = true;
+        data[RelewiseDataKeys.Version] = version;
 
         return result;
     }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Umbraco.Cms.Core.Dictionary;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Site;
 
@@ -24,11 +25,11 @@ internal static class Storefront
 
     internal static string Image(IPublishedContent content)
     {
-        var image = content.Value<string>("heroImage");
+        var image = content.Value<string>(PropertyAliases.HeroImage);
 
-        if (string.IsNullOrWhiteSpace(image) && content.ContentType.Alias == "productVariant")
+        if (string.IsNullOrWhiteSpace(image) && content.ContentType.Alias == DocumentTypeAliases.ProductVariant)
         {
-            image = content.Parent()?.Value<string>("heroImage");
+            image = content.Parent()?.Value<string>(PropertyAliases.HeroImage);
         }
 
         image = string.IsNullOrWhiteSpace(image) ? "/images/daypack.svg" : image;

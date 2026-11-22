@@ -39,7 +39,8 @@ internal class ExportContentService(
     {
         try
         {
-            return services.GetRequiredService<IRelewiseClientFactory>().GetClient<ITracker>(Constants.NamedClientName);
+            return services.GetRequiredService<IRelewiseClientFactory>().GetClient<ITracker>(
+                Constants.ClientNames.Integration);
         }
         catch (InvalidOperationException) { return null; }
         catch (ArgumentException) { return null; }

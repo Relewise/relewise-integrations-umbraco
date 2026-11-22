@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Antiforgery;
 using Relewise.DemoStorefront.Setup;
 using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Features.Products;
 
@@ -10,26 +11,30 @@ internal static class PurchaseControls
 {
     internal static PurchaseModel Create(IPublishedContent page, IPublishedContent product, HttpContext http)
     {
-        var stock = product.Value<int>("stock");
-        bool priced = ProductPrices.Read(product, "salesPrice", DemoMarket.Current(http).Currency) != null;
+        var stock = product.Value<int>(PropertyAliases.Stock);
+        bool priced = ProductPrices.Read(
+            product,
+            PropertyAliases.SalesPrice,
+            DemoMarket.Current(http).Currency) != null;
         string availability = Storefront.Text(
             http,
             stock <= 0 ? "OutOfStock" : !priced ? "Unavailable" : stock <= 3 ? "LowStock" : "InStock",
             stock);
         string? availableUrl = stock <= 0
-            ? (product.Parent()?.ContentType.Alias == "productCategory"
+            ? (product.Parent()?.ContentType.Alias == DocumentTypeAliases.ProductCategory
                 ? product.Parent()!.Url()
                 : DemoMarket.Current(http).StoreUrl) + "?available=true"
             : null;
         string? message = !DemoConnection.IsConfigured(http) ? Storefront.Text(http, "ShoppingDisabled") : null;
-        bool isVariant = page.ContentType.Alias == "productVariant";
+        bool isVariant = page.ContentType.Alias == DocumentTypeAliases.ProductVariant;
         var fields = new Dictionary<string, string>();
         int maximum = Math.Min(99, stock);
         string? json = null;
 
         if (message == null && stock > 0 && priced)
         {
-            if (!isVariant && product.Children().Any(node => node.ContentType.Alias == "productVariant"))
+            if (!isVariant
+                && product.Children().Any(node => node.ContentType.Alias == DocumentTypeAliases.ProductVariant))
             {
                 message = Storefront.Text(http, "SelectVariant");
             }

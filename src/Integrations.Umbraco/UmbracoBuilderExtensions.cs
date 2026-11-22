@@ -57,7 +57,7 @@ public static class UmbracoBuilderExtensions
         ArgumentNullException.ThrowIfNull(configure);
 
         builder.Services.AddRelewise(x => x.Named.Add(
-            Constants.NamedClientName,
+            Constants.ClientNames.Integration,
             clientOptions =>
             {
                 clientOptions.Tracker.Timeout = TimeSpan.FromMinutes(2);

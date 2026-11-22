@@ -12,5 +12,5 @@ namespace Relewise.Integrations.Umbraco.Controllers;
 [ApiController]
 [BackOfficeRoute("relewisedashboard/api/v{version:apiVersion}")]
 [Authorize(Policy = AuthorizationPolicies.SectionAccessContent)]
-[MapToApi(Constants.ApiName)]
+[MapToApi(Constants.Api.Name)]
 public abstract class RelewiseApiControllerBase : ControllerBase;

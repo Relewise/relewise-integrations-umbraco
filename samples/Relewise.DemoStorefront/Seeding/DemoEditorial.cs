@@ -5,6 +5,7 @@ using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Infrastructure.Scoping;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Seeding;
 
@@ -18,7 +19,7 @@ internal static class DemoEditorial
 
         scope.EagerWriteLock(Constants.Locks.ContentTree);
 
-        IContent home = content.GetRootContent().Single(node => node.ContentType.Alias == "home");
+        IContent home = content.GetRootContent().Single(node => node.ContentType.Alias == DocumentTypeAliases.Home);
 
         foreach (Story story in Stories)
         {
@@ -30,19 +31,19 @@ internal static class DemoEditorial
                 continue;
             }
 
-            IContent node = content.Create(story.EnglishTitle, home.Id, "article");
+            IContent node = content.Create(story.EnglishTitle, home.Id, DocumentTypeAliases.Article);
 
             node.Key = key;
-            node.TemplateId = types.Get("article")!.AllowedTemplates!.Single().Id;
+            node.TemplateId = types.Get(DocumentTypeAliases.Article)!.AllowedTemplates!.Single().Id;
             node.SetCultureName(story.EnglishTitle, "en-US");
             node.SetCultureName(story.DanishTitle, "da-DK");
-            node.SetValue("heading", story.EnglishTitle, "en-US");
-            node.SetValue("heading", story.DanishTitle, "da-DK");
-            node.SetValue("bodyText", story.EnglishIntro, "en-US");
-            node.SetValue("bodyText", story.DanishIntro, "da-DK");
-            node.SetValue("heroImage", "/images/" + story.Image + ".svg");
-            node.SetValue("contentRows", DemoBlockValues.Story(types, story.EnglishBody), "en-US");
-            node.SetValue("contentRows", DemoBlockValues.Story(types, story.DanishBody), "da-DK");
+            node.SetValue(PropertyAliases.Heading, story.EnglishTitle, "en-US");
+            node.SetValue(PropertyAliases.Heading, story.DanishTitle, "da-DK");
+            node.SetValue(PropertyAliases.BodyText, story.EnglishIntro, "en-US");
+            node.SetValue(PropertyAliases.BodyText, story.DanishIntro, "da-DK");
+            node.SetValue(PropertyAliases.HeroImage, "/images/" + story.Image + ".svg");
+            node.SetValue(PropertyAliases.ContentRows, DemoBlockValues.Story(types, story.EnglishBody), "en-US");
+            node.SetValue(PropertyAliases.ContentRows, DemoBlockValues.Story(types, story.DanishBody), "da-DK");
             content.Save(node);
 
             PublishResult published = content.Publish(node, ["en-US", "da-DK"]);
@@ -55,8 +56,8 @@ internal static class DemoEditorial
 
         foreach (IContent node in content.GetPagedDescendants(home.Id, 0, 1000, out _)
                      .Where(node => !node.Edited && node.Published &&
-                                    (node.ContentType.Alias == "localizedArticle" ||
-                                     (node.ContentType.Alias == "article" &&
+                                    (node.ContentType.Alias == DocumentTypeAliases.LocalizedArticle ||
+                                     (node.ContentType.Alias == DocumentTypeAliases.Article &&
                                       node.GetCultureName("en-US") is "Finding your trail"
                                           or "A slower kind of weekend"))))
         {
@@ -64,7 +65,7 @@ internal static class DemoEditorial
 
             foreach (string culture in new[] { "en-US", "da-DK" })
             {
-                foreach (string alias in new[] { "contentRows", "pageGrid" })
+                foreach (string alias in new[] { PropertyAliases.ContentRows, PropertyAliases.PageGrid })
                 {
                     if (node.GetValue<string>(alias, culture) is { } json && RefreshCopy(json) is { } updated)
                     {
@@ -97,10 +98,10 @@ internal static class DemoEditorial
                             "nætter i telt og alle eventyrene derimellem.")
                  })
         {
-            if (!home.Edited && home.Published && home.GetValue<string>("heading", culture) == oldTitle)
+            if (!home.Edited && home.Published && home.GetValue<string>(PropertyAliases.Heading, culture) == oldTitle)
             {
-                home.SetValue("heading", title, culture);
-                home.SetValue("bodyText", intro, culture);
+                home.SetValue(PropertyAliases.Heading, title, culture);
+                home.SetValue(PropertyAliases.BodyText, intro, culture);
                 homeChanged = true;
             }
         }

@@ -16,6 +16,7 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
+using static Relewise.DemoStorefront.DemoConstants;
 using static Relewise.DemoStorefront.Features.Recommendations.RecommendationRequests;
 
 namespace Relewise.DemoStorefront.Features.Recommendations;
@@ -53,16 +54,21 @@ internal static class StorefrontRecommendations
 
         IPublishedContent? page = published.GetById(key);
 
-        if (page == null || page.ContentType.Alias is not ("home" or "product" or "productVariant") || !Available(page))
+        if (page == null
+            || page.ContentType.Alias is not (DocumentTypeAliases.Home or DocumentTypeAliases.Product
+                or DocumentTypeAliases.ProductVariant)
+            || !Available(page))
         {
             return Results.NotFound();
         }
 
-        IPublishedContent product = page.ContentType.Alias == "productVariant" ? page.Parent()! : page;
+        IPublishedContent product = page.ContentType.Alias == DocumentTypeAliases.ProductVariant
+            ? page.Parent()!
+            : page;
         IPublishedContent? category = product.Parent();
-        bool isHome = page.ContentType.Alias == "home";
+        bool isHome = page.ContentType.Alias == DocumentTypeAliases.Home;
 
-        if (!Available(product) || (!isHome && category?.ContentType.Alias != "productCategory"))
+        if (!Available(product) || (!isHome && category?.ContentType.Alias != DocumentTypeAliases.ProductCategory))
         {
             return Results.NotFound();
         }
@@ -75,7 +81,7 @@ internal static class StorefrontRecommendations
         User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser();
         string site = http.RequestServices.GetRequiredService<IOptions<GlobalSettings>>().Value.Id;
 
-        var productType = product.Value<string>("productType");
+        var productType = product.Value<string>(PropertyAliases.ProductType);
         bool emptyCart = isHome && http.Request.Query["placement"] == "cart";
         bool similarEnabled = !isHome && !string.IsNullOrWhiteSpace(productType);
 
@@ -130,7 +136,8 @@ internal static class StorefrontRecommendations
 
                 foreach (ProductResult result in results)
                 {
-                    if (result.Data?.TryGetValue("rwUmbracoNodeKey", out DataValue? data) != true || data == null ||
+                    if (result.Data?.TryGetValue(RelewiseDataKeys.NodeKey, out DataValue? data) != true
+                        || data == null ||
                         !Guid.TryParse(data.ValueAs<string>(), out Guid node) || node == product.Key || !seen.Add(node))
                     {
                         continue;
@@ -138,12 +145,13 @@ internal static class StorefrontRecommendations
 
                     IPublishedContent? candidate = published.GetById(node);
 
-                    if (candidate?.ContentType.Alias != "product" || !Available(candidate) ||
+                    if (candidate?.ContentType.Alias != DocumentTypeAliases.Product || !Available(candidate) ||
                         !string.Equals(Id(candidate), result.ProductId, StringComparison.OrdinalIgnoreCase) ||
-                        !HasPrice(candidate, market) || (requireStock && candidate.Value<int>("stock") <= 0) ||
+                        !HasPrice(candidate, market) || (requireStock
+                            && candidate.Value<int>(PropertyAliases.Stock) <= 0) ||
                         (requireSimilarity && (candidate.Parent()?.Key != category!.Key ||
                                                !string.Equals(
-                                                   candidate.Value<string>("productType"),
+                                                   candidate.Value<string>(PropertyAliases.ProductType),
                                                    productType,
                                                    StringComparison.OrdinalIgnoreCase
                                                ))))
@@ -222,8 +230,8 @@ internal static class StorefrontRecommendations
                             }
 
                             IPublishedContent? example = candidate.Descendants()
-                                .FirstOrDefault(node => node.ContentType.Alias == "product" &&
-                                                        Available(node) && node.Value<int>("stock") > 0 &&
+                                .FirstOrDefault(node => node.ContentType.Alias == DocumentTypeAliases.Product &&
+                                                        Available(node) && node.Value<int>(PropertyAliases.Stock) > 0 &&
                                                         HasPrice(node, market));
 
                             if (example != null)
@@ -276,7 +284,7 @@ internal static class StorefrontRecommendations
         IPublishedContent product,
         DemoMarket market)
     {
-        return PriceConverter.Read(product.Value("salesPrice"))
+        return PriceConverter.Read(product.Value(PropertyAliases.SalesPrice))
             ?.Values?.Any(value =>
                 value.Currency.Value.Equals(market.Currency, StringComparison.OrdinalIgnoreCase)) == true;
     }

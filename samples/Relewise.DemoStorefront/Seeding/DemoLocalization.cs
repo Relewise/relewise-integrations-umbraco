@@ -4,6 +4,7 @@ using Umbraco.Cms.Core.Models.ContentEditing;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Services.OperationStatus;
 using Umbraco.Cms.Infrastructure.Scoping;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Seeding;
 
@@ -20,10 +21,17 @@ internal static class DemoLocalization
         ];
 
         // Keep the invariant values before changing the schema, so existing local edits become English variants.
-        string[] translatedFields = ["heading", "bodyText", "color", "size", "contentRows", "pageGrid"];
+        string[] translatedFields = [
+            PropertyAliases.Heading,
+            PropertyAliases.BodyText,
+            PropertyAliases.Color,
+            PropertyAliases.Size,
+            PropertyAliases.ContentRows,
+            PropertyAliases.PageGrid
+        ];
         Dictionary<Guid, (string? Name, bool Invariant, Dictionary<string, object?> Values)> snapshots = nodes
             .Where(node => !node.ContentType.VariesByCulture() ||
-                           (node.ContentType.Alias == "localizedArticle" &&
+                           (node.ContentType.Alias == DocumentTypeAliases.LocalizedArticle &&
                             node.Properties.Any(property =>
                                 translatedFields.Contains(property.Alias) &&
                                 !property.PropertyType.VariesByCulture())))
@@ -38,8 +46,15 @@ internal static class DemoLocalization
 
         foreach (string alias in new[]
                  {
-                     "home", "article", "guide", "folder", "brand", "productCategory", "product", "productVariant",
-                     "localizedArticle"
+                     DocumentTypeAliases.Home,
+                     DocumentTypeAliases.Article,
+                     DocumentTypeAliases.Guide,
+                     DocumentTypeAliases.Folder,
+                     DocumentTypeAliases.Brand,
+                     DocumentTypeAliases.ProductCategory,
+                     DocumentTypeAliases.Product,
+                     DocumentTypeAliases.ProductVariant,
+                     DocumentTypeAliases.LocalizedArticle
                  })
         {
             IContentType type = types.Get(alias)!;
@@ -64,10 +79,29 @@ internal static class DemoLocalization
 
         foreach ((string parent, string[] children) in new (string Parent, string[] Children)[]
                  {
-                     ("home", ["article", "localizedArticle", "guide", "folder", "brand", "productCategory"]),
-                     ("folder", ["article", "localizedArticle", "guide", "folder", "productCategory"]),
-                     ("productCategory", ["productCategory", "product"]),
-                     ("product", ["productVariant"])
+                     (
+                         DocumentTypeAliases.Home,
+                         [
+                             DocumentTypeAliases.Article,
+                             DocumentTypeAliases.LocalizedArticle,
+                             DocumentTypeAliases.Guide,
+                             DocumentTypeAliases.Folder,
+                             DocumentTypeAliases.Brand,
+                             DocumentTypeAliases.ProductCategory
+                         ]),
+                     (
+                         DocumentTypeAliases.Folder,
+                         [
+                             DocumentTypeAliases.Article,
+                             DocumentTypeAliases.LocalizedArticle,
+                             DocumentTypeAliases.Guide,
+                             DocumentTypeAliases.Folder,
+                             DocumentTypeAliases.ProductCategory
+                         ]),
+                     (
+                         DocumentTypeAliases.ProductCategory,
+                         [DocumentTypeAliases.ProductCategory, DocumentTypeAliases.Product]),
+                     (DocumentTypeAliases.Product, [DocumentTypeAliases.ProductVariant])
                  })
         {
             IContentType type = types.Get(parent)!;
@@ -91,8 +125,8 @@ internal static class DemoLocalization
         }
 
         var domains = services.GetRequiredService<IDomainService>();
-        IContent home = content.GetById(nodes.Single(node => node.ContentType.Alias == "home").Key)!;
-        IContent story = nodes.Single(node => node.ContentType.Alias == "localizedArticle");
+        IContent home = content.GetById(nodes.Single(node => node.ContentType.Alias == DocumentTypeAliases.Home).Key)!;
+        IContent story = nodes.Single(node => node.ContentType.Alias == DocumentTypeAliases.LocalizedArticle);
 
         // One site root gives every entity the same native culture-aware URL hierarchy.
         if (story.ParentId == -1)
@@ -142,12 +176,12 @@ internal static class DemoLocalization
                     if (translation != null)
                     {
                         node.SetCultureName(translation.Value.Name, "da-DK");
-                        node.SetValue("heading", translation.Value.Name, "da-DK");
-                        node.SetValue("bodyText", translation.Value.Body, "da-DK");
+                        node.SetValue(PropertyAliases.Heading, translation.Value.Name, "da-DK");
+                        node.SetValue(PropertyAliases.BodyText, translation.Value.Body, "da-DK");
 
-                        if (node.ContentType.Alias == "productVariant")
+                        if (node.ContentType.Alias == DocumentTypeAliases.ProductVariant)
                         {
-                            foreach (string alias in new[] { "color", "size" })
+                            foreach (string alias in new[] { PropertyAliases.Color, PropertyAliases.Size })
                             {
                                 node.SetValue(alias, TranslateOption(node.GetValue<string>(alias, "en-US")), "da-DK");
                             }
@@ -162,7 +196,7 @@ internal static class DemoLocalization
                         node.Key,
                         out (string? Name, bool Invariant, Dictionary<string, object?> Values) blocks))
                 {
-                    foreach (string alias in new[] { "contentRows", "pageGrid" })
+                    foreach (string alias in new[] { PropertyAliases.ContentRows, PropertyAliases.PageGrid })
                     {
                         if (blocks.Values.TryGetValue(alias, out object? value) && value is string json)
                         {
@@ -226,22 +260,24 @@ internal static class DemoLocalization
         IContent node,
         IContentService content)
     {
-        var sku = node.GetValue<string>("sku");
+        var sku = node.GetValue<string>(PropertyAliases.Sku);
 
-        if (node.ContentType.Alias == "productVariant")
+        if (node.ContentType.Alias == DocumentTypeAliases.ProductVariant)
         {
             IContent parent = content.GetById(node.ParentId)!;
 
-            if (!Products.TryGetValue(parent.GetValue<string>("sku") ?? "", out (string Name, string Body) product))
+            if (!Products.TryGetValue(
+                parent.GetValue<string>(PropertyAliases.Sku) ?? "",
+                out (string Name, string Body) product))
             {
                 return null;
             }
 
-            var raw = node.GetValue<string>("color", "en-US");
+            var raw = node.GetValue<string>(PropertyAliases.Color, "en-US");
 
             if (string.IsNullOrWhiteSpace(raw))
             {
-                raw = node.GetValue<string>("size", "en-US");
+                raw = node.GetValue<string>(PropertyAliases.Size, "en-US");
             }
 
             if (raw is not ("Forest" or "Sand" or "Slate" or "Rust" or "Copper" or "Moss" or "Small" or "Medium"
@@ -260,7 +296,7 @@ internal static class DemoLocalization
             return translated;
         }
 
-        return node.GetValue<string>("categoryId") switch
+        return node.GetValue<string>(PropertyAliases.CategoryId) switch
         {
             "U19-SMOKE-ADVENTURES" => ("Fieldwork oplevelser", "Find inspiration til din næste tur i det fri."),
             "U19-SMOKE-DAYHIKES" => ("Dagsture", "Udstyr til en dag på vandrestierne."),

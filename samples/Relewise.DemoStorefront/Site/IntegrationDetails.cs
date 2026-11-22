@@ -1,6 +1,7 @@
 using System.Globalization;
 using Relewise.DemoStorefront.Integration;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Site;
 
@@ -18,7 +19,7 @@ internal static class IntegrationDetails
             ("Culture", DemoMarket.Current(http).Culture)
         };
 
-        if (page.ContentType.Alias == "productVariant" && page.Parent() is { } product)
+        if (page.ContentType.Alias == DocumentTypeAliases.ProductVariant && page.Parent() is { } product)
         {
             fields.Add(("Relewise Product ID", DemoConfiguration.EntityId(product, http.RequestServices)));
             fields.Add(("Relewise Variant ID", DemoConfiguration.EntityId(page, http.RequestServices)));
@@ -27,7 +28,7 @@ internal static class IntegrationDetails
         else
         {
             fields.Add(
-                (page.ContentType.Alias == "product" ? "Relewise Product ID" : "Relewise Content ID",
+                (page.ContentType.Alias == DocumentTypeAliases.Product ? "Relewise Product ID" : "Relewise Content ID",
                     DemoConfiguration.EntityId(page, http.RequestServices)));
         }
 

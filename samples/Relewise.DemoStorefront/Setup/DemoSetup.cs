@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Setup;
 
@@ -7,7 +8,7 @@ internal static class DemoSetup
 {
     internal static bool HasRelewiseConfiguration(IConfiguration configuration)
     {
-        string? id = configuration["Relewise:DatasetId"];
+        string? id = configuration[ConfigurationKeys.DatasetId];
         string? key = configuration["Relewise:ApiKey"];
         string? server = configuration["Relewise:ServerUrl"];
 

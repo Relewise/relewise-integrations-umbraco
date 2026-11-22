@@ -8,7 +8,7 @@
     <div>
         <p class="eyebrow">Fieldwork @Text(Context, "OutdoorGoods")</p>
         <h1>@Title(Model.Page)</h1>
-        <p class="lead">@(Model.Page.Value<string>("bodyText"))</p>
+        <p class="lead">@(Model.Page.Value<string>(PropertyAliases.BodyText))</p>
         <div class="actions">
             <a class="button" href="@market.StoreUrl">@Text(Context, "ExploreCollection")</a>
             <a class="button secondary" href="@(market.StoreUrl)?type=article">@Text(Context, "ExploreJournal")</a>

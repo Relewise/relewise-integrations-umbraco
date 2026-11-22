@@ -8,6 +8,7 @@ using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Services.OperationStatus;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Cms.Infrastructure.Scoping;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Seeding;
 
@@ -19,7 +20,7 @@ internal static class DemoSeed
         IServiceProvider services = scope.ServiceProvider;
         var contentTypes = services.GetRequiredService<IContentTypeService>();
 
-        if (contentTypes.Get("product") != null)
+        if (contentTypes.Get(DocumentTypeAliases.Product) != null)
         {
             if (contentTypes.Get("currencyPrice") == null)
             {
@@ -121,7 +122,16 @@ internal static class DemoSeed
         }
 
         foreach (string alias in new[]
-                     { "home", "article", "guide", "folder", "brand", "productCategory", "product", "productVariant" })
+                     {
+                         DocumentTypeAliases.Home,
+                         DocumentTypeAliases.Article,
+                         DocumentTypeAliases.Guide,
+                         DocumentTypeAliases.Folder,
+                         DocumentTypeAliases.Brand,
+                         DocumentTypeAliases.ProductCategory,
+                         DocumentTypeAliases.Product,
+                         DocumentTypeAliases.ProductVariant
+                     })
         {
             IContentType? type = types.Get(alias);
 
@@ -130,7 +140,15 @@ internal static class DemoSeed
                 type = new ContentType(strings, -1) { Alias = alias, Name = alias, AllowedAsRoot = true };
 
                 foreach (string property in new[]
-                             { "heading", "bodyText", "heroImage", "sku", "categoryId", "brandId", "color" })
+                             {
+                                 PropertyAliases.Heading,
+                                 PropertyAliases.BodyText,
+                                 PropertyAliases.HeroImage,
+                                 PropertyAliases.Sku,
+                                 PropertyAliases.CategoryId,
+                                 PropertyAliases.BrandId,
+                                 PropertyAliases.Color
+                             })
                 {
                     type.AddPropertyType(new PropertyType(strings, text, property) { Name = property });
                 }
@@ -140,70 +158,73 @@ internal static class DemoSeed
                 await types.CreateAsync(type, Constants.Security.SuperUserKey);
             }
 
-            if (alias == "article" && !type.PropertyTypes.Any(property => property.Alias == "contentRows"))
+            if (alias == DocumentTypeAliases.Article
+                && !type.PropertyTypes.Any(property => property.Alias == PropertyAliases.ContentRows))
             {
                 type.AddPropertyType(
-                    new PropertyType(strings, schema.Blocks, "contentRows")
+                    new PropertyType(strings, schema.Blocks, PropertyAliases.ContentRows)
                     { Name = "Editorial blocks" });
-                type.AddPropertyType(new PropertyType(strings, schema.Grid, "pageGrid") { Name = "Editorial Grid" });
+                type.AddPropertyType(
+                    new PropertyType(strings, schema.Grid, PropertyAliases.PageGrid) { Name = "Editorial Grid" });
                 await types.UpdateAsync(type, Constants.Security.SuperUserKey);
             }
 
-            if (alias == "product")
+            if (alias == DocumentTypeAliases.Product)
             {
-                if (!type.PropertyTypes.Any(property => property.Alias == "listPrice"))
+                if (!type.PropertyTypes.Any(property => property.Alias == PropertyAliases.ListPrice))
                 {
                     type.AddPropertyType(
-                        new PropertyType(strings, schema.Prices, "listPrice")
+                        new PropertyType(strings, schema.Prices, PropertyAliases.ListPrice)
                         { Name = "List prices" });
                     type.AddPropertyType(
-                        new PropertyType(strings, schema.Prices, "salesPrice")
+                        new PropertyType(strings, schema.Prices, PropertyAliases.SalesPrice)
                         { Name = "Sales prices" });
                 }
 
-                if (!type.PropertyTypes.Any(property => property.Alias == "brand"))
+                if (!type.PropertyTypes.Any(property => property.Alias == PropertyAliases.Brand))
                 {
-                    type.AddPropertyType(new PropertyType(strings, picker, "brand") { Name = "Brand" });
+                    type.AddPropertyType(new PropertyType(strings, picker, PropertyAliases.Brand) { Name = "Brand" });
                 }
 
-                if (!type.PropertyTypes.Any(property => property.Alias == "extraCategories"))
+                if (!type.PropertyTypes.Any(property => property.Alias == PropertyAliases.ExtraCategories))
                 {
                     type.AddPropertyType(
-                        new PropertyType(strings, categories, "extraCategories")
+                        new PropertyType(strings, categories, PropertyAliases.ExtraCategories)
                         { Name = "Additional categories" });
                 }
 
-                if (!type.PropertyTypes.Any(property => property.Alias == "stock"))
+                if (!type.PropertyTypes.Any(property => property.Alias == PropertyAliases.Stock))
                 {
-                    type.AddPropertyType(new PropertyType(strings, numeric, "stock") { Name = "Stock" });
+                    type.AddPropertyType(new PropertyType(strings, numeric, PropertyAliases.Stock) { Name = "Stock" });
                 }
 
                 await types.UpdateAsync(type, Constants.Security.SuperUserKey);
             }
         }
 
-        if (types.Get("localizedArticle") == null)
+        if (types.Get(DocumentTypeAliases.LocalizedArticle) == null)
         {
             var localized = new ContentType(strings, -1)
             {
-                Alias = "localizedArticle",
+                Alias = DocumentTypeAliases.LocalizedArticle,
                 Name = "Localized article",
                 AllowedAsRoot = true,
                 Variations = ContentVariation.Culture
             };
 
-            foreach (string alias in new[] { "heading", "bodyText", "score" })
+            foreach (string alias in new[] { PropertyAliases.Heading, PropertyAliases.BodyText, PropertyAliases.Score })
             {
                 localized.AddPropertyType(
-                    new PropertyType(strings, alias == "score" ? numeric : text, alias)
+                    new PropertyType(strings, alias == PropertyAliases.Score ? numeric : text, alias)
                     { Name = alias, Variations = ContentVariation.Culture });
             }
 
             // The outer editors are invariant; localized values live in nested block elements.
             localized.AddPropertyType(
-                new PropertyType(strings, schema.Blocks, "contentRows")
+                new PropertyType(strings, schema.Blocks, PropertyAliases.ContentRows)
                 { Name = "Localized nested blocks" });
-            localized.AddPropertyType(new PropertyType(strings, schema.Grid, "pageGrid") { Name = "Editorial Grid" });
+            localized.AddPropertyType(
+                new PropertyType(strings, schema.Grid, PropertyAliases.PageGrid) { Name = "Editorial Grid" });
 
             localized.AllowedTemplates = [template];
             localized.SetDefaultTemplate(template);
@@ -218,7 +239,7 @@ internal static class DemoSeed
         IDomainService domains,
         IConfiguration configuration)
     {
-        int templateId = types.Get("article")!.AllowedTemplates!.Single().Id;
+        int templateId = types.Get(DocumentTypeAliases.Article)!.AllowedTemplates!.Single().Id;
         Guid priceType = types.Get("currencyPrice")!.Key;
 
         IContent Node(
@@ -248,9 +269,9 @@ internal static class DemoSeed
                             );
 
             node.TemplateId = templateId;
-            node.SetValue("heading", name);
+            node.SetValue(PropertyAliases.Heading, name);
             node.SetValue(
-                "heroImage",
+                PropertyAliases.HeroImage,
                 "/images/" + (name.Contains("flask") ? "flask" : name.Contains("shelter") ? "shelter" : "daypack") +
                 ".svg");
 
@@ -259,18 +280,21 @@ internal static class DemoSeed
                 node.SetValue(field.Key, field.Value);
             }
 
-            if (type == "product")
+            if (type == DocumentTypeAliases.Product)
             {
-                IContent brand = content.GetRootContent().Single(candidate => candidate.ContentType.Alias == "brand");
+                IContent brand = content.GetRootContent().Single(
+                    candidate => candidate.ContentType.Alias == DocumentTypeAliases.Brand);
 
-                node.SetValue("brand", Udi.Create(Constants.UdiEntityType.Document, brand.Key).ToString());
-                node.SetValue("stock", name.Contains("flask") ? 20 : name.Contains("shelter") ? 30 : 10);
+                node.SetValue(
+                    PropertyAliases.Brand,
+                    Udi.Create(Constants.UdiEntityType.Document, brand.Key).ToString());
+                node.SetValue(PropertyAliases.Stock, name.Contains("flask") ? 20 : name.Contains("shelter") ? 30 : 10);
             }
 
-            if (type == "article")
+            if (type == DocumentTypeAliases.Article)
             {
-                node.SetValue("contentRows", DemoBlockValues.EditorialList(types, false));
-                node.SetValue("pageGrid", DemoBlockValues.Grid(types));
+                node.SetValue(PropertyAliases.ContentRows, DemoBlockValues.EditorialList(types, false));
+                node.SetValue(PropertyAliases.PageGrid, DemoBlockValues.Grid(types));
             }
 
             content.Save(node);
@@ -287,55 +311,63 @@ internal static class DemoSeed
             return node;
         }
 
-        Node("Fieldwork storefront", -1, "home");
+        Node("Fieldwork storefront", -1, DocumentTypeAliases.Home);
         Node(
             "Fieldwork",
             -1,
-            "brand",
+            DocumentTypeAliases.Brand,
             new Dictionary<string, string>
             {
-                ["brandId"] = "U19-SMOKE-BRAND"
+                [PropertyAliases.BrandId] = "U19-SMOKE-BRAND"
             }
         );
 
         IContent adventures = Node(
             "Fieldwork adventures",
             -1,
-            "productCategory",
+            DocumentTypeAliases.ProductCategory,
             new Dictionary<string, string>
             {
-                ["categoryId"] = "U19-SMOKE-ADVENTURES"
+                [PropertyAliases.CategoryId] = "U19-SMOKE-ADVENTURES"
             }
         );
-        IContent folder = Node("Trail routes", adventures.Id, "folder");
+        IContent folder = Node("Trail routes", adventures.Id, DocumentTypeAliases.Folder);
         IContent hikes = Node(
             "Day hikes",
             folder.Id,
-            "productCategory",
+            DocumentTypeAliases.ProductCategory,
             new Dictionary<string, string>
             {
-                ["categoryId"] = "U19-SMOKE-DAYHIKES"
+                [PropertyAliases.CategoryId] = "U19-SMOKE-DAYHIKES"
             }
         );
         IContent category = Node(
             "Fieldwork equipment",
             -1,
-            "productCategory",
+            DocumentTypeAliases.ProductCategory,
             new Dictionary<string, string>
             {
-                ["categoryId"] = "U19-SMOKE-EQUIPMENT"
+                [PropertyAliases.CategoryId] = "U19-SMOKE-EQUIPMENT"
             }
         );
         IContent pack = Node(
             "Trail daypack",
             category.Id,
-            "product",
+            DocumentTypeAliases.Product,
             new Dictionary<string, string>
             {
-                ["sku"] = "U19-SMOKE-PACK",
-                ["listPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 899m), ("EUR", 119.95m), ("USD", 129.95m)),
-                ["salesPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 699m), ("EUR", 94.95m), ("USD", 99.95m)),
-                ["bodyText"] = "A lightweight daypack for trails, city commutes and everything between."
+                [PropertyAliases.Sku] = "U19-SMOKE-PACK",
+                [PropertyAliases.ListPrice] = DemoBlockValues.Prices(
+                    priceType,
+                    ("DKK", 899m),
+                    ("EUR", 119.95m),
+                    ("USD", 129.95m)),
+                [PropertyAliases.SalesPrice] = DemoBlockValues.Prices(
+                    priceType,
+                    ("DKK", 699m),
+                    ("EUR", 94.95m),
+                    ("USD", 99.95m)),
+                [PropertyAliases.BodyText] = "A lightweight daypack for trails, city commutes and everything between."
             }
         );
 
@@ -343,7 +375,7 @@ internal static class DemoSeed
         {
             scope.EagerWriteLock(Constants.Locks.ContentTree);
             pack.SetValue(
-                "extraCategories",
+                PropertyAliases.ExtraCategories,
                 JsonSerializer.Serialize(new[] { category.Key, hikes.Key, hikes.Key }));
             content.Save(pack);
 
@@ -358,57 +390,75 @@ internal static class DemoSeed
         Node(
             "Trail daypack Forest",
             pack.Id,
-            "productVariant",
+            DocumentTypeAliases.ProductVariant,
             new Dictionary<string, string>
             {
-                ["sku"] = "U19-SMOKE-PACK-FOREST",
-                ["color"] = "Forest",
-                ["bodyText"] = "The forest green edition of our everyday daypack."
+                [PropertyAliases.Sku] = "U19-SMOKE-PACK-FOREST",
+                [PropertyAliases.Color] = "Forest",
+                [PropertyAliases.BodyText] = "The forest green edition of our everyday daypack."
             }
         );
         Node(
             "Trail daypack Sand",
             pack.Id,
-            "productVariant",
+            DocumentTypeAliases.ProductVariant,
             new Dictionary<string, string>
             {
-                ["sku"] = "U19-SMOKE-PACK-SAND",
-                ["color"] = "Sand",
-                ["bodyText"] = "A warm sand finish, made for all seasons."
+                [PropertyAliases.Sku] = "U19-SMOKE-PACK-SAND",
+                [PropertyAliases.Color] = "Sand",
+                [PropertyAliases.BodyText] = "A warm sand finish, made for all seasons."
             }
         );
         Node(
             "Trail flask",
             category.Id,
-            "product",
+            DocumentTypeAliases.Product,
             new Dictionary<string, string>
             {
-                ["sku"] = "U19-SMOKE-FLASK",
-                ["listPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 299m), ("EUR", 39.95m), ("USD", 44.95m)),
-                ["salesPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 249m), ("EUR", 34.95m), ("USD", 36.95m)),
-                ["bodyText"] = "Keep your coffee warm and your water cool, from first light to late evening."
+                [PropertyAliases.Sku] = "U19-SMOKE-FLASK",
+                [PropertyAliases.ListPrice] = DemoBlockValues.Prices(
+                    priceType,
+                    ("DKK", 299m),
+                    ("EUR", 39.95m),
+                    ("USD", 44.95m)),
+                [PropertyAliases.SalesPrice] = DemoBlockValues.Prices(
+                    priceType,
+                    ("DKK", 249m),
+                    ("EUR", 34.95m),
+                    ("USD", 36.95m)),
+                [PropertyAliases.BodyText] =
+                    "Keep your coffee warm and your water cool, from first light to late evening."
             }
         );
         Node(
             "Camp shelter",
             category.Id,
-            "product",
+            DocumentTypeAliases.Product,
             new Dictionary<string, string>
             {
-                ["sku"] = "U19-SMOKE-SHELTER",
-                ["listPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 1999m), ("EUR", 269.95m), ("USD", 289.95m)),
-                ["salesPrice"] = DemoBlockValues.Prices(priceType, ("DKK", 1599m), ("EUR", 214.95m), ("USD", 229.95m)),
-                ["bodyText"] = "Simple shelter, thoughtful details. A place to pause on your next adventure."
+                [PropertyAliases.Sku] = "U19-SMOKE-SHELTER",
+                [PropertyAliases.ListPrice] = DemoBlockValues.Prices(
+                    priceType,
+                    ("DKK", 1999m),
+                    ("EUR", 269.95m),
+                    ("USD", 289.95m)),
+                [PropertyAliases.SalesPrice] = DemoBlockValues.Prices(
+                    priceType,
+                    ("DKK", 1599m),
+                    ("EUR", 214.95m),
+                    ("USD", 229.95m)),
+                [PropertyAliases.BodyText] =
+                    "Simple shelter, thoughtful details. A place to pause on your next adventure."
             }
         );
 
         IContent article = Node(
             "Finding your trail",
             -1,
-            "article",
+            DocumentTypeAliases.Article,
             new Dictionary<string, string>
             {
-                ["bodyText"] =
+                [PropertyAliases.BodyText] =
                     "Our field guide to getting outdoors. Choose your route, pack lightly and leave no trace."
             }
         );
@@ -416,20 +466,20 @@ internal static class DemoSeed
         Node(
             "A slower kind of weekend",
             -1,
-            "article",
+            DocumentTypeAliases.Article,
             new Dictionary<string, string>
             {
-                ["bodyText"] =
+                [PropertyAliases.BodyText] =
                     "Good coffee, a quiet campsite and time to explore. The essentials for a weekend outside."
             }
         );
         Node(
             "Packing for your first camp",
             article.Id,
-            "guide",
+            DocumentTypeAliases.Guide,
             new Dictionary<string, string>
             {
-                ["bodyText"] = "A practical packing checklist from the Fieldwork team."
+                [PropertyAliases.BodyText] = "A practical packing checklist from the Fieldwork team."
             }
         );
         using (IScope scope = scopes.CreateScope())
@@ -437,24 +487,25 @@ internal static class DemoSeed
             scope.EagerWriteLock(Constants.Locks.ContentTree);
 
             IContent localized =
-                content.GetRootContent().FirstOrDefault(node => node.ContentType.Alias == "localizedArticle") ??
+                content.GetRootContent().FirstOrDefault(
+                    node => node.ContentType.Alias == DocumentTypeAliases.LocalizedArticle) ??
                 content.Create(
                     "Across the seasons",
                     -1,
-                    "localizedArticle"
+                    DocumentTypeAliases.LocalizedArticle
                 );
 
             localized.TemplateId = templateId;
             localized.SetCultureName("Across the seasons", "en-US");
             localized.SetCultureName("Gennem årstiderne", "da-DK");
-            localized.SetValue("heading", "Across the seasons", "en-US");
-            localized.SetValue("heading", "Gennem årstiderne", "da-DK");
-            localized.SetValue("bodyText", "Find your seasonal adventure.", "en-US");
-            localized.SetValue("bodyText", "Find dit næste eventyr.", "da-DK");
-            localized.SetValue("score", 10, "en-US");
-            localized.SetValue("score", 20, "da-DK");
-            localized.SetValue("contentRows", DemoBlockValues.EditorialList(types, true));
-            localized.SetValue("pageGrid", DemoBlockValues.Grid(types));
+            localized.SetValue(PropertyAliases.Heading, "Across the seasons", "en-US");
+            localized.SetValue(PropertyAliases.Heading, "Gennem årstiderne", "da-DK");
+            localized.SetValue(PropertyAliases.BodyText, "Find your seasonal adventure.", "en-US");
+            localized.SetValue(PropertyAliases.BodyText, "Find dit næste eventyr.", "da-DK");
+            localized.SetValue(PropertyAliases.Score, 10, "en-US");
+            localized.SetValue(PropertyAliases.Score, 20, "da-DK");
+            localized.SetValue(PropertyAliases.ContentRows, DemoBlockValues.EditorialList(types, true));
+            localized.SetValue(PropertyAliases.PageGrid, DemoBlockValues.Grid(types));
             content.Save(localized);
 
             if (!content.Publish(localized, ["en-US", "da-DK"]).Success)
@@ -465,7 +516,8 @@ internal static class DemoSeed
             scope.Complete();
         }
 
-        IContent localizedRoot = content.GetRootContent().Single(node => node.ContentType.Alias == "localizedArticle");
+        IContent localizedRoot = content.GetRootContent().Single(
+            node => node.ContentType.Alias == DocumentTypeAliases.LocalizedArticle);
         Attempt<DomainUpdateResult, DomainOperationStatus> domainResult = await domains.UpdateDomainsAsync(
             localizedRoot.Key,
             new DomainsUpdateModel

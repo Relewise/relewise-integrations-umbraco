@@ -7,7 +7,7 @@
     <header class="article-header">
         <p class="eyebrow">@Text(Context, "Journal")</p>
         <h1>@Title(Model.Page)</h1>
-        <p class="lead">@(Model.Page.Value<string>("bodyText"))</p>
+        <p class="lead">@(Model.Page.Value<string>(PropertyAliases.BodyText))</p>
     </header>
     @foreach (EditorialSection block in Model.Sections)
     {

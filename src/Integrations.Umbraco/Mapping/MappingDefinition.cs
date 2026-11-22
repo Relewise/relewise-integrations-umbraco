@@ -63,8 +63,10 @@ internal sealed class MappingDefinition(Type entityType)
                 throw new InvalidOperationException($"Data key '{data.Options.DataKey}' is already mapped.");
             }
 
-            if (data.Options.DataKey is "contentTypeAlias" or "url" or "createdAt" or "UmbracoVersionId" ||
-                data.Options.DataKey.StartsWith("rwUmbraco", StringComparison.Ordinal))
+            if (data.Options.DataKey is
+                RelewiseDataKeys.DocumentTypeAlias or RelewiseDataKeys.Url or
+                RelewiseDataKeys.CreatedAt or RelewiseDataKeys.Version ||
+                data.Options.DataKey.StartsWith(RelewiseDataKeys.ReservedPrefix, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
                     $"Data key '{data.Options.DataKey}' is reserved for integration metadata.");

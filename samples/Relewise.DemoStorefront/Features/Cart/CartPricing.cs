@@ -4,6 +4,7 @@ using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Services;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Features.Cart;
 
@@ -24,16 +25,17 @@ internal static class CartPricing
             IPublishedContent? product = cache.GetById(line.ProductKey);
             IPublishedContent? variant = line.VariantKey.HasValue ? cache.GetById(line.VariantKey.Value) : null;
 
-            if (product?.ContentType.Alias != "product" || !product.Cultures.ContainsKey(market.Culture) ||
+            if (product?.ContentType.Alias != DocumentTypeAliases.Product
+                || !product.Cultures.ContainsKey(market.Culture) ||
                 access.IsProtected(product.Path).Success ||
                 line.Quantity < 1 || line.Quantity > 99 ||
-                (line.VariantKey.HasValue && (variant?.ContentType.Alias != "productVariant" ||
+                (line.VariantKey.HasValue && (variant?.ContentType.Alias != DocumentTypeAliases.ProductVariant ||
                                               access.IsProtected(variant.Path).Success ||
                                               variant.Parent()?.Key != product.Key ||
                                               !variant.Cultures.ContainsKey(market.Culture))) ||
                 (!line.VariantKey.HasValue &&
-                 product.Children().Any(node => node.ContentType.Alias == "productVariant")) ||
-                ProductPrices.Read(product, "salesPrice", market.Currency) is not { } amount)
+                 product.Children().Any(node => node.ContentType.Alias == DocumentTypeAliases.ProductVariant)) ||
+                ProductPrices.Read(product, PropertyAliases.SalesPrice, market.Currency) is not { } amount)
             {
                 if (availableOnly)
                 {
@@ -52,7 +54,9 @@ internal static class CartPricing
     internal static bool InStock(PricedCartLine[] lines)
     {
         return lines.GroupBy(line => line.Product.Key)
-            .All(group => group.Sum(line => line.Line.Quantity) <= group.First().Product.Value<int>("stock"));
+            .All(
+                group => group.Sum(
+                    line => line.Line.Quantity) <= group.First().Product.Value<int>(PropertyAliases.Stock));
     }
 
     internal static string ReviewKey(

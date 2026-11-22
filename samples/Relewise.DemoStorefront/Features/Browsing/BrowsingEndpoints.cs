@@ -1,5 +1,6 @@
 using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Features.Browsing;
 
@@ -37,7 +38,10 @@ internal static class BrowsingEndpoints
                         collection = SiteContent.Home(http.RequestServices)
                             .DescendantsOrSelf()
                             .FirstOrDefault(node =>
-                                node.Key == key && node.ContentType.Alias is "brand" or "productCategory" or "folder");
+                                node.Key == key
+                                    && node.ContentType.Alias is DocumentTypeAliases.Brand
+                                        or DocumentTypeAliases.ProductCategory
+                                        or DocumentTypeAliases.Folder);
 
                         if (collection == null)
                         {

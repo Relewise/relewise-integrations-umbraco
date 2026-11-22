@@ -21,12 +21,6 @@ namespace Relewise.Integrations.Umbraco.Search;
 
 internal static class CoreSearchTranslation
 {
-    internal const string IdKey = "rwUmbracoNodeKey";
-    internal const string CultureKey = "rwUmbracoSearchCulture";
-    internal const string SegmentsKey = "rwUmbracoSearchSegments";
-    internal const string AccessKey = "rwUmbracoSearchAccess";
-    internal const string ProtectedKey = "rwUmbracoSearchProtected";
-
     internal static RFilter MapFilter(
         UFilter filter,
         string? culture = null,
@@ -122,7 +116,9 @@ internal static class CoreSearchTranslation
         RFilter[] items = [.. filters];
 
         // Explicit false predicate for empty ORs; do not rely on backend empty-group behavior.
-        return items.Length == 0 ? new AndFilter([Equal(IdKey, ""), Negate(Equal(IdKey, ""))]) : new OrFilter(items);
+        return items.Length == 0
+            ? new AndFilter([Equal(RelewiseDataKeys.NodeKey, ""), Negate(Equal(RelewiseDataKeys.NodeKey, ""))])
+            : new OrFilter(items);
     }
 
     internal static void ApplySorting(
@@ -217,7 +213,7 @@ internal static class CoreSearchTranslation
         string kind,
         string? culture = null)
     {
-        return $"rwUmbracoField_{Uri.EscapeDataString(name)}_{kind}" +
+        return RelewiseDataKeys.Search.FieldPrefix + $"{Uri.EscapeDataString(name)}_{kind}" +
                (culture != null && (kind.StartsWith("integer", StringComparison.Ordinal) ||
                                     kind.StartsWith("decimal", StringComparison.Ordinal) ||
                                     kind.StartsWith("date", StringComparison.Ordinal))

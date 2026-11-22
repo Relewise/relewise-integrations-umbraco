@@ -4,6 +4,7 @@ using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search.Indexing;
 using Umbraco.Cms.Core.Services;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Integration.Indexing;
 
@@ -18,7 +19,7 @@ internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentI
     {
         var fields = new List<IndexField>();
 
-        if (source is not IContent product || product.ContentType.Alias != "product")
+        if (source is not IContent product || product.ContentType.Alias != DocumentTypeAliases.Product)
         {
             return Task.FromResult<IEnumerable<IndexField>>(fields);
         }
@@ -34,7 +35,7 @@ internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentI
             categories.Add(parent.Result.ToString("D"));
         }
 
-        var additional = product.GetValue<string>("extraCategories", published: published);
+        var additional = product.GetValue<string>(PropertyAliases.ExtraCategories, published: published);
 
         if (!string.IsNullOrWhiteSpace(additional))
         {
@@ -45,20 +46,20 @@ internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentI
 
         fields.Add(
             new IndexField(
-                "shopCategory",
+                SearchFields.Category,
                 new IndexValue { Keywords = categories.Distinct().ToArray() },
                 null,
                 null
             ));
 
-        var brandReference = product.GetValue<string>("brand", published: published);
+        var brandReference = product.GetValue<string>(PropertyAliases.Brand, published: published);
 
         if (!string.IsNullOrWhiteSpace(brandReference) && UdiParser.TryParse(brandReference, out Udi? brand) &&
             brand is GuidUdi brandId)
         {
             fields.Add(
                 new IndexField(
-                    "shopBrand",
+                    SearchFields.Brand,
                     new IndexValue { Keywords = [brandId.Guid.ToString("D")] },
                     null,
                     null
@@ -66,13 +67,13 @@ internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentI
         }
 
         Dictionary<string, decimal> sales =
-            StoredPriceReader.Read(product.GetValue<string>("salesPrice", published: published));
+            StoredPriceReader.Read(product.GetValue<string>(PropertyAliases.SalesPrice, published: published));
 
         foreach ((string currency, decimal amount) in sales)
         {
             fields.Add(
                 new IndexField(
-                    "shopPrice" + currency,
+                    SearchFields.Price(currency),
                     new IndexValue { Decimals = [amount] },
                     null,
                     null

@@ -4,6 +4,7 @@ using Umbraco.Cms.Core.PropertyEditors;
 using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Strings;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Seeding;
 
@@ -78,10 +79,10 @@ internal static class DemoEditorialSchema
             };
 
             created.AddPropertyType(
-                new PropertyType(strings, text, "heading")
+                new PropertyType(strings, text, PropertyAliases.Heading)
                 { Name = "Heading", Variations = created.Variations });
             created.AddPropertyType(
-                new PropertyType(strings, body, "text")
+                new PropertyType(strings, body, PropertyAliases.Text)
                 { Name = "Text", Variations = created.Variations });
             await types.CreateAsync(created, Constants.Security.SuperUserKey);
 
@@ -110,9 +111,10 @@ internal static class DemoEditorialSchema
         {
             price = new ContentType(strings, -1) { Alias = "currencyPrice", Name = "Currency price", IsElement = true };
             price.AddPropertyType(
-                new PropertyType(strings, currencies, "currency")
+                new PropertyType(strings, currencies, PropertyAliases.Currency)
                 { Name = "Currency", Mandatory = true });
-            price.AddPropertyType(new PropertyType(strings, amount, "amount") { Name = "Amount", Mandatory = true });
+            price.AddPropertyType(
+                new PropertyType(strings, amount, PropertyAliases.Amount) { Name = "Amount", Mandatory = true });
             await types.CreateAsync(price, Constants.Security.SuperUserKey);
         }
 
@@ -125,23 +127,27 @@ internal static class DemoEditorialSchema
             }
         );
 
-        IContentType editorial = await Element("editorialText", "Editorial rich text", richText);
+        IContentType editorial = await Element(DocumentTypeAliases.EditorialText, "Editorial rich text", richText);
         IContentType localizedText = await Element(
-            "localizedEditorialText",
+            DocumentTypeAliases.LocalizedEditorialText,
             "Localized editorial text",
             richText,
             true
         );
-        IContentType group = await Element("editorialGroup", "Editorial group", text);
-        IContentType localizedGroup = await Element("localizedEditorialGroup", "Localized editorial group", text, true);
-        IContentType? visibility = types.Get("editorialVisibility");
+        IContentType group = await Element(DocumentTypeAliases.EditorialGroup, "Editorial group", text);
+        IContentType localizedGroup = await Element(
+            DocumentTypeAliases.LocalizedEditorialGroup,
+            "Localized editorial group",
+            text,
+            true);
+        IContentType? visibility = types.Get(DocumentTypeAliases.EditorialVisibility);
 
         if (visibility == null)
         {
             visibility = new ContentType(strings, -1)
-            { Alias = "editorialVisibility", Name = "Editorial visibility", IsElement = true };
+            { Alias = DocumentTypeAliases.EditorialVisibility, Name = "Editorial visibility", IsElement = true };
             visibility.AddPropertyType(
-                new PropertyType(strings, boolean, "hide")
+                new PropertyType(strings, boolean, PropertyAliases.Hide)
                 { Name = "Hide from editorial text" });
             await types.CreateAsync(visibility, Constants.Security.SuperUserKey);
         }
@@ -162,10 +168,10 @@ internal static class DemoEditorialSchema
 
         foreach (IContentType container in new[] { group, localizedGroup })
         {
-            if (!container.PropertyTypes.Any(property => property.Alias == "items"))
+            if (!container.PropertyTypes.Any(property => property.Alias == PropertyAliases.Items))
             {
                 container.AddPropertyType(
-                    new PropertyType(strings, blocks, "items")
+                    new PropertyType(strings, blocks, PropertyAliases.Items)
                     { Name = "Nested editorial blocks" });
                 await types.UpdateAsync(container, Constants.Security.SuperUserKey);
             }

@@ -6,6 +6,7 @@ using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
 using Relewise.Integrations.Umbraco.Search;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Integration;
 
@@ -19,9 +20,10 @@ internal static class DemoConfiguration
             services.GetService<RelewiseUmbracoConfiguration>()?.GetContentId(content) ??
             content.ContentType.Alias switch
             {
-                "product" or "productVariant" => content.Value<string>("sku"),
-                "brand" => content.Value<string>("brandId"),
-                "productCategory" => content.Value<string>("categoryId"),
+                DocumentTypeAliases.Product
+                    or DocumentTypeAliases.ProductVariant => content.Value<string>(PropertyAliases.Sku),
+                DocumentTypeAliases.Brand => content.Value<string>(PropertyAliases.BrandId),
+                DocumentTypeAliases.ProductCategory => content.Value<string>(PropertyAliases.CategoryId),
                 _ => null
             } ?? content.Key.ToString("D");
     }
@@ -31,90 +33,96 @@ internal static class DemoConfiguration
         options.UseContentKeysAsIds = true;
 
         options.MapContent(
-            "article",
+            DocumentTypeAliases.Article,
             mapping =>
             {
-                mapping.Map(entity => entity.DisplayName, "heading");
-                mapping.MapData("bodyText");
-                mapping.MapData("heroImage");
-                mapping.MapData("contentRows", data => data.UseConverter<EditorialBlocksConverter>());
-                mapping.MapData("pageGrid", data => data.UseConverter<EditorialBlocksConverter>());
+                mapping.Map(entity => entity.DisplayName, PropertyAliases.Heading);
+                mapping.MapData(PropertyAliases.BodyText);
+                mapping.MapData(PropertyAliases.HeroImage);
+                mapping.MapData(PropertyAliases.ContentRows, data => data.UseConverter<EditorialBlocksConverter>());
+                mapping.MapData(PropertyAliases.PageGrid, data => data.UseConverter<EditorialBlocksConverter>());
                 mapping.UseMapper<EditorialMapper>(); // Runs last, after declarative fields.
             });
 
         options.MapContent(
-            "localizedArticle",
+            DocumentTypeAliases.LocalizedArticle,
             mapping =>
             {
-                mapping.Map(entity => entity.DisplayName, "heading");
-                mapping.MapData("bodyText");
-                mapping.MapData("score");
-                mapping.MapData("contentRows", data => data.UseConverter<EditorialBlocksConverter>());
-                mapping.MapData("pageGrid", data => data.UseConverter<EditorialBlocksConverter>());
+                mapping.Map(entity => entity.DisplayName, PropertyAliases.Heading);
+                mapping.MapData(PropertyAliases.BodyText);
+                mapping.MapData(PropertyAliases.Score);
+                mapping.MapData(PropertyAliases.ContentRows, data => data.UseConverter<EditorialBlocksConverter>());
+                mapping.MapData(PropertyAliases.PageGrid, data => data.UseConverter<EditorialBlocksConverter>());
                 mapping.UseMapper<EditorialMapper>(); // Aggregate only the published cultures in this export.
             });
 
 #pragma warning disable CS0618 // Deliberate example of the legacy compatibility adapter.
-        options.AddContentType("guide", mapping => mapping.UseMapper(new LegacyGuideMapper()));
+        options.AddContentType(DocumentTypeAliases.Guide, mapping => mapping.UseMapper(new LegacyGuideMapper()));
 #pragma warning restore CS0618
 
-        options.MapProductCategory("productCategory", mapping => mapping.IdFromProperty("categoryId"));
+        options.MapProductCategory(
+            DocumentTypeAliases.ProductCategory,
+            mapping => mapping.IdFromProperty(PropertyAliases.CategoryId));
 
-        options.MapBrand("brand", mapping => mapping.IdFromProperty("brandId"));
+        options.MapBrand(DocumentTypeAliases.Brand, mapping => mapping.IdFromProperty(PropertyAliases.BrandId));
 
         options.MapProduct(
-            "product",
+            DocumentTypeAliases.Product,
             mapping =>
             {
-                mapping.IdFromProperty("sku");
+                mapping.IdFromProperty(PropertyAliases.Sku);
                 // For externally managed Products, use AdministrativeActionPolicy.None() here.
 
-                mapping.Map(product => product.DisplayName, "heading");
+                mapping.Map(product => product.DisplayName, PropertyAliases.Heading);
                 mapping.Map(
                     product => product.ListPrice,
-                    "listPrice",
+                    PropertyAliases.ListPrice,
                     property => property.UseConverter<PriceConverter>());
                 mapping.Map(
                     product => product.SalesPrice,
-                    "salesPrice",
+                    PropertyAliases.SalesPrice,
                     property => property.UseConverter<PriceConverter>());
 
-                mapping.MapData("bodyText");
-                mapping.MapData("heroImage");
+                mapping.MapData(PropertyAliases.BodyText);
+                mapping.MapData(PropertyAliases.HeroImage);
 
-                mapping.BrandFrom("brand");
+                mapping.BrandFrom(PropertyAliases.Brand);
 
-                mapping.AdditionalCategoriesFrom("extraCategories");
+                mapping.AdditionalCategoriesFrom(PropertyAliases.ExtraCategories);
 
-                mapping.MapData("stock");
-                mapping.MapData("productType"); // Editable classification for genuine alternatives.
-                mapping.MapData("weightGrams");
-                mapping.MapData("capacity");
-                mapping.MapData("sizeGuide");
+                mapping.MapData(PropertyAliases.Stock);
+                mapping.MapData(PropertyAliases.ProductType); // Editable classification for genuine alternatives.
+                mapping.MapData(PropertyAliases.WeightGrams);
+                mapping.MapData(PropertyAliases.Capacity);
+                mapping.MapData(PropertyAliases.SizeGuide);
 
                 mapping.UseMapper<DemoProductMapper>(); // Enrich the SDK Product after built-in properties are mapped.
 
                 mapping.VariantsFromChildren(
-                    "productVariant",
+                    DocumentTypeAliases.ProductVariant,
                     variant =>
                     {
-                        variant.IdFromProperty("sku");
+                        variant.IdFromProperty(PropertyAliases.Sku);
 
-                        variant.Map(productVariant => productVariant.DisplayName, "heading");
+                        variant.Map(productVariant => productVariant.DisplayName, PropertyAliases.Heading);
 
-                        variant.MapData("bodyText");
-                        variant.MapData("color");
-                        variant.MapData("size");
-                        variant.MapData("optionLabel");
-                        variant.MapData("capacity");
+                        variant.MapData(PropertyAliases.BodyText);
+                        variant.MapData(PropertyAliases.Color);
+                        variant.MapData(PropertyAliases.Size);
+                        variant.MapData(PropertyAliases.OptionLabel);
+                        variant.MapData(PropertyAliases.Capacity);
                     });
             });
 
         options.SearchProviders.AddContent(
-            "articles",
+            SearchProviders.Articles,
             provider =>
             {
-                provider.DocumentTypeAliases = ["article", "localizedArticle", "guide"];
+                provider.DocumentTypeAliases = [
+                    DocumentTypeAliases.Article,
+                    DocumentTypeAliases.LocalizedArticle,
+                    DocumentTypeAliases.Guide
+                ];
 
                 provider.ConfigureRequest((request, context) =>
                 {
@@ -122,10 +130,10 @@ internal static class DemoConfiguration
                 });
             });
 
-        options.SearchProviders.AddProduct("catalogue", ConfigureProductSearch);
+        options.SearchProviders.AddProduct(SearchProviders.Catalogue, ConfigureProductSearch);
 
         options.SearchProviders.AddProduct(
-            "offers",
+            SearchProviders.Offers,
             provider =>
             {
                 ConfigureProductSearch(provider);
@@ -133,16 +141,16 @@ internal static class DemoConfiguration
                 provider.DisplayedAtLocation = "Storefront offers";
             });
 
-        options.SearchProviders.DefaultPublishedContentProviderAlias = "articles";
+        options.SearchProviders.DefaultPublishedContentProviderAlias = SearchProviders.Articles;
     }
 
     private static void ConfigureProductSearch(ProductSearchProviderOptions provider)
     {
-        provider.MapBooleanData("inStock"); // Query the same business value written by DemoProductMapper.
+        provider.MapBooleanData(DataKeys.InStock); // Query the same business value written by DemoProductMapper.
 
         foreach (DemoMarket market in DemoMarket.All)
         {
-            provider.MapBooleanData("onSale_" + market.Currency);
+            provider.MapBooleanData(DataKeys.OnSale(market.Currency));
         }
 
         provider.ConfigureRequest((request, context) =>

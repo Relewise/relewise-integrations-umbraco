@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Site;
 
@@ -19,7 +20,7 @@ internal static class DemoIllustrations
             return null;
         }
 
-        string colour = content.Value<string>("color", "en-US") switch
+        string colour = content.Value<string>(PropertyAliases.Color, "en-US") switch
         {
             "Sand" => "#aa8e62",
             "Slate" => "#4b6070",

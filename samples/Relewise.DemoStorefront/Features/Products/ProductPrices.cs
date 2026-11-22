@@ -2,6 +2,7 @@ using System.Globalization;
 using Relewise.DemoStorefront.Integration.Converters;
 using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Features.Products;
 
@@ -21,8 +22,8 @@ internal static class ProductPrices
                        CultureInfo.GetCultureInfo(market.Culture));
         }
 
-        decimal? sale = Read(product, "salesPrice", market.Currency);
-        decimal? list = Read(product, "listPrice", market.Currency);
+        decimal? sale = Read(product, PropertyAliases.SalesPrice, market.Currency);
+        decimal? list = Read(product, PropertyAliases.ListPrice, market.Currency);
         int? percent = DiscountPercentage(sale, list);
         string? savings = null;
 

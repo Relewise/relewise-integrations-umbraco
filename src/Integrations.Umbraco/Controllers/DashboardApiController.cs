@@ -116,7 +116,7 @@ public class DashboardApiController : RelewiseApiControllerBase
         {
             clientFactory = _provider.GetRequiredService<IRelewiseClientFactory>();
 
-            if (!clientFactory.Contains<ITracker>(Constants.NamedClientName))
+            if (!clientFactory.Contains<ITracker>(Constants.ClientNames.Integration))
             {
                 throw new InvalidOperationException("No clients registered.");
             }
@@ -125,13 +125,15 @@ public class DashboardApiController : RelewiseApiControllerBase
             [
                 new DashboardClientViewModel(
                     "Tracker",
-                    new ClientOptionsViewObject(clientFactory.GetOptions<ITracker>(Constants.NamedClientName))),
+                    new ClientOptionsViewObject(clientFactory.GetOptions<ITracker>(Constants.ClientNames.Integration))),
                 new DashboardClientViewModel(
                     "Searcher",
-                    new ClientOptionsViewObject(clientFactory.GetOptions<ISearcher>(Constants.NamedClientName))),
+                    new ClientOptionsViewObject(
+                        clientFactory.GetOptions<ISearcher>(Constants.ClientNames.Integration))),
                 new DashboardClientViewModel(
                     "Data accessor",
-                    new ClientOptionsViewObject(clientFactory.GetOptions<IDataAccessor>(Constants.NamedClientName)))
+                    new ClientOptionsViewObject(
+                        clientFactory.GetOptions<IDataAccessor>(Constants.ClientNames.Integration)))
             ];
         }
         catch (Exception ex)
@@ -148,7 +150,7 @@ public class DashboardApiController : RelewiseApiControllerBase
         List<NamedOptionsViewObject> clients =
         [
             .. clientFactory.ClientNames
-                .Where(x => !Constants.NamedClientName.Equals(x, StringComparison.OrdinalIgnoreCase))
+                .Where(x => !Constants.ClientNames.Integration.Equals(x, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
                 .Select(name =>
                 {

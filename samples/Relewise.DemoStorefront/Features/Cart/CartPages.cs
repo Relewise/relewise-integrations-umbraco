@@ -3,6 +3,7 @@ using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Web;
+using static Relewise.DemoStorefront.DemoConstants;
 using static Relewise.DemoStorefront.Features.Cart.CartHttp;
 using static Relewise.DemoStorefront.Features.Cart.CartModelBuilder;
 using static Relewise.DemoStorefront.Features.Cart.CartPricing;
@@ -37,7 +38,7 @@ internal static class CartPages
 
             if (checkout)
             {
-                http.Items["Fieldwork:Checkout"] = true;
+                http.Items[RequestItems.Checkout] = true;
             }
 
             List<CartLine> lines = [.. basket.Lines];
@@ -110,7 +111,7 @@ internal static class CartPages
             return Results.LocalRedirect(DemoMarket.Current(http).LanguagePath + "/cart");
         }
 
-        http.Items["Fieldwork:Checkout"] = true;
+        http.Items[RequestItems.Checkout] = true;
 
         var page = new StorefrontPage(
             Storefront.Text(http, "Confirmation"),

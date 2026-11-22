@@ -4,6 +4,8 @@ using Relewise.Client.Requests.Filters;
 using Relewise.Client.Requests.Recommendations;
 using Relewise.Client.Requests.Shared;
 using Relewise.DemoStorefront.Site;
+using Relewise.Integrations.Umbraco;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Features.Recommendations;
 
@@ -39,10 +41,10 @@ internal static class RecommendationRequests
                 SignificantProductDataFields =
                 [
                     new SignificantDataValue(
-                        "capacity",
+                        PropertyAliases.Capacity,
                         SignificantDataValue.SignificantDataValueComparer.StringSimilarity),
                     new SignificantDataValue(
-                        "weightGrams",
+                        PropertyAliases.WeightGrams,
                         SignificantDataValue.SignificantDataValueComparer.NumericPercentDifference,
                         0.25
                     )
@@ -50,9 +52,9 @@ internal static class RecommendationRequests
             }
         );
 
-        similar.Filters.Add(new ProductDataFilter("productType", new EqualsCondition(productType)));
+        similar.Filters.Add(new ProductDataFilter(DataKeys.ProductType, new EqualsCondition(productType)));
         similar.Filters.Add(new ProductCategoryIdFilter(categoryId, CategoryScope.ImmediateParent));
-        similar.Filters.Add(new ProductDataFilter("inStock", new EqualsCondition(true)));
+        similar.Filters.Add(new ProductDataFilter(DataKeys.InStock, new EqualsCondition(true)));
         ConfigureRequest(similar, market, site, productId);
 
         // The sections serve different purposes; an actual recently viewed item may also be a similar Product.
@@ -105,7 +107,7 @@ internal static class RecommendationRequests
         );
 
         ConfigureRequest(request, market, site, null);
-        request.Filters.Add(new ProductDataFilter("inStock", new EqualsCondition(true)));
+        request.Filters.Add(new ProductDataFilter(DataKeys.InStock, new EqualsCondition(true)));
 
         return request;
     }
@@ -145,13 +147,16 @@ internal static class RecommendationRequests
             request.Filters.Add(new ProductIdFilter(excludedProductId, true));
         }
 
-        request.Filters.Add(new ProductDataFilter("rwUmbracoSite", new EqualsCondition(site)));
-        request.Filters.Add(new ProductDataFilter("contentTypeAlias", new EqualsCondition("product")));
-        request.Filters.Add(new ProductDataFilter("rwUmbracoPublished", new EqualsCondition(true)));
-        request.Filters.Add(new ProductDataFilter("rwUmbracoSearchProtected", new EqualsCondition(false)));
+        request.Filters.Add(new ProductDataFilter(RelewiseDataKeys.Site, new EqualsCondition(site)));
         request.Filters.Add(
             new ProductDataFilter(
-                "rwUmbracoSearchCulture",
+                RelewiseDataKeys.DocumentTypeAlias,
+                new EqualsCondition(DocumentTypeAliases.Product)));
+        request.Filters.Add(new ProductDataFilter(RelewiseDataKeys.Published, new EqualsCondition(true)));
+        request.Filters.Add(new ProductDataFilter(RelewiseDataKeys.Search.Protected, new EqualsCondition(false)));
+        request.Filters.Add(
+            new ProductDataFilter(
+                RelewiseDataKeys.Search.Culture,
                 new ContainsCondition(market.Culture.ToLowerInvariant())));
         request.Settings.NumberOfRecommendations = VisibleCount;
         // Keep browsing history genuine: no fill or novelty replacement.
@@ -164,7 +169,7 @@ internal static class RecommendationRequests
         };
         request.Settings.SelectedProductProperties = new SelectedProductPropertiesSettings
         {
-            DataKeys = ["rwUmbracoNodeKey"]
+            DataKeys = [RelewiseDataKeys.NodeKey]
         };
     }
 }

@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Umbraco.Cms.Core.Services;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Seeding;
 
@@ -18,7 +19,12 @@ internal static class DemoBlockValues
         return Serialize(
             "Umbraco.BlockList",
             [new { contentKey = key }],
-            [Element(key, types.Get("editorialText")!.Key, Value("text", "Umbraco.RichText", RichText(markup)))],
+            [
+                Element(
+                    key,
+                    types.Get(DocumentTypeAliases.EditorialText)!.Key,
+                    Value(PropertyAliases.Text, "Umbraco.RichText", RichText(markup)))
+            ],
             [],
             [new { contentKey = key, culture = (string?)null, segment = (string?)null }]
         );
@@ -37,8 +43,11 @@ internal static class DemoBlockValues
                 .. prices.Select((price, index) => Element(
                     keys[index],
                     priceType,
-                    Value("currency", "Umbraco.DropDown.Single", JsonSerializer.Serialize(new[] { price.Currency })),
-                    Value("amount", "Umbraco.Decimal", price.Amount)
+                    Value(
+                        PropertyAliases.Currency,
+                        "Umbraco.DropDown.Single",
+                        JsonSerializer.Serialize(new[] { price.Currency })),
+                    Value(PropertyAliases.Amount, "Umbraco.Decimal", price.Amount)
                 ))
             ],
             [],
@@ -50,25 +59,27 @@ internal static class DemoBlockValues
 
     internal static string EditorialList(IContentTypeService types, bool localized)
     {
-        Guid textType = types.Get("editorialText")!.Key;
-        Guid nestedType = types.Get(localized ? "localizedEditorialText" : "editorialText")!.Key;
-        Guid groupType = types.Get(localized ? "localizedEditorialGroup" : "editorialGroup")!.Key;
-        Guid settingType = types.Get("editorialVisibility")!.Key;
+        Guid textType = types.Get(DocumentTypeAliases.EditorialText)!.Key;
+        Guid nestedType = types.Get(
+            localized ? DocumentTypeAliases.LocalizedEditorialText : DocumentTypeAliases.EditorialText)!.Key;
+        Guid groupType = types.Get(
+            localized ? DocumentTypeAliases.LocalizedEditorialGroup : DocumentTypeAliases.EditorialGroup)!.Key;
+        Guid settingType = types.Get(DocumentTypeAliases.EditorialVisibility)!.Key;
 
         var nestedKey = Guid.NewGuid();
         object[] nestedValues = localized
             ?
             [
-                Value("heading", "Umbraco.TextBox", "English nested heading", "en-US"),
+                Value(PropertyAliases.Heading, "Umbraco.TextBox", "English nested heading", "en-US"),
                 Value(
-                    "text",
+                    PropertyAliases.Text,
                     "Umbraco.RichText",
                     RichText("<p>English <strong>woodland</strong> route &amp; picnic.</p>"),
                     "en-US"
                 ),
-                Value("heading", "Umbraco.TextBox", "Dansk indlejret overskrift", "da-DK"),
+                Value(PropertyAliases.Heading, "Umbraco.TextBox", "Dansk indlejret overskrift", "da-DK"),
                 Value(
-                    "text",
+                    PropertyAliases.Text,
                     "Umbraco.RichText",
                     RichText("<p>Dansk <strong>skovtur</strong> med kaffe &amp; madpakke.</p>"),
                     "da-DK"
@@ -76,9 +87,9 @@ internal static class DemoBlockValues
             ]
             :
             [
-                Value("heading", "Umbraco.TextBox", "Nested trail advice"),
+                Value(PropertyAliases.Heading, "Umbraco.TextBox", "Nested trail advice"),
                 Value(
-                    "text",
+                    PropertyAliases.Text,
                     "Umbraco.RichText",
                     RichText("<p>Follow the <strong>woodland</strong> path &amp; refill your flask.</p>")
                 )
@@ -103,14 +114,14 @@ internal static class DemoBlockValues
         object[] groupValues = localized
             ?
             [
-                Value("heading", "Umbraco.TextBox", "Nested editorial content", "en-US"),
-                Value("heading", "Umbraco.TextBox", "Indlejret redaktionelt indhold", "da-DK"),
-                Value("items", "Umbraco.BlockList", JsonSerializer.Deserialize<JsonElement>(nested))
+                Value(PropertyAliases.Heading, "Umbraco.TextBox", "Nested editorial content", "en-US"),
+                Value(PropertyAliases.Heading, "Umbraco.TextBox", "Indlejret redaktionelt indhold", "da-DK"),
+                Value(PropertyAliases.Items, "Umbraco.BlockList", JsonSerializer.Deserialize<JsonElement>(nested))
             ]
             :
             [
-                Value("heading", "Umbraco.TextBox", "Nested editorial content"),
-                Value("items", "Umbraco.BlockList", JsonSerializer.Deserialize<JsonElement>(nested))
+                Value(PropertyAliases.Heading, "Umbraco.TextBox", "Nested editorial content"),
+                Value(PropertyAliases.Items, "Umbraco.BlockList", JsonSerializer.Deserialize<JsonElement>(nested))
             ];
 
         object[] exposure =
@@ -133,9 +144,9 @@ internal static class DemoBlockValues
                 Element(
                     textKey,
                     textType,
-                    Value("heading", "Umbraco.TextBox", "Ready for the outdoors"),
+                    Value(PropertyAliases.Heading, "Umbraco.TextBox", "Ready for the outdoors"),
                     Value(
-                        "text",
+                        PropertyAliases.Text,
                         "Umbraco.RichText",
                         RichText("<p>Bring a <strong>reusable flask</strong> and enjoy the quiet outdoors.</p>")
                     )
@@ -144,19 +155,22 @@ internal static class DemoBlockValues
                 Element(
                     hiddenKey,
                     textType,
-                    Value("heading", "Umbraco.TextBox", "Hidden block example"),
-                    Value("text", "Umbraco.RichText", RichText("<p>Hidden editorial marker: secret-list-note.</p>"))
+                    Value(PropertyAliases.Heading, "Umbraco.TextBox", "Hidden block example"),
+                    Value(
+                        PropertyAliases.Text,
+                        "Umbraco.RichText",
+                        RichText("<p>Hidden editorial marker: secret-list-note.</p>"))
                 )
             ],
-            [Element(settingsKey, settingType, Value("hide", "Umbraco.TrueFalse", true))],
+            [Element(settingsKey, settingType, Value(PropertyAliases.Hide, "Umbraco.TrueFalse", true))],
             exposure
         );
     }
 
     internal static string Grid(IContentTypeService types)
     {
-        Guid groupType = types.Get("editorialGroup")!.Key;
-        Guid textType = types.Get("editorialText")!.Key;
+        Guid groupType = types.Get(DocumentTypeAliases.EditorialGroup)!.Key;
+        Guid textType = types.Get(DocumentTypeAliases.EditorialText)!.Key;
 
         var parent = Guid.NewGuid();
         var child = Guid.NewGuid();
@@ -169,29 +183,34 @@ internal static class DemoBlockValues
             "Umbraco.BlockGrid",
             [GridItem(parent, child), GridItem(hidden, hiddenChild, settings)],
             [
-                Element(parent, groupType, Value("heading", "Umbraco.TextBox", "Grid adventure planner")),
+                Element(parent, groupType, Value(PropertyAliases.Heading, "Umbraco.TextBox", "Grid adventure planner")),
                 Element(
                     child,
                     textType,
-                    Value("heading", "Umbraco.TextBox", "Inside the Grid area"),
+                    Value(PropertyAliases.Heading, "Umbraco.TextBox", "Inside the Grid area"),
                     Value(
-                        "text",
+                        PropertyAliases.Text,
                         "Umbraco.RichText",
                         RichText("<p>Pack a <em>lightweight picnic</em> for the ridge trail.</p>")
                     )
                 ),
-                Element(hidden, groupType, Value("heading", "Umbraco.TextBox", "Hidden Grid container")),
+                Element(hidden, groupType, Value(PropertyAliases.Heading, "Umbraco.TextBox", "Hidden Grid container")),
                 Element(
                     hiddenChild,
                     textType,
                     Value(
-                        "text",
+                        PropertyAliases.Text,
                         "Umbraco.RichText",
                         RichText("<p>Hidden child marker: secret-grid-note.</p>")
                     )
                 )
             ],
-            [Element(settings, types.Get("editorialVisibility")!.Key, Value("hide", "Umbraco.TrueFalse", true))],
+            [
+                Element(
+                    settings,
+                    types.Get(DocumentTypeAliases.EditorialVisibility)!.Key,
+                    Value(PropertyAliases.Hide, "Umbraco.TrueFalse", true))
+            ],
             [
                 .. new[] { parent, child, hidden, hiddenChild }.Select(key => (object)new
                 {

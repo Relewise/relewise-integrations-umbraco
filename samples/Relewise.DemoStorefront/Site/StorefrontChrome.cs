@@ -5,6 +5,7 @@ using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Site;
 
@@ -21,7 +22,7 @@ internal static class StorefrontChrome
         http.RequestServices.GetRequiredService<IVariationContextAccessor>().VariationContext =
             new VariationContext(market.Culture);
 
-        bool checkout = http.Items.ContainsKey("Fieldwork:Checkout");
+        bool checkout = http.Items.ContainsKey(RequestItems.Checkout);
         using UmbracoContextReference context =
             http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
         IPublishedContent home = SiteContent.Home(http.RequestServices);
@@ -125,7 +126,7 @@ internal static class StorefrontChrome
             JournalUrl = market.StoreUrl + "?type=article",
 
             DatasetId = DemoConnection.IsConfigured(http)
-                ? http.RequestServices.GetRequiredService<IConfiguration>()["Relewise:DatasetId"]
+                ? http.RequestServices.GetRequiredService<IConfiguration>()[ConfigurationKeys.DatasetId]
                 : null,
 
             Count = CartStateStore.Count(http),

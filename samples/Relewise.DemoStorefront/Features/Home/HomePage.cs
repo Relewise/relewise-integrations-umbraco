@@ -3,6 +3,7 @@ using Relewise.DemoStorefront.Features.Recommendations;
 using Relewise.DemoStorefront.Setup;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
+using static Relewise.DemoStorefront.DemoConstants;
 using static Relewise.DemoStorefront.Site.SiteContent;
 using static Relewise.DemoStorefront.Site.StorefrontNavigation;
 
@@ -23,13 +24,15 @@ internal static class HomePage
                 ? []
                 :
                 [
-                    .. nodes.Where(node => node.ContentType.Alias == "product")
+                    .. nodes.Where(node => node.ContentType.Alias == DocumentTypeAliases.Product)
                         .OrderBy(Title, StringComparer.CurrentCulture)
                         .Take(3)
                         .Select(page => ListingCards.CardData(page, http))
                 ],
             [
-                .. nodes.Where(node => node.ContentType.Alias is "article" or "localizedArticle")
+                .. nodes.Where(
+                    node => node.ContentType.Alias is DocumentTypeAliases.Article
+                        or DocumentTypeAliases.LocalizedArticle)
                     .OrderByDescending(node => node.CreateDate)
                     .ThenBy(Title, StringComparer.CurrentCulture)
                     .Take(3)

@@ -1,6 +1,7 @@
 using Relewise.Client.DataTypes;
 using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco.Mapping;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Integration.Mapping;
 
@@ -10,7 +11,7 @@ internal sealed class DemoProductMapper : IEntityMapper<Product>
     public Task MapAsync(EntityMappingContext<Product> context, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        Apply(context.Entity, context.PublishedContent.Value<int>("stock"));
+        Apply(context.Entity, context.PublishedContent.Value<int>(PropertyAliases.Stock));
 
         return Task.CompletedTask;
     }
@@ -20,7 +21,7 @@ internal sealed class DemoProductMapper : IEntityMapper<Product>
         int stock)
     {
         product.Data ??= new Dictionary<string, DataValue?>();
-        product.Data["inStock"] = stock > 0;
+        product.Data[DataKeys.InStock] = stock > 0;
 
         Dictionary<string, decimal> sales = Amounts(product.SalesPrice);
         Dictionary<string, decimal> list = Amounts(product.ListPrice);
@@ -30,7 +31,7 @@ internal sealed class DemoProductMapper : IEntityMapper<Product>
                      .Concat(list.Keys)
                      .Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            product.Data["onSale_" + currency] = sales.TryGetValue(currency, out decimal amount) &&
+            product.Data[DataKeys.OnSale(currency)] = sales.TryGetValue(currency, out decimal amount) &&
                                                  list.TryGetValue(currency, out decimal original) && amount < original;
         }
     }

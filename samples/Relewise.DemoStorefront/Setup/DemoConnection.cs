@@ -2,6 +2,7 @@ using System.Text.Json;
 using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
 using Umbraco.Cms.Core.Search;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Setup;
 
@@ -23,7 +24,7 @@ internal static class DemoConnection
                http.RequestServices
                    .GetRequiredService<
                        ISearcherResolver>()
-                   .GetSearcher("catalogue") != null;
+                   .GetSearcher(SearchProviders.Catalogue) != null;
     }
 
     internal static StorefrontResponse Unavailable(HttpContext http, bool json)

@@ -70,6 +70,11 @@ callers must handle unavailable pages and any commerce destinations themselves.
 `AdministrativeActions` is configured independently; this option does not enable
 a disabled Product.
 
+For application-level SDK filters and selected Data fields, use the supported metadata
+constants in [RelewiseDataKeys](../src/Integrations.Umbraco/RelewiseDataKeys.cs). These
+cover source identity, site, document type, publication, culture and protection;
+export bookkeeping and search projection keys remain internal.
+
 `AddRelewise` registers **one indexing pipeline**, using Umbraco's published-content
 change and rebuild flow. It exports the configured entities whether or not query
 providers are registered. Notification handlers do not run a second export.

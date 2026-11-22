@@ -1,4 +1,5 @@
 using Relewise.Integrations.Umbraco;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Integration.Converters;
 
@@ -7,7 +8,7 @@ internal sealed class ImageUrlConverter(IConfiguration configuration) : IAsyncRe
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
-        return context.Property.Alias == "heroImage";
+        return context.Property.Alias == PropertyAliases.HeroImage;
     }
 
     public ValueTask ConvertAsync(

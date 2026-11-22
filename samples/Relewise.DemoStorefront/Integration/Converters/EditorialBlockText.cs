@@ -4,14 +4,23 @@ using HtmlAgilityPack;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Strings;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Integration.Converters;
 
 internal static class EditorialBlockText
 {
     // Only these example properties contribute text. Add your own aliases intentionally.
-    private static readonly string[] TextFields = ["heading", "text", "caption"];
-    private static readonly string[] NestedFields = ["items", "contentRows", "pageGrid"];
+    private static readonly string[] TextFields = [
+        PropertyAliases.Heading,
+        PropertyAliases.Text,
+        PropertyAliases.Caption
+    ];
+    private static readonly string[] NestedFields = [
+        PropertyAliases.Items,
+        PropertyAliases.ContentRows,
+        PropertyAliases.PageGrid
+    ];
 
     public static string ExtractProperty(
         IPublishedProperty property,
@@ -134,7 +143,7 @@ internal static class EditorialBlockText
 
     private static bool IsHidden(IPublishedElement? settings, string culture)
     {
-        return settings?.GetProperty("hide")?.GetValue(culture) is true;
+        return settings?.GetProperty(PropertyAliases.Hide)?.GetValue(culture) is true;
     }
 
     private static string PlainText(string html)

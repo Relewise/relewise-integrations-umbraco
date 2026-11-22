@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Integration.Converters;
 
@@ -18,9 +19,11 @@ internal static class StoredPriceReader
         {
             JsonArray? values = block?["values"]?.AsArray();
             var currencyJson =
-                values?.FirstOrDefault(value => value?["alias"]?.GetValue<string>() == "currency")?["value"]
+                values?.FirstOrDefault(
+                    value => value?["alias"]?.GetValue<string>() == PropertyAliases.Currency)?["value"]
                     ?.GetValue<string>();
-            var amount = values?.FirstOrDefault(value => value?["alias"]?.GetValue<string>() == "amount")?["value"]
+            var amount = values?.FirstOrDefault(
+                value => value?["alias"]?.GetValue<string>() == PropertyAliases.Amount)?["value"]
                 ?.GetValue<decimal>();
             string? currency = currencyJson == null
                 ? null

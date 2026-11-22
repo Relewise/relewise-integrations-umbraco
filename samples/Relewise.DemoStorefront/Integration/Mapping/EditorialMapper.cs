@@ -2,13 +2,14 @@ using Relewise.Client.DataTypes;
 using Relewise.DemoStorefront.Integration.Converters;
 using Relewise.Integrations.Umbraco.Mapping;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Integration.Mapping;
 
 /// <summary>Runs after declarative mappings and demonstrates application-level enrichment.</summary>
 internal sealed class EditorialMapper(IVariationContextAccessor variations) : IEntityMapper<Content>
 {
-    private static readonly string[] BlockFields = ["contentRows", "pageGrid"];
+    private static readonly string[] BlockFields = [PropertyAliases.ContentRows, PropertyAliases.PageGrid];
 
     public Task MapAsync(EntityMappingContext<Content> context, CancellationToken cancellationToken)
     {
@@ -63,20 +64,20 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
 
             return string.Join(
                 "\n",
-                new[] { ConvertedText("bodyText", culture) }
+                new[] { ConvertedText(DataKeys.BodyText, culture) }
                     .Concat(BlockFields.Select(alias => BlockText(alias, culture)))
                     .Where(text => !string.IsNullOrWhiteSpace(text)));
         }
 
         // Always overwrite the field, including when all relevant text was removed.
-        context.Entity.Data["searchText"] = context.CulturesToPublish.Count == 1
+        context.Entity.Data[DataKeys.SearchText] = context.CulturesToPublish.Count == 1
             ? new DataValue(TextFor(context.CulturesToPublish[0]))
             : new DataValue(
                 new Multilingual(
                     context.CulturesToPublish
                         .Select(culture => new Multilingual.Value(culture, TextFor(culture)))
                         .ToArray()));
-        context.Entity.Data["editorialSource"] = "Umbraco demo storefront";
+        context.Entity.Data[DataKeys.EditorialSource] = "Umbraco demo storefront";
 
         return Task.CompletedTask;
     }

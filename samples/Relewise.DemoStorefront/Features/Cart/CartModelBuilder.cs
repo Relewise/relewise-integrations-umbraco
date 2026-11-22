@@ -3,6 +3,7 @@ using Relewise.DemoStorefront.Features.Recommendations;
 using Relewise.DemoStorefront.Integration;
 using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using static Relewise.DemoStorefront.DemoConstants;
 using static Relewise.DemoStorefront.Features.Cart.CartHttp;
 using static Relewise.DemoStorefront.Features.Cart.CartPricing;
 
@@ -31,7 +32,7 @@ internal static class CartModelBuilder
             Url = page?.Url() ?? "",
             ImageHtml = page == null ? "" : Storefront.Image(page),
             Quantity = amount,
-            Maximum = priced == null ? 0 : Math.Max(0, Math.Min(99, priced.Product.Value<int>("stock"))),
+            Maximum = priced == null ? 0 : Math.Max(0, Math.Min(99, priced.Product.Value<int>(PropertyAliases.Stock))),
             UnitPrice = priced == null ? "" : Money(http, priced.Amount),
             LineTotal = priced == null ? "" : Money(http, priced.Amount * amount),
             Available = priced != null

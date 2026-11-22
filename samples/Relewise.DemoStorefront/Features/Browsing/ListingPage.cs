@@ -3,6 +3,7 @@ using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
+using static Relewise.DemoStorefront.DemoConstants;
 using static Relewise.DemoStorefront.Site.Storefront;
 
 namespace Relewise.DemoStorefront.Features.Browsing;
@@ -29,7 +30,9 @@ internal static class ListingPage
                 ? []
                 : StorefrontNavigation.Links(
                     collection.Children()
-                        .Where(node => node.ContentType.Alias is "productCategory" or "folder")),
+                        .Where(
+                            node => node.ContentType.Alias is DocumentTypeAliases.ProductCategory
+                                or DocumentTypeAliases.Folder)),
             model,
             []);
 
@@ -53,16 +56,19 @@ internal static class ListingPage
         string heading = collection == null
             ? Text(http, editorial ? "Journal" : "Collection")
             : SiteContent.Title(collection);
-        IEnumerable<IPublishedContent> pages = (collection?.ContentType.Alias == "brand" ? home : collection ?? home)
+        IEnumerable<IPublishedContent> pages = (collection?.ContentType.Alias == DocumentTypeAliases.Brand
+            ? home
+            : collection ?? home)
             .Descendants()
             .Where(node =>
                 editorial
-                    ? node.ContentType.Alias is "article" or "guide" or "localizedArticle"
-                    : node.ContentType.Alias == "product");
+                    ? node.ContentType.Alias is DocumentTypeAliases.Article or DocumentTypeAliases.Guide
+                        or DocumentTypeAliases.LocalizedArticle
+                    : node.ContentType.Alias == DocumentTypeAliases.Product);
 
-        if (collection?.ContentType.Alias == "brand")
+        if (collection?.ContentType.Alias == DocumentTypeAliases.Brand)
         {
-            pages = pages.Where(node => node.Value<IPublishedContent>("brand")?.Key == collection.Key);
+            pages = pages.Where(node => node.Value<IPublishedContent>(PropertyAliases.Brand)?.Key == collection.Key);
         }
 
         var access = http.RequestServices.GetRequiredService<IPublicAccessService>();

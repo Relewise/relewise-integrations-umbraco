@@ -12,6 +12,7 @@ using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
 using Umbraco.Cms.Core.HostedServices;
 using Umbraco.Cms.Core.Search.Indexing;
+using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront;
 
@@ -96,14 +97,14 @@ internal static class Program
 
         app.Use(async (context, next) =>
         {
-            if (connected && !context.Request.Cookies.ContainsKey("storefront-visitor"))
+            if (connected && !context.Request.Cookies.ContainsKey(Cookies.Visitor))
             {
                 var id = Guid.NewGuid()
                     .ToString("N");
 
-                context.Items["storefront-visitor"] = id;
+                context.Items[Cookies.Visitor] = id;
                 context.Response.Cookies.Append(
-                    "storefront-visitor",
+                    Cookies.Visitor,
                     id,
                     new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Lax }
                 );

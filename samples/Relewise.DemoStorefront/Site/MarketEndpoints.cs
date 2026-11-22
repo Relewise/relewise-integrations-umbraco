@@ -46,7 +46,7 @@ internal static class MarketEndpoints
         }
 
         http.Response.Cookies.Append(
-            DemoMarket.CookieName,
+            DemoConstants.Cookies.Market,
             selected.Id,
             new CookieOptions
             {
