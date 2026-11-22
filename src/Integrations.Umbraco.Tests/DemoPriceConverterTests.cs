@@ -13,6 +13,7 @@ public class DemoPriceConverterTests
     public void ReadsEachEnteredCurrencyAndAmountIncludingZero()
     {
         MultiCurrency prices = PriceConverter.Read(Entries(("DKK", 899m), ("eur", 119.95m), ("USD", 0m)))!;
+
         Assert.NotNull(prices.Values);
         Assert.Equal(3, prices.Values.Count);
         Assert.Contains(prices.Values, price => price.Currency.Value == "DKK" && price.Amount == 899m);
@@ -23,7 +24,9 @@ public class DemoPriceConverterTests
     [Fact]
     public void DuplicateCurrenciesAreRejectedAfterNormalization()
     {
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => PriceConverter.Read(Entries(("EUR", 10m), (" eur ", 20m))));
+        var error =
+            Assert.Throws<InvalidOperationException>(() => PriceConverter.Read(Entries(("EUR", 10m), (" eur ", 20m))));
+
         Assert.Contains("more than once", error.Message);
     }
 
@@ -32,7 +35,9 @@ public class DemoPriceConverterTests
     [InlineData("TOO-LONG", 10)]
     [InlineData("EUR", null)]
     public void IncompleteEntriesCannotSilentlyBecomeAZeroPrice(string? currency, int? amount)
-        => Assert.Throws<InvalidOperationException>(() => PriceConverter.Read(Entries((currency, amount))));
+    {
+        Assert.Throws<InvalidOperationException>(() => PriceConverter.Read(Entries((currency, amount))));
+    }
 
     [Fact]
     public void EmptyAndAbsentFieldsDoNotInventPrices()
@@ -46,18 +51,25 @@ public class DemoPriceConverterTests
     public void ReadingPricesHonorsCancellation()
     {
         using var cancellation = new CancellationTokenSource();
+
         cancellation.Cancel();
-        Assert.ThrowsAny<OperationCanceledException>(() => PriceConverter.Read(Entries(("DKK", 899m)), cancellation.Token));
+        Assert.ThrowsAny<OperationCanceledException>(() =>
+            PriceConverter.Read(Entries(("DKK", 899m)), cancellation.Token));
     }
 
     [Fact]
     public void ProductPriceReadsDoNotSubstituteAnotherCurrencyOrProperty()
     {
         var sales = new Mock<IPublishedProperty>();
+
         sales.Setup(value => value.GetValue(null, null)).Returns(Entries(("EUR", 10m), ("DKK", 75m)));
+
         var list = new Mock<IPublishedProperty>();
+
         list.Setup(value => value.GetValue(null, null)).Returns(Entries(("EUR", 20m), ("USD", 22m)));
+
         var product = new Mock<IPublishedContent>();
+
         product.Setup(value => value.GetProperty("salesPrice")).Returns(sales.Object);
         product.Setup(value => value.GetProperty("listPrice")).Returns(list.Object);
 
@@ -68,15 +80,29 @@ public class DemoPriceConverterTests
     }
 
     private static BlockListModel Entries(params (string? Currency, decimal? Amount)[] prices)
-        => new(prices.Select(price =>
-        {
-            var currency = new Mock<IPublishedProperty>();
-            currency.Setup(value => value.GetValue(null, null)).Returns(price.Currency);
-            var amount = new Mock<IPublishedProperty>();
-            amount.Setup(value => value.GetValue(null, null)).Returns(price.Amount);
-            var element = new Mock<IPublishedElement>();
-            element.Setup(value => value.GetProperty("currency")).Returns(currency.Object);
-            element.Setup(value => value.GetProperty("amount")).Returns(amount.Object);
-            return new BlockListItem(Guid.NewGuid(), element.Object, null, null);
-        }).ToList());
+    {
+        return new BlockListModel([
+            .. prices.Select(price =>
+            {
+                var currency = new Mock<IPublishedProperty>();
+
+                currency.Setup(value => value.GetValue(null, null))
+                    .Returns(price.Currency);
+
+                var amount = new Mock<IPublishedProperty>();
+
+                amount.Setup(value => value.GetValue(null, null))
+                    .Returns(price.Amount);
+
+                var element = new Mock<IPublishedElement>();
+
+                element.Setup(value => value.GetProperty("currency"))
+                    .Returns(currency.Object);
+                element.Setup(value => value.GetProperty("amount"))
+                    .Returns(amount.Object);
+
+                return new BlockListItem(Guid.NewGuid(), element.Object, null, null);
+            })
+        ]);
+    }
 }

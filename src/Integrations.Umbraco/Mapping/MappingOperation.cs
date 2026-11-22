@@ -7,40 +7,56 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Relewise.Integrations.Umbraco.Mapping;
 
-internal sealed class MappingOperation(IServiceProvider services, CancellationToken cancellationToken) : IAsyncDisposable
+internal sealed class MappingOperation(
+    IServiceProvider services,
+    CancellationToken cancellationToken) : IAsyncDisposable
 {
     private readonly Dictionary<Type, object> _instances = new();
     internal IServiceProvider Services { get; } = services;
     internal CancellationToken CancellationToken { get; } = cancellationToken;
+
     internal object Resolve(Type type)
     {
-        object? registered = Services.GetService(type);
+        var registered = Services.GetService(type);
+
         if (registered != null)
         {
             return registered;
         }
 
-        if (_instances.TryGetValue(type, out object? instance))
+        if (_instances.TryGetValue(type, out var instance))
         {
             return instance;
         }
 
         instance = ActivatorUtilities.CreateInstance(Services, type);
         _instances.Add(type, instance);
+
         return instance;
     }
-    internal T Resolve<T>() where T : class => (T)Resolve(typeof(T));
+
+    internal T Resolve<T>() where T : class
+    {
+        return (T)Resolve(typeof(T));
+    }
+
     private Task<string>? _defaultCulture;
+
     internal async Task<string> DefaultCultureAsync(string[] publishedCultures)
     {
-        string culture = await (_defaultCulture ??= Services.GetRequiredService<global::Umbraco.Cms.Core.Services.ILanguageService>().GetDefaultIsoCodeAsync());
+        var culture = await (_defaultCulture ??= Services
+            .GetRequiredService<global::Umbraco.Cms.Core.Services.ILanguageService>()
+            .GetDefaultIsoCodeAsync());
+
         return publishedCultures.FirstOrDefault(value => value.Equals(culture, StringComparison.OrdinalIgnoreCase))
-            ?? publishedCultures.Order(StringComparer.OrdinalIgnoreCase).First();
+               ?? publishedCultures.Order(StringComparer.OrdinalIgnoreCase).First();
     }
+
     public async ValueTask DisposeAsync()
     {
         List<Exception>? errors = null;
-        foreach (object instance in _instances.Values.Reverse())
+
+        foreach (var instance in _instances.Values.Reverse())
         {
             try
             {
@@ -53,9 +69,11 @@ internal sealed class MappingOperation(IServiceProvider services, CancellationTo
                     disposable.Dispose();
                 }
             }
-            catch (Exception error) { (errors ??= new()).Add(error); }
+            catch (Exception error) { (errors ??= new List<Exception>()).Add(error); }
         }
+
         _instances.Clear();
+
         if (errors != null)
         {
             throw new AggregateException("Mapping resources could not all be disposed.", errors);

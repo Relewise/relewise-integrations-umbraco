@@ -13,7 +13,6 @@ internal sealed class MappingDefinition(Type entityType)
     internal bool Export { get; set; } = true;
     internal bool TrackViews { get; set; } = true;
     internal bool AutomaticData { get; set; }
-    internal bool Legacy { get; set; }
     internal IContentTypeMapping? LegacyMapper { get; set; }
     internal Func<object, IPublishedContent, string[], MappingOperation, Task>? Mapper { get; set; }
     internal Type? MapperType { get; set; }
@@ -26,6 +25,7 @@ internal sealed class MappingDefinition(Type entityType)
     internal HashSet<string> PropertyNames { get; } = new(StringComparer.Ordinal);
     internal List<DataMapping> DataMappings { get; } = new();
     internal HashSet<string> DataKeys { get; } = new(StringComparer.Ordinal);
+
     internal void AddProperty(string destinationProperty, IPropertyMapping mapping)
     {
         if (!PropertyNames.Add(destinationProperty))
@@ -35,25 +35,32 @@ internal sealed class MappingDefinition(Type entityType)
 
         Properties.Add(mapping);
     }
+
     internal void Validate()
     {
-        if ((AutomaticData && (DataMappings.Count > 0 || Properties.Count > 0)) || (LegacyMapper != null && (DataMappings.Count > 0 || Properties.Count > 0 || Mapper != null)))
+        if ((AutomaticData && (DataMappings.Count > 0 || Properties.Count > 0)) || (LegacyMapper != null &&
+                (DataMappings.Count > 0 || Properties.Count > 0 || Mapper != null)))
         {
-            throw new InvalidOperationException($"Mapping '{DocumentTypeAlias}' combines automatic/custom and explicit field mappings.");
+            throw new InvalidOperationException(
+                $"Mapping '{DocumentTypeAlias}' combines automatic/custom and explicit field mappings.");
         }
 
         var dataKeys = new HashSet<string>(StringComparer.Ordinal);
+
         foreach (DataMapping data in DataMappings)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(data.Options.DataKey);
+
             if (!dataKeys.Add(data.Options.DataKey))
             {
                 throw new InvalidOperationException($"Data key '{data.Options.DataKey}' is already mapped.");
             }
 
-            if (data.Options.DataKey is "contentTypeAlias" or "url" or "createdAt" or "UmbracoVersionId" || data.Options.DataKey.StartsWith("rwUmbraco", StringComparison.Ordinal))
+            if (data.Options.DataKey is "contentTypeAlias" or "url" or "createdAt" or "UmbracoVersionId" ||
+                data.Options.DataKey.StartsWith("rwUmbraco", StringComparison.Ordinal))
             {
-                throw new InvalidOperationException($"Data key '{data.Options.DataKey}' is reserved for integration metadata.");
+                throw new InvalidOperationException(
+                    $"Data key '{data.Options.DataKey}' is reserved for integration metadata.");
             }
         }
 

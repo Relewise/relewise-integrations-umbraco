@@ -13,14 +13,21 @@ internal static class EditorialBlockText
     private static readonly string[] TextFields = ["heading", "text", "caption"];
     private static readonly string[] NestedFields = ["items", "contentRows", "pageGrid"];
 
-    public static string ExtractProperty(IPublishedProperty property, string culture, IVariationContextAccessor variations, CancellationToken token = default)
+    public static string ExtractProperty(
+        IPublishedProperty property,
+        string culture,
+        IVariationContextAccessor variations,
+        CancellationToken token = default)
     {
         token.ThrowIfCancellationRequested();
+
         // Umbraco uses the ambient culture when deciding which localized blocks are exposed.
         VariationContext? previous = variations.VariationContext;
+
         try
         {
             variations.VariationContext = new VariationContext(culture);
+
             return Extract(property.GetValue(property.PropertyType.VariesByCulture() ? culture : null), culture, token);
         }
         finally
@@ -32,13 +39,16 @@ internal static class EditorialBlockText
     public static string Extract(object? value, string culture, CancellationToken token = default)
     {
         var fragments = new List<string>();
+
         Visit(value, culture, fragments, token);
+
         return string.Join("\n", fragments);
     }
 
     private static void Visit(object? value, string culture, List<string> fragments, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+
         switch (value)
         {
             case BlockListModel list:
@@ -68,15 +78,20 @@ internal static class EditorialBlockText
         }
     }
 
-    private static void VisitGridItem(BlockGridItem item, string culture, List<string> fragments, CancellationToken token)
+    private static void VisitGridItem(BlockGridItem item,
+        string culture,
+        List<string> fragments,
+        CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+
         if (IsHidden(item.Settings, culture))
         {
             return; // A hidden container also hides its area children.
         }
 
         VisitElement(item.Content, culture, fragments, token);
+
         foreach (BlockGridArea area in item.Areas)
         {
             foreach (BlockGridItem child in area)
@@ -86,7 +101,11 @@ internal static class EditorialBlockText
         }
     }
 
-    private static void VisitElement(IPublishedElement element, string culture, List<string> fragments, CancellationToken token)
+    private static void VisitElement(
+        IPublishedElement element,
+        string culture,
+        List<string> fragments,
+        CancellationToken token)
     {
         foreach (var alias in TextFields)
         {
@@ -97,7 +116,9 @@ internal static class EditorialBlockText
                 string plain => plain,
                 _ => string.Empty // Never stringify arbitrary editor objects or settings.
             };
+
             text = Regex.Replace(text, @"\s+", " ").Trim();
+
             if (text.Length > 0)
             {
                 fragments.Add(text);
@@ -110,22 +131,29 @@ internal static class EditorialBlockText
         }
     }
 
-    private static bool IsHidden(IPublishedElement? settings, string culture) =>
-        settings?.GetProperty("hide")?.GetValue(culture) is true;
+    private static bool IsHidden(IPublishedElement? settings, string culture)
+    {
+        return settings?.GetProperty("hide")?.GetValue(culture) is true;
+    }
 
     private static string PlainText(string html)
     {
         var document = new HtmlDocument();
+
         document.LoadHtml(html);
-        foreach (HtmlNode? node in document.DocumentNode.SelectNodes("//script|//style|//template")?.ToArray()
-                             ?? Array.Empty<HtmlNode>())
+
+        foreach (HtmlNode node in document.DocumentNode.SelectNodes("//script|//style|//template")?.ToArray()
+                                  ?? [])
         {
             node.Remove();
         }
 
         // Separate text nodes so adjacent paragraphs do not become a single word.
         HtmlNodeCollection? textNodes = document.DocumentNode.SelectNodes("//text()");
-        return textNodes is null ? string.Empty : WebUtility.HtmlDecode(
-            string.Join(" ", textNodes.Select(node => node.InnerText)));
+
+        return textNodes is null
+            ? string.Empty
+            : WebUtility.HtmlDecode(
+                string.Join(" ", textNodes.Select(node => node.InnerText)));
     }
 }

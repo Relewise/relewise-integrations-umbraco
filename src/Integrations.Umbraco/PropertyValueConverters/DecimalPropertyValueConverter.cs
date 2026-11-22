@@ -18,6 +18,7 @@ internal class DecimalPropertyValueConverter : IDefaultPropertyValueConverter, I
     {
         cancellationToken.ThrowIfCancellationRequested();
         Convert(context);
+
         return default;
     }
 
@@ -25,10 +26,14 @@ internal class DecimalPropertyValueConverter : IDefaultPropertyValueConverter, I
     [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        decimal value = context.Property.GetValue<decimal>(context.Culture);
+        var value = context.Property.GetValue<decimal>(context.Culture);
         var number = 0d;
 
-        if (double.TryParse(value.ToString(CultureInfo.InvariantCulture), out double n))
+        if (double.TryParse(
+                value.ToString(CultureInfo.InvariantCulture),
+                NumberStyles.Float | NumberStyles.AllowThousands,
+                CultureInfo.InvariantCulture,
+                out var n))
         {
             number = n;
         }

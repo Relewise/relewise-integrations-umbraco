@@ -7,7 +7,12 @@ using Relewise.Client.Requests;
 
 namespace Relewise.Integrations.Umbraco.Mapping;
 
-internal sealed class MappedEntity(Guid nodeKey, string documentTypeAlias, string id, object entity, bool synchronize)
+internal sealed class MappedEntity(
+    Guid nodeKey,
+    string documentTypeAlias,
+    string id,
+    object entity,
+    bool synchronize)
 {
     internal Guid NodeKey { get; } = nodeKey;
     internal string DocumentTypeAlias { get; } = documentTypeAlias;
@@ -15,28 +20,39 @@ internal sealed class MappedEntity(Guid nodeKey, string documentTypeAlias, strin
     internal object Entity { get; } = entity;
     internal bool Synchronize { get; set; } = synchronize;
     internal List<MappedEntity> Variants { get; } = new();
+
     internal Trackable Update(ContentUpdate.UpdateKind? contentUpdateKind = null)
     {
         contentUpdateKind ??= ContentUpdateKind;
+
         if (!Synchronize && contentUpdateKind == ContentUpdate.UpdateKind.ClearAndReplace)
         {
-            throw new InvalidOperationException("ClearAndReplace is incompatible with AdministrativeActionPolicy.None.");
+            throw new InvalidOperationException(
+                "ClearAndReplace is incompatible with AdministrativeActionPolicy.None.");
         }
 
         return Entity switch
         {
-            Content content => new ContentUpdate(content, contentUpdateKind ?? ContentUpdate.UpdateKind.ReplaceProvidedProperties),
-            Product product => new ProductUpdate(product, Variants.Select(variant => (ProductVariant)variant.Entity), ProductUpdate.UpdateKind.ReplaceProvidedProperties,
-                ProductUpdate.UpdateKind.ReplaceProvidedProperties, replaceExistingVariants: Synchronize && VariantsConfigured)
+            Content content => new ContentUpdate(content,
+                contentUpdateKind ?? ContentUpdate.UpdateKind.ReplaceProvidedProperties),
+            Product product => new ProductUpdate(
+                product,
+                Variants.Select(variant => (ProductVariant)variant.Entity),
+                ProductUpdate.UpdateKind.ReplaceProvidedProperties,
+                ProductUpdate.UpdateKind.ReplaceProvidedProperties,
+                Synchronize && VariantsConfigured)
             {
                 BrandUpdateKind = BrandUpdate.UpdateKind.None
             },
             Brand brand => new BrandUpdate(brand, BrandUpdate.UpdateKind.ReplaceProvidedProperties),
-            ProductCategory category => new ProductCategoryUpdate(category, CategoryUpdate.UpdateKind.ReplaceProvidedProperties),
-            ContentCategory category => new ContentCategoryUpdate(category, CategoryUpdate.UpdateKind.ReplaceProvidedProperties),
+            ProductCategory category => new ProductCategoryUpdate(category,
+                CategoryUpdate.UpdateKind.ReplaceProvidedProperties),
+            ContentCategory category => new ContentCategoryUpdate(category,
+                CategoryUpdate.UpdateKind.ReplaceProvidedProperties),
             _ => throw new InvalidOperationException("Variants must be exported through their Product.")
         };
     }
+
     internal ContentUpdate.UpdateKind? ContentUpdateKind { get; set; }
     internal bool VariantsConfigured { get; set; }
 }

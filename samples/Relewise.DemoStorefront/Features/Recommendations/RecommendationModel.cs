@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace Relewise.DemoStorefront.Features.Recommendations;
 
+[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 internal sealed class RecommendationModel
 {
     public string Endpoint { get; init; } = "";

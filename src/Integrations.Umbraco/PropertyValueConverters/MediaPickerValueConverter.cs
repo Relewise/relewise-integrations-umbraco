@@ -15,10 +15,11 @@ namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 /// </summary>
 public class MediaPickerValueConverter : IDefaultPropertyValueConverter, IRelewisePropertyValueConverter
 {
-    /// <inheritdoc />
+    /// <inheritdoc cref="IRelewisePropertyValueConverter.CanHandle" />
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
-        return context.Property.PropertyType.EditorAlias is "Umbraco.MediaPicker3" or "Umbraco.MediaPicker.Single" or "Umbraco.MultipleMediaPicker";
+        return context.Property.PropertyType.EditorAlias is "Umbraco.MediaPicker3" or "Umbraco.MediaPicker.Single"
+            or "Umbraco.MultipleMediaPicker";
     }
 
     /// <inheritdoc />
@@ -26,33 +27,35 @@ public class MediaPickerValueConverter : IDefaultPropertyValueConverter, IRelewi
     {
         cancellationToken.ThrowIfCancellationRequested();
         Convert(context);
+
         return default;
     }
 
     /// <inheritdoc/>
-    [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
+    [Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        bool isMultiple = context.Property.PropertyType.EditorAlias != "Umbraco.MediaPicker.Single";
+        var isMultiple = context.Property.PropertyType.EditorAlias != "Umbraco.MediaPicker.Single";
 
         if (isMultiple)
         {
             var value = new List<string>();
-            IEnumerable<IPublishedContent> items = context.Property.GetValue<IEnumerable<IPublishedContent>>(context.Culture) ?? Array.Empty<IPublishedContent>();
+            IEnumerable<IPublishedContent> items =
+                context.Property.GetValue<IEnumerable<IPublishedContent>>(context.Culture) ??
+                Array.Empty<IPublishedContent>();
+
             foreach (IPublishedContent item in items)
             {
-                string? mediaObject = item.Url();
-                if (mediaObject != null)
-                {
-                    value.Add(mediaObject);
-                }
+                value.Add(item.Url());
             }
+
             context.Add(context.Property.Alias, new DataValue(value));
         }
         else
         {
-            IPublishedContent? item = context.Property.GetValue<IPublishedContent>(context.Culture);
-            string? mediaObject = item?.Url();
+            var item = context.Property.GetValue<IPublishedContent>(context.Culture);
+            var mediaObject = item?.Url();
+
             if (mediaObject != null)
             {
                 context.Add(context.Property.Alias, new DataValue(mediaObject));

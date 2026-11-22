@@ -10,6 +10,8 @@
 - Separate logical steps with blank lines. Expand long calls with one argument per line; keep short calls compact. Expand enum members and empty constructors onto separate lines.
 - Every C# type must belong to a namespace matching the project root namespace plus its physical folders. This is mandatory across the repository, not only in the sample. Prefer file-scoped namespaces. Use `var` for built-in or apparent types; use explicit types when a method result does not make the type apparent. Follow `.editorconfig` for target-typed construction and formatting.
 - Keep using directives outside namespaces, sorted with `System` first, followed by other namespaces, static imports and aliases; do not add blank import groups. Apply ReSharper's Adjust Namespaces / Optimize Usings or the shared `dotnet format` rules before delivery. Namespace and import checks must pass in CI.
+- Put `CancellationToken` last in every signature, including internal helpers and test callbacks. Use the solution-wide latest C# language setting.
+- ReSharper inspections must have no warnings or errors. Fix findings rather than disabling inspections; annotate real serialization or external API use explicitly. The shared ReSharper type/collection inspections also enforce code style; a warning-only CLI run without those settings is insufficient. Run `dotnet tool restore` and `pwsh scripts/Inspect-Code.ps1` after building the solution.
 - Keep the public surface small. Document public contracts with useful XML comments matching the existing package, and preserve compatibility unless a breaking change is explicitly agreed.
 - Do not rename existing public members as part of formatting or file organization.
 

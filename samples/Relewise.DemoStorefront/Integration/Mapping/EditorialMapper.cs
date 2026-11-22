@@ -13,7 +13,7 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
     public Task MapAsync(EntityMappingContext<Content> context, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        context.Entity.Data ??= new();
+        context.Entity.Data ??= new Dictionary<string, DataValue?>();
 
         string ConvertedText(string key, string culture)
         {
@@ -30,7 +30,8 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
                         localized.Language.Value,
                         culture,
                         StringComparison.OrdinalIgnoreCase
-                    ))?.Text ?? string.Empty,
+                    ))
+                    ?.Text ?? string.Empty,
                 _ => string.Empty
             };
         }
@@ -38,6 +39,7 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
         string BlockText(string alias, string culture)
         {
             IPublishedProperty? property = context.PublishedContent.GetProperty(alias);
+
             // An invariant outer block property can contain culture-varying elements.
             // Read those elements per culture rather than reusing the first culture's converted text.
             if (property != null &&
@@ -58,17 +60,21 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
         string TextFor(string culture)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return string.Join("\n", new[] { ConvertedText("bodyText", culture) }
-                .Concat(BlockFields.Select(alias => BlockText(alias, culture)))
-                .Where(text => !string.IsNullOrWhiteSpace(text)));
+
+            return string.Join("\n",
+                new[] { ConvertedText("bodyText", culture) }
+                    .Concat(BlockFields.Select(alias => BlockText(alias, culture)))
+                    .Where(text => !string.IsNullOrWhiteSpace(text)));
         }
 
         // Always overwrite the field, including when all relevant text was removed.
         context.Entity.Data["searchText"] = context.CulturesToPublish.Count == 1
             ? new DataValue(TextFor(context.CulturesToPublish[0]))
             : new DataValue(new Multilingual(context.CulturesToPublish
-                .Select(culture => new Multilingual.Value(culture, TextFor(culture))).ToArray()));
+                .Select(culture => new Multilingual.Value(culture, TextFor(culture)))
+                .ToArray()));
         context.Entity.Data["editorialSource"] = "Umbraco demo storefront";
+
         return Task.CompletedTask;
     }
 }

@@ -11,22 +11,33 @@ internal sealed class DemoProductMapper : IEntityMapper<Product>
     {
         cancellationToken.ThrowIfCancellationRequested();
         Apply(context.Entity, context.PublishedContent.Value<int>("stock"));
+
         return Task.CompletedTask;
     }
 
-    internal static void Apply(Product product, int stock)
+    internal static void Apply(Product product,
+        int stock)
     {
-        product.Data ??= new();
+        product.Data ??= new Dictionary<string, DataValue?>();
         product.Data["inStock"] = stock > 0;
+
         Dictionary<string, decimal> sales = Amounts(product.SalesPrice);
         Dictionary<string, decimal> list = Amounts(product.ListPrice);
-        foreach (string currency in DemoMarket.All.Select(market => market.Currency).Concat(sales.Keys).Concat(list.Keys).Distinct(StringComparer.OrdinalIgnoreCase))
+
+        foreach (var currency in DemoMarket.All.Select(market => market.Currency)
+                     .Concat(sales.Keys)
+                     .Concat(list.Keys)
+                     .Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            product.Data["onSale_" + currency] = sales.TryGetValue(currency, out decimal amount) &&
-                list.TryGetValue(currency, out decimal original) && amount < original;
+            product.Data["onSale_" + currency] = sales.TryGetValue(currency, out var amount) &&
+                                                 list.TryGetValue(currency, out var original) && amount < original;
         }
     }
 
-    private static Dictionary<string, decimal> Amounts(MultiCurrency? prices) =>
-        (prices?.Values ?? []).ToDictionary(price => price.Currency.Value.ToUpperInvariant(), price => price.Amount, StringComparer.OrdinalIgnoreCase);
+    private static Dictionary<string, decimal> Amounts(MultiCurrency? prices)
+    {
+        return (prices?.Values ?? []).ToDictionary(price => price.Currency.Value.ToUpperInvariant(),
+            price => price.Amount,
+            StringComparer.OrdinalIgnoreCase);
+    }
 }

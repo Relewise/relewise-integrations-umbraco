@@ -17,6 +17,7 @@ internal class TextFieldPropertyValueConverter : IDefaultPropertyValueConverter,
     {
         cancellationToken.ThrowIfCancellationRequested();
         Convert(context);
+
         return default;
     }
 
@@ -24,7 +25,8 @@ internal class TextFieldPropertyValueConverter : IDefaultPropertyValueConverter,
     [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        string? value = context.Property.GetValue<string>(context.Culture);
+        var value = context.Property.GetValue<string>(context.Culture);
+
         context.Add(context.Property.Alias, new DataValue(value));
     }
 }

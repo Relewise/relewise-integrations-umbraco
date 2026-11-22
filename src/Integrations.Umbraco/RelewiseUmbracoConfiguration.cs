@@ -21,7 +21,6 @@ public class RelewiseUmbracoConfiguration
     internal IReadOnlyDictionary<string, MappingDefinition> Mappings { get; }
     internal SearchProviderOptions SearchProviders { get; }
     private readonly HashSet<string> _trackableDocTypes;
-    private readonly HashSet<string> _autoMappedContentTypes;
     private readonly Dictionary<string, IContentTypeMapping?> _customMappers;
 
 #pragma warning disable 1591
@@ -30,7 +29,8 @@ public class RelewiseUmbracoConfiguration
     {
         var options = new RelewiseUmbracoOptionsBuilder
         {
-            UseContentKeysAsIds = provider.GetService<IConfiguration>()?.GetValue<bool>("Relewise:Umbraco:UseContentKeysAsIds") ?? false
+            UseContentKeysAsIds =
+                provider.GetService<IConfiguration>()?.GetValue<bool>("Relewise:Umbraco:UseContentKeysAsIds") ?? false
         };
 
         foreach (Configure configure in provider.GetServices<Configure>())
@@ -39,21 +39,32 @@ public class RelewiseUmbracoConfiguration
         }
 
         UseContentKeysAsIds = options.UseContentKeysAsIds;
-        var mappings = new Dictionary<string, MappingDefinition>(options.EntityMappings, StringComparer.OrdinalIgnoreCase);
+
+        var mappings =
+            new Dictionary<string, MappingDefinition>(options.EntityMappings, StringComparer.OrdinalIgnoreCase);
+
         foreach (KeyValuePair<string, ContentTypeBuilder?> content in options.ContentBuilders)
         {
-            MappingDefinition definition = content.Value?.Definition ?? new MappingDefinition(typeof(Relewise.Client.DataTypes.Content)) { AutomaticData = true };
+            MappingDefinition definition = content.Value?.Definition ??
+                                           new MappingDefinition(typeof(Relewise.Client.DataTypes.Content))
+                                           { AutomaticData = true };
+
             definition.DocumentTypeAlias = content.Key;
             definition.Validate();
+
             if (!mappings.TryAdd(content.Key, definition))
             {
-                throw new InvalidOperationException($"Document Type '{content.Key}' is registered for multiple entity targets.");
+                throw new InvalidOperationException(
+                    $"Document Type '{content.Key}' is registered for multiple entity targets.");
             }
         }
+
         var variants = new List<MappingDefinition>();
+
         foreach (MappingDefinition mapping in mappings.Values)
         {
             mapping.Validate();
+
             if (mapping.Variant == null)
             {
                 continue;
@@ -63,11 +74,13 @@ public class RelewiseUmbracoConfiguration
             mapping.Variant.TrackViews &= mapping.TrackViews;
             variants.Add(mapping.Variant);
         }
+
         foreach (MappingDefinition variant in variants)
         {
             if (!mappings.TryAdd(variant.DocumentTypeAlias, variant))
             {
-                throw new InvalidOperationException($"Variant Document Type '{variant.DocumentTypeAlias}' is already registered.");
+                throw new InvalidOperationException(
+                    $"Variant Document Type '{variant.DocumentTypeAlias}' is already registered.");
             }
         }
 
@@ -75,17 +88,13 @@ public class RelewiseUmbracoConfiguration
         SearchProviders = options.SearchProviders;
         SearchProviders.Validate(Mappings);
 
-        _trackableDocTypes = mappings.Where(x => x.Value.TrackViews).Select(x => x.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        _autoMappedContentTypes = options
-            .ContentBuilders
-            .Where(x => x.Value == null || x.Value.AutoMapContent)
+        _trackableDocTypes = mappings.Where(x => x.Value.TrackViews)
             .Select(x => x.Key)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         _customMappers = options
             .ContentBuilders
-            .Where(x => x.Value is { Mapper: { } })
+            .Where(x => x.Value is { Mapper: not null })
             .ToDictionary(x => x.Key, x => x.Value?.Mapper, StringComparer.OrdinalIgnoreCase);
     }
 
@@ -101,9 +110,14 @@ public class RelewiseUmbracoConfiguration
     public string GetContentId(IPublishedContent content)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if (Mappings.TryGetValue(content.ContentType?.Alias ?? string.Empty, out MappingDefinition? mapping) && mapping.IdPropertyAlias is { } alias)
+
+        if (Mappings.TryGetValue(content.ContentType.Alias, out MappingDefinition? mapping) &&
+            mapping.IdPropertyAlias is { } alias)
         {
-            IPublishedProperty property = content.GetProperty(alias) ?? throw new InvalidOperationException($"ID property '{alias}' does not exist on '{content.Key}'.");
+            IPublishedProperty property = content.GetProperty(alias) ??
+                                          throw new InvalidOperationException(
+                                              $"ID property '{alias}' does not exist on '{content.Key}'.");
+
             if (property.PropertyType.VariesByCulture() || property.PropertyType.VariesBySegment())
             {
                 throw new InvalidOperationException($"ID property '{alias}' must be culture and segment invariant.");
@@ -111,6 +125,7 @@ public class RelewiseUmbracoConfiguration
 
             return ResolvePropertyId(property.GetValue(), alias, content.Key);
         }
+
         return GetContentId(content.Id, content.Key);
     }
 
@@ -120,21 +135,28 @@ public class RelewiseUmbracoConfiguration
     public string GetContentId(IContent content)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if (Mappings.TryGetValue(content.ContentType?.Alias ?? string.Empty, out MappingDefinition? mapping) && mapping.IdPropertyAlias is { } alias)
+
+        if (Mappings.TryGetValue(content.ContentType.Alias, out MappingDefinition? mapping) &&
+            mapping.IdPropertyAlias is { } alias)
         {
             return ResolvePropertyId(content.GetValue(alias), alias, content.Key);
         }
+
         return GetContentId(content.Id, content.Key);
     }
 
-    private static string ResolvePropertyId(object? raw, string sourcePropertyAlias, Guid nodeKey)
+    private static string ResolvePropertyId(object? raw,
+        string sourcePropertyAlias,
+        Guid nodeKey)
     {
         if (raw is not (string or Guid or byte or short or int or long or ushort or uint or ulong or decimal))
         {
-            throw new InvalidOperationException($"ID property '{sourcePropertyAlias}' on '{nodeKey}' must contain a string, GUID, or integer/decimal ID.");
+            throw new InvalidOperationException(
+                $"ID property '{sourcePropertyAlias}' on '{nodeKey}' must contain a string, GUID, or integer/decimal ID.");
         }
 
-        string? value = Convert.ToString(raw, CultureInfo.InvariantCulture);
+        var value = Convert.ToString(raw, CultureInfo.InvariantCulture);
+
         if (string.IsNullOrWhiteSpace(value))
         {
             throw new InvalidOperationException($"ID property '{sourcePropertyAlias}' is empty on '{nodeKey}'.");
@@ -143,7 +165,11 @@ public class RelewiseUmbracoConfiguration
         return value;
     }
 
-    private string GetContentId(int id, Guid key) => UseContentKeysAsIds ? key.ToString("D") : id.ToString(CultureInfo.InvariantCulture);
+    private string GetContentId(int id,
+        Guid key)
+    {
+        return UseContentKeysAsIds ? key.ToString("D") : id.ToString(CultureInfo.InvariantCulture);
+    }
 
     /// <summary>
     /// Contains all contentType aliases that are being tracked
@@ -153,7 +179,8 @@ public class RelewiseUmbracoConfiguration
     /// <summary>
     /// Contains all contentType aliases that are being exported
     /// </summary>
-    public IReadOnlyCollection<string> ExportedContentTypes => Mappings.Where(x => x.Value.Export).Select(x => x.Key).ToArray();
+    public IReadOnlyCollection<string> ExportedContentTypes =>
+        Mappings.Where(x => x.Value.Export).Select(x => x.Key).ToArray();
 
     /// <summary>
     /// If the contents type is registered, this will tell that it can be mapped by the automapping or by a mapper

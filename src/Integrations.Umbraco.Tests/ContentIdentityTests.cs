@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Relewise.Client;
 using Relewise.Client.DataTypes;
+using Relewise.Client.DataTypes.Search.Facets.Result;
 using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Search;
 using Relewise.Client.Responses.Search;
@@ -41,7 +42,7 @@ public class ContentIdentityTests
         RelewiseUmbracoConfiguration configuration = Configuration(setting);
         IPublishedContent published = PublishedContent(1234, SharedKey);
         IContent editable = EditableContent(1234, SharedKey);
-        string expected = useKeys ? SharedKey.ToString("D") : "1234";
+        var expected = useKeys ? SharedKey.ToString("D") : "1234";
 
         Assert.Equal(useKeys, configuration.UseContentKeysAsIds);
         Assert.Equal(expected, configuration.GetContentId(published));
@@ -54,9 +55,13 @@ public class ContentIdentityTests
     public void RegistrationCanOverrideEnvironmentConfiguration(bool useKeys)
     {
         var services = new ServiceCollection();
+
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(
-            new Dictionary<string, string?> { ["Relewise:Umbraco:UseContentKeysAsIds"] = (!useKeys).ToString() }).Build());
-        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) => options.UseContentKeysAsIds = useKeys);
+                new Dictionary<string, string?> { ["Relewise:Umbraco:UseContentKeysAsIds"] = (!useKeys).ToString() })
+            .Build());
+        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
+            options.UseContentKeysAsIds = useKeys);
+
         using ServiceProvider provider = services.BuildServiceProvider();
 
         Assert.Equal(useKeys, new RelewiseUmbracoConfiguration(provider).UseContentKeysAsIds);
@@ -82,17 +87,23 @@ public class ContentIdentityTests
     [InlineData(true, "recycle")]
     [InlineData(false, "delete")]
     [InlineData(true, "delete")]
-    public async Task LifecycleActionsTargetConfiguredIdentityAndIgnoreUnregisteredTypes(bool useKeys, string operation)
+    public async Task LifecycleActionsTargetConfiguredIdentityAndIgnoreUnregisteredTypes(bool useKeys,
+        string operation)
     {
         RelewiseUmbracoConfiguration configuration = Configuration(useKeys.ToString());
         var tracker = new Mock<ITracker>();
         ContentAdministrativeAction? captured = null;
         using var cancellation = new CancellationTokenSource();
-        tracker.Setup(x => x.TrackAsync(It.IsAny<ContentAdministrativeAction>(), cancellation.Token))
+        CancellationToken cancellationToken = cancellation.Token;
+
+        tracker.Setup(x => x.TrackAsync(It.IsAny<ContentAdministrativeAction>(), cancellationToken))
             .Callback<ContentAdministrativeAction, CancellationToken>((action, _) => captured = action)
             .Returns(Task.CompletedTask);
+
         var exporter = new Mock<IExportContentService>();
+
         exporter.Setup(x => x.GetTrackerOrNull()).Returns(tracker.Object);
+
         IContent[] content = [EditableContent(1234, SharedKey), EditableContent(7777, Guid.NewGuid(), "unregistered")];
         var messages = new EventMessages();
 
@@ -100,68 +111,108 @@ public class ContentIdentityTests
         {
             case "unpublish":
                 await new RelewiseContentUnpublishedNotificationHandler(exporter.Object, configuration)
-                    .HandleAsync(new ContentUnpublishedNotification(content, messages), cancellation.Token);
+                    .HandleAsync(new ContentUnpublishedNotification(content, messages), cancellationToken);
                 break;
             case "recycle":
                 await new RelewiseContentMovedToRecycleBinNotificationHandler(exporter.Object, configuration)
-                    .HandleAsync(new ContentMovedToRecycleBinNotification(content.Select(x => new MoveToRecycleBinEventInfo<IContent>(x, "-1")), messages), cancellation.Token);
+                    .HandleAsync(
+                        new ContentMovedToRecycleBinNotification(
+                            content.Select(x => new MoveToRecycleBinEventInfo<IContent>(x, "-1")),
+                            messages),
+                        cancellationToken);
                 break;
             case "delete":
                 await new RelewiseContentDeletedNotificationNotificationHandler(exporter.Object, configuration)
-                    .HandleAsync(new ContentDeletedNotification(content[0], messages), cancellation.Token);
+                    .HandleAsync(new ContentDeletedNotification(content[0], messages), cancellationToken);
                 await new RelewiseContentDeletedNotificationNotificationHandler(exporter.Object, configuration)
-                    .HandleAsync(new ContentDeletedNotification(content[1], messages), cancellation.Token);
+                    .HandleAsync(new ContentDeletedNotification(content[1], messages), cancellationToken);
                 break;
         }
 
         Assert.NotNull(captured);
+
         JObject actionJson = JObject.Parse(JsonConvert.SerializeObject(captured));
         string[] ids = actionJson.SelectTokens("$..ContentIds[*]").Values<string>().ToArray()!;
+
         Assert.Equal([useKeys ? SharedKey.ToString("D") : "1234"], ids);
-        Assert.Equal(operation == "delete" ? ContentAdministrativeAction.UpdateKind.Delete : ContentAdministrativeAction.UpdateKind.Disable, captured.Kind);
-        tracker.Verify(x => x.TrackAsync(It.IsAny<ContentAdministrativeAction>(), cancellation.Token), Times.Once);
+        Assert.Equal(
+            operation == "delete"
+                ? ContentAdministrativeAction.UpdateKind.Delete
+                : ContentAdministrativeAction.UpdateKind.Disable,
+            captured.Kind);
+        tracker.Verify(x => x.TrackAsync(It.IsAny<ContentAdministrativeAction>(), cancellationToken), Times.Once);
     }
 
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public async Task AutomaticViewsUseExportIdentityAndDoNotTrackPreview(bool useKeys, bool preview)
+    public async Task AutomaticViewsUseExportIdentityAndDoNotTrackPreview(bool useKeys,
+        bool preview)
     {
         var published = new Mock<IPublishedContent>();
+
         published.SetupGet(x => x.Id).Returns(1234);
         published.SetupGet(x => x.Key).Returns(SharedKey);
+
         var contentType = new Mock<IPublishedContentType>();
+
         contentType.SetupGet(x => x.Alias).Returns("article");
         published.SetupGet(x => x.ContentType).Returns(contentType.Object);
+
         var request = new Mock<IPublishedRequest>();
+
         request.SetupGet(x => x.PublishedContent).Returns(published.Object);
+
         var umbraco = new Mock<IUmbracoContext>();
+
         umbraco.SetupGet(x => x.PublishedRequest).Returns(request.Object);
         umbraco.SetupGet(x => x.InPreviewMode).Returns(preview);
+
         var factory = new Mock<IUmbracoContextFactory>();
-        factory.Setup(x => x.EnsureUmbracoContext()).Returns(() => new UmbracoContextReference(umbraco.Object, false, Mock.Of<IUmbracoContextAccessor>()));
+
+        factory.Setup(x => x.EnsureUmbracoContext())
+            .Returns(() =>
+                new UmbracoContextReference(umbraco.Object, false, Mock.Of<IUmbracoContextAccessor>()));
+
         var tracker = new Mock<ITracker>();
         ContentView? captured = null;
+
         tracker.Setup(x => x.TrackAsync(It.IsAny<ContentView>(), It.IsAny<CancellationToken>()))
-            .Callback<ContentView, CancellationToken>((view, _) => captured = view).Returns(Task.CompletedTask);
+            .Callback<ContentView, CancellationToken>((view, _) => captured = view)
+            .Returns(Task.CompletedTask);
+
         var services = new ServiceCollection();
+
         services.AddSingleton(factory.Object);
+
         var clients = new Mock<IRelewiseClientFactory>();
+
         clients.Setup(value => value.GetClient<ITracker>(Constants.NamedClientName)).Returns(tracker.Object);
         services.AddSingleton(clients.Object);
-        services.AddSingleton(new Mock<ITracker>(MockBehavior.Strict).Object); // An unrelated default client must not receive views.
+        services.AddSingleton(new Mock<ITracker>(MockBehavior.Strict)
+            .Object); // An unrelated default client must not receive views.
+
         var userLocator = new Mock<IRelewiseUserLocator>();
+
         userLocator.Setup(x => x.GetUser()).ReturnsAsync(User.Anonymous());
         services.AddSingleton(userLocator.Object);
+
         using ServiceProvider provider = services.BuildServiceProvider();
-        bool nextCalled = false;
-        var middleware = new RelewiseContentMiddleware(_ => { nextCalled = true; return Task.CompletedTask; }, Configuration(useKeys.ToString()));
+        var nextCalled = false;
+        var middleware = new RelewiseContentMiddleware(_ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            },
+            Configuration(useKeys.ToString()));
 
         await middleware.InvokeAsync(new DefaultHttpContext { RequestServices = provider });
 
         Assert.True(nextCalled);
-        clients.Verify(value => value.GetClient<ITracker>(Constants.NamedClientName), preview ? Times.Never : Times.Once);
+        clients.Verify(value => value.GetClient<ITracker>(Constants.NamedClientName),
+            preview ? Times.Never : Times.Once);
+
         if (preview)
         {
             Assert.Null(captured);
@@ -180,44 +231,73 @@ public class ContentIdentityTests
     public async Task BehavioralViewsAndAllSearchRequestsShareTheRequestScopedUser(string identityKind)
     {
         var published = new Mock<IPublishedContent>();
+
         published.SetupGet(x => x.ContentType.Alias).Returns("article");
         published.SetupGet(x => x.Id).Returns(1234);
         published.SetupGet(x => x.Key).Returns(SharedKey);
+
         var request = new Mock<IPublishedRequest>();
+
         request.SetupGet(x => x.PublishedContent).Returns(published.Object);
+
         var umbraco = new Mock<IUmbracoContext>();
+
         umbraco.SetupGet(x => x.PublishedRequest).Returns(request.Object);
+
         var contexts = new Mock<IUmbracoContextFactory>();
-        contexts.Setup(x => x.EnsureUmbracoContext()).Returns(() => new UmbracoContextReference(umbraco.Object, false, Mock.Of<IUmbracoContextAccessor>()));
+
+        contexts.Setup(x => x.EnsureUmbracoContext())
+            .Returns(() =>
+                new UmbracoContextReference(umbraco.Object, false, Mock.Of<IUmbracoContextAccessor>()));
+
         var views = new ConcurrentBag<ContentView>();
         var tracker = new Mock<ITracker>();
+
         tracker.Setup(x => x.TrackAsync(It.IsAny<ContentView>(), It.IsAny<CancellationToken>()))
-            .Callback<ContentView, CancellationToken>((view, _) => views.Add(view)).Returns(Task.CompletedTask);
+            .Callback<ContentView, CancellationToken>((view, _) => views.Add(view))
+            .Returns(Task.CompletedTask);
+
         var searches = new ConcurrentBag<ContentSearchRequest>();
         var searcher = new Mock<Relewise.Client.Search.ISearcher>();
+
         searcher.Setup(x => x.SearchAsync(It.IsAny<ContentSearchRequest>(), It.IsAny<CancellationToken>()))
             .Callback<ContentSearchRequest, CancellationToken>((search, _) => searches.Add(search))
-            .ReturnsAsync(new ContentSearchResponse { Hits = 0, Results = [], Facets = new() });
+            .ReturnsAsync(new ContentSearchResponse { Hits = 0, Results = [], Facets = new ContentFacetResult() });
+
         var clients = new Mock<IRelewiseClientFactory>();
-        clients.Setup(x => x.GetClient<Relewise.Client.Search.ISearcher>(Constants.NamedClientName)).Returns(searcher.Object);
+
+        clients.Setup(x => x.GetClient<Relewise.Client.Search.ISearcher>(Constants.NamedClientName))
+            .Returns(searcher.Object);
         clients.Setup(x => x.GetClient<ITracker>(Constants.NamedClientName)).Returns(tracker.Object);
+
         var accessor = new HttpContextAccessor();
         var locators = new ConcurrentBag<Mock<IRelewiseUserLocator>>();
         var services = new ServiceCollection();
+
         services.AddSingleton(contexts.Object);
         services.AddSingleton(tracker.Object);
         services.AddScoped<IRelewiseUserLocator>(_ =>
         {
             var locator = new Mock<IRelewiseUserLocator>();
             var user = (User)accessor.HttpContext!.Items["User"]!;
+
             locator.As<IDisposable>();
-            locator.Setup(x => x.GetUser()).Returns(async () => { await Task.Delay(5); return user; });
+            locator.Setup(x => x.GetUser())
+                .Returns(async () =>
+                {
+                    await Task.Delay(5);
+                    return user;
+                });
             locators.Add(locator);
+
             return locator.Object;
         });
         services.AddSingleton(clients.Object);
+
         var store = new Mock<global::Umbraco.Cms.Core.Services.IKeyValueService>();
-        services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(settings => settings.Id = "identity-test");
+
+        services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(settings =>
+            settings.Id = "identity-test");
         services.AddSingleton(store.Object);
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
         {
@@ -226,39 +306,62 @@ public class ContentIdentityTests
             options.SearchProviders.DefaultPublishedContentProviderAlias = "articles";
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
-        using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
-        var provider = new MappedEntitySearcher(root.GetRequiredService<RelewiseUmbracoConfiguration>(), root.GetRequiredService<IServiceScopeFactory>(), accessor);
+
+        using ServiceProvider root =
+            services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        var provider = new MappedEntitySearcher(root.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            root.GetRequiredService<IServiceScopeFactory>(),
+            accessor);
         var middleware = new RelewiseContentMiddleware(_ => Task.CompletedTask, Configuration("true"));
-        await Task.WhenAll(Enumerable.Range(0, 12).Select(async visitor =>
-        {
-            try
+        var requestScopes = root.GetRequiredService<IServiceScopeFactory>();
+
+        await Task.WhenAll(Enumerable.Range(0, 12)
+            .Select(async visitor =>
             {
-                User currentUser = identityKind switch
+                try
                 {
-                    "temporary" => User.ByTemporaryId($"browser-{visitor}"),
-                    "authenticated" => User.ByAuthenticatedId($"customer-{visitor}", $"browser-{visitor}"),
-                    _ => User.Anonymous()
-                };
-                using IServiceScope scope = root.CreateScope();
-                accessor.HttpContext = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
-                accessor.HttpContext.Items["User"] = currentUser;
-                await middleware.InvokeAsync(accessor.HttpContext);
-                string query = $"article-{visitor}";
-                await provider.SearchAsync(global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent, query,
-                    facets: [new KeywordFacet("tag"), new IntegerRangeFacet("number", [new("low", 0, 10), new("high", 10, null)])],
-                    culture: "en-US", accessContext: new AccessContext(Guid.NewGuid(), []));
-                Assert.Contains(views, view => ReferenceEquals(currentUser, view.User));
-                ContentSearchRequest[] visitorSearches = searches.Where(search => search.Term == query).ToArray();
-                Assert.Equal(4, visitorSearches.Length); // Main search, keyword facet, two range buckets.
-                Assert.All(visitorSearches, search => Assert.Same(currentUser, search.User));
-            }
-            finally
-            {
-                accessor.HttpContext = null;
-            }
-        }));
+                    User currentUser = identityKind switch
+                    {
+                        "temporary" => User.ByTemporaryId($"browser-{visitor}"),
+                        "authenticated" => User.ByAuthenticatedId($"customer-{visitor}", $"browser-{visitor}"),
+                        _ => User.Anonymous()
+                    };
+                    using IServiceScope scope = requestScopes.CreateScope();
+
+                    accessor.HttpContext = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
+                    accessor.HttpContext.Items["User"] = currentUser;
+                    await middleware.InvokeAsync(accessor.HttpContext);
+
+                    var query = $"article-{visitor}";
+
+                    await provider.SearchAsync(
+                        global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent,
+                        query,
+                        facets:
+                        [
+                            new KeywordFacet("tag"),
+                            new IntegerRangeFacet("number",
+                            [
+                                new IntegerRangeFacetRange("low", 0, 10), new IntegerRangeFacetRange("high", 10, null)
+                            ])
+                        ],
+                        culture: "en-US",
+                        accessContext: new AccessContext(Guid.NewGuid(), []));
+                    Assert.Contains(views, view => ReferenceEquals(currentUser, view.User));
+
+                    ContentSearchRequest[] visitorSearches = [.. searches.Where(search => search.Term == query)];
+
+                    Assert.Equal(4, visitorSearches.Length); // Main search, keyword facet, two range buckets.
+                    Assert.All(visitorSearches, search => Assert.Same(currentUser, search.User));
+                }
+                finally
+                {
+                    accessor.HttpContext = null;
+                }
+            }));
         Assert.Equal(12, views.Count);
         Assert.Equal(12, locators.Count);
+
         foreach (Mock<IRelewiseUserLocator> locator in locators)
         {
             locator.Verify(x => x.GetUser(), Times.Exactly(2)); // View + search; metadata must not identify a visitor.
@@ -270,9 +373,14 @@ public class ContentIdentityTests
     public void TrackingRegistrationDoesNotResolveScopedIdentityAtStartup()
     {
         var services = new ServiceCollection();
-        services.AddScoped<IRelewiseUserLocator>(_ => throw new InvalidOperationException("Must only resolve during a request"));
-        using ServiceProvider root = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+
+        services.AddScoped<IRelewiseUserLocator>(_ =>
+            throw new InvalidOperationException("Must only resolve during a request"));
+
+        using ServiceProvider root =
+            services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         var builder = new Mock<IUmbracoApplicationBuilderContext>();
+
         builder.SetupGet(x => x.ApplicationServices).Returns(root);
         builder.SetupGet(x => x.AppBuilder).Returns(new ApplicationBuilder(root));
 
@@ -282,29 +390,41 @@ public class ContentIdentityTests
     private static RelewiseUmbracoConfiguration Configuration(string? value)
     {
         var services = new ServiceCollection();
+
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(
-            new Dictionary<string, string?> { ["Relewise:Umbraco:UseContentKeysAsIds"] = value }).Build());
-        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) => options.AddContentType("article", type => type.AutoMap()));
+                new Dictionary<string, string?> { ["Relewise:Umbraco:UseContentKeysAsIds"] = value })
+            .Build());
+        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
+            options.AddContentType("article", type => type.AutoMap()));
+
         using ServiceProvider provider = services.BuildServiceProvider();
+
         return new RelewiseUmbracoConfiguration(provider);
     }
 
     private static IPublishedContent PublishedContent(int id, Guid key)
     {
         var content = new Mock<IPublishedContent>();
+        content.SetupGet(x => x.ContentType.Alias).Returns("article");
+
         content.SetupGet(x => x.Id).Returns(id);
         content.SetupGet(x => x.Key).Returns(key);
+
         return content.Object;
     }
 
     private static IContent EditableContent(int id, Guid key, string alias = "article")
     {
         var contentType = new Mock<ISimpleContentType>();
+
         contentType.SetupGet(x => x.Alias).Returns(alias);
+
         var content = new Mock<IContent>();
+
         content.SetupGet(x => x.Id).Returns(id);
         content.SetupGet(x => x.Key).Returns(key);
         content.SetupGet(x => x.ContentType).Returns(contentType.Object);
+
         return content.Object;
     }
 }

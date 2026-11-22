@@ -23,8 +23,11 @@ internal class ContentMapper : IContentMapper
     private readonly IServiceProvider _provider;
 
     public ContentMapper(
-        IUmbracoContextFactory umbracoContextFactory, IDocumentNavigationQueryService documentNavigationQueryService,
-        RelewiseUmbracoConfiguration configuration, IRelewisePropertyConverter propertyConverter, IServiceProvider provider)
+        IUmbracoContextFactory umbracoContextFactory,
+        IDocumentNavigationQueryService documentNavigationQueryService,
+        RelewiseUmbracoConfiguration configuration,
+        IRelewisePropertyConverter propertyConverter,
+        IServiceProvider provider)
     {
         _umbracoContextFactory = umbracoContextFactory;
         _documentNavigationQueryService = documentNavigationQueryService;
@@ -43,9 +46,10 @@ internal class ContentMapper : IContentMapper
         using UmbracoContextReference umbracoContextReference = _umbracoContextFactory.EnsureUmbracoContext();
 
         var culturesToPublish = new List<string>();
+
         if (content.PublishedContent.ContentType.VariesByCulture())
         {
-            culturesToPublish = content.PublishedContent.Cultures.Values.Select(x => x.Culture).ToList();
+            culturesToPublish = [.. content.PublishedContent.Cultures.Values.Select(x => x.Culture)];
         }
         else
         {
@@ -56,36 +60,54 @@ internal class ContentMapper : IContentMapper
         {
             DisplayName = MapDisplayName(content.PublishedContent, culturesToPublish),
             CategoryPaths = GetCategoryPaths(content, culturesToPublish)
-        }, content.UpdateKind);
+        },
+            content.UpdateKind);
 
         await AutoMapOrUseMapper(content, culturesToPublish, contentUpdate, token);
 
         return new MapContentResult(contentUpdate);
     }
 
-    private async Task AutoMapOrUseMapper(MapContent content, List<string> culturesToPublish, ContentUpdate contentUpdate, CancellationToken token)
+    private async Task AutoMapOrUseMapper(
+        MapContent content,
+        List<string> culturesToPublish,
+        ContentUpdate contentUpdate,
+        CancellationToken token)
     {
         if (TryGetMapper(content, out IContentTypeMapping? mapping))
         {
-            contentUpdate = await mapping.Map(new ContentMappingContext(content.PublishedContent, contentUpdate, culturesToPublish, _provider), token);
+            contentUpdate =
+                await mapping.Map(
+                    new ContentMappingContext(content.PublishedContent, contentUpdate, culturesToPublish, _provider),
+                    token);
 
             if (contentUpdate == null)
             {
-                throw new InvalidOperationException("Content update can not be null when returned from a ContentTypeMapping");
+                throw new InvalidOperationException(
+                    "Content update can not be null when returned from a ContentTypeMapping");
             }
         }
         else
         {
             contentUpdate.Content.Data = (await _propertyConverter
-                .ConvertAsync(content.PublishedContent, content.PublishedContent, culturesToPublish.ToArray(), _provider, token))
+                    .ConvertAsync(content.PublishedContent,
+                        content.PublishedContent,
+                        [.. culturesToPublish],
+                        _provider,
+                        token))
                 .ToDictionary(x => x.Key, x => x.Value);
         }
 
         contentUpdate.Content.Data ??= new Dictionary<string, DataValue?>();
         contentUpdate.Content.Data.Add(Constants.VersionKey, content.Version);
         contentUpdate.Content.Data.Add("contentTypeAlias", content.PublishedContent.ContentType.Alias);
-        contentUpdate.Content.Data.Add("url", new Multilingual(culturesToPublish.Select(x => new Multilingual.Value(x, content.PublishedContent.Url(x, UrlMode.Absolute))).ToList()));
-        contentUpdate.Content.Data.Add("createdAt", new DateTimeOffset(content.PublishedContent.CreateDate).ToUnixTimeSeconds());
+        contentUpdate.Content.Data.Add(
+            "url",
+            new Multilingual(culturesToPublish
+                .Select(x => new Multilingual.Value(x, content.PublishedContent.Url(x, UrlMode.Absolute)))
+                .ToList()));
+        contentUpdate.Content.Data.Add("createdAt",
+            new DateTimeOffset(content.PublishedContent.CreateDate).ToUnixTimeSeconds());
 
         bool TryGetMapper(MapContent mapContent, [NotNullWhen(true)] out IContentTypeMapping? contentTypeMapping)
         {
@@ -93,7 +115,8 @@ internal class ContentMapper : IContentMapper
         }
     }
 
-    private List<CategoryPath>? GetCategoryPaths(MapContent content, List<string> culturesToPublish)
+    private List<CategoryPath>? GetCategoryPaths(MapContent content,
+        List<string> culturesToPublish)
     {
         if (!_documentNavigationQueryService.TryGetParentKey(content.PublishedContent.Key, out _))
         {
@@ -102,10 +125,12 @@ internal class ContentMapper : IContentMapper
 
         return
         [
-            new(content.PublishedContent
-                .Breadcrumbs(andSelf: false)
-                .Select(x => new CategoryNameAndId(_configuration.GetContentId(x), MapDisplayName(x, culturesToPublish)))
-                .ToArray())
+            new CategoryPath([
+                .. content.PublishedContent
+                    .Breadcrumbs(false)
+                    .Select(x =>
+                        new CategoryNameAndId(_configuration.GetContentId(x), MapDisplayName(x, culturesToPublish)))
+            ])
         ];
     }
 

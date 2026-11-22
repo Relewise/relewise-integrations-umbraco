@@ -15,7 +15,9 @@ internal class RelewiseContentUnpublishedNotificationHandler : INotificationAsyn
     private readonly IExportContentService _exportContentService;
     private readonly RelewiseUmbracoConfiguration _configuration;
 
-    public RelewiseContentUnpublishedNotificationHandler(IExportContentService exportContentService, RelewiseUmbracoConfiguration configuration)
+    public RelewiseContentUnpublishedNotificationHandler(
+        IExportContentService exportContentService,
+        RelewiseUmbracoConfiguration configuration)
     {
         _exportContentService = exportContentService;
         _configuration = configuration;
@@ -30,7 +32,7 @@ internal class RelewiseContentUnpublishedNotificationHandler : INotificationAsyn
             return;
         }
 
-        string[] ids = notification.UnpublishedEntities
+        var ids = notification.UnpublishedEntities
             .Where(x => _configuration.CanMap(x))
             .Select(x => _configuration.GetContentId(x))
             .ToArray();

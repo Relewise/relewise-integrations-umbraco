@@ -34,12 +34,23 @@ using UFilter = Umbraco.Cms.Core.Search.Querying.Filtering.Filter;
 
 namespace Relewise.Integrations.Umbraco.Search;
 
-internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configuration, IServiceScopeFactory scopes,
+internal sealed class MappedEntitySearcher(
+    RelewiseUmbracoConfiguration configuration,
+    IServiceScopeFactory scopes,
     IHttpContextAccessor http) : global::Umbraco.Cms.Core.Search.ISearcher
 {
-    public async Task<SearchResult> SearchAsync(string indexAlias, string? query = null, IEnumerable<UFilter>? filters = null,
-        IEnumerable<UFacet>? facets = null, IEnumerable<Sorter>? sorters = null, string? culture = null, string? segment = null,
-        AccessContext? accessContext = null, int skip = 0, int take = 10, int maxSuggestions = 0)
+    public async Task<SearchResult> SearchAsync(
+        string indexAlias,
+        string? query = null,
+        IEnumerable<UFilter>? filters = null,
+        IEnumerable<UFacet>? facets = null,
+        IEnumerable<Sorter>? sorters = null,
+        string? culture = null,
+        string? segment = null,
+        AccessContext? accessContext = null,
+        int skip = 0,
+        int take = 10,
+        int maxSuggestions = 0)
     {
         query = string.IsNullOrWhiteSpace(query) ? null : query;
         culture = string.IsNullOrWhiteSpace(culture) ? null : culture;
@@ -48,8 +59,10 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
         ArgumentOutOfRangeException.ThrowIfNegative(take);
         ArgumentOutOfRangeException.ThrowIfNegative(maxSuggestions);
 
-        string alias = indexAlias == global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent
-            ? configuration.SearchProviders.DefaultPublishedContentProviderAlias ?? indexAlias : indexAlias;
+        var alias = indexAlias == global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent
+            ? configuration.SearchProviders.DefaultPublishedContentProviderAlias ?? indexAlias
+            : indexAlias;
+
         if (!configuration.SearchProviders.Providers.TryGetValue(alias, out SearchProviderDefinition? provider))
         {
             throw new InvalidOperationException($"No Relewise query provider is configured for '{alias}'.");
@@ -57,26 +70,37 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
 
         if (segment != null)
         {
-            UnsupportedSegmentBehavior behavior = provider.Options is ContentSearchProviderOptions content ? content.UnsupportedSegmentBehavior : ((ProductSearchProviderOptions)provider.Options).UnsupportedSegmentBehavior;
+            UnsupportedSegmentBehavior behavior = provider.Options is ContentSearchProviderOptions content
+                ? content.UnsupportedSegmentBehavior
+                : ((ProductSearchProviderOptions)provider.Options).UnsupportedSegmentBehavior;
+
             if (!behavior.IgnoreSegment)
             {
-                throw new NotSupportedException("Segment-specific core queries are not supported. Configure Ignore() to execute without a segment.");
+                throw new NotSupportedException(
+                    "Segment-specific core queries are not supported. Configure Ignore() to execute without a segment.");
             }
 
             segment = null;
         }
-        bool requirePublishedPage = provider.Options is not ProductSearchProviderOptions { RequirePublishedPage: false };
+
+        var requirePublishedPage = provider.Options is not ProductSearchProviderOptions
+        {
+            RequirePublishedPage: false
+        };
         await using AsyncServiceScope scope = scopes.CreateAsyncScope();
         IServiceProvider services = http.HttpContext?.RequestServices ?? scope.ServiceProvider;
         User user = await services.GetRequiredService<IRelewiseUserLocator>().GetUser();
-        string language = culture ?? (await services.GetRequiredService<ILanguageService>().GetDefaultIsoCodeAsync());
+        var language = culture ?? await services.GetRequiredService<ILanguageService>().GetDefaultIsoCodeAsync();
         var context = new SearchRequestContext(services, user, language);
-        string site = EntityIndexingService.SiteId(services);
+        var site = EntityIndexingService.SiteId(services);
         UFilter[] supplied = filters?.ToArray() ?? [];
         UFacet[] selectedFacets = facets?.ToArray() ?? [];
         Sorter[] selectedSorters = sorters?.ToArray() ?? [];
-        IReadOnlyDictionary<string, string> booleanDataFields = provider.Options is ProductSearchProviderOptions productOptions
-            ? productOptions.BooleanDataFields : new Dictionary<string, string>();
+        IReadOnlyDictionary<string, string> booleanDataFields =
+            provider.Options is ProductSearchProviderOptions productOptions
+                ? productOptions.BooleanDataFields
+                : new Dictionary<string, string>();
+
         foreach (UFacet facet in selectedFacets)
         {
             if (booleanDataFields.ContainsKey(facet.FieldName) && facet is not KeywordFacet)
@@ -84,6 +108,7 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
                 throw new NotSupportedException($"Boolean Data binding '{facet.FieldName}' requires a KeywordFacet.");
             }
         }
+
         foreach (Sorter sorter in selectedSorters)
         {
             if (sorter.FieldName != null && booleanDataFields.ContainsKey(sorter.FieldName))
@@ -91,40 +116,70 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
                 throw new NotSupportedException($"Sorting Boolean Data binding '{sorter.FieldName}' is not supported.");
             }
         }
-        string[] sourceAliases = provider.ContentOptions?.DocumentTypeAliases ?? configuration.Mappings.Values
-            .Where(mapping => mapping.Export && mapping.EntityType == provider.EntityType).Select(mapping => mapping.DocumentTypeAlias).ToArray();
-        ISearcher client = services.GetRequiredService<IRelewiseClientFactory>().GetClient<global::Relewise.Client.Search.ISearcher>(Constants.NamedClientName);
-        ContentSearchRequest Create(IEnumerable<UFilter> selected, int offset, int count)
+
+        var sourceAliases = provider.ContentOptions?.DocumentTypeAliases ??
+        [
+            .. configuration.Mappings.Values
+                .Where(mapping => mapping.Export && mapping.EntityType == provider.EntityType)
+                .Select(mapping => mapping.DocumentTypeAlias)
+        ];
+        var client = services.GetRequiredService<IRelewiseClientFactory>()
+            .GetClient<ISearcher>(Constants.NamedClientName);
+
+        ContentSearchRequest Create(IEnumerable<UFilter> selected,
+            int offset,
+            int count)
         {
-            var request = new ContentSearchRequest(new Language(language), Currency.Undefined, user, provider.Location(alias), query, offset, count)
+            var request = new ContentSearchRequest(new Language(language),
+                Currency.Undefined,
+                user,
+                provider.Location(alias),
+                query,
+                offset,
+                count)
             {
                 Filters = new FilterCollection(),
                 Facets = new ContentFacetQuery(),
                 Sorting = new ContentSortBySpecification(),
-                Settings = new ContentSearchSettings { SelectedContentProperties = new SelectedContentPropertiesSettings { DataKeys = ["rwUmbracoNodeKey"] } }
+                Settings = new ContentSearchSettings
+                {
+                    SelectedContentProperties = new SelectedContentPropertiesSettings
+                    { DataKeys = ["rwUmbracoNodeKey"] }
+                }
             };
+
             request.Filters!.Add(Equal("rwUmbracoSite", site));
+
             if (requirePublishedPage)
             {
                 request.Filters.Add(Equal("rwUmbracoPublished", true));
             }
 
-            request.Filters!.Add(new OrFilter(sourceAliases.Select(a => Equal("contentTypeAlias", a)).ToArray()));
-            request.Filters!.Add(new OrFilter((culture == null ? new[] { "" } : new[] { "", culture.ToLowerInvariant() })
-                .Select(value => (RFilter)new ContentDataFilter(CultureKey, new ContainsCondition(value))).ToArray()));
-            request.Filters!.Add(new OrFilter((segment == null ? new[] { "" } : new[] { "", segment })
-                .Select(value => (RFilter)new ContentDataFilter(SegmentsKey, new ContainsCondition(value))).ToArray()));
+            request.Filters!.Add(
+                new OrFilter([.. sourceAliases.Select(a => (RFilter)Equal("contentTypeAlias", a))]));
+            request.Filters!.Add(new OrFilter(
+            [
+                .. (culture == null ? new[] { "" } : ["", culture.ToLowerInvariant()]).Select(value =>
+                    (RFilter)new ContentDataFilter(CultureKey, new ContainsCondition(value)))
+            ]));
+            request.Filters!.Add(new OrFilter([
+                .. (segment == null ? new[] { "" } : ["", segment]).Select(value =>
+                    (RFilter)new ContentDataFilter(SegmentsKey, new ContainsCondition(value)))
+            ]));
+
             if (accessContext?.Bypass != true)
             {
                 var allowed = new List<RFilter> { Equal(ProtectedKey, false) };
+
                 if (accessContext != null && accessContext.PrincipalId != Guid.Empty)
                 {
                     allowed.AddRange((accessContext.GroupIds ?? []).Append(accessContext.PrincipalId)
                         .Select(id => new ContentDataFilter(AccessKey, new ContainsCondition(id.ToString("D")))));
                 }
 
-                request.Filters!.Add(new OrFilter(allowed.ToArray()));
+                request.Filters!.Add(new OrFilter([.. allowed]));
             }
+
             foreach (UFilter filter in selected)
             {
                 request.Filters!.Add(MapFilter(filter, culture, booleanDataFields));
@@ -132,24 +187,39 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
 
             return request;
         }
+
         SearchRequest? predictionSource = null;
         CancellationToken cancellation = http.HttpContext?.RequestAborted ?? CancellationToken.None;
+
         async Task<ContentSearchResponse> Execute(ContentSearchRequest source)
         {
             // A fresh typed SDK request is configured for every execution, including facet queries.
             int pagingSkip = source.Skip, pagingTake = source.Take;
-            RFilter[] mandatory = source.Filters!.Items!.ToArray();
+            RFilter[] mandatory = [.. source.Filters!.Items!];
+
             if (provider.Options is ContentSearchProviderOptions content)
             {
-                var outgoing = new ContentSearchRequest(source.Language, source.Currency, user, provider.Location(alias), query, pagingSkip, pagingTake)
+                var outgoing = new ContentSearchRequest(source.Language,
+                    source.Currency,
+                    user,
+                    provider.Location(alias),
+                    query,
+                    pagingSkip,
+                    pagingTake)
                 {
                     Filters = new FilterCollection(),
-                    Facets = new ContentFacetQuery { Items = source.Facets?.Items?.ToList() ?? [] },
+                    Facets = new ContentFacetQuery { Items = source.Facets?.Items.ToList() ?? [] },
                     Sorting = source.Sorting,
-                    Settings = new ContentSearchSettings { SelectedContentProperties = new SelectedContentPropertiesSettings { DataKeys = ["rwUmbracoNodeKey"] } }
+                    Settings = new ContentSearchSettings
+                    {
+                        SelectedContentProperties = new SelectedContentPropertiesSettings
+                        { DataKeys = ["rwUmbracoNodeKey"] }
+                    }
                 };
+
                 content.Configure?.Invoke(outgoing, context);
-                outgoing.Filters = new FilterCollection((outgoing.Filters?.Items ?? []).Concat(mandatory).Distinct().ToArray());
+                outgoing.Filters =
+                    new FilterCollection([.. (outgoing.Filters?.Items ?? []).Concat(mandatory).Distinct()]);
                 outgoing.User = user;
                 outgoing.Language = new Language(language);
                 outgoing.IndexSelector = null;
@@ -158,32 +228,53 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
                 outgoing.Take = pagingTake;
                 outgoing.Settings ??= new ContentSearchSettings();
                 outgoing.Settings.SelectedContentProperties ??= new SelectedContentPropertiesSettings();
-                outgoing.Settings.SelectedContentProperties.DataKeys = (outgoing.Settings.SelectedContentProperties.DataKeys ?? []).Append("rwUmbracoNodeKey").Distinct().ToArray();
+                outgoing.Settings.SelectedContentProperties.DataKeys =
+                [
+                    .. (outgoing.Settings.SelectedContentProperties.DataKeys ?? []).Append("rwUmbracoNodeKey")
+                    .Distinct()
+                ];
+
                 if (string.IsNullOrWhiteSpace(outgoing.DisplayedAtLocation))
                 {
                     outgoing.DisplayedAtLocation = provider.Location(alias);
                 }
 
                 predictionSource ??= outgoing;
+
                 return await client.SearchAsync(outgoing, cancellation);
             }
+
             var options = (ProductSearchProviderOptions)provider.Options;
-            var target = new ProductSearchRequest(source.Language, source.Currency, user, provider.Location(alias), query, source.Skip, source.Take)
+            var target = new ProductSearchRequest(source.Language,
+                source.Currency,
+                user,
+                provider.Location(alias),
+                query,
+                source.Skip,
+                source.Take)
             {
                 Filters = new FilterCollection(),
                 Settings = new ProductSearchSettings
                 {
-                    SelectedProductProperties = new SelectedProductPropertiesSettings { DataKeys = ["rwUmbracoNodeKey"] },
+                    SelectedProductProperties = new SelectedProductPropertiesSettings
+                    { DataKeys = ["rwUmbracoNodeKey"] },
                     VariantRequestSettings = new VariantSearchRequestSettings { MaxVariantsPerProduct = 0 }
                 }
             };
+
             if (source.Sorting?.Value != null)
             {
                 target.Sorting!.Value = ProductSort(source.Sorting.Value);
             }
 
-            foreach (ContentDataStringValueFacet facet in source.Facets!.Items)
+            foreach (Relewise.Client.DataTypes.Search.Facets.Queries.Facet sourceFacet in source.Facets!.Items)
             {
+                if (sourceFacet is not ContentDataStringValueFacet facet)
+                {
+                    throw new NotSupportedException(
+                        $"Cannot translate facet '{sourceFacet.GetType().Name}' to Product search.");
+                }
+
                 if (booleanDataFields.Values.Contains(facet.Key))
                 {
                     target.Facets!.AddDataBoolean(DataSelectionStrategy.Product, facet.Key);
@@ -195,8 +286,10 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
             }
 
             int originalSkip = source.Skip, originalTake = source.Take;
+
             options.Configure?.Invoke(target, context);
-            target.Filters = new FilterCollection((target.Filters?.Items ?? []).Concat(mandatory.Select(ProductFilter)).ToArray());
+            target.Filters =
+                new FilterCollection([.. (target.Filters?.Items ?? []), .. mandatory.Select(ProductFilter)]);
             target.User = user;
             target.Language = new Language(language);
             target.IndexSelector = null;
@@ -204,6 +297,7 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
             target.Skip = originalSkip;
             target.Take = originalTake;
             target.Settings ??= new ProductSearchSettings();
+
             if (target.Settings.VariantRequestSettings?.MaxVariantsPerProduct > 1)
             {
                 throw new NotSupportedException("Umbraco document search requires at most one result per Product.");
@@ -212,78 +306,143 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
             target.Settings.VariantRequestSettings ??= new VariantSearchRequestSettings();
             target.Settings.VariantRequestSettings.MaxVariantsPerProduct ??= 0;
             target.Settings.SelectedProductProperties ??= new SelectedProductPropertiesSettings();
-            target.Settings.SelectedProductProperties.DataKeys = (target.Settings.SelectedProductProperties.DataKeys ?? []).Append("rwUmbracoNodeKey").Distinct().ToArray();
+            target.Settings.SelectedProductProperties.DataKeys =
+                [.. (target.Settings.SelectedProductProperties.DataKeys ?? []).Append("rwUmbracoNodeKey").Distinct()];
+
             if (string.IsNullOrWhiteSpace(target.DisplayedAtLocation))
             {
                 target.DisplayedAtLocation = provider.Location(alias);
             }
 
             predictionSource ??= target;
+
             ProductSearchResponse response = await client.SearchAsync(target, cancellation);
+
 #pragma warning disable CS0618 // Construct an internal adapter response, not an SDK request.
             return new ContentSearchResponse
             {
                 Hits = response.Hits,
-                Results = (response.Results ?? []).Select(result => new ContentResult { ContentId = result.ProductId, Data = result.Data }).ToArray(),
+                Results =
+                [
+                    .. (response.Results ?? []).Select(result => new ContentResult
+                        { ContentId = result.ProductId, Data = result.Data })
+                ],
                 Facets = new ContentFacetResult
                 {
-                    Items = (response.Facets?.Items ?? []).Select(f => f switch
-                    {
-                        ProductDataStringValueFacetResult text => (global::Relewise.Client.DataTypes.Search.Facets.Result.FacetResult)new ContentDataStringValueFacetResult(text.Key, text.Selected, text.CollectionFilterType, text.Available),
-                        ProductDataBooleanValueFacetResult boolean => new ContentDataStringValueFacetResult(boolean.Key,
-                            (boolean.Selected ?? []).Select(value => value ? "true" : "false").ToList(), null,
-                            (boolean.Available ?? []).Select(value => new AvailableFacetValue<string>(value.Value ? "true" : "false", value.Selected, value.Hits)).ToList()),
-                        _ => null
-                    }).OfType<global::Relewise.Client.DataTypes.Search.Facets.Result.FacetResult>().ToList()
+                    Items =
+                    [
+                        .. (response.Facets?.Items ?? []).Select(f => f switch
+                        {
+                            ProductDataStringValueFacetResult text => (
+                                global::Relewise.Client.DataTypes.Search.Facets.Result.FacetResult)new
+                                ContentDataStringValueFacetResult(text.Key,
+                                    text.Selected,
+                                    text.CollectionFilterType,
+                                    text.Available),
+                            ProductDataBooleanValueFacetResult boolean => new ContentDataStringValueFacetResult(
+                                boolean.Key,
+                                [.. (boolean.Selected ?? []).Select(value => value ? "true" : "false")],
+                                null,
+                                [
+                                    .. (boolean.Available ?? []).Select(value =>
+                                        new AvailableFacetValue<string>(value.Value ? "true" : "false",
+                                            value.Selected,
+                                            value.Hits))
+                                ]),
+                            _ => null
+                        })
+                        .OfType<global::Relewise.Client.DataTypes.Search.Facets.Result.FacetResult>()
+                    ]
                 }
             };
 #pragma warning restore CS0618
         }
-        Task<ContentSearchResponse> Run(ContentSearchRequest request) => Execute(request);
+
+        Task<ContentSearchResponse> Run(ContentSearchRequest request)
+        {
+            return Execute(request);
+        }
+
         ContentSearchRequest request = Create(supplied, skip, take);
+
         ApplySorting(request, selectedSorters, culture);
+
         ContentSearchResponse result = await Run(request);
         var facetResults = new List<UFacetResult>();
+
         foreach (UFacet facet in selectedFacets)
         {
-            facetResults.Add(await ComputeFacet(Create(supplied.Where(f => f.FieldName != facet.FieldName), 0, 0), facet, Run, culture, booleanDataFields));
+            facetResults.Add(await ComputeFacet(Create(supplied.Where(f => f.FieldName != facet.FieldName), 0, 0),
+                facet,
+                Run,
+                culture,
+                booleanDataFields));
         }
 
         string[] suggestions = [];
+
         if (maxSuggestions > 0 && query != null && predictionSource != null)
         {
-            var prediction = new SearchTermPredictionRequest(predictionSource.Language, predictionSource.Currency, user,
-                predictionSource.DisplayedAtLocation!, query, maxSuggestions)
+            var prediction = new SearchTermPredictionRequest(predictionSource.Language,
+                predictionSource.Currency,
+                user,
+                predictionSource.DisplayedAtLocation!,
+                query,
+                maxSuggestions)
             {
                 // Predictions retain the fully configured query scope, including protection and provider filters.
-                Filters = new FilterCollection((predictionSource.Filters?.Items ?? [])
-                    .Concat(predictionSource.PostFilters?.Items ?? []).ToArray()),
+                Filters = new FilterCollection([
+                    .. (predictionSource.Filters?.Items ?? []), .. predictionSource.PostFilters?.Items ?? []
+                ]),
                 RelevanceModifiers = predictionSource.RelevanceModifiers,
                 ContextValues = predictionSource.ContextValues,
                 Settings = new SearchTermPredictionSettings
                 {
-                    TargetEntityTypes = [provider.EntityType == typeof(Product) ? EntityType.Product : EntityType.Content]
+                    TargetEntityTypes =
+                        [provider.EntityType == typeof(Product) ? EntityType.Product : EntityType.Content]
                 }
             };
             SearchTermPredictionResponse predicted = await client.PredictAsync(prediction, cancellation);
-            suggestions = (predicted.Predictions ?? [])
+
+            suggestions =
+            [
+                .. (predicted.Predictions ?? [])
                 .Select(value => value.Term)
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Take(maxSuggestions)
-                .ToArray();
+            ];
         }
 
-        return new SearchResult(result.Hits, take == 0 ? [] : (result.Results ?? []).Select(r =>
-            new Document(Guid.Parse(r.Data["rwUmbracoNodeKey"].ValueAs<string>()), UmbracoObjectTypes.Document)).ToArray(), facetResults, suggestions);
+        return new SearchResult(
+            result.Hits,
+            take == 0
+                ? []
+                : (result.Results ?? []).Select(r =>
+                    new Document(Guid.Parse(r.Data["rwUmbracoNodeKey"].ValueAs<string>()), UmbracoObjectTypes.Document))
+                .ToArray(),
+            facetResults,
+            suggestions);
     }
-    private static RFilter ProductFilter(RFilter filter) => filter switch
+
+    private static RFilter ProductFilter(RFilter filter)
     {
-        ContentDataFilter f => new ProductDataFilter(f.Key, f.ObjectPath!, f.Conditions, f.MustMatchAllConditions, f.FilterOutIfKeyIsNotFound, f.Language, f.Currency),
-        AndFilter f => new AndFilter(f.Filters.Select(ProductFilter).ToArray(), f.Negated),
-        OrFilter f => new OrFilter(f.Filters.Select(ProductFilter).ToArray(), f.Negated),
-        _ => throw new NotSupportedException($"Cannot translate core predicate '{filter.GetType().Name}' to Product search.")
-    };
+        return filter switch
+        {
+            ContentDataFilter f => new ProductDataFilter(f.Key,
+                f.ObjectPath!,
+                f.Conditions,
+                f.MustMatchAllConditions,
+                f.FilterOutIfKeyIsNotFound,
+                f.Language,
+                f.Currency),
+            AndFilter f => new AndFilter([.. f.Filters.Select(ProductFilter)], f.Negated),
+            OrFilter f => new OrFilter([.. f.Filters.Select(ProductFilter)], f.Negated),
+            _ => throw new NotSupportedException(
+                $"Cannot translate core predicate '{filter.GetType().Name}' to Product search.")
+        };
+    }
+
     private static ProductSorting ProductSort(ContentSorting sorting)
     {
         ProductSorting target = sorting switch
@@ -292,6 +451,7 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
             ContentRelevanceSorting s => new ProductRelevanceSorting(s.Order),
             _ => throw new NotSupportedException($"Unsupported core sorting '{sorting.GetType().Name}'.")
         };
+
         if (sorting.ThenBy != null)
         {
             target.ThenBy = ProductSort(sorting.ThenBy);
@@ -299,25 +459,33 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
 
         return target;
     }
-    private static async Task<UFacetResult> ComputeFacet(ContentSearchRequest request, UFacet facet, Func<ContentSearchRequest, Task<ContentSearchResponse>> execute, string? culture = null,
+
+    private static async Task<UFacetResult> ComputeFacet(
+        ContentSearchRequest request,
+        UFacet facet,
+        Func<ContentSearchRequest, Task<ContentSearchResponse>> execute,
+        string? culture = null,
         IReadOnlyDictionary<string, string>? booleanDataFields = null)
     {
         var values = new List<FacetValue>();
+
         switch (facet)
         {
             case KeywordFacet:
             case IntegerExactFacet:
             case DecimalExactFacet:
             case DateTimeOffsetExactFacet:
-                string kind = facet switch
+                var kind = facet switch
                 {
                     KeywordFacet => "keyword",
                     IntegerExactFacet => "integerExact",
                     DecimalExactFacet => "decimalExact",
                     _ => "dateExact"
                 };
-                string dataKey = booleanDataFields != null && booleanDataFields.TryGetValue(facet.FieldName, out string? directKey)
-                    ? directKey : Field(facet.FieldName, kind, culture);
+                var dataKey = booleanDataFields != null &&
+                              booleanDataFields.TryGetValue(facet.FieldName, out var directKey)
+                    ? directKey
+                    : Field(facet.FieldName, kind, culture);
                 request.Facets!.AddDataString(dataKey);
                 ContentSearchResponse response = await execute(request);
                 foreach (AvailableFacetValue<string>? bucket in response.Facets?.DataString(dataKey)?.Available ?? [])
@@ -325,46 +493,79 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
                     values.Add(facet switch
                     {
                         KeywordFacet => new KeywordFacetValue(bucket.Value, bucket.Hits),
-                        IntegerExactFacet => new IntegerExactFacetValue(checked((int)ParseNumber(bucket.Value)), bucket.Hits),
-                        DecimalExactFacet => new DecimalExactFacetValue((decimal)ParseNumber(bucket.Value), bucket.Hits),
-                        _ => new DateTimeOffsetExactFacetValue(DateTimeOffset.FromUnixTimeMilliseconds(checked((long)ParseNumber(bucket.Value))), bucket.Hits)
+                        IntegerExactFacet => new IntegerExactFacetValue(checked((int)ParseNumber(bucket.Value)),
+                            bucket.Hits),
+                        DecimalExactFacet => new DecimalExactFacetValue((decimal)ParseNumber(bucket.Value),
+                            bucket.Hits),
+                        _ => new DateTimeOffsetExactFacetValue(
+                            DateTimeOffset.FromUnixTimeMilliseconds(checked((long)ParseNumber(bucket.Value))),
+                            bucket.Hits)
                     });
                 }
+
                 break;
             case IntegerRangeFacet f:
                 foreach (IntegerRangeFacetRange range in f.Ranges)
                 {
-                    values.Add(new IntegerRangeFacetValue(range.Key, range.MinValue, range.MaxValue,
-                    await CountRange(request, execute, NumberRange(f.FieldName, "integer", range.MinValue, range.MaxValue, culture))));
+                    values.Add(new IntegerRangeFacetValue(
+                        range.Key,
+                        range.MinValue,
+                        range.MaxValue,
+                        await CountRange(request,
+                            execute,
+                            NumberRange(f.FieldName, "integer", range.MinValue, range.MaxValue, culture))));
                 }
 
                 break;
             case DecimalRangeFacet f:
                 foreach (DecimalRangeFacetRange range in f.Ranges)
                 {
-                    values.Add(new DecimalRangeFacetValue(range.Key, range.MinValue, range.MaxValue,
-                    await CountRange(request, execute, NumberRange(f.FieldName, "decimal", (double?)range.MinValue, (double?)range.MaxValue, culture))));
+                    values.Add(new DecimalRangeFacetValue(
+                        range.Key,
+                        range.MinValue,
+                        range.MaxValue,
+                        await CountRange(request,
+                            execute,
+                            NumberRange(f.FieldName,
+                                "decimal",
+                                (double?)range.MinValue,
+                                (double?)range.MaxValue,
+                                culture))));
                 }
 
                 break;
             case DateTimeOffsetRangeFacet f:
                 foreach (DateTimeOffsetRangeFacetRange range in f.Ranges)
                 {
-                    values.Add(new DateTimeOffsetRangeFacetValue(range.Key, range.MinValue, range.MaxValue,
-                    await CountRange(request, execute, NumberRange(f.FieldName, "date", range.MinValue.HasValue ? DateNumber(range.MinValue.Value) : null,
-                        range.MaxValue.HasValue ? DateNumber(range.MaxValue.Value) : null, culture))));
+                    values.Add(new DateTimeOffsetRangeFacetValue(
+                        range.Key,
+                        range.MinValue,
+                        range.MaxValue,
+                        await CountRange(request,
+                            execute,
+                            NumberRange(f.FieldName,
+                                "date",
+                                range.MinValue.HasValue ? DateNumber(range.MinValue.Value) : null,
+                                range.MaxValue.HasValue ? DateNumber(range.MaxValue.Value) : null,
+                                culture))));
                 }
 
                 break;
             default:
-                throw new NotSupportedException($"The Relewise provider does not support facet '{facet.GetType().Name}'.");
+                throw new NotSupportedException(
+                    $"The Relewise provider does not support facet '{facet.GetType().Name}'.");
         }
+
         return new UFacetResult(facet.FieldName, values);
     }
 
-    private static async Task<long> CountRange(ContentSearchRequest request, Func<ContentSearchRequest, Task<ContentSearchResponse>> execute, RFilter filter)
+    private static async Task<long> CountRange(
+        ContentSearchRequest request,
+        Func<ContentSearchRequest, Task<ContentSearchResponse>> execute,
+        RFilter filter)
     {
         request.Filters!.Items!.Add(filter);
+
         try
         {
             return (await execute(request)).Hits;
@@ -374,5 +575,4 @@ internal sealed class MappedEntitySearcher(RelewiseUmbracoConfiguration configur
             request.Filters!.Items!.Remove(filter);
         }
     }
-
 }

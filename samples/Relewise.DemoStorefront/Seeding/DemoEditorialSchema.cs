@@ -18,14 +18,17 @@ internal static class DemoEditorialSchema
         PropertyEditorCollection editors,
         IConfigurationEditorJsonSerializer serializer)
     {
-        var available = (await dataTypes.GetAllAsync()).ToList();
+        List<IDataType> available = [.. (await dataTypes.GetAllAsync())];
         IDataType text = available.First(type => type.Name == "Textstring");
         IDataType richText = available.First(type => type.EditorAlias == "Umbraco.RichText");
         IDataType boolean = available.First(type => type.EditorAlias == "Umbraco.TrueFalse");
 
-        async Task<IDataType> Data(string name, string editor, Dictionary<string, object> configuration)
+        async Task<IDataType> Data(string name,
+            string editor,
+            Dictionary<string, object> configuration)
         {
             IDataType? existing = available.FirstOrDefault(type => type.Name == name);
+
             if (existing != null)
             {
                 return existing;
@@ -34,23 +37,32 @@ internal static class DemoEditorialSchema
             var created = new DataType(editors.Single(value => value.Alias == editor), serializer)
             {
                 Name = name,
-                EditorUiAlias = available.FirstOrDefault(type => type.EditorAlias == editor)?.EditorUiAlias ?? editor switch
-                {
-                    "Umbraco.BlockList" => "Umb.PropertyEditorUi.BlockList",
-                    "Umbraco.BlockGrid" => "Umb.PropertyEditorUi.BlockGrid",
-                    "Umbraco.Decimal" => "Umb.PropertyEditorUi.Decimal",
-                    _ => throw new InvalidOperationException($"No demo UI is configured for '{editor}'.")
-                },
+                EditorUiAlias = available.FirstOrDefault(type => type.EditorAlias == editor)?.EditorUiAlias ??
+                                editor switch
+                                {
+                                    "Umbraco.BlockList" => "Umb.PropertyEditorUi.BlockList",
+                                    "Umbraco.BlockGrid" => "Umb.PropertyEditorUi.BlockGrid",
+                                    "Umbraco.Decimal" => "Umb.PropertyEditorUi.Decimal",
+                                    _ => throw new InvalidOperationException(
+                                        $"No demo UI is configured for '{editor}'.")
+                                },
                 ConfigurationData = configuration
             };
+
             await dataTypes.CreateAsync(created, Constants.Security.SuperUserKey);
             available.Add(created);
+
             return created;
         }
 
-        async Task<IContentType> Element(string alias, string name, IDataType body, bool localized = false)
+        async Task<IContentType> Element(
+            string alias,
+            string name,
+            IDataType body,
+            bool localized = false)
         {
             IContentType? existing = types.Get(alias);
+
             if (existing != null)
             {
                 return existing;
@@ -63,16 +75,20 @@ internal static class DemoEditorialSchema
                 IsElement = true,
                 Variations = localized ? ContentVariation.Culture : ContentVariation.Nothing
             };
-            created.AddPropertyType(new PropertyType(strings, text, "heading") { Name = "Heading", Variations = created.Variations });
-            created.AddPropertyType(new PropertyType(strings, body, "text") { Name = "Text", Variations = created.Variations });
+
+            created.AddPropertyType(new PropertyType(strings, text, "heading")
+            { Name = "Heading", Variations = created.Variations });
+            created.AddPropertyType(new PropertyType(strings, body, "text")
+            { Name = "Text", Variations = created.Variations });
             await types.CreateAsync(created, Constants.Security.SuperUserKey);
+
             return created;
         }
 
         IDataType currencies = await Data(
             "Demo currencies",
             "Umbraco.DropDown.Single",
-            new()
+            new Dictionary<string, object>
             {
                 ["items"] = new[] { "DKK", "EUR", "USD" }
             }
@@ -80,24 +96,28 @@ internal static class DemoEditorialSchema
         IDataType amount = await Data(
             "Demo price amount",
             Constants.PropertyEditors.Aliases.Decimal,
-            new()
+            new Dictionary<string, object>
             {
                 ["step"] = 0.01d
             }
         );
         IContentType? price = types.Get("currencyPrice");
+
         if (price == null)
         {
             price = new ContentType(strings, -1) { Alias = "currencyPrice", Name = "Currency price", IsElement = true };
-            price.AddPropertyType(new PropertyType(strings, currencies, "currency") { Name = "Currency", Mandatory = true });
+            price.AddPropertyType(new PropertyType(strings, currencies, "currency")
+            { Name = "Currency", Mandatory = true });
             price.AddPropertyType(new PropertyType(strings, amount, "amount") { Name = "Amount", Mandatory = true });
             await types.CreateAsync(price, Constants.Security.SuperUserKey);
         }
 
-        IDataType prices = await Data("Demo multi-currency prices", "Umbraco.BlockList", new()
-        {
-            ["blocks"] = new[] { new { contentElementTypeKey = price.Key, label = "{=currency} {=amount}" } }
-        }
+        IDataType prices = await Data("Demo multi-currency prices",
+            "Umbraco.BlockList",
+            new Dictionary<string, object>
+            {
+                ["blocks"] = new[] { new { contentElementTypeKey = price.Key, label = "{=currency} {=amount}" } }
+            }
         );
 
         IContentType editorial = await Element("editorialText", "Editorial rich text", richText);
@@ -110,48 +130,58 @@ internal static class DemoEditorialSchema
         IContentType group = await Element("editorialGroup", "Editorial group", text);
         IContentType localizedGroup = await Element("localizedEditorialGroup", "Localized editorial group", text, true);
         IContentType? visibility = types.Get("editorialVisibility");
+
         if (visibility == null)
         {
-            visibility = new ContentType(strings, -1) { Alias = "editorialVisibility", Name = "Editorial visibility", IsElement = true };
-            visibility.AddPropertyType(new PropertyType(strings, boolean, "hide") { Name = "Hide from editorial text" });
+            visibility = new ContentType(strings, -1)
+            { Alias = "editorialVisibility", Name = "Editorial visibility", IsElement = true };
+            visibility.AddPropertyType(new PropertyType(strings, boolean, "hide")
+            { Name = "Hide from editorial text" });
             await types.CreateAsync(visibility, Constants.Security.SuperUserKey);
         }
 
-        IDataType blocks = await Data("Demo editorial blocks", "Umbraco.BlockList", new()
-        {
-            ["blocks"] = new[] { editorial, localizedText, group, localizedGroup }.Select(type => new
+        IDataType blocks = await Data("Demo editorial blocks",
+            "Umbraco.BlockList",
+            new Dictionary<string, object>
             {
-                contentElementTypeKey = type.Key,
-                settingsElementTypeKey = visibility.Key,
-                label = "{=heading}"
-            }).ToArray()
-        });
+                ["blocks"] = new[] { editorial, localizedText, group, localizedGroup }.Select(type => new
+                {
+                    contentElementTypeKey = type.Key,
+                    settingsElementTypeKey = visibility.Key,
+                    label = "{=heading}"
+                })
+                    .ToArray()
+            });
 
-        foreach (IContentType? container in new[] { group, localizedGroup })
+        foreach (IContentType container in new[] { group, localizedGroup })
         {
             if (!container.PropertyTypes.Any(property => property.Alias == "items"))
             {
-                container.AddPropertyType(new PropertyType(strings, blocks, "items") { Name = "Nested editorial blocks" });
+                container.AddPropertyType(new PropertyType(strings, blocks, "items")
+                { Name = "Nested editorial blocks" });
                 await types.UpdateAsync(container, Constants.Security.SuperUserKey);
             }
         }
 
-        IDataType grid = await Data("Demo editorial grid", "Umbraco.BlockGrid", new()
-        {
-            ["gridColumns"] = 12,
-            ["blocks"] = new[] { editorial, group }.Select(type => new
+        IDataType grid = await Data("Demo editorial grid",
+            "Umbraco.BlockGrid",
+            new Dictionary<string, object>
             {
-                contentElementTypeKey = type.Key,
-                settingsElementTypeKey = visibility.Key,
-                allowAtRoot = true,
-                allowInAreas = true,
-                areaGridColumns = 12,
-                areas = type.Key == group.Key
-                    ? new[] { new { key = GridAreaKey, alias = "main", columnSpan = 12, rowSpan = 1 } }
-                    : [],
-                label = "{=heading}"
-            }).ToArray()
-        });
+                ["gridColumns"] = 12,
+                ["blocks"] = new[] { editorial, group }.Select(type => new
+                {
+                    contentElementTypeKey = type.Key,
+                    settingsElementTypeKey = visibility.Key,
+                    allowAtRoot = true,
+                    allowInAreas = true,
+                    areaGridColumns = 12,
+                    areas = type.Key == group.Key
+                            ? new[] { new { key = GridAreaKey, alias = "main", columnSpan = 12, rowSpan = 1 } }
+                            : [],
+                    label = "{=heading}"
+                })
+                    .ToArray()
+            });
 
         return (blocks, grid, prices);
     }

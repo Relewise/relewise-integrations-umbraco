@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using JetBrains.Annotations;
 
 namespace Relewise.Integrations.Umbraco.Controllers.Messages;
 
 /// <summary>
 /// Relewise Package configuration model
 /// </summary>
+[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 public class ConfigurationViewModel
 {
     /// <summary>
@@ -45,7 +47,11 @@ public class ConfigurationViewModel
     /// <summary>
     /// Relewise Package configuration model
     /// </summary>
-    public ConfigurationViewModel(IReadOnlyCollection<string> trackedContentTypes, IReadOnlyCollection<string> exportedContentTypes, List<NamedOptionsViewObject> named, bool contentMiddlewareEnabled)
+    public ConfigurationViewModel(
+        IReadOnlyCollection<string> trackedContentTypes,
+        IReadOnlyCollection<string> exportedContentTypes,
+        List<NamedOptionsViewObject> named,
+        bool contentMiddlewareEnabled)
     {
         TrackedContentTypes = trackedContentTypes;
         ExportedContentTypes = exportedContentTypes;

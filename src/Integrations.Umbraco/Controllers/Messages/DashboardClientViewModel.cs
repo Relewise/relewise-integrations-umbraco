@@ -7,6 +7,7 @@ public class DashboardClientViewModel(string name, ClientOptionsViewObject optio
 {
     /// <summary>The SDK client role.</summary>
     public string Name { get; } = name;
+
     /// <summary>Effective Dataset, server and request timeout.</summary>
     public ClientOptionsViewObject Options { get; } = options;
 }

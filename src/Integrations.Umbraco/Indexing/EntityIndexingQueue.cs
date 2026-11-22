@@ -20,7 +20,7 @@ internal sealed class EntityIndexingQueue(
     ILogger<EntityIndexingQueue> logger)
 {
     internal const int BatchSize = 100;
-    private readonly object _sync = new();
+    private readonly Lock _sync = new();
     private readonly Queue<Work> _pending = new();
     private readonly SemaphoreSlim _processing = new(1, 1);
     private readonly AsyncLocal<Execution?> _execution = new();
@@ -28,7 +28,8 @@ internal sealed class EntityIndexingQueue(
 
     internal void EnqueueChanges(IEnumerable<ContentChange> changes)
     {
-        ContentChange[][] batches = changes.Chunk(BatchSize).ToArray();
+        ContentChange[][] batches = [.. changes.Chunk(BatchSize)];
+
         lock (_sync)
         {
             foreach (ContentChange[] batch in batches)
@@ -36,65 +37,86 @@ internal sealed class EntityIndexingQueue(
                 _pending.Enqueue(new Changes(batch));
             }
         }
+
         ScheduleFlush();
     }
 
     internal void EnqueueDeletion(DeletedEntity[] entities, Guid[] parents)
     {
-        var snapshot = new Deletion(entities.ToArray(), parents.ToArray());
+        var snapshot = new Deletion([.. entities], [.. parents]);
+
         lock (_sync)
         {
             _pending.Enqueue(snapshot);
         }
+
         ScheduleFlush();
     }
 
-    internal Task ExportAsync(IEnumerable<Guid> keys, CancellationToken token = default,
-        ContentUpdate.UpdateKind? updateKind = null, long? version = null)
+    internal Task ExportAsync(
+        IEnumerable<Guid> keys,
+        ContentUpdate.UpdateKind? updateKind = null,
+        long? version = null,
+        CancellationToken token = default)
     {
-        Guid[] identities = keys.ToArray();
-        return ExecuteAsync(cancellation => indexing.ExportAsync(identities, cancellation, updateKind, version), token);
+        Guid[] identities = [.. keys];
+
+        return ExecuteAsync(cancellation => indexing.ExportAsync(identities, updateKind, version, cancellation), token);
     }
 
     internal Task RebuildAsync(bool permanentlyDelete = false, CancellationToken token = default)
-        => ExecuteAsync(cancellation => indexing.RebuildAsync(permanentlyDelete, cancellation), token);
+    {
+        return ExecuteAsync(cancellation => indexing.RebuildAsync(permanentlyDelete, cancellation), token);
+    }
 
-    private async Task ExecuteAsync(Func<CancellationToken, Task> action, CancellationToken token)
+    private async Task ExecuteAsync(Func<CancellationToken, Task> action,
+        CancellationToken token)
     {
         if (_execution.Value is { Active: true })
         {
-            throw new InvalidOperationException("An explicit export or rebuild cannot be started recursively from an indexing mapper or converter.");
+            throw new InvalidOperationException(
+                "An explicit export or rebuild cannot be started recursively from an indexing mapper or converter.");
         }
 
         using var waiting = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.ApplicationStopping);
+
         waiting.Token.ThrowIfCancellationRequested();
+
         var boundary = new Boundary(action, token);
+
         lock (_sync)
         {
             _pending.Enqueue(boundary);
         }
+
         // A rebuild may itself run on Umbraco's worker: execute inline rather than awaiting that same queue.
         try
         {
             await _processing.WaitAsync(waiting.Token);
+
             try
             {
                 while (!boundary.Completion.Task.IsCompleted)
                 {
                     // Finish the current operation's scope before returning, but leave other callers' queued work intact.
                     waiting.Token.ThrowIfCancellationRequested();
-                    await ProcessAsync(TakeNext() ?? throw new InvalidOperationException("The queued indexing operation is missing."), lifetime.ApplicationStopping);
+
+                    await ProcessAsync(
+                        TakeNext() ?? throw new InvalidOperationException("The queued indexing operation is missing."),
+                        lifetime.ApplicationStopping);
                 }
             }
             finally
             {
                 _processing.Release();
             }
+
             await boundary.Completion.Task;
         }
         catch (OperationCanceledException) when (waiting.IsCancellationRequested)
         {
             boundary.Completion.TrySetCanceled(waiting.Token);
+
             throw;
         }
     }
@@ -111,6 +133,7 @@ internal sealed class EntityIndexingQueue(
 
             _flushQueued = true;
         }
+
         try
         {
             queue.QueueBackgroundWorkItem(FlushAsync);
@@ -129,13 +152,19 @@ internal sealed class EntityIndexingQueue(
     private async Task FlushAsync(CancellationToken token)
     {
         using var stopping = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.ApplicationStopping);
+
         token = stopping.Token;
-        bool entered = false;
+
+        var entered = false;
+
         try
         {
             await _processing.WaitAsync(token);
+
             entered = true;
+
             Work? work = TakeNext();
+
             if (work != null)
             {
                 await ProcessAsync(work, token);
@@ -175,23 +204,30 @@ internal sealed class EntityIndexingQueue(
             }
 
             var combined = new List<ContentChange>(first.Items);
-            while (_pending.TryPeek(out Work? next) && next is Changes changes && combined.Count + changes.Items.Length <= BatchSize)
+
+            while (_pending.TryPeek(out Work? next) && next is Changes changes &&
+                   combined.Count + changes.Items.Length <= BatchSize)
             {
                 _pending.Dequeue();
                 combined.AddRange(changes.Items);
             }
-            return new Changes(combined.ToArray());
+
+            return new Changes([.. combined]);
         }
     }
 
-    private async Task ProcessAsync(Work work, CancellationToken token)
+    private async Task ProcessAsync(Work work,
+        CancellationToken token)
     {
         Execution? previous = _execution.Value;
         var current = new Execution();
+
         _execution.Value = current;
+
         try
         {
             token.ThrowIfCancellationRequested();
+
             switch (work)
             {
                 case Changes changes:
@@ -201,7 +237,7 @@ internal sealed class EntityIndexingQueue(
                     await indexing.DeleteAsync(deletion.Entities, token);
                     if (deletion.Parents.Length > 0)
                     {
-                        await indexing.ExportAsync(deletion.Parents, token);
+                        await indexing.ExportAsync(deletion.Parents, cancellationToken: token);
                     }
 
                     break;
@@ -216,14 +252,17 @@ internal sealed class EntityIndexingQueue(
                         linked.Token.ThrowIfCancellationRequested();
                         await boundary.Action(linked.Token);
                     }
+
                     boundary.Completion.TrySetResult();
                     break;
             }
         }
         catch (Exception error)
         {
-            bool cancelled = error is OperationCanceledException && (token.IsCancellationRequested
-                || work is Boundary requested && requested.Token.IsCancellationRequested);
+            var cancelled =
+                error is OperationCanceledException &&
+                (token.IsCancellationRequested || work is Boundary { Token.IsCancellationRequested: true });
+
             if (work is Boundary boundary)
             {
                 if (cancelled)
@@ -233,17 +272,21 @@ internal sealed class EntityIndexingQueue(
                 else
                 {
                     boundary.Completion.TrySetException(error);
-                    _ = boundary.Completion.Task.Exception; // Observe even if its caller cancelled while waiting for the writer.
+                    _ = boundary.Completion.Task
+                        .Exception; // Observe even if its caller cancelled while waiting for the writer.
                 }
             }
+
             if (!cancelled)
             {
-                logger.LogError(error, "Relewise indexing work failed. A full export may be needed to reconcile published content.");
+                logger.LogError(error,
+                    "Relewise indexing work failed. A full export may be needed to reconcile published content.");
             }
         }
         finally
         {
             current.Active = false;
+
             _execution.Value = previous;
         }
     }
@@ -254,8 +297,11 @@ internal sealed class EntityIndexingQueue(
     }
 
     private abstract record Work;
+
     private sealed record Changes(ContentChange[] Items) : Work;
+
     private sealed record Deletion(DeletedEntity[] Entities, Guid[] Parents) : Work;
+
     private sealed record Boundary(Func<CancellationToken, Task> Action, CancellationToken Token) : Work
     {
         internal TaskCompletionSource Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);

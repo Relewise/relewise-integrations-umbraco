@@ -7,14 +7,16 @@ internal static class ProductOptions
 {
     internal static string Label(IPublishedContent page)
     {
-        foreach (string alias in new[] { "optionLabel", "color", "size" })
+        foreach (var alias in new[] { "optionLabel", "color", "size" })
         {
-            string? value = page.Value<string>(alias);
+            var value = page.Value<string>(alias);
+
             if (!string.IsNullOrWhiteSpace(value))
             {
                 return value;
             }
         }
+
         return SiteContent.Title(page);
     }
 }

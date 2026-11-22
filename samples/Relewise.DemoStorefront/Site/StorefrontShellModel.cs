@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace Relewise.DemoStorefront.Site;
 
+[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 internal sealed class StorefrontShellModel
 {
     public Dictionary<string, string> Labels { get; init; } = [];

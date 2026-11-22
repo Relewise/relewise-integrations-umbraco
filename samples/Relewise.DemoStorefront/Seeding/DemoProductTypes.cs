@@ -11,11 +11,15 @@ internal static class DemoProductTypes
 {
     internal static async Task EnsureAsync(IServiceProvider services)
     {
-        IContentTypeService types = services.GetRequiredService<IContentTypeService>();
+        var types = services.GetRequiredService<IContentTypeService>();
         IContentType productType = types.Get("product")!;
+
         if (!productType.PropertyTypes.Any(property => property.Alias == "productType"))
         {
-            IDataType text = (await services.GetRequiredService<IDataTypeService>().GetAllAsync()).First(type => type.Name == "Textstring");
+            IDataType text =
+                (await services.GetRequiredService<IDataTypeService>().GetAllAsync()).First(type =>
+                    type.Name == "Textstring");
+
             productType.AddPropertyType(new PropertyType(
                 services.GetRequiredService<IShortStringHelper>(),
                 text,
@@ -28,29 +32,38 @@ internal static class DemoProductTypes
         }
 
         using IScope scope = services.GetRequiredService<IScopeProvider>().CreateScope();
+
         scope.EagerWriteLock(Constants.Locks.ContentTree);
-        IContentService content = services.GetRequiredService<IContentService>();
-        IEnumerable<IContent> products = content.GetRootContent().SelectMany(root => content.GetPagedDescendants(
-            root.Id,
-            0,
-            1000,
-            out _
-        ))
+
+        var content = services.GetRequiredService<IContentService>();
+        IEnumerable<IContent> products = content.GetRootContent()
+            .SelectMany(root => content.GetPagedDescendants(
+                root.Id,
+                0,
+                1000,
+                out _
+            ))
             .Where(node => node.ContentType.Alias == "product");
+
         foreach (IContent product in products)
         {
-            if (!product.Published || product.Edited || !product.AvailableCultures.All(culture => product.PublishedCultures.Contains(culture)) ||
-                !string.IsNullOrWhiteSpace(product.GetValue<string>("productType")) || !Types.TryGetValue(product.GetValue<string>("sku") ?? "", out string? type))
+            if (!product.Published || product.Edited ||
+                !product.AvailableCultures.All(culture => product.PublishedCultures.Contains(culture)) ||
+                !string.IsNullOrWhiteSpace(product.GetValue<string>("productType")) ||
+                !Types.TryGetValue(product.GetValue<string>("sku") ?? "", out var type))
             {
                 continue;
             }
+
             product.SetValue("productType", type);
             content.Save(product);
-            if (!content.Publish(product, product.PublishedCultures.ToArray()).Success)
+
+            if (!content.Publish(product, [.. product.PublishedCultures]).Success)
             {
                 throw new InvalidOperationException($"Failed publishing Product type for '{product.Name}'.");
             }
         }
+
         scope.Complete();
     }
 
@@ -147,6 +160,6 @@ internal static class DemoProductTypes
         ["FIELDWORK-CAMP-TABLE"] = "Camping table",
         ["FIELDWORK-CAMP-STOOL"] = "Camping stool",
         ["FIELDWORK-CAMP-STOVE"] = "Camping stove",
-        ["FIELDWORK-CAMP-KETTLE"] = "Camping kettle",
+        ["FIELDWORK-CAMP-KETTLE"] = "Camping kettle"
     };
 }

@@ -8,6 +8,7 @@ internal static class StoredPriceReader
     internal static Dictionary<string, decimal> Read(string? json)
     {
         var prices = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+
         if (string.IsNullOrWhiteSpace(json))
         {
             return prices;
@@ -16,14 +17,22 @@ internal static class StoredPriceReader
         foreach (JsonNode? block in JsonNode.Parse(json)?["contentData"]?.AsArray() ?? [])
         {
             JsonArray? values = block?["values"]?.AsArray();
-            string? currencyJson = values?.FirstOrDefault(value => value?["alias"]?.GetValue<string>() == "currency")?["value"]?.GetValue<string>();
-            decimal? amount = values?.FirstOrDefault(value => value?["alias"]?.GetValue<string>() == "amount")?["value"]?.GetValue<decimal>();
-            string? currency = currencyJson == null ? null : JsonNode.Parse(currencyJson)?.AsArray().FirstOrDefault()?.GetValue<string>();
-            string? code = currency?.Trim().ToUpperInvariant();
+            var currencyJson =
+                values?.FirstOrDefault(value => value?["alias"]?.GetValue<string>() == "currency")?["value"]
+                    ?.GetValue<string>();
+            var amount = values?.FirstOrDefault(value => value?["alias"]?.GetValue<string>() == "amount")?["value"]
+                ?.GetValue<decimal>();
+            var currency = currencyJson == null
+                ? null
+                : JsonNode.Parse(currencyJson)?.AsArray().FirstOrDefault()?.GetValue<string>();
+            var code = currency?.Trim().ToUpperInvariant();
+
             if (code is not { Length: 3 } || !code.All(char.IsAsciiLetterUpper) || !amount.HasValue)
             {
-                throw new InvalidOperationException("Each indexed price requires a three-letter currency code and an amount.");
+                throw new InvalidOperationException(
+                    "Each indexed price requires a three-letter currency code and an amount.");
             }
+
             PriceConverter.ValidateAmount(amount.Value);
             prices.Add(code, amount.Value);
         }

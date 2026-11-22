@@ -30,11 +30,17 @@ public class EntityIndexingServiceTests
     {
         await using var fixture = new Fixture();
         Guid removed = Guid.NewGuid(), draft = Guid.NewGuid();
+
         await fixture.Writer.ApplyChangesAsync([
-            ContentChange.Document(removed, ChangeImpact.Remove, ContentState.Draft),
-            ContentChange.Document(draft, ChangeImpact.Refresh, ContentState.Draft)], CancellationToken.None);
-        ContentAdministrativeAction cleanup = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
-        string filters = JsonConvert.SerializeObject(cleanup.Filters);
+                ContentChange.Document(removed, ChangeImpact.Remove, ContentState.Draft),
+                ContentChange.Document(draft, ChangeImpact.Refresh, ContentState.Draft)
+            ],
+            CancellationToken.None);
+
+        var cleanup =
+            Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+        var filters = JsonConvert.SerializeObject(cleanup.Filters);
+
         Assert.Contains(removed.ToString("D"), filters);
         Assert.DoesNotContain(draft.ToString("D"), filters);
     }
@@ -45,15 +51,26 @@ public class EntityIndexingServiceTests
     public async Task UnavailableMetadataNeverReplacesBusinessCollections(bool product)
     {
         await using var fixture = new Fixture();
+
         fixture.Reader.Setup(value => value.QueryAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProductDetailsCollectionResponse([new ProductResultDetails("external")], 1));
         fixture.Reader.Setup(value => value.QueryAsync(It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ContentDetailsCollectionResponse([new ContentResultDetails("external")], 1));
-        await fixture.Writer.DeleteAsync([new DeletedEntity(product ? typeof(Product) : typeof(Relewise.Client.DataTypes.Content), "external", Guid.NewGuid(), false)], CancellationToken.None);
+        await fixture.Writer.DeleteAsync(
+            [
+                new DeletedEntity(product ? typeof(Product) : typeof(Client.DataTypes.Content),
+                    "external",
+                    Guid.NewGuid(),
+                    false)
+            ],
+            CancellationToken.None);
+
         Trackable action = Assert.Single(Assert.Single(fixture.Tracked));
+
         if (product)
         {
-            ProductUpdate update = Assert.IsType<ProductUpdate>(action);
+            var update = Assert.IsType<ProductUpdate>(action);
+
             Assert.Null(update.Product.Assortments);
             Assert.Null(update.Product.CategoryPaths);
             Assert.False(update.ReplaceExistingVariants);
@@ -61,7 +78,8 @@ public class EntityIndexingServiceTests
         }
         else
         {
-            ContentUpdate update = Assert.IsType<ContentUpdate>(action);
+            var update = Assert.IsType<ContentUpdate>(action);
+
             Assert.Null(update.Content.Assortments);
             Assert.Null(update.Content.CategoryPaths);
             Assert.Equal("rwUmbracoPublished", Assert.Single(update.Content.Data!).Key);
@@ -76,22 +94,35 @@ public class EntityIndexingServiceTests
         await using var fixture = new Fixture();
         var transaction = new TestScopeContext();
         var scopes = new Mock<ICoreScopeProvider>();
+
         scopes.SetupGet(value => value.Context).Returns(transaction);
+
         var queue = new Mock<IBackgroundTaskQueue>();
         Func<CancellationToken, Task>? work = null;
+
         queue.Setup(value => value.QueueBackgroundWorkItem(It.IsAny<Func<CancellationToken, Task>>()))
             .Callback<Func<CancellationToken, Task>>(value => work = value);
+
         var node = new Mock<IContent>();
+
         node.SetupGet(value => value.ContentType.Alias).Returns("article");
         node.SetupGet(value => value.Id).Returns(42);
         node.SetupGet(value => value.Key).Returns(Guid.NewGuid());
-        var handler = new DeletedEntityIndexingHandler(fixture.Services.GetRequiredService<RelewiseUmbracoConfiguration>(),
-            Mock.Of<IContentService>(), scopes.Object,
-            new EntityIndexingQueue(fixture.Writer, queue.Object, Mock.Of<IHostApplicationLifetime>(), NullLogger<EntityIndexingQueue>.Instance),
+
+        var handler = new DeletedEntityIndexingHandler(
+            fixture.Services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            Mock.Of<IContentService>(),
+            scopes.Object,
+            new EntityIndexingQueue(fixture.Writer,
+                queue.Object,
+                Mock.Of<IHostApplicationLifetime>(),
+                NullLogger<EntityIndexingQueue>.Instance),
             NullLogger<DeletedEntityIndexingHandler>.Instance);
+
         handler.Handle(new ContentDeletedNotification(node.Object, new EventMessages()));
         Assert.Null(work);
         transaction.ScopeExit(completed);
+
         if (completed)
         {
             Assert.NotNull(work);
@@ -108,32 +139,49 @@ public class EntityIndexingServiceTests
     public async Task TerminalDeletionUsesTheCapturedCanonicalIdentityWithoutARead()
     {
         await using var fixture = new Fixture();
-        await fixture.Writer.DeleteAsync([new DeletedEntity(typeof(Relewise.Client.DataTypes.Content), "external-id", Guid.NewGuid(), true)], CancellationToken.None);
-        ContentAdministrativeAction action = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+
+        await fixture.Writer.DeleteAsync(
+            [new DeletedEntity(typeof(Client.DataTypes.Content), "external-id", Guid.NewGuid(), true)],
+            CancellationToken.None);
+
+        var action =
+            Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+
         Assert.Equal(ContentAdministrativeAction.UpdateKind.Delete, action.Kind);
         Assert.Contains("external-id", JsonConvert.SerializeObject(action.Filters));
-        fixture.Reader.Verify(value => value.QueryAsync(It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()), Times.Never);
+        fixture.Reader.Verify(value => value.QueryAsync(It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
     public async Task TerminalDeletionDoesNotDeleteAnExternallyManagedProduct()
     {
         await using var fixture = new Fixture();
+
         fixture.Reader.Setup(value => value.QueryAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProductDetailsCollectionResponse([], null));
-        await fixture.Writer.DeleteAsync([new DeletedEntity(typeof(Product), "external-product", Guid.NewGuid(), false)], CancellationToken.None);
+        await fixture.Writer.DeleteAsync(
+            [new DeletedEntity(typeof(Product), "external-product", Guid.NewGuid(), false)],
+            CancellationToken.None);
         Assert.Empty(fixture.Tracked);
-        fixture.Reader.Verify(value => value.QueryAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()), Times.Once);
+        fixture.Reader.Verify(value => value.QueryAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
     public async Task RebuildWithoutLocalRecordsScopesReconciliationToItsSiteAndSource()
     {
         await using var fixture = new Fixture();
+
         await fixture.Writer.RebuildAsync();
-        ContentAdministrativeAction cleanup = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+
+        var cleanup =
+            Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+
         Assert.Equal(ContentAdministrativeAction.UpdateKind.Disable, cleanup.Kind);
-        string json = JsonConvert.SerializeObject(cleanup.Filters);
+
+        var json = JsonConvert.SerializeObject(cleanup.Filters);
+
         Assert.Contains("test-installation", json);
         Assert.Contains("article", json);
         Assert.Contains("rwUmbracoExportGeneration", json);
@@ -144,11 +192,13 @@ public class EntityIndexingServiceTests
     public async Task FailedRebuildNeverReconcilesAndReleasesTheWriter()
     {
         await using var fixture = new Fixture();
+
         fixture.Strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Fixture export failed"));
         await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Writer.RebuildAsync());
         Assert.Empty(fixture.Tracked);
-        fixture.Strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        fixture.Strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         await fixture.Writer.RebuildAsync().WaitAsync(TimeSpan.FromSeconds(3));
         Assert.Single(fixture.Tracked);
     }
@@ -160,6 +210,7 @@ public class EntityIndexingServiceTests
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         int active = 0, maximum = 0;
+
         fixture.Strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
             .Returns(async () =>
             {
@@ -168,9 +219,13 @@ public class EntityIndexingServiceTests
                 await release.Task;
                 Interlocked.Decrement(ref active);
             });
+
         Task first = fixture.Writer.RebuildAsync();
+
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(3));
+
         Task second = fixture.Writer.RebuildAsync();
+
         Assert.False(second.IsCompleted);
         release.SetResult();
         await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(3));
@@ -181,9 +236,13 @@ public class EntityIndexingServiceTests
     public async Task DeletedSourceIsTargetedByNodeKeyRatherThanItsCurrentCustomId()
     {
         await using var fixture = new Fixture();
-        Guid key = Guid.NewGuid();
+        var key = Guid.NewGuid();
+
         await fixture.Writer.ExportAsync([key]);
-        ContentAdministrativeAction action = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+
+        var action =
+            Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
+
         Assert.Equal(ContentAdministrativeAction.UpdateKind.Delete, action.Kind);
         Assert.Contains(key.ToString("D"), JsonConvert.SerializeObject(action.Filters));
     }
@@ -194,21 +253,34 @@ public class EntityIndexingServiceTests
         public int CreatedThreadId { get; } = Environment.CurrentManagedThreadId;
         private readonly Dictionary<string, object?> _items = new();
         private readonly Dictionary<string, Action<bool>> _actions = new();
-        public void Enlist(string key, Action<bool> action, int priority = 100) => _actions.TryAdd(key, action);
+
+        public void Enlist(string key, Action<bool> action, int priority = 100)
+        {
+            _actions.TryAdd(key, action);
+        }
+
         public T? Enlist<T>(string key, Func<T> creator, Action<bool, T?>? action = null, int priority = 100)
         {
             if (!_items.ContainsKey(key))
             {
                 T value = creator();
+
                 _items.Add(key, value);
+
                 if (action != null)
                 {
                     _actions.Add(key, completed => action(completed, value));
                 }
             }
+
             return (T?)_items[key];
         }
-        public T? GetEnlisted<T>(string key) => _items.TryGetValue(key, out object? value) ? (T?)value : default;
+
+        public T? GetEnlisted<T>(string key)
+        {
+            return _items.TryGetValue(key, out var value) ? (T?)value : default;
+        }
+
         public void ScopeExit(bool completed)
         {
             foreach (Action<bool> action in _actions.Values)
@@ -229,25 +301,44 @@ public class EntityIndexingServiceTests
         public Fixture()
         {
             var tracker = new Mock<ITracker>();
+
             tracker.Setup(value => value.TrackAsync(It.IsAny<IEnumerable<Trackable>>(), It.IsAny<CancellationToken>()))
-                .Callback<IEnumerable<Trackable>, CancellationToken>((items, _) => Tracked.Add(items.ToArray())).Returns(Task.CompletedTask);
+                .Callback<IEnumerable<Trackable>, CancellationToken>((items, _) => Tracked.Add([.. items]))
+                .Returns(Task.CompletedTask);
+
             Mock<IDataAccessor> reader = Reader;
+
             reader.Setup(value => value.QueryAsync(It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ContentDetailsCollectionResponse([], 0));
+
             var clients = new Mock<IRelewiseClientFactory>();
+
             clients.Setup(value => value.GetClient<ITracker>(It.IsAny<string>())).Returns(tracker.Object);
             clients.Setup(value => value.GetClient<IDataAccessor>(It.IsAny<string>())).Returns(reader.Object);
+
             var contexts = new Mock<IUmbracoContextFactory>();
-            contexts.Setup(value => value.EnsureUmbracoContext()).Returns(() =>
-                new UmbracoContextReference(Mock.Of<IUmbracoContext>(), false, Mock.Of<IUmbracoContextAccessor>()));
+
+            contexts.Setup(value => value.EnsureUmbracoContext())
+                .Returns(() =>
+                    new UmbracoContextReference(Mock.Of<IUmbracoContext>(), false, Mock.Of<IUmbracoContextAccessor>()));
+
             var languages = new Mock<ILanguageService>();
+
             languages.Setup(value => value.GetAllAsync()).ReturnsAsync(Array.Empty<ILanguage>());
-            Strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            Strategy.Setup(value => value.HandleAsync(It.IsAny<IEnumerable<ContentIndexInfo>>(), It.IsAny<IEnumerable<ContentChange>>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            Strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            Strategy.Setup(value => value.HandleAsync(It.IsAny<IEnumerable<ContentIndexInfo>>(),
+                    It.IsAny<IEnumerable<ContentChange>>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
             var services = new ServiceCollection();
+
             services.AddLogging();
-            services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(options => options.Id = "test-installation");
-            services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) => options.MapContent("article", mapping => mapping.AutoMap()));
+            services.Configure<global::Umbraco.Cms.Core.Configuration.Models.GlobalSettings>(options =>
+                options.Id = "test-installation");
+            services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
+                options.MapContent("article", mapping => mapping.AutoMap()));
             services.AddSingleton<RelewiseUmbracoConfiguration>();
             services.AddSingleton(clients.Object);
             services.AddSingleton(contexts.Object);
@@ -255,10 +346,14 @@ public class EntityIndexingServiceTests
             services.AddSingleton(Strategy.Object);
             services.AddSingleton(Mock.Of<IContentService>());
             services.AddSingleton<EntityIndexingService>();
-            Services = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+            Services = services.BuildServiceProvider(new ServiceProviderOptions
+            { ValidateScopes = true, ValidateOnBuild = true });
             Writer = Services.GetRequiredService<EntityIndexingService>();
         }
 
-        public ValueTask DisposeAsync() => Services.DisposeAsync();
+        public ValueTask DisposeAsync()
+        {
+            return Services.DisposeAsync();
+        }
     }
 }

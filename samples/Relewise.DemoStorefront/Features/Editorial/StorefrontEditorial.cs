@@ -8,12 +8,15 @@ namespace Relewise.DemoStorefront.Features.Editorial;
 
 internal static class StorefrontEditorial
 {
-    internal static string Render(object? value, string culture)
+    internal static string Render(object? value,
+        string culture)
     {
         var html = new StringBuilder();
+
         void Element(IPublishedElement content)
         {
-            if (content.GetProperty("heading")?.GetValue(culture) is string heading && !string.IsNullOrWhiteSpace(heading))
+            if (content.GetProperty("heading")?.GetValue(culture) is string heading &&
+                !string.IsNullOrWhiteSpace(heading))
             {
                 html.Append($"<h2>{WebUtility.HtmlEncode(heading)}</h2>");
             }
@@ -62,6 +65,7 @@ internal static class StorefrontEditorial
         }
 
         Visit(value);
+
         return html.ToString();
     }
 }

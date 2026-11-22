@@ -3,7 +3,6 @@
 	<PropertyGroup>
 		<TargetFrameworks>net11.0</TargetFrameworks>
 		<Version>19.0.0-rc1</Version>
-		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<WarningsAsErrors>true</WarningsAsErrors>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
@@ -31,6 +30,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="JetBrains.Annotations" Version="2026.2.0" PrivateAssets="all" />
 		<PackageReference Include="Relewise.Client" Version="[1.326.0, 2)" />
 		<PackageReference Include="Relewise.Client.Extensions" Version="[1.4.1, 2)" />
 	</ItemGroup>

@@ -22,23 +22,36 @@ namespace Relewise.DemoStorefront.Features.Recommendations;
 
 internal static class StorefrontRecommendations
 {
-    internal static async Task<IResult> GetAsync(HttpContext http, Guid key)
+    internal static async Task<IResult> GetAsync(HttpContext http,
+        Guid key)
     {
         http.Response.Headers.CacheControl = "no-store";
-        if (DemoConnection.RequireConnection(http, json: true) is { } blocked)
+
+        if (DemoConnection.RequireConnection(http, true) is { } blocked)
         {
             return blocked;
         }
 
-        var market = DemoMarket.Current(http);
-        http.RequestServices.GetRequiredService<IVariationContextAccessor>().VariationContext = new VariationContext(market.Culture);
-        using UmbracoContextReference context = http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
-        IPublishedContentCache published = context.UmbracoContext.Content!;
-        IPublicAccessService access = http.RequestServices.GetRequiredService<IPublicAccessService>();
+        DemoMarket market = DemoMarket.Current(http);
+
+        http.RequestServices.GetRequiredService<IVariationContextAccessor>().VariationContext =
+            new VariationContext(market.Culture);
+
+        using UmbracoContextReference context =
+            http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
+        IPublishedContentCache published = context.UmbracoContext.Content;
+        var access = http.RequestServices.GetRequiredService<IPublicAccessService>();
         IPublishedContent home = SiteContent.Home(http.RequestServices);
-        bool Available(IPublishedContent page) => page.Root().Key == home.Key &&
-            page.Cultures.ContainsKey(market.Culture) && !access.IsProtected(page.Path).Success;
+
+        bool Available(IPublishedContent page)
+        {
+            return page.Root().Key == home.Key &&
+                   page.Cultures.ContainsKey(market.Culture) &&
+                   !access.IsProtected(page.Path).Success;
+        }
+
         IPublishedContent? page = published.GetById(key);
+
         if (page == null || page.ContentType.Alias is not ("home" or "product" or "productVariant") || !Available(page))
         {
             return Results.NotFound();
@@ -46,22 +59,31 @@ internal static class StorefrontRecommendations
 
         IPublishedContent product = page.ContentType.Alias == "productVariant" ? page.Parent()! : page;
         IPublishedContent? category = product.Parent();
-        bool isHome = page.ContentType.Alias == "home";
-        if (!Available(product) || !isHome && category?.ContentType.Alias != "productCategory")
+        var isHome = page.ContentType.Alias == "home";
+
+        if (!Available(product) || (!isHome && category?.ContentType.Alias != "productCategory"))
         {
             return Results.NotFound();
         }
 
-        string Id(IPublishedContent content) => DemoConfiguration.EntityId(content, http.RequestServices);
+        string Id(IPublishedContent content)
+        {
+            return DemoConfiguration.EntityId(content, http.RequestServices);
+        }
+
         User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser();
-        string site = http.RequestServices.GetRequiredService<IOptions<GlobalSettings>>().Value.Id!;
-        string? productType = product.Value<string>("productType");
-        bool emptyCart = isHome && http.Request.Query["placement"] == "cart";
-        bool similarEnabled = !isHome && !string.IsNullOrWhiteSpace(productType);
+        var site = http.RequestServices.GetRequiredService<IOptions<GlobalSettings>>().Value.Id;
+        var productType = product.Value<string>("productType");
+        var emptyCart = isHome && http.Request.Query["placement"] == "cart";
+        var similarEnabled = !isHome && !string.IsNullOrWhiteSpace(productType);
         ProductRecommendationRequestCollection batch = !similarEnabled
-            ? new ProductRecommendationRequestCollection(false, CreateRecentlyViewed(user, market, site, isHome ? null : Id(product),
-                emptyCart ? "Empty cart: Recently viewed" : null
-            )
+            ? new ProductRecommendationRequestCollection(false,
+                CreateRecentlyViewed(user,
+                    market,
+                    site,
+                    isHome ? null : Id(product),
+                    emptyCart ? "Empty cart: Recently viewed" : null
+                )
             )
             : CreateRequests(
                 user,
@@ -72,24 +94,34 @@ internal static class StorefrontRecommendations
                 Id(category!),
                 productType!
             );
+
         if (isHome && !emptyCart)
         {
             batch = new ProductRecommendationRequestCollection(false,
-                CreateRecentlyViewed(user, market, site), CreatePopularProducts(user, market, site)
+                CreateRecentlyViewed(user, market, site),
+                CreatePopularProducts(user, market, site)
             );
         }
+
         try
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(http.RequestAborted);
+
             timeout.CancelAfter(TimeSpan.FromSeconds(5));
-            IRecommender client = http.RequestServices.GetRequiredService<IRelewiseClientFactory>().GetClient<IRecommender>();
+
+            var client = http.RequestServices.GetRequiredService<IRelewiseClientFactory>()
+                .GetClient<IRecommender>();
             ProductRecommendationResponseCollection response = await client.RecommendAsync(batch, timeout.Token);
             ProductRecommendationResponse[] responses = response.Responses ?? [];
 
-            ListingCard[] Cards(IEnumerable<ProductResult> results, bool requireStock = false, bool requireSimilarity = false)
+            ListingCard[] Cards(
+                IEnumerable<ProductResult> results,
+                bool requireStock = false,
+                bool requireSimilarity = false)
             {
                 var cards = new List<ListingCard>();
                 var seen = new HashSet<Guid>();
+
                 foreach (ProductResult result in results)
                 {
                     if (result.Data?.TryGetValue("rwUmbracoNodeKey", out DataValue? data) != true || data == null ||
@@ -99,83 +131,104 @@ internal static class StorefrontRecommendations
                     }
 
                     IPublishedContent? candidate = published.GetById(node);
+
                     if (candidate?.ContentType.Alias != "product" || !Available(candidate) ||
                         !string.Equals(Id(candidate), result.ProductId, StringComparison.OrdinalIgnoreCase) ||
-                        !HasPrice(candidate, market) || requireStock && candidate.Value<int>("stock") <= 0 ||
-                        requireSimilarity && (candidate.Parent()?.Key != category!.Key ||
-                            !string.Equals(
-                                candidate.Value<string>("productType"),
-                                productType,
-                                StringComparison.OrdinalIgnoreCase
-                            )))
+                        !HasPrice(candidate, market) || (requireStock && candidate.Value<int>("stock") <= 0) ||
+                        (requireSimilarity && (candidate.Parent()?.Key != category!.Key ||
+                                               !string.Equals(
+                                                   candidate.Value<string>("productType"),
+                                                   productType,
+                                                   StringComparison.OrdinalIgnoreCase
+                                               ))))
                     {
                         continue;
                     }
 
                     cards.Add(ListingCards.CardData(candidate, http));
+
                     if (cards.Count == VisibleCount)
                     {
                         break;
                     }
                 }
-                return cards.ToArray();
+
+                return [.. cards];
             }
 
             ListingCard[] similar = similarEnabled
                 ? Cards(
                     responses.ElementAtOrDefault(0)?.Recommendations ?? [],
-                    requireStock: true,
-                    requireSimilarity: true
+                    true,
+                    true
                 )
                 : [];
-            ListingCard[] recentlyViewed = Cards(responses.ElementAtOrDefault(similarEnabled ? 1 : 0)?.Recommendations ?? []);
+            ListingCard[] recentlyViewed =
+                Cards(responses.ElementAtOrDefault(similarEnabled ? 1 : 0)?.Recommendations ?? []);
             ListingCard[] popular = isHome && !emptyCart
-                ? Cards(responses.ElementAtOrDefault(1)?.Recommendations ?? [], requireStock: true)
+                ? Cards(responses.ElementAtOrDefault(1)?.Recommendations ?? [], true)
                 : [];
+
             if (emptyCart && recentlyViewed.Length == 0)
             {
                 // Request the fallback only when no visible history remains, keeping analytics meaningful.
                 ProductRecommendationResponse fallback = await client.RecommendAsync(CreatePopularProducts(
-                    user,
-                    market,
-                    site,
-                    emptyCart: true
-                ), timeout.Token
+                        user,
+                        market,
+                        site,
+                        true
+                    ),
+                    timeout.Token
                 );
-                popular = Cards(fallback.Recommendations ?? [], requireStock: true);
+
+                popular = Cards(fallback.Recommendations ?? [], true);
             }
 
             var categories = new List<CategoryRecommendationCard>();
+
             if (isHome && !emptyCart)
             {
-                var candidates = SiteContent.ShoppingCategories(home).Where(Available)
+                Dictionary<string, IPublishedContent> candidates = SiteContent.ShoppingCategories(home)
+                    .Where(Available)
                     .ToDictionary(Id, StringComparer.OrdinalIgnoreCase);
+
                 if (candidates.Count > 0)
                 {
                     try
                     {
-                        ProductCategoryRecommendationResponse categoryResponse = await client.RecommendAsync(CreatePopularCategories(
-                            user,
-                            market,
-                            candidates.Keys
-                        ), timeout.Token
+                        ProductCategoryRecommendationResponse categoryResponse = await client.RecommendAsync(
+                            CreatePopularCategories(
+                                user,
+                                market,
+                                candidates.Keys
+                            ),
+                            timeout.Token
                         );
                         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                         foreach (ProductCategoryResult? result in categoryResponse.Recommendations ?? [])
                         {
-                            if (!seen.Add(result.CategoryId) || !candidates.TryGetValue(result.CategoryId, out IPublishedContent? candidate))
+                            if (!seen.Add(result.CategoryId) ||
+                                !candidates.TryGetValue(result.CategoryId, out IPublishedContent? candidate))
                             {
                                 continue;
                             }
 
-                            IPublishedContent? example = candidate.Descendants().FirstOrDefault(node => node.ContentType.Alias == "product" &&
-                                Available(node) && node.Value<int>("stock") > 0 && HasPrice(node, market));
+                            IPublishedContent? example = candidate.Descendants()
+                                .FirstOrDefault(node => node.ContentType.Alias == "product" &&
+                                                        Available(node) && node.Value<int>("stock") > 0 &&
+                                                        HasPrice(node, market));
+
                             if (example != null)
                             {
-                                categories.Add(new CategoryRecommendationCard(candidate.Key, Id(candidate), candidate.Url(market.Culture),
-                                    SiteContent.Title(candidate), Storefront.Image(example)
+                                categories.Add(new CategoryRecommendationCard(candidate.Key,
+                                    Id(candidate),
+                                    candidate.Url(market.Culture),
+                                    SiteContent.Title(candidate),
+                                    Storefront.Image(example)
                                 ));
                             }
+
                             if (categories.Count == VisibleCount)
                             {
                                 break;
@@ -184,11 +237,13 @@ internal static class StorefrontRecommendations
                     }
                     catch (Exception error) when (DemoConnection.IsConnectionFailure(error, http.RequestAborted))
                     {
-                        http.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("StorefrontRecommendations")
+                        http.RequestServices.GetRequiredService<ILoggerFactory>()
+                            .CreateLogger("StorefrontRecommendations")
                             .LogWarning(error, "Unable to load optional category recommendations.");
                     }
                 }
             }
+
             return Results.Json(new
             {
                 similar,
@@ -199,12 +254,19 @@ internal static class StorefrontRecommendations
         }
         catch (Exception error) when (DemoConnection.IsConnectionFailure(error, http.RequestAborted))
         {
-            http.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("StorefrontRecommendations")
+            http.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("StorefrontRecommendations")
                 .LogWarning(error, "Unable to load optional Product recommendations.");
+
             return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
         }
     }
 
-    private static bool HasPrice(IPublishedContent product, DemoMarket market) =>
-        PriceConverter.Read(product.Value("salesPrice"))?.Values?.Any(value => value.Currency.Value.Equals(market.Currency, StringComparison.OrdinalIgnoreCase)) == true;
+    private static bool HasPrice(IPublishedContent product,
+        DemoMarket market)
+    {
+        return PriceConverter.Read(product.Value("salesPrice"))
+            ?.Values?.Any(value =>
+                value.Currency.Value.Equals(market.Currency, StringComparison.OrdinalIgnoreCase)) == true;
+    }
 }

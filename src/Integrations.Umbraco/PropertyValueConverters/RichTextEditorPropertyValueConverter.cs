@@ -12,7 +12,7 @@ namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 /// </summary>
 public class RichTextEditorPropertyValueConverter : IDefaultPropertyValueConverter, IRelewisePropertyValueConverter
 {
-    /// <inheritdoc />
+    /// <inheritdoc cref="IRelewisePropertyValueConverter.CanHandle" />
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
         return context.Property.PropertyType.EditorAlias is "Umbraco.RichText" or "Umbraco.TinyMCE";
@@ -23,6 +23,7 @@ public class RichTextEditorPropertyValueConverter : IDefaultPropertyValueConvert
     {
         cancellationToken.ThrowIfCancellationRequested();
         Convert(context);
+
         return default;
     }
 
@@ -30,7 +31,8 @@ public class RichTextEditorPropertyValueConverter : IDefaultPropertyValueConvert
     [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        IHtmlEncodedString? value = context.Property.GetValue<IHtmlEncodedString>(context.Culture);
+        var value = context.Property.GetValue<IHtmlEncodedString>(context.Culture);
+
         context.Add(context.Property.Alias, new DataValue(value?.ToHtmlString()));
     }
 }

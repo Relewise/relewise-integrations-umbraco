@@ -1,9 +1,14 @@
 namespace Relewise.DemoStorefront.Site;
 
 // Application preferences: these are not integration configuration or Dataset boundaries.
-internal sealed record DemoMarket(string Id, string LabelKey, string Culture, string Currency)
+internal sealed record DemoMarket(
+    string Id,
+    string LabelKey,
+    string Culture,
+    string Currency)
 {
     internal const string CookieName = "storefront-market";
+
     internal static readonly DemoMarket[] All =
     [
         new("eu", "Europe", "en-US", "EUR"),
@@ -19,7 +24,9 @@ internal sealed record DemoMarket(string Id, string LabelKey, string Culture, st
         }
 
         DemoMarket? saved = All.FirstOrDefault(market => market.Id == context?.Request.Cookies[CookieName]);
-        string? prefix = context?.Request.Path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        var prefix = context?.Request.Path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault();
+
         // Explicit language URLs win over a remembered market; English still permits both EUR and USD.
         return prefix switch
         {
@@ -42,16 +49,19 @@ internal sealed record DemoMarket(string Id, string LabelKey, string Culture, st
             return StoreUrl;
         }
 
-        int suffix = value.IndexOfAny(['?', '#']);
-        string path = (suffix < 0 ? value : value[..suffix]).TrimEnd('/');
-        string[] parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var suffix = value.IndexOfAny(['?', '#']);
+        var path = (suffix < 0 ? value : value[..suffix]).TrimEnd('/');
+        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
         if (parts.Length > 0 && parts[0] is "en" or "da")
         {
             if (parts.Length > 2 && parts[1] == "cart")
             {
                 return LanguagePath + "/cart";
             }
+
             parts[0] = LanguagePath.TrimStart('/');
+
             return "/" + string.Join('/', parts) + (suffix < 0 ? "" : value[suffix..]);
         }
 

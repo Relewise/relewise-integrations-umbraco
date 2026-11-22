@@ -4,11 +4,21 @@ namespace Relewise.Integrations.Umbraco.Mapping;
 public class AdministrativeActionPolicy
 {
     internal bool Enabled { get; }
-    private AdministrativeActionPolicy(bool enabled) => Enabled = enabled;
+
+    private AdministrativeActionPolicy(bool enabled)
+    {
+        Enabled = enabled;
+    }
 
     /// <summary>Follow publication, unpublication, and removal of the source document.</summary>
-    public static AdministrativeActionPolicy Synchronize() => new(true);
+    public static AdministrativeActionPolicy Synchronize()
+    {
+        return new AdministrativeActionPolicy(true);
+    }
 
     /// <summary>Export data without enabling, disabling, or deleting the entity.</summary>
-    public static AdministrativeActionPolicy None() => new(false);
+    public static AdministrativeActionPolicy None()
+    {
+        return new AdministrativeActionPolicy(false);
+    }
 }

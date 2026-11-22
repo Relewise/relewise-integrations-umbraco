@@ -16,15 +16,19 @@ internal static class CartStateStore
         {
             http.Session.SetString(SessionMarkerKey, "active");
         }
-        string key = "fieldwork-basket-" + http.Session.Id;
-        IMemoryCache cache = http.RequestServices.GetRequiredService<IMemoryCache>();
+
+        var key = "fieldwork-basket-" + http.Session.Id;
+        var cache = http.RequestServices.GetRequiredService<IMemoryCache>();
+
         lock (StateCreation)
         {
-            return cache.GetOrCreate(key, entry =>
-            {
-                entry.SlidingExpiration = TimeSpan.FromHours(8);
-                return new CartState();
-            })!;
+            return cache.GetOrCreate(key,
+                entry =>
+                {
+                    entry.SlidingExpiration = TimeSpan.FromHours(8);
+
+                    return new CartState();
+                })!;
         }
     }
 

@@ -7,7 +7,8 @@ namespace Relewise.Integrations.Umbraco;
 /// <summary>
 /// Defines a contract on how to map a PublishedContent
 /// </summary>
-[System.Obsolete("Use IEntityMapper<Content> with UseMapper<TMapper>() instead. This interface will be removed in the next major version.")]
+[System.Obsolete(
+    "Use IEntityMapper<Content> with UseMapper<TMapper>() instead. This interface will be removed in the next major version.")]
 public interface IContentTypeMapping
 {
     /// <summary>

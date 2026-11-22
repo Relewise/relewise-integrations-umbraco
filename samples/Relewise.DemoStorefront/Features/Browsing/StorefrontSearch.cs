@@ -22,13 +22,23 @@ internal sealed class StorefrontSearch(
     private bool FixedBrand => collection?.ContentType.Alias == "brand";
     private string PriceField => "shopPrice" + DemoMarket.Current(request.HttpContext).Currency;
     private string SaleField => "onSale_" + DemoMarket.Current(request.HttpContext).Currency;
+
     private DecimalRangeFacetRange[] PriceRanges => DemoMarket.Current(request.HttpContext).Currency == "DKK"
-        ? [new("low", null, 400m), new("mid", 400m, 1200m), new("high", 1200m, null)]
-        : [new("low", null, 50m), new("mid", 50m, 150m), new("high", 150m, null)];
+        ?
+        [
+            new DecimalRangeFacetRange("low", null, 400m), new DecimalRangeFacetRange("mid", 400m, 1200m),
+            new DecimalRangeFacetRange("high", 1200m, null)
+        ]
+        :
+        [
+            new DecimalRangeFacetRange("low", null, 50m), new DecimalRangeFacetRange("mid", 50m, 150m),
+            new DecimalRangeFacetRange("high", 150m, null)
+        ];
 
     internal Filter[] Filters()
     {
         var filters = new List<Filter>();
+
         if (editorial)
         {
             return [];
@@ -42,11 +52,12 @@ internal sealed class StorefrontSearch(
             }
             else
             {
-                string[] scopeCategories = collection.DescendantsOrSelf()
+                var scopeCategories = collection.DescendantsOrSelf()
                     .Where(node => node.ContentType.Alias == "productCategory")
                     .Select(node => node.Key.ToString("D"))
                     .DefaultIfEmpty(collection.Key.ToString("D"))
                     .ToArray();
+
                 filters.Add(new KeywordFilter("shopCategory", scopeCategories, false));
             }
         }
@@ -57,14 +68,27 @@ internal sealed class StorefrontSearch(
             filters.Add(new KeywordFilter(SaleField, ["true"], false));
         }
 
-        string[] categories = request.Query["category"].Where(value => Guid.TryParse(value, out _)).OfType<string>().Select(value => Guid.Parse(value).ToString("D")).Distinct().ToArray();
+        var categories = request.Query["category"]
+            .Where(value => Guid.TryParse(value, out _))
+            .OfType<string>()
+            .Select(value => Guid.Parse(value)
+                .ToString("D"))
+            .Distinct()
+            .ToArray();
+
         if (categories.Length > 0)
         {
             filters.Add(new KeywordFilter("shopCategory", categories, false));
         }
 
-        string[] brands = request.Query["brand"].Where(value => Guid.TryParse(value, out _)).OfType<string>()
-            .Select(value => Guid.Parse(value).ToString("D")).Distinct().ToArray();
+        var brands = request.Query["brand"]
+            .Where(value => Guid.TryParse(value, out _))
+            .OfType<string>()
+            .Select(value => Guid.Parse(value)
+                .ToString("D"))
+            .Distinct()
+            .ToArray();
+
         if (brands.Length > 0)
         {
             filters.Add(new KeywordFilter("shopBrand", brands, false));
@@ -75,11 +99,16 @@ internal sealed class StorefrontSearch(
             filters.Add(new KeywordFilter("inStock", ["true"], false));
         }
 
-        bool validMinimum = TryBudget("minPrice", out decimal? minimum);
-        bool validMaximum = TryBudget("maxPrice", out decimal? maximum);
-        bool custom = validMinimum && validMaximum && (minimum.HasValue || maximum.HasValue);
-        DecimalRangeFilterRange[] ranges = PriceRanges.Where(range => !custom && request.Query["price"].Contains(range.Key))
-            .Select(range => new DecimalRangeFilterRange(range.MinValue, range.MaxValue)).ToArray();
+        var validMinimum = TryBudget("minPrice", out var minimum);
+        var validMaximum = TryBudget("maxPrice", out var maximum);
+        var custom = validMinimum && validMaximum && (minimum.HasValue || maximum.HasValue);
+        DecimalRangeFilterRange[] ranges =
+        [
+            .. PriceRanges
+                .Where(range => !custom && request.Query["price"].Contains(range.Key))
+                .Select(range => new DecimalRangeFilterRange(range.MinValue, range.MaxValue))
+        ];
+
         if (ranges.Length > 0)
         {
             filters.Add(new DecimalRangeFilter(PriceField, ranges, false));
@@ -94,7 +123,8 @@ internal sealed class StorefrontSearch(
                 false
             ));
         }
-        return filters.ToArray();
+
+        return [.. filters];
     }
 
     internal Facet[] Facets()
@@ -103,71 +133,119 @@ internal sealed class StorefrontSearch(
         {
             return [];
         }
+
         var facets = new List<Facet>();
+
         if (!FixedCategory)
         {
             facets.Add(new KeywordFacet("shopCategory"));
         }
+
         if (!FixedBrand)
         {
             facets.Add(new KeywordFacet("shopBrand"));
         }
+
         facets.Add(new KeywordFacet("inStock"));
         facets.Add(new DecimalRangeFacet(PriceField, PriceRanges));
+
         if (!offers)
         {
             facets.Add(new KeywordFacet(SaleField));
         }
-        return facets.ToArray();
+
+        return [.. facets];
     }
 
-    internal Sorter[] Sorters() => request.Query["sort"].ToString() switch
+    internal Sorter[] Sorters()
     {
-        "price-asc" when !editorial => [new DecimalSorter(PriceField, Direction.Ascending), new ScoreSorter(Direction.Descending)],
-        "price-desc" when !editorial => [new DecimalSorter(PriceField, Direction.Descending), new ScoreSorter(Direction.Descending)],
-        "name-desc" => [new KeywordSorter(global::Umbraco.Cms.Core.Constants.Search.FieldNames.Name, Direction.Descending)],
-        "name" => [NameSorter()],
-        _ => []
-    };
+        return request.Query["sort"].ToString() switch
+        {
+            "price-asc" when !editorial =>
+                [new DecimalSorter(PriceField, Direction.Ascending), new ScoreSorter(Direction.Descending)],
+            "price-desc" when !editorial =>
+                [new DecimalSorter(PriceField, Direction.Descending), new ScoreSorter(Direction.Descending)],
+            "name-desc" => [new KeywordSorter(Constants.Search.FieldNames.Name, Direction.Descending)],
+            "name" => [NameSorter()],
+            _ => []
+        };
+    }
 
-    private static Sorter NameSorter() => new KeywordSorter(global::Umbraco.Cms.Core.Constants.Search.FieldNames.Name, Direction.Ascending);
+    private static KeywordSorter NameSorter()
+    {
+        return new KeywordSorter(Constants.Search.FieldNames.Name, Direction.Ascending);
+    }
 
-    internal ListingFacet[] Groups(SearchResult result, IPublishedContent home)
+    internal ListingFacet[] Groups(SearchResult result,
+        IPublishedContent home)
     {
         if (editorial)
         {
             return [];
         }
+
         var groups = new List<ListingFacet>();
+
         if (!FixedCategory)
         {
-            var counts = (result.Facets.FirstOrDefault(facet => facet.FieldName == "shopCategory")?.Values.OfType<KeywordFacetValue>() ?? [])
+            Dictionary<string, long> counts = (result.Facets.FirstOrDefault(facet => facet.FieldName == "shopCategory")
+                    ?.Values
+                    .OfType<KeywordFacetValue>() ?? [])
                 .ToDictionary(value => value.Key, value => value.Count);
-            groups.Add(new ListingFacet("category", Storefront.Text(request.HttpContext, "Categories"),
-                SiteContent.ShoppingCategories(home).OrderBy(node => node.Name)
-                    .Select(node => new ListingChoice(node.Key.ToString("D"), node.Name,
-                        counts.GetValueOrDefault(node.Key.ToString("D")), Selected("category", node.Key.ToString("D"))
-                    )).ToArray()));
+
+            groups.Add(new ListingFacet("category",
+                Storefront.Text(request.HttpContext, "Categories"),
+                [
+                    .. SiteContent.ShoppingCategories(home)
+                        .OrderBy(node => node.Name, StringComparer.CurrentCulture)
+                        .Select(node => new ListingChoice(node.Key.ToString("D"),
+                            node.Name,
+                            counts.GetValueOrDefault(node.Key.ToString("D")),
+                            Selected("category", node.Key.ToString("D"))
+                        ))
+                ]));
         }
+
         if (!FixedBrand)
         {
-            var counts = (result.Facets.FirstOrDefault(facet => facet.FieldName == "shopBrand")?.Values.OfType<KeywordFacetValue>() ?? [])
+            Dictionary<string, long> counts = (result.Facets.FirstOrDefault(facet => facet.FieldName == "shopBrand")
+                    ?.Values
+                    .OfType<KeywordFacetValue>() ?? [])
                 .ToDictionary(value => value.Key, value => value.Count);
-            groups.Add(new ListingFacet("brand", Storefront.Text(request.HttpContext, "Brands"),
-                SiteContent.ShoppingBrands(home).Select(node => new ListingChoice(node.Key.ToString("D"), SiteContent.Title(node),
-                    counts.GetValueOrDefault(node.Key.ToString("D")), Selected("brand", node.Key.ToString("D"))
-                )).ToArray()));
+
+            groups.Add(new ListingFacet(
+                "brand",
+                Storefront.Text(request.HttpContext, "Brands"),
+                [
+                    .. SiteContent.ShoppingBrands(home)
+                        .Select(node => new ListingChoice(node.Key.ToString("D"),
+                            SiteContent.Title(node),
+                            counts.GetValueOrDefault(node.Key.ToString("D")),
+                            Selected("brand", node.Key.ToString("D"))
+                        ))
+                ]));
         }
-        groups.Add(new ListingFacet("price", Storefront.Text(request.HttpContext, "Price"),
-            (result.Facets.FirstOrDefault(facet => facet.FieldName == PriceField)?.Values.OfType<DecimalRangeFacetValue>() ?? [])
+
+        groups.Add(new ListingFacet(
+            "price",
+            Storefront.Text(request.HttpContext, "Price"),
+            [
+                .. (result.Facets.FirstOrDefault(facet => facet.FieldName == PriceField)
+                    ?.Values
+                    .OfType<DecimalRangeFacetValue>() ?? [])
                 .Select(range => new ListingChoice(
                     range.Key,
                     PriceLabel(range.Min, range.Max),
                     range.Count,
                     Selected("price", range.Key)
-                )).ToArray()));
-        long available = result.Facets.FirstOrDefault(facet => facet.FieldName == "inStock")?.Values
-            .OfType<KeywordFacetValue>().FirstOrDefault(value => value.Key == "true")?.Count ?? 0;
+                ))
+            ]));
+
+        var available = result.Facets.FirstOrDefault(facet => facet.FieldName == "inStock")
+            ?.Values
+            .OfType<KeywordFacetValue>()
+            .FirstOrDefault(value => value.Key == "true")
+            ?.Count ?? 0;
         var showOnly = new List<ListingChoice>
         {
             new(
@@ -178,11 +256,16 @@ internal sealed class StorefrontSearch(
                 "available"
             )
         };
+
         if (!offers)
         {
-            long onSale = result.Facets.FirstOrDefault(facet => facet.FieldName == SaleField)?.Values
-                .OfType<KeywordFacetValue>().FirstOrDefault(value => value.Key == "true")?.Count ?? 0;
-            showOnly.Add(new(
+            var onSale = result.Facets.FirstOrDefault(facet => facet.FieldName == SaleField)
+                ?.Values
+                .OfType<KeywordFacetValue>()
+                .FirstOrDefault(value => value.Key == "true")
+                ?.Count ?? 0;
+
+            showOnly.Add(new ListingChoice(
                 "true",
                 Storefront.Text(request.HttpContext, "OnSale"),
                 onSale,
@@ -190,70 +273,110 @@ internal sealed class StorefrontSearch(
                 "onSale"
             ));
         }
-        groups.Add(new ListingFacet("showOnly", Storefront.Text(request.HttpContext, "ShowOnly"), showOnly.ToArray()));
-        return groups.ToArray();
+
+        groups.Add(new ListingFacet("showOnly", Storefront.Text(request.HttpContext, "ShowOnly"), [.. showOnly]));
+
+        return [.. groups];
     }
 
-    internal bool HasFilters => request.Query.Any(pair => pair.Key is "category" or "brand" or "price" or "available" or "onSale" or "minPrice" or "maxPrice" && pair.Value.Any(value => !string.IsNullOrWhiteSpace(value)));
+    internal bool HasFilters => request.Query.Any(pair =>
+        pair.Key is "category" or "brand" or "price" or "available" or "onSale" or "minPrice" or "maxPrice" &&
+        pair.Value.Any(value => !string.IsNullOrWhiteSpace(value)));
 
     internal ListingChip[] Chips(IPublishedContent home)
     {
         var chips = new List<ListingChip>();
-        void Add(string name, string value, string label) => chips.Add(new ListingChip(label, RemoveValueUrl(name, value)));
-        foreach (IPublishedContent? category in SiteContent.ShoppingCategories(home).OrderBy(node => node.Name))
+
+        foreach (IPublishedContent category in SiteContent.ShoppingCategories(home)
+                     .OrderBy(node => node.Name, StringComparer.CurrentCulture))
         {
-            string key = category.Key.ToString("D");
+            var key = category.Key.ToString("D");
+
             if (Selected("category", key))
             {
                 Add("category", key, category.Name);
             }
         }
+
         foreach (IPublishedContent brand in SiteContent.ShoppingBrands(home))
         {
-            string key = brand.Key.ToString("D");
+            var key = brand.Key.ToString("D");
+
             if (Selected("brand", key))
             {
                 Add("brand", key, SiteContent.Title(brand));
             }
         }
-        foreach (DecimalRangeFacetRange? range in PriceRanges.Where(range => Selected("price", range.Key)))
+
+        foreach (DecimalRangeFacetRange range in PriceRanges.Where(range => Selected("price", range.Key)))
         {
             Add("price", range.Key, PriceLabel(range.MinValue, range.MaxValue));
         }
-        if (TryBudget("minPrice", out decimal? minimum) && TryBudget("maxPrice", out decimal? maximum) && (minimum.HasValue || maximum.HasValue))
+
+        if (TryBudget("minPrice", out var minimum) && TryBudget("maxPrice", out var maximum) &&
+            (minimum.HasValue || maximum.HasValue))
         {
-            var market = DemoMarket.Current(request.HttpContext);
-            string Amount(decimal value) => value.ToString("0.##", CultureInfo.GetCultureInfo(market.Culture));
-            string label = market.Currency + " " + (minimum.HasValue && maximum.HasValue ? Amount(minimum.Value) + "–" + Amount(maximum.Value)
-                : minimum.HasValue ? Amount(minimum.Value) + "+" : "≤ " + Amount(maximum!.Value));
-            IEnumerable<KeyValuePair<string, StringValues>> query = request.Query.Where(pair => pair.Key is not ("minPrice" or "maxPrice" or "page" or "collection" or "view"));
+            DemoMarket market = DemoMarket.Current(request.HttpContext);
+
+            string Amount(decimal value)
+            {
+                return value.ToString("0.##", CultureInfo.GetCultureInfo(market.Culture));
+            }
+
+            var label = market.Currency + " " + (minimum.HasValue && maximum.HasValue
+                ? Amount(minimum.Value) + "–" + Amount(maximum.Value)
+                : minimum.HasValue
+                    ? Amount(minimum.Value) + "+"
+                    : "≤ " + Amount(maximum!.Value));
+            IEnumerable<KeyValuePair<string, StringValues>> query = request.Query.Where(pair =>
+                pair.Key is not ("minPrice" or "maxPrice" or "page" or "collection" or "view"));
+
             chips.Add(new ListingChip(label, ListingPath + QueryString.Create(query)));
         }
+
         if (Selected("available", "true"))
         {
             Add("available", "true", Storefront.Text(request.HttpContext, "InStock"));
         }
+
         if (!offers && Selected("onSale", "true"))
         {
             Add("onSale", "true", Storefront.Text(request.HttpContext, "OnSale"));
         }
-        return chips.ToArray();
+
+        return [.. chips];
+
+        void Add(string name, string value, string label)
+        {
+            chips.Add(new ListingChip(label, RemoveValueUrl(name, value)));
+        }
     }
 
-    private string PriceLabel(decimal? min, decimal? max)
+    private string PriceLabel(decimal? min,
+        decimal? max)
     {
-        var market = DemoMarket.Current(request.HttpContext);
-        string Amount(decimal? value) => market.Currency + " " + value?.ToString("0.##", System.Globalization.CultureInfo.GetCultureInfo(market.Culture));
+        DemoMarket market = DemoMarket.Current(request.HttpContext);
+
         return min == null ? Storefront.Text(request.HttpContext, "UnderPrice", Amount(max))
-            : max == null ? Amount(min) + "+" : Amount(min) + "–" + max.Value.ToString("0.##", System.Globalization.CultureInfo.GetCultureInfo(market.Culture));
+            : max == null ? Amount(min) + "+"
+            : Amount(min) + "–" + max.Value.ToString("0.##", CultureInfo.GetCultureInfo(market.Culture));
+
+        string Amount(decimal? value)
+        {
+            return market.Currency + " " + value?.ToString("0.##", CultureInfo.GetCultureInfo(market.Culture));
+        }
     }
 
     private string RemoveValueUrl(string name, string value)
     {
-        var query = request.Query.Where(pair => pair.Key is not ("page" or "collection" or "view"))
+        Dictionary<string, StringValues> query = request.Query
+            .Where(pair => pair.Key is not ("page" or "collection" or "view"))
             .ToDictionary(pair => pair.Key, pair => pair.Value);
-        string[] remaining = request.Query[name].OfType<string>()
-            .Where(item => !string.Equals(item, value, StringComparison.OrdinalIgnoreCase)).ToArray();
+        var remaining = request.Query[name]
+            .OfType<string>()
+            .Where(item => !string.Equals(item, value, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
         if (remaining.Length == 0)
         {
             query.Remove(name);
@@ -262,64 +385,90 @@ internal sealed class StorefrontSearch(
         {
             query[name] = remaining;
         }
+
         return ListingPath + QueryString.Create(query);
     }
 
-    internal string ClearQueryUrl() => ListingPath + QueryString.Create(request.Query.Where(pair => pair.Key is not ("page" or "q" or "collection" or "view")));
+    internal string ClearQueryUrl()
+    {
+        return ListingPath +
+               QueryString.Create(request.Query.Where(pair =>
+                   pair.Key is not ("page" or "q" or "collection" or "view")));
+    }
 
-    private bool Selected(string name, string value) => request.Query[name].Any(selected => string.Equals(
-        selected,
-        value,
-        StringComparison.OrdinalIgnoreCase
-    ));
+    private bool Selected(string name, string value)
+    {
+        return request.Query[name]
+            .Any(selected => string.Equals(
+                selected,
+                value,
+                StringComparison.OrdinalIgnoreCase
+            ));
+    }
 
     internal bool IsValid(IPublishedContent home)
     {
         string[] sorts = editorial ? ["", "name", "name-desc"] : ["", "name", "name-desc", "price-asc", "price-desc"];
-        if (!TryBudget("minPrice", out decimal? minimum) || !TryBudget("maxPrice", out decimal? maximum) ||
-            minimum.HasValue && maximum.HasValue && minimum.Value > maximum.Value ||
-            (minimum.HasValue || maximum.HasValue) && request.Query["price"].Any(value => !string.IsNullOrWhiteSpace(value)))
+
+        if (!TryBudget("minPrice", out var minimum) || !TryBudget("maxPrice", out var maximum) ||
+            (minimum.HasValue && maximum.HasValue && minimum.Value > maximum.Value) ||
+            ((minimum.HasValue || maximum.HasValue) &&
+             request.Query["price"].Any(value => !string.IsNullOrWhiteSpace(value))))
         {
             return false;
         }
+
         if (!sorts.Contains(request.Query["sort"].ToString()) ||
             request.Query["available"].Any(value => value != "true") ||
             request.Query["onSale"].Any(value => value != "true") ||
-            request.Query["price"].Any(value => !PriceRanges.Any(range => range.Key == value)))
+            request.Query["price"].Any(value => PriceRanges.All(range => range.Key != value)))
         {
             return false;
         }
-        var categories = SiteContent.ShoppingCategories(home).Select(node => node.Key).ToHashSet();
-        var brands = SiteContent.ShoppingBrands(home).Select(node => node.Key).ToHashSet();
-        return (!FixedCategory || !request.Query.ContainsKey("category")) && request.Query["category"].All(value => Guid.TryParse(value, out Guid key) && categories.Contains(key)) &&
-            (!FixedBrand || !request.Query.ContainsKey("brand")) && request.Query["brand"].All(value => Guid.TryParse(value, out Guid key) && brands.Contains(key)) &&
-            (!editorial || !request.Query.Keys.Any(key => key is "price" or "category" or "brand" or "available" or "onSale"));
+
+        HashSet<Guid> categories = [.. SiteContent.ShoppingCategories(home).Select(node => node.Key)];
+        HashSet<Guid> brands = [.. SiteContent.ShoppingBrands(home).Select(node => node.Key)];
+
+        return (!FixedCategory || !request.Query.ContainsKey("category")) && request.Query["category"]
+                   .All(value => Guid.TryParse(value, out Guid key) && categories.Contains(key)) &&
+               (!FixedBrand || !request.Query.ContainsKey("brand")) && request.Query["brand"]
+                   .All(value => Guid.TryParse(value, out Guid key) && brands.Contains(key)) &&
+               (!editorial || !request.Query.Keys.Any(key =>
+                   key is "price" or "category" or "brand" or "available" or "onSale"));
     }
 
     private bool TryBudget(string name, out decimal? amount)
     {
         amount = null;
+
         StringValues values = request.Query[name];
-        if (values.Count == 0 || values.Count == 1 && string.IsNullOrWhiteSpace(values[0]))
+
+        if (values.Count == 0 || (values.Count == 1 && string.IsNullOrWhiteSpace(values[0])))
         {
             return true;
         }
+
         if (values.Count != 1 || !decimal.TryParse(
-            values[0],
-            NumberStyles.AllowDecimalPoint,
-            CultureInfo.InvariantCulture,
-            out decimal parsed
-        ) || parsed < 0 || parsed > 1000000m || decimal.Round(parsed, 2) != parsed)
+                values[0],
+                NumberStyles.AllowDecimalPoint,
+                CultureInfo.InvariantCulture,
+                out var parsed
+            ) || parsed < 0 || parsed > 1000000m || decimal.Round(parsed, 2) != parsed)
         {
             return false;
         }
+
         amount = parsed;
+
         return true;
     }
 
     internal string ResetUrl()
     {
-        IEnumerable<KeyValuePair<string, StringValues>> query = request.Query.Where(value => value.Key is not ("category" or "brand" or "price" or "available" or "onSale" or "minPrice" or "maxPrice" or "page" or "collection" or "view"));
+        IEnumerable<KeyValuePair<string, StringValues>> query = request.Query.Where(value =>
+            value.Key is not ("category" or "brand" or "price" or "available" or "onSale" or "minPrice" or "maxPrice"
+                or "page" or "collection" or "view"));
+
         return ListingPath + QueryString.Create(query);
     }
 }

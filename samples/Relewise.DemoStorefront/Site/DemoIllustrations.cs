@@ -4,15 +4,20 @@ namespace Relewise.DemoStorefront.Site;
 
 internal static class DemoIllustrations
 {
-    internal static string? Render(IPublishedContent content, string image)
+    internal static string? Render(IPublishedContent content,
+        string image)
     {
-        string? name = image.StartsWith("/images/", StringComparison.Ordinal) && image.EndsWith(".svg", StringComparison.Ordinal)
-            ? image[8..^4] : null;
+        var name = image.StartsWith("/images/", StringComparison.Ordinal) &&
+                   image.EndsWith(".svg", StringComparison.Ordinal)
+            ? image[8..^4]
+            : null;
+
         if (name == null || !Assets.Contains(name))
         {
             return null;
         }
-        string colour = content.Value<string>("color", culture: "en-US") switch
+
+        var colour = content.Value<string>("color", "en-US") switch
         {
             "Sand" => "#aa8e62",
             "Slate" => "#4b6070",
@@ -21,11 +26,14 @@ internal static class DemoIllustrations
             "Moss" => "#6f7853",
             _ => "#556746"
         };
-        return $"<svg viewBox='0 0 300 300' aria-hidden='true' style='color:{colour}'><use href='/images/products.svg#{name}'></use></svg>";
+
+        return
+            $"<svg viewBox='0 0 300 300' aria-hidden='true' style='color:{colour}'><use href='/images/products.svg#{name}'></use></svg>";
     }
 
-    private static readonly HashSet<string> Assets = new(StringComparer.Ordinal)
-    {
+    private static readonly HashSet<string> Assets =
+    [
+        with (StringComparer.Ordinal),
         "accessories",
         "beanie",
         "binoculars",
@@ -50,5 +58,5 @@ internal static class DemoIllustrations
         "socks",
         "straps",
         "sunglasses"
-    };
+    ];
 }

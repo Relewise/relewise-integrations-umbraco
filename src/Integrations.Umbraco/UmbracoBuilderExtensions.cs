@@ -27,7 +27,9 @@ public static class UmbracoBuilderExtensions
     /// <param name="builder">The <see cref="IUmbracoBuilder"/></param>
     /// <param name="configure">A delegate to configure <see cref="RelewiseUmbracoOptionsBuilder"/></param>
     /// <returns>The <see cref="IUmbracoBuilder"/></returns>
-    public static IUmbracoBuilder AddRelewise(this IUmbracoBuilder builder, Action<RelewiseUmbracoOptionsBuilder>? configure = null)
+    public static IUmbracoBuilder AddRelewise(
+        this IUmbracoBuilder builder,
+        Action<RelewiseUmbracoOptionsBuilder>? configure = null)
     {
         configure ??= _ => { };
 
@@ -40,15 +42,18 @@ public static class UmbracoBuilderExtensions
     /// <param name="builder">The <see cref="IUmbracoBuilder"/></param>
     /// <param name="configure">A delegate to configure <see cref="RelewiseUmbracoOptionsBuilder"/> which also includes the <see cref="IServiceProvider"/> if you need to do service lookups part of this configuration.</param>
     /// <returns>The <see cref="IUmbracoBuilder"/></returns>
-    public static IUmbracoBuilder AddRelewise(this IUmbracoBuilder builder, Action<RelewiseUmbracoOptionsBuilder, IServiceProvider> configure)
+    public static IUmbracoBuilder AddRelewise(
+        this IUmbracoBuilder builder,
+        Action<RelewiseUmbracoOptionsBuilder, IServiceProvider> configure)
     {
-        ArgumentNullException.ThrowIfNull(builder, nameof(builder));
-        ArgumentNullException.ThrowIfNull(configure, nameof(configure));
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(configure);
 
-        builder.Services.AddRelewise(x => x.Named.Add(Constants.NamedClientName, clientOptions =>
-        {
-            clientOptions.Tracker.Timeout = TimeSpan.FromMinutes(2);
-        }));
+        builder.Services.AddRelewise(x => x.Named.Add(Constants.NamedClientName,
+            clientOptions =>
+            {
+                clientOptions.Tracker.Timeout = TimeSpan.FromMinutes(2);
+            }));
 
         builder.Services.AddSingleton(new RelewiseUmbracoConfiguration.Configure(configure));
 
@@ -72,39 +77,59 @@ public static class UmbracoBuilderExtensions
         builder.AddNotificationHandler<ContentDeletedNotification, DeletedEntityIndexingHandler>();
         builder.Services.AddHttpContextAccessor();
         builder.Services.TryAddSingleton<EntityIndexingService>();
-        builder.Services.TryAddSingleton<IEntityIndexingOperations>(services => services.GetRequiredService<EntityIndexingService>());
+        builder.Services.TryAddSingleton<IEntityIndexingOperations>(services =>
+            services.GetRequiredService<EntityIndexingService>());
         builder.Services.TryAddSingleton<EntityIndexingQueue>();
         builder.Services.TryAddTransient<MappedEntityIndexer>();
         builder.Services.TryAddTransient<MappedEntityChangeStrategy>();
         builder.Services.TryAddTransient<MappedEntitySearcher>();
-        builder.Services.AddOptions<IndexOptions>().PostConfigure<RelewiseUmbracoConfiguration>((indexes, configuration) =>
-        {
-            indexes.RegisterContentIndex<MappedEntityIndexer, MappedEntitySearcher, MappedEntityChangeStrategy>(
-                EntityIndexingService.IndexAlias, true, UmbracoObjectTypes.Document);
-            foreach (string alias in configuration.SearchProviders.Providers.Keys)
+        builder.Services.AddOptions<IndexOptions>()
+            .PostConfigure<RelewiseUmbracoConfiguration>((indexes,
+                configuration) =>
             {
-                if (indexes.GetIndexRegistration(alias) != null)
+                indexes.RegisterContentIndex<MappedEntityIndexer, MappedEntitySearcher, MappedEntityChangeStrategy>(
+                    EntityIndexingService.IndexAlias,
+                    true,
+                    UmbracoObjectTypes.Document);
+
+                foreach (var alias in configuration.SearchProviders.Providers.Keys)
                 {
-                    throw new InvalidOperationException($"Search provider alias '{alias}' is already registered by Umbraco.");
+                    if (indexes.GetIndexRegistration(alias) != null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Search provider alias '{alias}' is already registered by Umbraco.");
+                    }
+
+                    indexes.RegisterIndex<MappedEntityIndexer, MappedEntitySearcher>(alias);
                 }
 
-                indexes.RegisterIndex<MappedEntityIndexer, MappedEntitySearcher>(alias);
-            }
-            if (configuration.SearchProviders.DefaultPublishedContentProviderAlias != null)
-            {
-                ContentIndexRegistration original = indexes.GetContentIndexRegistration(global::Umbraco.Cms.Core.Constants.Search.IndexAliases.PublishedContent)
-                    ?? throw new InvalidOperationException("Umbraco's published-content search registration is required.");
-                // Preserve Examine's indexer and change strategy; only route published queries to Relewise.
-                typeof(UmbracoBuilderExtensions).GetMethod(nameof(UsePublishedSearcher), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
-                    .MakeGenericMethod(original.Indexer, original.ContentChangeStrategy).Invoke(null, [indexes, original]);
-            }
-        });
+                if (configuration.SearchProviders.DefaultPublishedContentProviderAlias != null)
+                {
+                    ContentIndexRegistration original =
+                        indexes.GetContentIndexRegistration(global::Umbraco.Cms.Core.Constants.Search.IndexAliases
+                            .PublishedContent)
+                        ?? throw new InvalidOperationException(
+                            "Umbraco's published-content search registration is required.");
+
+                    // Preserve Examine's indexer and change strategy; only route published queries to Relewise.
+                    typeof(UmbracoBuilderExtensions).GetMethod(nameof(UsePublishedSearcher),
+                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+                        .MakeGenericMethod(original.Indexer, original.ContentChangeStrategy)
+                        .Invoke(null, [indexes, original]);
+                }
+            });
 
         return builder;
     }
-    private static void UsePublishedSearcher<TIndexer, TStrategy>(IndexOptions indexes, ContentIndexRegistration original)
+
+    private static void UsePublishedSearcher<TIndexer, TStrategy>(
+        IndexOptions indexes,
+        ContentIndexRegistration original)
         where TIndexer : class, global::Umbraco.Cms.Core.Search.IIndexer
         where TStrategy : class, IContentChangeStrategy
-        => indexes.RegisterContentIndex<TIndexer, MappedEntitySearcher, TStrategy>(original.IndexAlias, original.SameOriginOnly,
+    {
+        indexes.RegisterContentIndex<TIndexer, MappedEntitySearcher, TStrategy>(original.IndexAlias,
+            original.SameOriginOnly,
             System.Linq.Enumerable.ToArray(original.ContainedObjectTypes));
+    }
 }

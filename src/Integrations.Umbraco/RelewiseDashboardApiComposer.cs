@@ -19,24 +19,26 @@ public class RelewiseDashboardApiComposer : IComposer
     /// <param name="builder"></param>
     public void Compose(IUmbracoBuilder builder)
     {
-        builder.AddBackOfficeOpenApiDocument(Constants.ApiName, document => document
-            .WithTitle("Relewise Dashboard Backoffice API")
-            .WithBackOfficeAuthentication()
-            .ConfigureOpenApiOptions(options => options.AddOperationTransformer((operation, context, _) =>
-            {
-                if (context.Description.ActionDescriptor is ControllerActionDescriptor descriptor &&
-                    IsRelewiseController(descriptor))
+        builder.AddBackOfficeOpenApiDocument(Constants.ApiName,
+            document => document
+                .WithTitle("Relewise Dashboard Backoffice API")
+                .WithBackOfficeAuthentication()
+                .ConfigureOpenApiOptions(options => options.AddOperationTransformer((operation, context, _) =>
                 {
-                    operation.OperationId = context.Description.ActionDescriptor.RouteValues["action"];
-                }
+                    if (context.Description.ActionDescriptor is ControllerActionDescriptor descriptor &&
+                        IsRelewiseController(descriptor))
+                    {
+                        operation.OperationId = context.Description.ActionDescriptor.RouteValues["action"];
+                    }
 
-                return Task.CompletedTask;
-            })));
+                    return Task.CompletedTask;
+                })));
     }
 
     private static bool IsRelewiseController(ControllerActionDescriptor descriptor)
     {
         return descriptor.ControllerTypeInfo.Namespace?
-            .StartsWith("Relewise.Integrations.Umbraco.Controllers", StringComparison.InvariantCultureIgnoreCase) is true;
+            .StartsWith("Relewise.Integrations.Umbraco.Controllers",
+                StringComparison.InvariantCultureIgnoreCase) is true;
     }
 }

@@ -7,9 +7,11 @@ namespace Relewise.DemoStorefront.Integration.Mapping;
 
 internal sealed class LegacyGuideMapper : IContentTypeMapping
 {
-    public Task<ContentUpdate> Map(ContentMappingContext context, CancellationToken token)
+    public Task<ContentUpdate> Map(ContentMappingContext context,
+        CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+
         if (context.ContentUpdate.Content.CategoryPaths?.Count != 1)
         {
             throw new InvalidOperationException("Legacy mappers must receive their pre-populated category paths.");
@@ -17,7 +19,9 @@ internal sealed class LegacyGuideMapper : IContentTypeMapping
 
         context.ContentUpdate.Content.CategoryPaths = [];
         context.ContentUpdate.Content.Data = context.GetRequiredService<IRelewisePropertyConverter>()
-            .Convert(context.PublishedContent.Properties, context.CulturesToPublish.ToArray()).ToDictionary(pair => pair.Key, pair => pair.Value);
+            .Convert(context.PublishedContent.Properties, [.. context.CulturesToPublish])
+            .ToDictionary(pair => pair.Key, pair => pair.Value);
+
         return Task.FromResult(context.ContentUpdate);
     }
 }

@@ -12,7 +12,8 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvider) : IDefaultPropertyValueConverter, IRelewisePropertyValueConverter
+internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvider)
+    : IDefaultPropertyValueConverter, IRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
@@ -20,28 +21,45 @@ internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvi
     }
 
     /// <inheritdoc/>
-    [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
+    [Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
-        => ConvertAsync(context, context.CancellationToken).GetAwaiter().GetResult();
-
-    public async ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
     {
-        IPublishedElement[]? elementItems = context.Property.GetValue<IEnumerable<IPublishedElement>?>(context.Culture)?.ToArray();
+        ConvertAsync(context, context.CancellationToken).GetAwaiter().GetResult();
+    }
+
+    public async ValueTask ConvertAsync(
+        RelewisePropertyConverterContext context,
+        CancellationToken cancellationToken)
+    {
+        IPublishedElement[]? elementItems =
+            context.Property.GetValue<IEnumerable<IPublishedElement>?>(context.Culture)?.ToArray();
 
         if (elementItems != null)
         {
             // NOTE: This needs to be resolved manually, since it would cause a circular dependency if injected through constructor
-            IRelewisePropertyConverter propertyConverter = (context.Services ?? serviceProvider).GetRequiredService<IRelewisePropertyConverter>();
+            var propertyConverter =
+                (context.Services ?? serviceProvider).GetRequiredService<IRelewisePropertyConverter>();
 
             var properties = new List<DataValue?>();
 
             foreach (IPublishedElement prop in elementItems)
             {
-                IReadOnlyDictionary<string, DataValue?> converted = propertyConverter is RelewisePropertyConverter contextual && context.Services != null
-                    ? await contextual.ConvertElementAsync(context.PublishedContent, prop, [context.Culture], context.Services, cancellationToken)
-                    : context.PublishedContent != null && context.Services != null
-                    ? await propertyConverter.ConvertAsync(context.PublishedContent, prop, [context.Culture], context.Services, context.CancellationToken)
-                    : await propertyConverter.ConvertAsync(prop.Properties, [context.Culture], cancellationToken);
+                IReadOnlyDictionary<string, DataValue?> converted =
+                    propertyConverter is RelewisePropertyConverter contextual && context.Services != null
+                        ? await contextual.ConvertElementAsync(context.PublishedContent,
+                            prop,
+                            [context.Culture],
+                            context.Services,
+                            cancellationToken)
+                        : context.PublishedContent != null && context.Services != null
+                            ? await propertyConverter.ConvertAsync(context.PublishedContent,
+                                prop,
+                                [context.Culture],
+                                context.Services,
+                                context.CancellationToken)
+                            : await propertyConverter.ConvertAsync(prop.Properties,
+                                [context.Culture],
+                                cancellationToken);
 
                 properties.AddRange(converted.Values);
             }
@@ -51,7 +69,7 @@ internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvi
                 return;
             }
 
-            string[] stringCollection = properties
+            var stringCollection = properties
                 .Select(x => x?.Value?.ToString())
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(x => x!)

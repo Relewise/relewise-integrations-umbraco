@@ -11,7 +11,14 @@ internal static class RecommendationRequests
 {
     internal const int VisibleCount = 4;
 
-    internal static ProductRecommendationRequestCollection CreateRequests(User user, DemoMarket market, string site, string productId, string? variantId, string categoryId, string productType)
+    internal static ProductRecommendationRequestCollection CreateRequests(
+        User user,
+        DemoMarket market,
+        string site,
+        string productId,
+        string? variantId,
+        string categoryId,
+        string productType)
     {
         var similar = new SimilarProductsRequest(
             new Language(market.Culture),
@@ -31,8 +38,9 @@ internal static class RecommendationRequests
                 SignificanceOfIdenticalProductDataValues = 0,
                 SignificantProductDataFields =
                 [
-                    new("capacity", SignificantDataValue.SignificantDataValueComparer.StringSimilarity),
-                    new(
+                    new SignificantDataValue("capacity",
+                        SignificantDataValue.SignificantDataValueComparer.StringSimilarity),
+                    new SignificantDataValue(
                         "weightGrams",
                         SignificantDataValue.SignificantDataValueComparer.NumericPercentDifference,
                         0.25
@@ -40,10 +48,12 @@ internal static class RecommendationRequests
                 ]
             }
         );
+
         similar.Filters.Add(new ProductDataFilter("productType", new EqualsCondition(productType)));
         similar.Filters.Add(new ProductCategoryIdFilter(categoryId, CategoryScope.ImmediateParent));
         similar.Filters.Add(new ProductDataFilter("inStock", new EqualsCondition(true)));
         ConfigureRequest(similar, market, site, productId);
+
         // The sections serve different purposes; an actual recently viewed item may also be a similar Product.
         return new ProductRecommendationRequestCollection(
             false,
@@ -57,19 +67,32 @@ internal static class RecommendationRequests
         );
     }
 
-    internal static RecentlyViewedProductsRequest CreateRecentlyViewed(User user, DemoMarket market, string site, string? excludedProductId = null, string? displayedAtLocation = null)
+    internal static RecentlyViewedProductsRequest CreateRecentlyViewed(
+        User user,
+        DemoMarket market,
+        string site,
+        string? excludedProductId = null,
+        string? displayedAtLocation = null)
     {
         var request = new RecentlyViewedProductsRequest(
             new Language(market.Culture),
             new Currency(market.Currency),
-            displayedAtLocation ?? (excludedProductId == null ? "Home page: Recently viewed" : "Product page: Recently viewed"),
+            displayedAtLocation ?? (excludedProductId == null
+                ? "Home page: Recently viewed"
+                : "Product page: Recently viewed"),
             user
         );
+
         ConfigureRequest(request, market, site, excludedProductId);
+
         return request;
     }
 
-    internal static PopularProductsRequest CreatePopularProducts(User user, DemoMarket market, string site, bool emptyCart = false)
+    internal static PopularProductsRequest CreatePopularProducts(
+        User user,
+        DemoMarket market,
+        string site,
+        bool emptyCart = false)
     {
         var request = new PopularProductsRequest(
             new Language(market.Culture),
@@ -79,52 +102,64 @@ internal static class RecommendationRequests
             PopularityTypes.MostViewed,
             TimeSpan.FromDays(30)
         );
-        ConfigureRequest(request, market, site, excludedProductId: null);
+
+        ConfigureRequest(request, market, site, null);
         request.Filters.Add(new ProductDataFilter("inStock", new EqualsCondition(true)));
+
         return request;
     }
 
-    internal static PopularProductCategoriesRecommendationRequest CreatePopularCategories(User user, DemoMarket market, IEnumerable<string> categoryIds)
+    internal static PopularProductCategoriesRecommendationRequest CreatePopularCategories(
+        User user,
+        DemoMarket market,
+        IEnumerable<string> categoryIds)
     {
         var request = new PopularProductCategoriesRecommendationRequest(
             new Language(market.Culture),
             new Currency(market.Currency),
             "Home page: Popular categories",
             user,
-            new ProductCategoryRecommendationWeights(categoryViews: 1, productViews: 1, productPurchases: 0),
+            new ProductCategoryRecommendationWeights(1, 1, 0),
             TimeSpan.FromDays(30)
         );
+
         // Only the published browsing categories on this site may be recommended.
         request.Filters.Add(new ProductCategoryIdFilter(categoryIds, CategoryScope.ImmediateParent));
         request.Settings.NumberOfRecommendations = VisibleCount;
         request.Settings.AllowFillIfNecessaryToReachNumberOfRecommendations = false;
         request.Settings.AllowReplacingOfRecentlyShownRecommendations = false;
+
         return request;
     }
 
-    private static void ConfigureRequest(ProductRecommendationRequest request, DemoMarket market, string site, string? excludedProductId)
+    private static void ConfigureRequest(
+        ProductRecommendationRequest request,
+        DemoMarket market,
+        string site,
+        string? excludedProductId)
     {
         if (excludedProductId != null)
         {
             // Exclude the current Product, including its other Variants.
-            request.Filters.Add(new ProductIdFilter(excludedProductId, negated: true));
+            request.Filters.Add(new ProductIdFilter(excludedProductId, true));
         }
 
         request.Filters.Add(new ProductDataFilter("rwUmbracoSite", new EqualsCondition(site)));
         request.Filters.Add(new ProductDataFilter("contentTypeAlias", new EqualsCondition("product")));
         request.Filters.Add(new ProductDataFilter("rwUmbracoPublished", new EqualsCondition(true)));
         request.Filters.Add(new ProductDataFilter("rwUmbracoSearchProtected", new EqualsCondition(false)));
-        request.Filters.Add(new ProductDataFilter("rwUmbracoSearchCulture", new ContainsCondition(market.Culture.ToLowerInvariant())));
+        request.Filters.Add(new ProductDataFilter("rwUmbracoSearchCulture",
+            new ContainsCondition(market.Culture.ToLowerInvariant())));
         request.Settings.NumberOfRecommendations = VisibleCount;
         // Keep browsing history genuine: no fill or novelty replacement.
         request.Settings.AllowFillIfNecessaryToReachNumberOfRecommendations = false;
         request.Settings.AllowReplacingOfRecentlyShownRecommendations = false;
         request.Settings.AllowProductsCurrentlyInCart = true;
-        request.Settings.VariantRequestSettings = new()
+        request.Settings.VariantRequestSettings = new VariantRecommendationRequestSettings
         {
             MaxVariantsPerProduct = 0
         };
-        request.Settings.SelectedProductProperties = new()
+        request.Settings.SelectedProductProperties = new SelectedProductPropertiesSettings
         {
             DataKeys = ["rwUmbracoNodeKey"]
         };

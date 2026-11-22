@@ -18,6 +18,7 @@ internal class TagsPropertyValueConverter : IDefaultPropertyValueConverter, IRel
     {
         cancellationToken.ThrowIfCancellationRequested();
         Convert(context);
+
         return default;
     }
 
@@ -25,7 +26,8 @@ internal class TagsPropertyValueConverter : IDefaultPropertyValueConverter, IRel
     [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        IEnumerable<string>? value = context.Property.GetValue<IEnumerable<string>>(context.Culture);
+        var value = context.Property.GetValue<IEnumerable<string>>(context.Culture);
+
         context.Add(context.Property.Alias, new DataValue(value));
     }
 }

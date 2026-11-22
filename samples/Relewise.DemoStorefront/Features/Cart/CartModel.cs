@@ -1,6 +1,9 @@
+using JetBrains.Annotations;
 using Relewise.DemoStorefront.Features.Recommendations;
+
 namespace Relewise.DemoStorefront.Features.Cart;
 
+[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 internal sealed class CartModel
 {
     public CartLineModel[] Lines { get; init; } = [];

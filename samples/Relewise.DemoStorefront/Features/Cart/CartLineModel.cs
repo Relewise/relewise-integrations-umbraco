@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace Relewise.DemoStorefront.Features.Cart;
 
+[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 internal sealed record CartLineModel
 {
     public Guid ProductKey { get; init; }

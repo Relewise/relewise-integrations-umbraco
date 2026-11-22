@@ -5,5 +5,8 @@ namespace Relewise.Integrations.Umbraco;
 
 internal class DefaultAnonymousUserLocator : IRelewiseUserLocator
 {
-    public Task<User> GetUser() => Task.FromResult(User.Anonymous());
+    public Task<User> GetUser()
+    {
+        return Task.FromResult(User.Anonymous());
+    }
 }

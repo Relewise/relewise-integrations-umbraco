@@ -1,14 +1,18 @@
+using JetBrains.Annotations;
+
 namespace Relewise.Integrations.Umbraco.Controllers.Messages;
 
 /// <summary>
 /// Represents a named set of Relewise client options
 /// </summary>
+[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 public class NamedOptionsViewObject
 {
     /// <summary>
     /// Creates a new instance of <see cref="NamedOptionsViewObject"/>
     /// </summary>
-    public NamedOptionsViewObject(string name,
+    public NamedOptionsViewObject(
+        string name,
         ClientOptionsViewObject tracker,
         ClientOptionsViewObject recommender,
         ClientOptionsViewObject searcher,
@@ -33,6 +37,7 @@ public class NamedOptionsViewObject
 
     /// <summary>Whether this represents SDK defaults instead of a named registration.</summary>
     public bool IsDefault { get; internal set; }
+
     /// <summary>
     /// Represents the options for the Relewise Tracker client
     /// </summary>

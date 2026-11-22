@@ -35,13 +35,14 @@ internal class RelewiseContentMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        IUmbracoContextFactory umbracoContextFactory = context.RequestServices.GetRequiredService<IUmbracoContextFactory>();
+        var umbracoContextFactory =
+            context.RequestServices.GetRequiredService<IUmbracoContextFactory>();
 
         using (UmbracoContextReference umbracoContextReference = umbracoContextFactory.EnsureUmbracoContext())
         {
             if (IsNotInPreview(umbracoContextReference))
             {
-                IPublishedContent? content = umbracoContextReference.UmbracoContext?.PublishedRequest?.PublishedContent;
+                IPublishedContent? content = umbracoContextReference.UmbracoContext.PublishedRequest?.PublishedContent;
 
                 if (content != null && EnsureContentAndIsTrackable(content))
                 {
@@ -54,6 +55,7 @@ internal class RelewiseContentMiddleware
                         try
                         {
                             Trackable view = CreateView(content, user);
+
                             await (view switch
                             {
                                 ContentView value => tracker.TrackAsync(value, context.RequestAborted),
@@ -68,7 +70,9 @@ internal class RelewiseContentMiddleware
                         {
                             if (ex.StatusCode == HttpStatusCode.NotFound)
                             {
-                                throw new InvalidOperationException($"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com", ex);
+                                throw new InvalidOperationException(
+                                    $"The Dataset Id '{tracker.DatasetId}' is not known by Relewise - You can always find your available dataset id's on https://my.relewise.com",
+                                    ex);
                             }
 
                             throw;
@@ -81,9 +85,11 @@ internal class RelewiseContentMiddleware
         await _next.Invoke(context);
     }
 
-    private Trackable CreateView(IPublishedContent content, User user)
+    private Trackable CreateView(IPublishedContent content,
+        User user)
     {
-        string id = _configuration.GetContentId(content);
+        var id = _configuration.GetContentId(content);
+
         if (!_configuration.Mappings.TryGetValue(content.ContentType.Alias, out MappingDefinition? mapping))
         {
             return new ContentView(user, id);
@@ -91,7 +97,10 @@ internal class RelewiseContentMiddleware
 
         if (mapping.EntityType == typeof(ProductVariant))
         {
-            IPublishedContent parent = content.Parent() ?? throw new InvalidOperationException("A Variant view requires its mapped Product parent.");
+            IPublishedContent parent = content.Parent() ??
+                                       throw new InvalidOperationException(
+                                           "A Variant view requires its mapped Product parent.");
+
             if (!_configuration.Mappings.TryGetValue(parent.ContentType.Alias, out MappingDefinition? parentMapping)
                 || parentMapping.EntityType != typeof(Product) || parentMapping.Variant != mapping)
             {
@@ -100,6 +109,7 @@ internal class RelewiseContentMiddleware
 
             return new ProductView(user, new Product(_configuration.GetContentId(parent)), new ProductVariant(id));
         }
+
         if (mapping.EntityType == typeof(Product))
         {
             return new ProductView(user, new Product(id));
@@ -123,20 +133,30 @@ internal class RelewiseContentMiddleware
         return new ContentView(user, id);
     }
 
-    private string[] CategoryPath(IPublishedContent content, Type entityType)
-        => content.Breadcrumbs(andSelf: true)
-            .Where(node => _configuration.Mappings.TryGetValue(node.ContentType.Alias, out MappingDefinition? mapping) && mapping.EntityType == entityType)
-            .Select(_configuration.GetContentId).ToArray();
+    private string[] CategoryPath(IPublishedContent content,
+        Type entityType)
+    {
+        return
+        [
+            .. content.Breadcrumbs()
+                .Where(node =>
+                    _configuration.Mappings.TryGetValue(node.ContentType.Alias, out MappingDefinition? mapping) &&
+                    mapping.EntityType == entityType)
+                .Select(_configuration.GetContentId)
+        ];
+    }
 
     private static ITracker? SafeGetTracker(HttpContext context)
     {
         try
         {
-            return context.RequestServices.GetRequiredService<IRelewiseClientFactory>().GetClient<ITracker>(Constants.NamedClientName);
+            return context.RequestServices.GetRequiredService<IRelewiseClientFactory>()
+                .GetClient<ITracker>(Constants.NamedClientName);
         }
         catch (Exception ex)
         {
-            ILogger<RelewiseContentMiddleware>? logger = context.RequestServices.GetService<ILogger<RelewiseContentMiddleware>>();
+            var logger =
+                context.RequestServices.GetService<ILogger<RelewiseContentMiddleware>>();
 
             logger?.LogError(ex, $"Unable to resolve {nameof(ITracker)}-instance. {{Message}}", ex.Message);
 
@@ -146,7 +166,7 @@ internal class RelewiseContentMiddleware
 
     private static bool IsNotInPreview(UmbracoContextReference umbracoContextReference)
     {
-        return umbracoContextReference.UmbracoContext?.InPreviewMode == false;
+        return umbracoContextReference.UmbracoContext.InPreviewMode == false;
     }
 
     private bool EnsureContentAndIsTrackable(IPublishedContent content)

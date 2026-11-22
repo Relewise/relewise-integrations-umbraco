@@ -5,7 +5,8 @@ namespace Relewise.DemoStorefront.Site;
 
 internal static class IntegrationDetails
 {
-    internal static string Render(IPublishedContent page, HttpContext http)
+    internal static string Render(IPublishedContent page,
+        HttpContext http)
     {
         var fields = new List<(string Label, string Value)>
         {
@@ -14,6 +15,7 @@ internal static class IntegrationDetails
             ("Document type", page.ContentType.Alias),
             ("Culture", DemoMarket.Current(http).Culture)
         };
+
         if (page.ContentType.Alias == "productVariant" && page.Parent() is { } product)
         {
             fields.Add(("Relewise Product ID", DemoConfiguration.EntityId(product, http.RequestServices)));
@@ -26,8 +28,10 @@ internal static class IntegrationDetails
                 DemoConfiguration.EntityId(page, http.RequestServices)));
         }
 
-        string rows = string.Concat(fields.Select(field =>
+        var rows = string.Concat(fields.Select(field =>
             $"<dt>{Storefront.E(field.Label)}</dt><dd><code>{Storefront.E(field.Value)}</code></dd>"));
-        return $"<details class='developer-details' lang='en'><summary>Integration details</summary><dl>{rows}</dl></details>";
+
+        return
+            $"<details class='developer-details' lang='en'><summary>Integration details</summary><dl>{rows}</dl></details>";
     }
 }

@@ -26,3 +26,9 @@ jobs:
 
       - name: Test with dotnet
         run: dotnet test Relewise.Integrations.Umbraco.slnx --configuration Debug
+
+      - name: Verify ReSharper inspections
+        shell: pwsh
+        run: |
+          dotnet tool restore
+          ./scripts/Inspect-Code.ps1

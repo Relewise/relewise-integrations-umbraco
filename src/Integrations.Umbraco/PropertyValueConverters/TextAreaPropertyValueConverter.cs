@@ -11,7 +11,7 @@ namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 /// </summary>
 public class TextAreaPropertyValueConverter : IDefaultPropertyValueConverter, IRelewisePropertyValueConverter
 {
-    /// <inheritdoc />
+    /// <inheritdoc cref="IRelewisePropertyValueConverter.CanHandle" />
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
         return context.Property.PropertyType.EditorAlias.Equals("Umbraco.TextArea");
@@ -22,6 +22,7 @@ public class TextAreaPropertyValueConverter : IDefaultPropertyValueConverter, IR
     {
         cancellationToken.ThrowIfCancellationRequested();
         Convert(context);
+
         return default;
     }
 
@@ -29,7 +30,8 @@ public class TextAreaPropertyValueConverter : IDefaultPropertyValueConverter, IR
     [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        string? value = context.Property.GetValue<string>(context.Culture);
+        var value = context.Property.GetValue<string>(context.Culture);
+
         context.Add(context.Property.Alias, new DataValue(value));
     }
 }

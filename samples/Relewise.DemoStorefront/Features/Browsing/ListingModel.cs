@@ -1,5 +1,8 @@
+using JetBrains.Annotations;
+
 namespace Relewise.DemoStorefront.Features.Browsing;
 
+[UsedImplicitly(ImplicitUseTargetFlags.Members)]
 internal sealed class ListingModel
 {
     public string View { get; init; } = "store";

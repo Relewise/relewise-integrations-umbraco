@@ -17,6 +17,7 @@ internal class CheckboxPropertyValueConverter : IDefaultPropertyValueConverter, 
     {
         cancellationToken.ThrowIfCancellationRequested();
         Convert(context);
+
         return default;
     }
 
@@ -24,7 +25,8 @@ internal class CheckboxPropertyValueConverter : IDefaultPropertyValueConverter, 
     [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        bool value = context.Property.GetValue<bool>(context.Culture);
+        var value = context.Property.GetValue<bool>(context.Culture);
+
         context.Add(context.Property.Alias, new DataValue(value));
     }
 }

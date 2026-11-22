@@ -10,12 +10,15 @@ using Umbraco.Cms.Core.Notifications;
 
 namespace Relewise.Integrations.Umbraco.NotificationHandlers;
 
-internal class RelewiseContentDeletedNotificationNotificationHandler : INotificationAsyncHandler<ContentDeletedNotification>
+internal class
+    RelewiseContentDeletedNotificationNotificationHandler : INotificationAsyncHandler<ContentDeletedNotification>
 {
     private readonly IExportContentService _exportContentService;
     private readonly RelewiseUmbracoConfiguration _configuration;
 
-    public RelewiseContentDeletedNotificationNotificationHandler(IExportContentService exportContentService, RelewiseUmbracoConfiguration configuration)
+    public RelewiseContentDeletedNotificationNotificationHandler(
+        IExportContentService exportContentService,
+        RelewiseUmbracoConfiguration configuration)
     {
         _exportContentService = exportContentService;
         _configuration = configuration;
@@ -30,7 +33,7 @@ internal class RelewiseContentDeletedNotificationNotificationHandler : INotifica
             return;
         }
 
-        string[] ids = notification.DeletedEntities
+        var ids = notification.DeletedEntities
             .Where(x => _configuration.CanMap(x))
             .Select(x => _configuration.GetContentId(x))
             .ToArray();

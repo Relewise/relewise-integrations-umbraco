@@ -13,12 +13,15 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         cancellationToken.ThrowIfCancellationRequested();
+
         return ValueTask.FromResult(Read(context.Property.GetValue(), cancellationToken));
     }
 
-    internal static MultiCurrency? Read(object? source, CancellationToken cancellationToken = default)
+    internal static MultiCurrency? Read(object? source,
+        CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
         if (source == null)
         {
             return null;
@@ -31,11 +34,14 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
 
         var values = new List<Money>();
         var currencies = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         foreach (BlockListItem entry in entries)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            string? code = entry.Content.GetProperty("currency")?.GetValue()?.ToString()?.Trim().ToUpperInvariant();
-            object? amount = entry.Content.GetProperty("amount")?.GetValue();
+
+            var code = entry.Content.GetProperty("currency")?.GetValue()?.ToString()?.Trim().ToUpperInvariant();
+            var amount = entry.Content.GetProperty("amount")?.GetValue();
+
             if (code is not { Length: 3 } || !code.All(char.IsAsciiLetterUpper) || amount == null)
             {
                 throw new InvalidOperationException("Each price requires a three-letter currency code and an amount.");
@@ -43,10 +49,12 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
 
             if (!currencies.Add(code))
             {
-                throw new InvalidOperationException($"Currency '{code}' is entered more than once for this price field.");
+                throw new InvalidOperationException(
+                    $"Currency '{code}' is entered more than once for this price field.");
             }
 
-            decimal value = System.Convert.ToDecimal(amount, CultureInfo.InvariantCulture);
+            var value = Convert.ToDecimal(amount, CultureInfo.InvariantCulture);
+
             ValidateAmount(value);
             values.Add(new Money(code, value));
         }
@@ -54,13 +62,17 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
         return new MultiCurrency(values);
     }
 
-    public void Dispose() => _disposed = true;
+    public void Dispose()
+    {
+        _disposed = true;
+    }
 
     internal static void ValidateAmount(decimal amount)
     {
         if (amount < 0 || decimal.Round(amount, 2) != amount)
         {
-            throw new InvalidOperationException("Demo prices require a nonnegative amount with at most two decimal places.");
+            throw new InvalidOperationException(
+                "Demo prices require a nonnegative amount with at most two decimal places.");
         }
     }
 }

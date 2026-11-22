@@ -3,7 +3,8 @@ namespace Relewise.Integrations.Umbraco;
 /// <summary>
 /// Convert a PublishedContent Property Value to one or more Relewise Content Data-fields
 /// </summary>
-[System.Obsolete("Implement IAsyncRelewisePropertyValueConverter and register with AddAsyncValueConverter instead. This interface will be removed in the next major version.")]
+[System.Obsolete(
+    "Implement IAsyncRelewisePropertyValueConverter and register with AddAsyncValueConverter instead. This interface will be removed in the next major version.")]
 public interface IRelewisePropertyValueConverter
 {
     /// <summary>

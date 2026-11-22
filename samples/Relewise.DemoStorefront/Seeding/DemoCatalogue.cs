@@ -11,13 +11,15 @@ internal static class DemoCatalogue
 {
     internal static async Task EnsureAsync(IServiceProvider services)
     {
-        IContentService content = services.GetRequiredService<IContentService>();
-        IContentTypeService types = services.GetRequiredService<IContentTypeService>();
+        var content = services.GetRequiredService<IContentService>();
+        var types = services.GetRequiredService<IContentTypeService>();
         IContentType variantType = types.Get("productVariant")!;
+
         if (!variantType.PropertyTypes.Any(property => property.Alias == "size"))
         {
-            IDataTypeService dataTypes = services.GetRequiredService<IDataTypeService>();
+            var dataTypes = services.GetRequiredService<IDataTypeService>();
             IDataType text = (await dataTypes.GetAllAsync()).First(type => type.Name == "Textstring");
+
             variantType.AddPropertyType(new PropertyType(
                 services.GetRequiredService<IShortStringHelper>(),
                 text,
@@ -30,12 +32,20 @@ internal static class DemoCatalogue
         }
 
         using IScope scope = services.GetRequiredService<IScopeProvider>().CreateScope();
+
         scope.EagerWriteLock(Constants.Locks.ContentTree);
-        var nodes = content.GetRootContent()
-            .SelectMany(root => new[] { root }.Concat(content.GetPagedDescendants(root.Id, 0, 1000, out _))).ToList();
-        IContent equipment = nodes.Single(node => node.ContentType.Alias == "productCategory" && node.GetValue<string>("categoryId") == "U19-SMOKE-EQUIPMENT");
-        IContent brand = nodes.Single(node => node.ContentType.Alias == "brand" && node.GetValue<string>("brandId") == "U19-SMOKE-BRAND");
-        int template = types.Get("product")!.AllowedTemplates!.Single().Id;
+
+        List<IContent> nodes =
+        [
+            .. content.GetRootContent()
+                .SelectMany(root => new[] { root }.Concat(content.GetPagedDescendants(root.Id, 0, 1000, out _)))
+        ];
+        IContent equipment = nodes.Single(node =>
+            node.ContentType.Alias == "productCategory" &&
+            node.GetValue<string>("categoryId") == "U19-SMOKE-EQUIPMENT");
+        IContent brand = nodes.Single(node =>
+            node.ContentType.Alias == "brand" && node.GetValue<string>("brandId") == "U19-SMOKE-BRAND");
+        var template = types.Get("product")!.AllowedTemplates!.Single().Id;
         Guid prices = types.Get("currencyPrice")!.Key;
 
         void Publish(IContent node)
@@ -46,6 +56,7 @@ internal static class DemoCatalogue
             }
 
             content.Save(node);
+
             if (!content.Publish(node, ["*"]).Success)
             {
                 throw new InvalidOperationException($"Failed publishing catalogue item '{node.Name}'.");
@@ -58,15 +69,19 @@ internal static class DemoCatalogue
         }
 
         var brands = new Dictionary<string, IContent> { ["U19-SMOKE-BRAND"] = brand };
-        bool distributeExisting = !nodes.Any(node => node.ContentType.Alias == "brand" &&
-            node.GetValue<string>("brandId") is "FIELDWORK-RIDGEWAY" or "FIELDWORK-EMBERCAMP");
-        foreach ((string? id, string? name, string? description) in new[]
+        var distributeExisting = !nodes.Any(node => node.ContentType.Alias == "brand" &&
+                                                    node.GetValue<string>("brandId") is "FIELDWORK-RIDGEWAY"
+                                                        or "FIELDWORK-EMBERCAMP");
+
+        foreach (var (id, name, description) in new[]
+                 {
+                     ("FIELDWORK-RIDGEWAY", "Ridgeway", "Practical packs and equipment for days on the trail."),
+                     ("FIELDWORK-EMBERCAMP", "Embercamp", "Thoughtful essentials for relaxed days outdoors.")
+                 })
         {
-            ("FIELDWORK-RIDGEWAY", "Ridgeway", "Practical packs and equipment for days on the trail."),
-            ("FIELDWORK-EMBERCAMP", "Embercamp", "Thoughtful essentials for relaxed days outdoors.")
-        })
-        {
-            IContent? additionalBrand = nodes.FirstOrDefault(node => node.ContentType.Alias == "brand" && node.GetValue<string>("brandId") == id);
+            IContent? additionalBrand = nodes.FirstOrDefault(node =>
+                node.ContentType.Alias == "brand" && node.GetValue<string>("brandId") == id);
+
             if (additionalBrand == null)
             {
                 additionalBrand = content.Create(name, brand.ParentId, "brand");
@@ -76,14 +91,22 @@ internal static class DemoCatalogue
                 SetText(additionalBrand, "bodyText", description);
                 Publish(additionalBrand);
             }
+
             brands.Add(id, additionalBrand);
         }
 
         var categories = new Dictionary<string, IContent>();
-        foreach ((string? code, string? name) in new[] { ("packs", "Packs and bags"), ("drinkware", "Drinkware"), ("camping", "Camping"), ("accessories", "Accessories") })
+
+        foreach (var (code, name) in new[]
+                 {
+                     ("packs", "Packs and bags"), ("drinkware", "Drinkware"), ("camping", "Camping"),
+                     ("accessories", "Accessories")
+                 })
         {
-            string id = "FIELDWORK-" + code.ToUpperInvariant();
-            IContent? category = nodes.FirstOrDefault(node => node.ContentType.Alias == "productCategory" && node.GetValue<string>("categoryId") == id);
+            var id = "FIELDWORK-" + code.ToUpperInvariant();
+            IContent? category = nodes.FirstOrDefault(node =>
+                node.ContentType.Alias == "productCategory" && node.GetValue<string>("categoryId") == id);
+
             if (category == null)
             {
                 category = content.Create(name, equipment.Id, "productCategory");
@@ -98,7 +121,9 @@ internal static class DemoCatalogue
 
         foreach (ProductSeed item in Products)
         {
-            IContent? product = nodes.FirstOrDefault(node => node.ContentType.Alias == "product" && node.GetValue<string>("sku") == item.Sku);
+            IContent? product = nodes.FirstOrDefault(node =>
+                node.ContentType.Alias == "product" && node.GetValue<string>("sku") == item.Sku);
+
             if (product == null)
             {
                 product = content.Create(item.Name, categories[item.Category].Id, "product");
@@ -107,24 +132,30 @@ internal static class DemoCatalogue
                 product.SetValue("sku", item.Sku);
                 SetText(product, "bodyText", item.Description);
                 product.SetValue("heroImage", "/images/" + item.Image + ".svg");
-                product.SetValue("brand", Udi.Create(Constants.UdiEntityType.Document, brands[BrandIdForSku(item.Sku)].Key).ToString());
+                product.SetValue("brand",
+                    Udi.Create(Constants.UdiEntityType.Document, brands[BrandIdForSku(item.Sku)].Key).ToString());
                 product.SetValue("stock", item.Stock ?? 10 + categories[item.Category].Level * 5);
+
                 if (item.AdditionalCategory != null)
                 {
-                    product.SetValue("extraCategories", System.Text.Json.JsonSerializer.Serialize(new[] { categories[item.AdditionalCategory].Key }));
+                    product.SetValue("extraCategories",
+                        System.Text.Json.JsonSerializer.Serialize(new[] { categories[item.AdditionalCategory].Key }));
                 }
-                product.SetValue("listPrice", DemoBlockValues.Prices(
-                    prices,
-                    ("DKK", item.Dkk),
-                    ("EUR", item.Eur),
-                    ("USD", item.Usd)
-                )
+
+                product.SetValue("listPrice",
+                    DemoBlockValues.Prices(
+                        prices,
+                        ("DKK", item.Dkk),
+                        ("EUR", item.Eur),
+                        ("USD", item.Usd)
+                    )
                 );
-                product.SetValue("salesPrice", DemoBlockValues.Prices(prices,
-                    ("DKK", SalesPrice(item, "DKK", item.Dkk)),
-                    ("EUR", SalesPrice(item, "EUR", item.Eur)),
-                    ("USD", SalesPrice(item, "USD", item.Usd))
-                )
+                product.SetValue("salesPrice",
+                    DemoBlockValues.Prices(prices,
+                        ("DKK", SalesPrice(item, "DKK", item.Dkk)),
+                        ("EUR", SalesPrice(item, "EUR", item.Eur)),
+                        ("USD", SalesPrice(item, "USD", item.Usd))
+                    )
                 );
                 Publish(product);
             }
@@ -132,35 +163,43 @@ internal static class DemoCatalogue
             // Upgrade the original single-Brand seed once. Never publish drafts or replace a custom Brand choice.
             if (distributeExisting && product.Published && !product.Edited &&
                 product.AvailableCultures.All(culture => product.PublishedCultures.Contains(culture)) &&
-                product.GetValue<string>("brand") == Udi.Create(Constants.UdiEntityType.Document, brand.Key).ToString() &&
+                product.GetValue<string>("brand") ==
+                Udi.Create(Constants.UdiEntityType.Document, brand.Key).ToString() &&
                 BrandIdForSku(item.Sku) != "U19-SMOKE-BRAND")
             {
-                product.SetValue("brand", Udi.Create(Constants.UdiEntityType.Document, brands[BrandIdForSku(item.Sku)].Key).ToString());
+                product.SetValue("brand",
+                    Udi.Create(Constants.UdiEntityType.Document, brands[BrandIdForSku(item.Sku)].Key).ToString());
                 Publish(product);
             }
 
             if (product.ParentId == equipment.Id)
             {
                 OperationResult moved = content.Move(product, categories[item.Category].Id);
+
                 if (!moved.Success)
                 {
-                    throw new InvalidOperationException($"Failed placing '{product.Name}' in its category: {moved.Result}.");
+                    throw new InvalidOperationException(
+                        $"Failed placing '{product.Name}' in its category: {moved.Result}.");
                 }
             }
 
             if (!product.Edited && product.Published &&
-                item.Sku is "FIELDWORK-SUMMIT-PACK" or "FIELDWORK-HIP-PACK" or "FIELDWORK-CAMP-CHAIR" or "FIELDWORK-LANTERN")
+                item.Sku is "FIELDWORK-SUMMIT-PACK" or "FIELDWORK-HIP-PACK" or "FIELDWORK-CAMP-CHAIR"
+                    or "FIELDWORK-LANTERN")
             {
-                Dictionary<string, decimal> currentPrices = StoredPriceReader.Read(product.GetValue<string>("salesPrice"));
+                Dictionary<string, decimal> currentPrices =
+                    StoredPriceReader.Read(product.GetValue<string>("salesPrice"));
+
                 if (currentPrices.GetValueOrDefault("DKK") == item.Dkk &&
                     currentPrices.GetValueOrDefault("EUR") == item.Eur &&
                     currentPrices.GetValueOrDefault("USD") == item.Usd)
                 {
-                    product.SetValue("salesPrice", DemoBlockValues.Prices(prices,
-                        ("DKK", decimal.Round(item.Dkk * .8m, 2)),
-                        ("EUR", decimal.Round(item.Eur * .8m, 2)),
-                        ("USD", decimal.Round(item.Usd * .8m, 2))
-                    )
+                    product.SetValue("salesPrice",
+                        DemoBlockValues.Prices(prices,
+                            ("DKK", decimal.Round(item.Dkk * .8m, 2)),
+                            ("EUR", decimal.Round(item.Eur * .8m, 2)),
+                            ("USD", decimal.Round(item.Usd * .8m, 2))
+                        )
                     );
                     Publish(product);
                 }
@@ -169,13 +208,16 @@ internal static class DemoCatalogue
             // Stable SKUs make startup additive: keep edits to existing Products and Variants.
             foreach (VariantSeed option in item.Variants)
             {
-                string sku = item.Sku + "-" + option.Label.Replace(' ', '-').ToUpperInvariant();
-                if (nodes.Any(node => node.ContentType.Alias == "productVariant" && node.GetValue<string>("sku") == sku))
+                var sku = item.Sku + "-" + option.Label.Replace(' ', '-').ToUpperInvariant();
+
+                if (nodes.Any(node =>
+                        node.ContentType.Alias == "productVariant" && node.GetValue<string>("sku") == sku))
                 {
                     continue;
                 }
 
                 IContent variant = content.Create(item.Name + " " + option.Label, product.Id, "productVariant");
+
                 variant.TemplateId = template;
                 SetText(variant, "heading", item.Name + " " + option.Label);
                 variant.SetValue("sku", sku);
@@ -189,31 +231,50 @@ internal static class DemoCatalogue
         scope.Complete();
     }
 
-    internal static string BrandIdForSku(string sku) => sku.StartsWith("U19-SMOKE-", StringComparison.Ordinal)
-        ? "U19-SMOKE-BRAND"
-        : (sku.Sum(character => character) % 3) switch
-        {
-            0 => "U19-SMOKE-BRAND",
-            1 => "FIELDWORK-RIDGEWAY",
-            _ => "FIELDWORK-EMBERCAMP"
-        };
-
-    private static decimal SalesPrice(ProductSeed item, string currency, decimal amount)
+    internal static string BrandIdForSku(string sku)
     {
-        bool discounted = item.OfferCurrency == currency ||
-            item.Sku is "FIELDWORK-SUMMIT-PACK" or "FIELDWORK-HIP-PACK" or "FIELDWORK-CAMP-CHAIR" or "FIELDWORK-LANTERN";
+        return sku.StartsWith("U19-SMOKE-", StringComparison.Ordinal)
+            ? "U19-SMOKE-BRAND"
+            : (sku.Sum(character => character) % 3) switch
+            {
+                0 => "U19-SMOKE-BRAND",
+                1 => "FIELDWORK-RIDGEWAY",
+                _ => "FIELDWORK-EMBERCAMP"
+            };
+    }
+
+    private static decimal SalesPrice(ProductSeed item,
+        string currency,
+        decimal amount)
+    {
+        var discounted = item.OfferCurrency == currency ||
+                         item.Sku is "FIELDWORK-SUMMIT-PACK" or "FIELDWORK-HIP-PACK" or "FIELDWORK-CAMP-CHAIR"
+                             or "FIELDWORK-LANTERN";
+
         return discounted ? decimal.Round(amount * .8m, 2) : amount;
     }
 
     private static void SetText(IContent node, string alias, string? value)
-        => node.SetValue(alias, value, node.ContentType.VariesByCulture() ? "en-US" : null);
+    {
+        node.SetValue(alias, value, node.ContentType.VariesByCulture() ? "en-US" : null);
+    }
 
-    private static VariantSeed[] Colors(params string[] colors) => colors.Select(color => new VariantSeed(
-        color,
-        color,
-        null
-    )).ToArray();
-    private static VariantSeed[] Sizes(params string[] sizes) => sizes.Select(size => new VariantSeed(size, null, size)).ToArray();
+    private static VariantSeed[] Colors(params string[] colors)
+    {
+        return
+        [
+            .. colors.Select(color => new VariantSeed(
+                color,
+                color,
+                null
+            ))
+        ];
+    }
+
+    private static VariantSeed[] Sizes(params string[] sizes)
+    {
+        return [.. sizes.Select(size => new VariantSeed(size, null, size))];
+    }
 
     private static readonly ProductSeed[] Products =
     [
@@ -491,9 +552,9 @@ internal static class DemoCatalogue
             "A packable blanket for campsite breakfasts and picnic stops. Only two left; discounted in Europe only.",
             "accessories",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 2,
-            AdditionalCategory: "accessories",
-            OfferCurrency: "EUR"
+            2,
+            "accessories",
+            "EUR"
         ),
         new(
             "FIELDWORK-REPAIR-KIT",
@@ -505,9 +566,9 @@ internal static class DemoCatalogue
             "A compact repair kit for packs and camping equipment. Currently out of stock; discounted in the US only.",
             "accessories",
             Sizes("Small", "Large"),
-            Stock: 0,
-            AdditionalCategory: "camping",
-            OfferCurrency: "USD"
+            0,
+            "camping",
+            "USD"
         ),
         new(
             "FIELDWORK-HYDRATION-PACK",
@@ -519,9 +580,9 @@ internal static class DemoCatalogue
             "A close-fitting running pack with space for water and a light layer.",
             "daypack",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 0,
-            AdditionalCategory: "accessories",
-            OfferCurrency: "DKK"
+            0,
+            "accessories",
+            "DKK"
         ),
         new(
             "FIELDWORK-OVERNIGHT-PACK",
@@ -533,7 +594,7 @@ internal static class DemoCatalogue
             "A supportive trekking pack for overnight walks with tent and sleeping gear.",
             "daypack",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 13
+            13
         ),
         new(
             "FIELDWORK-EXPEDITION-PACK",
@@ -545,7 +606,7 @@ internal static class DemoCatalogue
             "A high-capacity pack for longer routes and bulky cold-weather equipment.",
             "daypack",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 14
+            14
         ),
         new(
             "FIELDWORK-FOLDABLE-PACK",
@@ -557,7 +618,7 @@ internal static class DemoCatalogue
             "A foldaway daypack that fits inside your main travel bag.",
             "daypack",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 15,
+            15,
             OfferCurrency: "EUR"
         ),
         new(
@@ -570,7 +631,7 @@ internal static class DemoCatalogue
             "A wide-opening duffel for weekend clothing and outdoor equipment.",
             "daypack",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 5
+            5
         ),
         new(
             "FIELDWORK-BASECAMP-DUFFEL",
@@ -582,8 +643,8 @@ internal static class DemoCatalogue
             "A tough equipment bag with grab handles for the journey to basecamp.",
             "daypack",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 17,
-            AdditionalCategory: "accessories"
+            17,
+            "accessories"
         ),
         new(
             "FIELDWORK-PACKING-CUBES",
@@ -595,7 +656,7 @@ internal static class DemoCatalogue
             "Keep spare clothing organised with lightweight zipped packing cubes.",
             "daypack",
             Sizes("Small", "Medium", "Large"),
-            Stock: 18,
+            18,
             OfferCurrency: "USD"
         ),
         new(
@@ -608,7 +669,7 @@ internal static class DemoCatalogue
             "Compression straps reduce the packed volume of a sleeping bag or spare layers.",
             "daypack",
             Sizes("Small", "Medium", "Large"),
-            Stock: 2
+            2
         ),
         new(
             "FIELDWORK-ROLLTOP-PACK",
@@ -620,7 +681,7 @@ internal static class DemoCatalogue
             "A rolltop backpack with a padded laptop sleeve for everyday journeys.",
             "daypack",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 5
+            5
         ),
         new(
             "FIELDWORK-CAMERA-PACK",
@@ -632,7 +693,7 @@ internal static class DemoCatalogue
             "Padded dividers keep camera equipment organised on trails and city walks.",
             "daypack",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 0,
+            0,
             OfferCurrency: "DKK"
         ),
         new(
@@ -645,8 +706,8 @@ internal static class DemoCatalogue
             "A clear-front pouch protects route notes and maps from passing showers.",
             "accessories",
             Sizes("Small", "Medium", "Large"),
-            Stock: 22,
-            AdditionalCategory: "accessories"
+            22,
+            "accessories"
         ),
         new(
             "FIELDWORK-TOILETRY-BAG",
@@ -658,7 +719,7 @@ internal static class DemoCatalogue
             "A hanging wash bag keeps small essentials together at the campsite.",
             "daypack",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 23
+            23
         ),
         new(
             "FIELDWORK-TRAVEL-WALLET",
@@ -670,7 +731,7 @@ internal static class DemoCatalogue
             "A slim zipped wallet for travel cards and campsite essentials.",
             "accessories",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 5,
+            5,
             OfferCurrency: "EUR"
         ),
         new(
@@ -683,7 +744,7 @@ internal static class DemoCatalogue
             "A rolltop pannier carries clothing and lunch on touring bike rides.",
             "daypack",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 25
+            25
         ),
         new(
             "FIELDWORK-FRAME-BAG",
@@ -695,7 +756,7 @@ internal static class DemoCatalogue
             "A compact frame bag keeps repair tools and snacks within easy reach.",
             "daypack",
             Sizes("Small", "Medium", "Large"),
-            Stock: 2
+            2
         ),
         new(
             "FIELDWORK-ESPRESSO-CUP",
@@ -707,9 +768,9 @@ internal static class DemoCatalogue
             "A small stainless cup for morning espresso beside the tent.",
             "mug",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 27,
-            AdditionalCategory: "camping",
-            OfferCurrency: "USD"
+            27,
+            "camping",
+            "USD"
         ),
         new(
             "FIELDWORK-ENAMEL-MUG",
@@ -721,7 +782,7 @@ internal static class DemoCatalogue
             "A traditional enamel mug for tea breaks and fireside coffee.",
             "mug",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 5
+            5
         ),
         new(
             "FIELDWORK-FOLDING-CUP",
@@ -733,7 +794,7 @@ internal static class DemoCatalogue
             "A folding cup slips into a jacket pocket for quick refreshment stops.",
             "mug",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 12
+            12
         ),
         new(
             "FIELDWORK-LARGE-THERMOS",
@@ -745,7 +806,7 @@ internal static class DemoCatalogue
             "A large vacuum flask shares warm drinks with friends on long outings.",
             "flask",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 0,
+            0,
             OfferCurrency: "DKK"
         ),
         new(
@@ -758,7 +819,7 @@ internal static class DemoCatalogue
             "A compact drinking bottle with a carry loop for younger explorers.",
             "flask",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 14
+            14
         ),
         new(
             "FIELDWORK-FILTER-BOTTLE",
@@ -770,8 +831,8 @@ internal static class DemoCatalogue
             "A drinking bottle with a replaceable filter for outdoor travel.",
             "flask",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 5,
-            AdditionalCategory: "camping"
+            5,
+            "camping"
         ),
         new(
             "FIELDWORK-STEEL-BOTTLE",
@@ -783,7 +844,7 @@ internal static class DemoCatalogue
             "A single-wall steel bottle for cold drinks on everyday walks.",
             "flask",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 2,
+            2,
             OfferCurrency: "EUR"
         ),
         new(
@@ -796,7 +857,7 @@ internal static class DemoCatalogue
             "A flexible water reservoir fits inside hydration-compatible backpacks.",
             "flask",
             Sizes("Small", "Medium", "Large"),
-            Stock: 17
+            17
         ),
         new(
             "FIELDWORK-TEA-FLASK",
@@ -808,7 +869,7 @@ internal static class DemoCatalogue
             "Brew loose-leaf tea directly in an insulated flask with a removable infuser.",
             "flask",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 18
+            18
         ),
         new(
             "FIELDWORK-CAMP-JUG",
@@ -820,7 +881,7 @@ internal static class DemoCatalogue
             "An insulated jug keeps drinks ready for the whole group at basecamp.",
             "flask",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 5,
+            5,
             OfferCurrency: "USD"
         ),
         new(
@@ -833,8 +894,8 @@ internal static class DemoCatalogue
             "Nesting cups save space when packing shared camp kitchen equipment.",
             "mug",
             Sizes("Small", "Medium", "Large"),
-            Stock: 20,
-            AdditionalCategory: "camping"
+            20,
+            "camping"
         ),
         new(
             "FIELDWORK-WATER-CARRIER",
@@ -846,7 +907,7 @@ internal static class DemoCatalogue
             "Carry water back to camp in a container that folds flat when empty.",
             "flask",
             Sizes("Small", "Medium", "Large"),
-            Stock: 21
+            21
         ),
         new(
             "FIELDWORK-TREKKING-TENT",
@@ -858,7 +919,7 @@ internal static class DemoCatalogue
             "A lightweight tent with a sheltered entrance for overnight walking routes.",
             "shelter",
             Sizes("Solo", "Duo"),
-            Stock: 0,
+            0,
             OfferCurrency: "DKK"
         ),
         new(
@@ -871,7 +932,7 @@ internal static class DemoCatalogue
             "A spacious family tent with room to gather on rainy camping days.",
             "shelter",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 2
+            2
         ),
         new(
             "FIELDWORK-BIVVY-BAG",
@@ -883,7 +944,7 @@ internal static class DemoCatalogue
             "A compact bivvy shelter for simple nights beneath the stars.",
             "sleeping-bag",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 24
+            24
         ),
         new(
             "FIELDWORK-CAMP-HAMMOCK",
@@ -895,9 +956,9 @@ internal static class DemoCatalogue
             "A packable hammock with tree straps for quiet afternoons outdoors.",
             "shelter",
             Sizes("Solo", "Duo"),
-            Stock: 25,
-            AdditionalCategory: "accessories",
-            OfferCurrency: "EUR"
+            25,
+            "accessories",
+            "EUR"
         ),
         new(
             "FIELDWORK-CAMP-PILLOW",
@@ -909,7 +970,7 @@ internal static class DemoCatalogue
             "An inflatable pillow adds a little comfort without filling your pack.",
             "sleeping-bag",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 26
+            26
         ),
         new(
             "FIELDWORK-FOAM-MAT",
@@ -921,7 +982,7 @@ internal static class DemoCatalogue
             "A folding foam mat provides simple insulation for campsites and lunch stops.",
             "sleeping-bag",
             Sizes("Small", "Medium", "Large"),
-            Stock: 5
+            5
         ),
         new(
             "FIELDWORK-WINTER-SLEEPING-BAG",
@@ -933,7 +994,7 @@ internal static class DemoCatalogue
             "A generously insulated sleeping bag for colder nights at camp.",
             "sleeping-bag",
             Sizes("Small", "Medium", "Large"),
-            Stock: 28,
+            28,
             OfferCurrency: "USD"
         ),
         new(
@@ -946,7 +1007,7 @@ internal static class DemoCatalogue
             "A folding table creates a steady place for camp meals and maps.",
             "chair",
             Sizes("Small", "Medium", "Large"),
-            Stock: 12
+            12
         ),
         new(
             "FIELDWORK-CAMP-STOOL",
@@ -958,8 +1019,8 @@ internal static class DemoCatalogue
             "A compact tripod stool offers a quick seat on walks and fishing trips.",
             "chair",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 2,
-            AdditionalCategory: "accessories"
+            2,
+            "accessories"
         ),
         new(
             "FIELDWORK-CAMP-STOVE",
@@ -971,7 +1032,7 @@ internal static class DemoCatalogue
             "A compact stove for preparing warm meals at the campsite.",
             "mug",
             Sizes("Solo", "Duo"),
-            Stock: 0,
+            0,
             OfferCurrency: "DKK"
         ),
         new(
@@ -984,7 +1045,7 @@ internal static class DemoCatalogue
             "A lightweight cooking pot with folding handles for the camp kitchen.",
             "mug",
             Sizes("Solo", "Duo"),
-            Stock: 15
+            15
         ),
         new(
             "FIELDWORK-CAMP-KETTLE",
@@ -996,7 +1057,7 @@ internal static class DemoCatalogue
             "A compact kettle makes shared tea breaks easy on outdoor trips.",
             "mug",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 16
+            16
         ),
         new(
             "FIELDWORK-SOLAR-LIGHT",
@@ -1008,7 +1069,7 @@ internal static class DemoCatalogue
             "A rechargeable campsite light with a solar panel for sunny rest days.",
             "lantern",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 17,
+            17,
             OfferCurrency: "EUR"
         ),
         new(
@@ -1021,8 +1082,8 @@ internal static class DemoCatalogue
             "A groundsheet protects the tent floor from rough ground and damp grass.",
             "shelter",
             Sizes("Solo", "Duo"),
-            Stock: 5,
-            AdditionalCategory: "accessories"
+            5,
+            "accessories"
         ),
         new(
             "FIELDWORK-TENT-PEG-SET",
@@ -1034,7 +1095,7 @@ internal static class DemoCatalogue
             "Spare tent pegs help secure your shelter on the next camping trip.",
             "accessories",
             Sizes("Small", "Medium", "Large"),
-            Stock: 19
+            19
         ),
         new(
             "FIELDWORK-HIKING-GLOVES",
@@ -1046,7 +1107,7 @@ internal static class DemoCatalogue
             "Light gloves keep hands comfortable on cool early-morning walks.",
             "accessories",
             Sizes("Small", "Medium", "Large"),
-            Stock: 2,
+            2,
             OfferCurrency: "USD"
         ),
         new(
@@ -1059,7 +1120,7 @@ internal static class DemoCatalogue
             "A soft merino neck warmer adds versatile warmth on windy trails.",
             "accessories",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 21
+            21
         ),
         new(
             "FIELDWORK-TRAIL-BEANIE",
@@ -1071,7 +1132,7 @@ internal static class DemoCatalogue
             "A warm ribbed hat for cold campsites and winter walks.",
             "accessories",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 5
+            5
         ),
         new(
             "FIELDWORK-RAIN-GAITERS",
@@ -1083,9 +1144,9 @@ internal static class DemoCatalogue
             "Light gaiters help keep wet grass and trail debris out of your boots.",
             "accessories",
             Sizes("Small", "Medium", "Large"),
-            Stock: 0,
-            AdditionalCategory: "camping",
-            OfferCurrency: "DKK"
+            0,
+            "camping",
+            "DKK"
         ),
         new(
             "FIELDWORK-HEADLAMP",
@@ -1097,7 +1158,7 @@ internal static class DemoCatalogue
             "A rechargeable headlamp leaves both hands free on dark trails.",
             "lantern",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 24
+            24
         ),
         new(
             "FIELDWORK-FIRST-AID-KIT",
@@ -1109,7 +1170,7 @@ internal static class DemoCatalogue
             "A compact organiser keeps basic first-aid supplies together on trips.",
             "accessories",
             Sizes("Small", "Medium", "Large"),
-            Stock: 25
+            25
         ),
         new(
             "FIELDWORK-TRAIL-COMPASS",
@@ -1121,7 +1182,7 @@ internal static class DemoCatalogue
             "A baseplate compass pairs with your paper map for route planning.",
             "accessories",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 5,
+            5,
             OfferCurrency: "EUR"
         ),
         new(
@@ -1134,7 +1195,7 @@ internal static class DemoCatalogue
             "Compact binoculars bring distant wildlife and landscape details closer.",
             "accessories",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 2
+            2
         ),
         new(
             "FIELDWORK-PHONE-POUCH",
@@ -1146,8 +1207,8 @@ internal static class DemoCatalogue
             "A clear phone pouch adds protection during wet walks and paddling trips.",
             "accessories",
             Sizes("Small", "Medium", "Large"),
-            Stock: 28,
-            AdditionalCategory: "camping"
+            28,
+            "camping"
         ),
         new(
             "FIELDWORK-TRAIL-SUNGLASSES",
@@ -1159,7 +1220,7 @@ internal static class DemoCatalogue
             "Light wraparound sunglasses stay comfortable on active outdoor days.",
             "accessories",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 12,
+            12,
             OfferCurrency: "USD"
         ),
         new(
@@ -1172,7 +1233,7 @@ internal static class DemoCatalogue
             "A folding foam sit pad gives you a dry seat for short trail breaks.",
             "accessories",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 5
+            5
         ),
         new(
             "FIELDWORK-GEAR-STRAPS",
@@ -1184,7 +1245,7 @@ internal static class DemoCatalogue
             "Reusable straps secure a sleeping mat or spare gear to your backpack.",
             "accessories",
             Sizes("Small", "Medium", "Large"),
-            Stock: 14
+            14
         ),
         new(
             "FIELDWORK-COMPACT-HEADLAMP",
@@ -1196,7 +1257,7 @@ internal static class DemoCatalogue
             "A compact 200-lumen headlamp lights the trail while keeping both hands free. A lightweight option for evening walks.",
             "headlamp",
             Colors("Forest", "Slate", "Copper"),
-            Stock: 8
+            8
         ),
         new(
             "FIELDWORK-HIGH-OUTPUT-HEADLAMP",
@@ -1208,7 +1269,7 @@ internal static class DemoCatalogue
             "A rechargeable 600-lumen headlamp with a long-range beam for dark trails and overnight hikes.",
             "headlamp",
             Colors("Forest", "Slate", "Copper"),
-            Stock: 8
+            8
         ),
         new(
             "FIELDWORK-INSULATED-GLOVES",
@@ -1220,7 +1281,7 @@ internal static class DemoCatalogue
             "Insulated hiking gloves keep your hands warm on cold winter walks. Soft lining and a grippy palm help when using trekking poles.",
             "gloves",
             Sizes("Small", "Medium", "Large"),
-            Stock: 8
+            8
         ),
         new(
             "FIELDWORK-WATERPROOF-GLOVES",
@@ -1232,7 +1293,7 @@ internal static class DemoCatalogue
             "Waterproof hiking gloves protect your hands from wind and rain. Flexible fingers and textured palms suit wet-weather hill walking.",
             "gloves",
             Sizes("Small", "Medium", "Large"),
-            Stock: 8
+            8
         ),
         new(
             "FIELDWORK-COMPACT-FIRST-AID",
@@ -1244,7 +1305,7 @@ internal static class DemoCatalogue
             "A small first-aid kit for solo day hikes, with clearly labelled compartments for dressings and basic supplies.",
             "first-aid",
             Sizes("Solo", "Duo"),
-            Stock: 8
+            8
         ),
         new(
             "FIELDWORK-FAMILY-FIRST-AID",
@@ -1256,7 +1317,7 @@ internal static class DemoCatalogue
             "A roomy first-aid kit for family camping trips, with organised compartments and space for extra dressings and personal supplies.",
             "first-aid",
             Sizes("Solo", "Duo"),
-            Stock: 8
+            8
         ),
         new(
             "FIELDWORK-LIGHT-CAMP-CHAIR",
@@ -1268,7 +1329,7 @@ internal static class DemoCatalogue
             "A lightweight folding camping chair with a supportive backrest. Packs into a small carry bag for hiking and campsite evenings.",
             "chair",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 8
+            8
         ),
         new(
             "FIELDWORK-RECLINING-CHAIR",
@@ -1280,7 +1341,7 @@ internal static class DemoCatalogue
             "A comfortable folding camp chair with an adjustable reclining backrest and padded seat for relaxed evenings at basecamp.",
             "chair",
             Colors("Forest", "Sand", "Slate"),
-            Stock: 8
+            8
         ),
         new(
             "FIELDWORK-LIGHT-DRY-BAG",
@@ -1292,7 +1353,7 @@ internal static class DemoCatalogue
             "A lightweight 10-litre waterproof dry bag with a rolltop closure keeps spare clothing dry inside your hiking backpack.",
             "pouch",
             Sizes("Small", "Medium", "Large"),
-            Stock: 8
+            8
         ),
         new(
             "FIELDWORK-EXPEDITION-DRY-BAG",
@@ -1304,7 +1365,7 @@ internal static class DemoCatalogue
             "A tough 30-litre waterproof dry bag with a reinforced rolltop closure for wet expeditions, canoe trips and protecting bulky camping gear.",
             "pouch",
             Sizes("Small", "Medium", "Large"),
-            Stock: 8
+            8
         ),
         new(
             "FIELDWORK-POCKET-BINOCULARS",
@@ -1316,7 +1377,7 @@ internal static class DemoCatalogue
             "Compact binoculars with 8x magnification and 25 mm lenses for spotting birds and wildlife on day walks. Fold into a small pocket case.",
             "binoculars",
             Colors("Forest", "Slate", "Sand"),
-            Stock: 8
+            8
         ),
         new(
             "FIELDWORK-WATERPROOF-BINOCULARS",
@@ -1328,12 +1389,23 @@ internal static class DemoCatalogue
             "Waterproof binoculars with 10x magnification and 42 mm lenses for observing distant wildlife in rain and low light.",
             "binoculars",
             Colors("Forest", "Slate", "Sand"),
-            Stock: 8
+            8
         )
     ];
 
-    private sealed record ProductSeed(string Sku, string Name, string Category, decimal Dkk, decimal Eur, decimal Usd,
-        string Description, string Image, VariantSeed[] Variants, int? Stock = null,
-        string? AdditionalCategory = null, string? OfferCurrency = null);
+    private sealed record ProductSeed(
+        string Sku,
+        string Name,
+        string Category,
+        decimal Dkk,
+        decimal Eur,
+        decimal Usd,
+        string Description,
+        string Image,
+        VariantSeed[] Variants,
+        int? Stock = null,
+        string? AdditionalCategory = null,
+        string? OfferCurrency = null);
+
     private sealed record VariantSeed(string Label, string? Color, string? Size);
 }

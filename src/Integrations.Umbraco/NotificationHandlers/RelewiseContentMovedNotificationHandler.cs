@@ -11,19 +11,17 @@ namespace Relewise.Integrations.Umbraco.NotificationHandlers;
 internal class RelewiseContentMovedNotificationHandler : INotificationAsyncHandler<ContentMovedNotification>
 {
     private readonly IExportContentService _exportContentService;
-    private readonly RelewiseUmbracoConfiguration _configuration;
 
-    public RelewiseContentMovedNotificationHandler(IExportContentService exportContentService, RelewiseUmbracoConfiguration configuration)
+    public RelewiseContentMovedNotificationHandler(IExportContentService exportContentService)
     {
         _exportContentService = exportContentService;
-        _configuration = configuration;
     }
 
     public async Task HandleAsync(ContentMovedNotification notification, CancellationToken cancellationToken)
     {
         await _exportContentService.Export(new ExportContent(
-            notification.MoveInfoCollection.Select(x => x.Entity).ToArray(),
-            ContentUpdate.UpdateKind.ReplaceProvidedProperties),
+                [.. notification.MoveInfoCollection.Select(x => x.Entity)],
+                ContentUpdate.UpdateKind.ReplaceProvidedProperties),
             cancellationToken);
     }
 }

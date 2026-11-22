@@ -10,9 +10,10 @@ public class DemoProductMapperTests
     {
         var product = new Product("sku")
         {
-            ListPrice = new(new Money("EUR", 100), new Money("DKK", 800), new Money("USD", 120)),
-            SalesPrice = new(new Money("EUR", 80), new Money("DKK", 800), new Money("USD", 90))
+            ListPrice = new MultiCurrency(new Money("EUR", 100), new Money("DKK", 800), new Money("USD", 120)),
+            SalesPrice = new MultiCurrency(new Money("EUR", 80), new Money("DKK", 800), new Money("USD", 90))
         };
+
         DemoProductMapper.Apply(product, 2);
 
         Assert.Equal(true, product.Data!["inStock"]!.Value);
@@ -29,9 +30,11 @@ public class DemoProductMapperTests
     {
         var product = new Product("sku")
         {
-            SalesPrice = new(new Money("EUR", 80)),
-            Data = new() { ["inStock"] = true, ["onSale_EUR"] = true, ["onSale_DKK"] = true, ["onSale_USD"] = true }
+            SalesPrice = new MultiCurrency(new Money("EUR", 80)),
+            Data = new Dictionary<string, DataValue?>
+            { ["inStock"] = true, ["onSale_EUR"] = true, ["onSale_DKK"] = true, ["onSale_USD"] = true }
         };
+
         DemoProductMapper.Apply(product, 0);
         Assert.Equal(false, product.Data["inStock"]!.Value);
         Assert.Equal(false, product.Data["onSale_EUR"]!.Value);
@@ -44,11 +47,12 @@ public class DemoProductMapperTests
     {
         var product = new Product("sku")
         {
-            ListPrice = new(new Money("EUR", 100), new Money("DKK", 800)),
-            SalesPrice = new(new Money("EUR", 80), new Money("DKK", 700))
+            ListPrice = new MultiCurrency(new Money("EUR", 100), new Money("DKK", 800)),
+            SalesPrice = new MultiCurrency(new Money("EUR", 80), new Money("DKK", 700))
         };
+
         DemoProductMapper.Apply(product, 1);
-        product.SalesPrice = new(new Money("EUR", 100));
+        product.SalesPrice = new MultiCurrency(new Money("EUR", 100));
         DemoProductMapper.Apply(product, 1);
         Assert.Equal(false, product.Data!["onSale_EUR"]!.Value);
         Assert.Equal(false, product.Data["onSale_DKK"]!.Value);

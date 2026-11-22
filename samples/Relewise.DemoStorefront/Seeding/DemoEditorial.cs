@@ -12,21 +12,26 @@ internal static class DemoEditorial
 {
     internal static void Ensure(IServiceProvider services)
     {
-        IContentService content = services.GetRequiredService<IContentService>();
-        IContentTypeService types = services.GetRequiredService<IContentTypeService>();
+        var content = services.GetRequiredService<IContentService>();
+        var types = services.GetRequiredService<IContentTypeService>();
         using IScope scope = services.GetRequiredService<IScopeProvider>().CreateScope();
+
         scope.EagerWriteLock(Constants.Locks.ContentTree);
+
         IContent home = content.GetRootContent().Single(node => node.ContentType.Alias == "home");
+
         foreach (Story story in Stories)
         {
             Guid key = new(SHA256.HashData(Encoding.UTF8.GetBytes("fieldwork-story-" + story.Slug))[..16]);
             IContent? existing = content.GetById(key);
+
             if (existing != null)
             {
                 continue;
             }
 
             IContent node = content.Create(story.EnglishTitle, home.Id, "article");
+
             node.Key = key;
             node.TemplateId = types.Get("article")!.AllowedTemplates!.Single().Id;
             node.SetCultureName(story.EnglishTitle, "en-US");
@@ -39,7 +44,9 @@ internal static class DemoEditorial
             node.SetValue("contentRows", DemoBlockValues.Story(types, story.EnglishBody), "en-US");
             node.SetValue("contentRows", DemoBlockValues.Story(types, story.DanishBody), "da-DK");
             content.Save(node);
+
             PublishResult published = content.Publish(node, ["en-US", "da-DK"]);
+
             if (!published.Success)
             {
                 throw new InvalidOperationException($"Failed publishing story '{node.Name}': {published.Result}.");
@@ -47,16 +54,19 @@ internal static class DemoEditorial
         }
 
         foreach (IContent node in content.GetPagedDescendants(home.Id, 0, 1000, out _)
-            .Where(node => !node.Edited && node.Published &&
-                (node.ContentType.Alias == "localizedArticle" ||
-                 node.ContentType.Alias == "article" && node.GetCultureName("en-US") is "Finding your trail" or "A slower kind of weekend")))
+                     .Where(node => !node.Edited && node.Published &&
+                                    (node.ContentType.Alias == "localizedArticle" ||
+                                     (node.ContentType.Alias == "article" &&
+                                      node.GetCultureName("en-US") is "Finding your trail"
+                                          or "A slower kind of weekend"))))
         {
-            bool changed = false;
-            foreach (string culture in new[] { "en-US", "da-DK" })
+            var changed = false;
+
+            foreach (var culture in new[] { "en-US", "da-DK" })
             {
-                foreach (string alias in new[] { "contentRows", "pageGrid" })
+                foreach (var alias in new[] { "contentRows", "pageGrid" })
                 {
-                    if (node.GetValue<string>(alias, culture) is string json && RefreshCopy(json) is string updated)
+                    if (node.GetValue<string>(alias, culture) is { } json && RefreshCopy(json) is { } updated)
                     {
                         node.SetValue(alias, updated, culture);
                         changed = true;
@@ -67,6 +77,7 @@ internal static class DemoEditorial
             if (changed)
             {
                 content.Save(node);
+
                 if (!content.Publish(node, ["en-US", "da-DK"]).Success)
                 {
                     throw new InvalidOperationException($"Failed updating editorial copy for '{node.Name}'.");
@@ -74,12 +85,15 @@ internal static class DemoEditorial
             }
         }
 
-        bool homeChanged = false;
-        foreach ((string? culture, string? oldTitle, string? title, string? intro) in new[]
-        {
-            ("en-US", "Fieldwork storefront", "Make room for the outdoors", "Thoughtful equipment and fresh ideas for days on the trail, nights under canvas and the adventures in between."),
-            ("da-DK", "Fieldwork friluftsbutik", "Gør plads til friluftslivet", "Gennemtænkt udstyr og nye idéer til dage på stien, nætter i telt og alle eventyrene derimellem.")
-        })
+        var homeChanged = false;
+
+        foreach (var (culture, oldTitle, title, intro) in new[]
+                 {
+                     ("en-US", "Fieldwork storefront", "Make room for the outdoors",
+                         "Thoughtful equipment and fresh ideas for days on the trail, nights under canvas and the adventures in between."),
+                     ("da-DK", "Fieldwork friluftsbutik", "Gør plads til friluftslivet",
+                         "Gennemtænkt udstyr og nye idéer til dage på stien, nætter i telt og alle eventyrene derimellem.")
+                 })
         {
             if (!home.Edited && home.Published && home.GetValue<string>("heading", culture) == oldTitle)
             {
@@ -92,6 +106,7 @@ internal static class DemoEditorial
         if (homeChanged)
         {
             content.Save(home);
+
             if (!content.Publish(home, ["en-US", "da-DK"]).Success)
             {
                 throw new InvalidOperationException("Failed publishing the storefront welcome page.");
@@ -112,11 +127,14 @@ internal static class DemoEditorial
             ["Indlejret redaktionelt indhold"] = "Planlæg lidt, og gå på opdagelse",
             ["Grid adventure planner"] = "Plan your next outing",
             ["Inside the Grid area"] = "Leave room for a break",
-            ["<p>English <strong>woodland</strong> route &amp; picnic.</p>"] = "<p>Follow a <strong>woodland</strong> route and stop for a picnic along the way.</p>",
-            ["<p>Dansk <strong>skovtur</strong> med kaffe &amp; madpakke.</p>"] = "<p>Tag på <strong>skovtur</strong> med kaffe og madpakke.</p>"
+            ["<p>English <strong>woodland</strong> route &amp; picnic.</p>"] =
+                "<p>Follow a <strong>woodland</strong> route and stop for a picnic along the way.</p>",
+            ["<p>Dansk <strong>skovtur</strong> med kaffe &amp; madpakke.</p>"] =
+                "<p>Tag på <strong>skovtur</strong> med kaffe og madpakke.</p>"
         };
         JsonNode? document = JsonNode.Parse(json);
-        bool changed = false;
+        var changed = false;
+
         void Visit(JsonNode? value)
         {
             if (value is JsonObject obj)
@@ -125,12 +143,13 @@ internal static class DemoEditorial
                 {
                     if (field.Value is JsonValue scalar && scalar.TryGetValue(out string? text))
                     {
-                        if (replacements.TryGetValue(text, out string? replacement))
+                        if (replacements.TryGetValue(text, out var replacement))
                         {
                             obj[field.Key] = replacement;
                             changed = true;
                         }
-                        else if (text.StartsWith('{') && text.Contains("contentData") && RefreshCopy(text) is string nested)
+                        else if (text.StartsWith('{') && text.Contains("contentData") &&
+                                 RefreshCopy(text) is { } nested)
                         {
                             obj[field.Key] = nested;
                             changed = true;
@@ -152,6 +171,7 @@ internal static class DemoEditorial
         }
 
         Visit(document);
+
         return changed ? document!.ToJsonString() : null;
     }
 
@@ -259,6 +279,13 @@ internal static class DemoEditorial
         )
     ];
 
-    private sealed record Story(string Slug, string EnglishTitle, string DanishTitle, string EnglishIntro,
-        string DanishIntro, string Image, string EnglishBody, string DanishBody);
+    private sealed record Story(
+        string Slug,
+        string EnglishTitle,
+        string DanishTitle,
+        string EnglishIntro,
+        string DanishIntro,
+        string Image,
+        string EnglishBody,
+        string DanishBody);
 }

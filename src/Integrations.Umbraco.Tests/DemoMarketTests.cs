@@ -9,12 +9,17 @@ public class DemoMarketTests
     [InlineData("dk", "da-DK", "DKK", "/da")]
     [InlineData("eu", "en-US", "EUR", "/en")]
     [InlineData("us", "en-US", "USD", "/en")]
-    public void ASelectedMarketKeepsLanguageCurrencyAndEditorialRoutingTogether(string id, string culture, string currency, string url)
+    public void ASelectedMarketKeepsLanguageCurrencyAndEditorialRoutingTogether(
+        string id,
+        string culture,
+        string currency,
+        string url)
     {
         var http = new DefaultHttpContext();
+
         http.Request.Headers.Cookie = DemoMarket.CookieName + "=" + id;
 
-        var market = DemoMarket.Current(http);
+        DemoMarket market = DemoMarket.Current(http);
 
         Assert.Equal(culture, market.Culture);
         Assert.Equal(currency, market.Currency);
@@ -31,6 +36,7 @@ public class DemoMarketTests
     public void MissingOrInvalidPreferencesUseTheDefaultMarket(string? preference)
     {
         var http = new DefaultHttpContext();
+
         if (preference != null)
         {
             http.Request.Headers.Cookie = DemoMarket.CookieName + "=" + preference;
@@ -48,6 +54,7 @@ public class DemoMarketTests
     public void ExplicitLanguageUrlsOverrideIncompatibleMarketPreferences(string saved, string path, string expected)
     {
         var http = new DefaultHttpContext();
+
         http.Request.Headers.Cookie = DemoMarket.CookieName + "=" + saved;
         http.Request.Path = path;
 
@@ -68,6 +75,7 @@ public class DemoMarketTests
     public void ASelectedMarketIsAvailableBeforeItsPreferenceCookieIsWritten()
     {
         var http = new DefaultHttpContext();
+
         http.Request.Headers.Cookie = DemoMarket.CookieName + "=us";
         http.Items[typeof(DemoMarket)] = DemoMarket.All.Single(market => market.Id == "dk");
 
@@ -81,5 +89,7 @@ public class DemoMarketTests
     [InlineData("/store\r\nLocation: https://example.com")]
     [InlineData("")]
     public void MarketSelectionCannotRedirectToAnExternalSite(string returnUrl)
-        => Assert.Equal("/en/store", DemoMarket.All[0].ReturnUrl(returnUrl));
+    {
+        Assert.Equal("/en/store", DemoMarket.All[0].ReturnUrl(returnUrl));
+    }
 }

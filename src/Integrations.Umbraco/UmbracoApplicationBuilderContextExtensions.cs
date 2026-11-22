@@ -16,7 +16,10 @@ public static class UmbracoApplicationBuilderContextExtensions
     /// </summary>
     /// <param name="builder"></param>
     /// <exception cref="ArgumentNullException"></exception>
-    public static void TrackContentViews(this IUmbracoApplicationBuilderContext builder) => builder.TrackEntityViews();
+    public static void TrackContentViews(this IUmbracoApplicationBuilderContext builder)
+    {
+        builder.TrackEntityViews();
+    }
 
     /// <summary>Tracks views using the entity type and canonical ID configured for the current document.</summary>
     /// <param name="builder">The Umbraco middleware builder.</param>
@@ -28,9 +31,11 @@ public static class UmbracoApplicationBuilderContextExtensions
         }
 
         // Check the registration without resolving a request-scoped locator at startup.
-        if (builder.ApplicationServices.GetService<IServiceProviderIsService>()?.IsService(typeof(IRelewiseUserLocator)) is false)
+        if (builder.ApplicationServices.GetService<IServiceProviderIsService>()
+                ?.IsService(typeof(IRelewiseUserLocator)) is false)
         {
-            throw new InvalidOperationException($"Could not find {nameof(IRelewiseUserLocator)} registered in the DI. Did you remember to add it to the servicecollection? It is required to automatically track page views.");
+            throw new InvalidOperationException(
+                $"Could not find {nameof(IRelewiseUserLocator)} registered in the DI. Did you remember to add it to the servicecollection? It is required to automatically track page views.");
         }
 
         builder.AppBuilder.UseMiddleware<RelewiseContentMiddleware>();

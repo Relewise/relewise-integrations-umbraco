@@ -17,6 +17,7 @@ internal class IntegerPropertyValueConverter : IDefaultPropertyValueConverter, I
     {
         cancellationToken.ThrowIfCancellationRequested();
         Convert(context);
+
         return default;
     }
 
@@ -24,7 +25,8 @@ internal class IntegerPropertyValueConverter : IDefaultPropertyValueConverter, I
     [System.Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        int value = context.Property.GetValue<int>(context.Culture);
+        var value = context.Property.GetValue<int>(context.Culture);
+
         context.Add(context.Property.Alias, new DataValue(value));
     }
 }

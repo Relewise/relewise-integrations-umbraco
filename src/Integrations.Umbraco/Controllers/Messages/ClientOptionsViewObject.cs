@@ -23,6 +23,7 @@ public class ClientOptionsViewObject
     /// Unique identifier for the dataset this client is configured to use
     /// </summary>
     public Guid DatasetId { get; }
+
     /// <summary>
     /// URL of the Relewise server this client connects to
     /// </summary>
