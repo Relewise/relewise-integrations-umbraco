@@ -8,7 +8,7 @@ internal sealed class StorefrontUserLocator(IHttpContextAccessor http) : IRelewi
     public Task<User> GetUser()
     {
         HttpContext? context = http.HttpContext;
-        var id = context?.Items["storefront-visitor"] as string ?? context?.Request.Cookies["storefront-visitor"];
+        string? id = context?.Items["storefront-visitor"] as string ?? context?.Request.Cookies["storefront-visitor"];
 
         return Task.FromResult(id == null ? User.Anonymous() : User.ByTemporaryId(id));
     }

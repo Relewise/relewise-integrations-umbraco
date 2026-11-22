@@ -27,12 +27,15 @@ public class MappedEntityChangeStrategyTests
         queue.Setup(value => value.QueueBackgroundWorkItem(It.IsAny<Func<CancellationToken, Task>>()))
             .Callback<Func<CancellationToken, Task>>(callback => work = callback);
 
-        var strategy = new MappedEntityChangeStrategy(new EntityIndexingQueue(operations.Object,
-            queue.Object,
-            Mock.Of<IHostApplicationLifetime>(),
-            NullLogger<EntityIndexingQueue>.Instance));
+        var strategy = new MappedEntityChangeStrategy(
+            new EntityIndexingQueue(
+                operations.Object,
+                queue.Object,
+                Mock.Of<IHostApplicationLifetime>(),
+                NullLogger<EntityIndexingQueue>.Instance));
 
-        await strategy.HandleAsync([new ContentIndexInfo("mapped", [UmbracoObjectTypes.Document], null!)],
+        await strategy.HandleAsync(
+            [new ContentIndexInfo("mapped", [UmbracoObjectTypes.Document], null!)],
             [
                 ContentChange.Document(removed, ChangeImpact.Remove, ContentState.Draft),
                 ContentChange.Document(draftSave, ChangeImpact.Refresh, ContentState.Draft),

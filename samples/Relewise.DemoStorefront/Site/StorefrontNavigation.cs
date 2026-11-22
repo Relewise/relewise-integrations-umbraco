@@ -40,8 +40,8 @@ internal static class StorefrontNavigation
         data.Save();
 
         var notice = JsonSerializer.Deserialize<Notice>(json)!;
-        var text = Storefront.E(Storefront.Text(http, notice.Key, [.. notice.Values]));
-        var actions = notice.Key == "CartAdded"
+        string text = Storefront.E(Storefront.Text(http, notice.Key, [.. notice.Values]));
+        string actions = notice.Key == "CartAdded"
             ? $"<div class='notice-actions'><a class='text-link' href='" +
               $"{DemoMarket.Current(http).LanguagePath}/cart'>" +
               $"{Storefront.E(Storefront.Text(http, "ViewCart"))}</a><a class='text-link' href='" +
@@ -72,15 +72,15 @@ internal static class StorefrontNavigation
     internal static string ShoppingUrl(HttpContext http)
     {
         DemoMarket market = DemoMarket.Current(http);
-        var view = http.Session.GetString("fieldwork-listing-view") ?? "store";
-        var path = market.LanguagePath + (view is "search" or "offers" ? "/" + view : "/store");
+        string view = http.Session.GetString("fieldwork-listing-view") ?? "store";
+        string path = market.LanguagePath + (view is "search" or "offers" ? "/" + view : "/store");
 
         if (Guid.TryParse(http.Session.GetString("fieldwork-listing-collection"), out Guid key))
         {
             IPublishedContentCache cache = http.RequestServices.GetRequiredService<IUmbracoContextAccessor>()
                 .GetRequiredUmbracoContext()
                 .Content;
-            var translated = cache.GetById(key)?.Url(market.Culture);
+            string? translated = cache.GetById(key)?.Url(market.Culture);
 
             if (!string.IsNullOrWhiteSpace(translated) && translated.StartsWith('/') && !translated.StartsWith("//"))
             {
@@ -120,14 +120,14 @@ internal static class StorefrontNavigation
     {
         DemoMarket market = DemoMarket.Current(http);
         var crumbs = new List<(string Name, string? Url)> { (Storefront.Text(http, "Home"), market.HomeUrl) };
-        var key = section switch
+        string key = section switch
         {
             "journal" => "Journal",
             "offers" => "OffersNavigation",
             "search" => "SearchResults",
             _ => "Shop"
         };
-        var sectionUrl = section switch
+        string sectionUrl = section switch
         {
             "journal" => market.StoreUrl + "?type=article",
             "offers" => market.LanguagePath + "/offers",

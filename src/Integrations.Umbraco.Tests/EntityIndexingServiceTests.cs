@@ -59,7 +59,7 @@ public class EntityIndexingServiceTests
 
         var cleanup =
             Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
-        var filters = JsonConvert.SerializeObject(cleanup.Filters);
+        string filters = JsonConvert.SerializeObject(cleanup.Filters);
 
         Assert.Contains(removed.ToString("D"), filters);
         Assert.DoesNotContain(draft.ToString("D"), filters);
@@ -204,7 +204,7 @@ public class EntityIndexingServiceTests
 
         Assert.Equal(ContentAdministrativeAction.UpdateKind.Disable, cleanup.Kind);
 
-        var json = JsonConvert.SerializeObject(cleanup.Filters);
+        string json = JsonConvert.SerializeObject(cleanup.Filters);
 
         Assert.Contains("test-installation", json);
         Assert.Contains("article", json);
@@ -307,7 +307,7 @@ public class EntityIndexingServiceTests
 
         public T? GetEnlisted<T>(string key)
         {
-            return _items.TryGetValue(key, out var value) ? (T?)value : default;
+            return _items.TryGetValue(key, out object? value) ? (T?)value : default;
         }
 
         public void ScopeExit(bool completed)

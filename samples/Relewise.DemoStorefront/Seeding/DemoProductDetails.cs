@@ -15,7 +15,7 @@ internal static class DemoProductDetails
         IDataType[] dataTypes = [.. (await services.GetRequiredService<IDataTypeService>().GetAllAsync())];
         var schemaChanged = false;
 
-        foreach (var (alias, name, editor) in new[]
+        foreach ((string alias, string name, string editor) in new[]
                      { ("weightGrams", "Weight (g)", "Numeric"), ("capacity", "Capacity", "Textstring") })
         {
             if (!type.PropertyTypes.Any(property => property.Alias == alias))
@@ -65,8 +65,8 @@ internal static class DemoProductDetails
                 changed = true;
             }
 
-            var previous = "/images/" + detail.PreviousIllustration + ".svg";
-            var illustration = "/images/" + detail.Illustration + ".svg";
+            string previous = "/images/" + detail.PreviousIllustration + ".svg";
+            string illustration = "/images/" + detail.Illustration + ".svg";
 
             if (previous != illustration && product.GetValue<string>("heroImage") == previous)
             {

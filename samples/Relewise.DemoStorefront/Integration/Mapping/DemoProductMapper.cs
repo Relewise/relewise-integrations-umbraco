@@ -15,7 +15,8 @@ internal sealed class DemoProductMapper : IEntityMapper<Product>
         return Task.CompletedTask;
     }
 
-    internal static void Apply(Product product,
+    internal static void Apply(
+        Product product,
         int stock)
     {
         product.Data ??= new Dictionary<string, DataValue?>();
@@ -24,19 +25,20 @@ internal sealed class DemoProductMapper : IEntityMapper<Product>
         Dictionary<string, decimal> sales = Amounts(product.SalesPrice);
         Dictionary<string, decimal> list = Amounts(product.ListPrice);
 
-        foreach (var currency in DemoMarket.All.Select(market => market.Currency)
+        foreach (string currency in DemoMarket.All.Select(market => market.Currency)
                      .Concat(sales.Keys)
                      .Concat(list.Keys)
                      .Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            product.Data["onSale_" + currency] = sales.TryGetValue(currency, out var amount) &&
-                                                 list.TryGetValue(currency, out var original) && amount < original;
+            product.Data["onSale_" + currency] = sales.TryGetValue(currency, out decimal amount) &&
+                                                 list.TryGetValue(currency, out decimal original) && amount < original;
         }
     }
 
     private static Dictionary<string, decimal> Amounts(MultiCurrency? prices)
     {
-        return (prices?.Values ?? []).ToDictionary(price => price.Currency.Value.ToUpperInvariant(),
+        return (prices?.Values ?? []).ToDictionary(
+            price => price.Currency.Value.ToUpperInvariant(),
             price => price.Amount,
             StringComparer.OrdinalIgnoreCase);
     }

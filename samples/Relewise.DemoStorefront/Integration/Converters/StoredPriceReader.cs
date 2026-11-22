@@ -22,10 +22,10 @@ internal static class StoredPriceReader
                     ?.GetValue<string>();
             var amount = values?.FirstOrDefault(value => value?["alias"]?.GetValue<string>() == "amount")?["value"]
                 ?.GetValue<decimal>();
-            var currency = currencyJson == null
+            string? currency = currencyJson == null
                 ? null
                 : JsonNode.Parse(currencyJson)?.AsArray().FirstOrDefault()?.GetValue<string>();
-            var code = currency?.Trim().ToUpperInvariant();
+            string? code = currency?.Trim().ToUpperInvariant();
 
             if (code is not { Length: 3 } || !code.All(char.IsAsciiLetterUpper) || !amount.HasValue)
             {

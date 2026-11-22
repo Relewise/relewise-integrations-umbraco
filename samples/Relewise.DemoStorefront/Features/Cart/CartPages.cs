@@ -36,7 +36,7 @@ internal static class CartPages
 
             SetCulture(http);
 
-            var key = checkout ? "Checkout" : "Cart";
+            string key = checkout ? "Checkout" : "Cart";
 
             if (checkout)
             {
@@ -50,8 +50,8 @@ internal static class CartPages
                 html.Append(StorefrontNavigation.Breadcrumb(null, http, "shop", Storefront.Text(http, key)));
             }
 
-            var heading = T(http, checkout ? "ReviewOrder" : "Cart");
-            var introduction = checkout ? $"<p>{T(http, "ReviewIntro")}</p>" : string.Empty;
+            string heading = T(http, checkout ? "ReviewOrder" : "Cart");
+            string introduction = checkout ? $"<p>{T(http, "ReviewIntro")}</p>" : string.Empty;
 
             html.Append($"<section class='hero'><h1>{heading}</h1>{introduction}</section>");
 
@@ -60,7 +60,7 @@ internal static class CartPages
 
             if (!checkout)
             {
-                var json =
+                string json =
                     JsonSerializer.Serialize(Model(http, lines, priced), StorefrontChrome.Json);
 
                 html.Append(
@@ -92,7 +92,7 @@ internal static class CartPages
         CartState basket,
         HttpContext http)
     {
-        var path = DemoMarket.Current(http).LanguagePath;
+        string path = DemoMarket.Current(http).LanguagePath;
 
         html.Append(
             $$"""
@@ -116,7 +116,7 @@ internal static class CartPages
             }
 
             IPublishedContent page = item.Variant ?? item.Product;
-            var title = Storefront.E(SiteContent.Title(page));
+            string title = Storefront.E(SiteContent.Title(page));
 
             html.Append(
                 $$"""
@@ -128,8 +128,8 @@ internal static class CartPages
                   """);
         }
 
-        var total = priced.Sum(line => line.Amount * line.Line.Quantity);
-        var totalLabel = T(http, "Total");
+        decimal total = priced.Sum(line => line.Amount * line.Line.Quantity);
+        string totalLabel = T(http, "Total");
 
         html.Append(
             $$"""
@@ -140,11 +140,11 @@ internal static class CartPages
                       <p class="muted">{{T(http, "DemoCheckout")}}</p>
               """);
 
-        var ready = priced.Length == lines.Count && InStock(priced);
+        bool ready = priced.Length == lines.Count && InStock(priced);
 
         if (ready)
         {
-            var review = ReviewKey(priced, http);
+            string review = ReviewKey(priced, http);
 
             if (basket.CheckoutKey != review || basket.CheckoutToken == null)
             {
@@ -206,11 +206,11 @@ internal static class CartPages
                 $"{Money(http, line.Total, receipt.Currency)}</strong></p>");
         }
 
-        var totalLabel = T(http, "Total");
-        var totalValue = Money(http, receipt.Total, receipt.Currency);
+        string totalLabel = T(http, "Total");
+        string totalValue = Money(http, receipt.Total, receipt.Currency);
 
-        var continueUrl = Storefront.E(StorefrontNavigation.ShoppingUrl(http));
-        var continueLabel = T(http, "ContinueShopping");
+        string continueUrl = Storefront.E(StorefrontNavigation.ShoppingUrl(http));
+        string continueLabel = T(http, "ContinueShopping");
 
         html.Append(
             $$"""

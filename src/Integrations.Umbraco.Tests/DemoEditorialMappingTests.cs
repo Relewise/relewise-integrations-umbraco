@@ -220,7 +220,7 @@ public class DemoEditorialMappingTests
         };
         var blocks = new BlockListModel([new BlockListItem(Guid.NewGuid(), visible, null, null)]);
 
-        var html = StorefrontEditorial.Render(blocks, "en-US");
+        string html = StorefrontEditorial.Render(blocks, "en-US");
 
         Assert.Contains("A &lt;quiet&gt; place", html);
         Assert.Contains("<p>Take a <strong>break</strong>.</p>", html);

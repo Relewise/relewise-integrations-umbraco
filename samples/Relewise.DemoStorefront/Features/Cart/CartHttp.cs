@@ -25,19 +25,21 @@ internal static class CartHttp
         return Storefront.E((currency ?? market.Currency) + " " + value);
     }
 
-    internal static IResult Error(HttpContext http,
+    internal static IResult Error(
+        HttpContext http,
         string key,
         params string[] values)
     {
         if (WantsJson(http))
         {
-            var status = key is "RelewiseActionFailed" or "CartFailed" ? 503 :
+            int status = key is "RelewiseActionFailed" or "CartFailed" ? 503 :
                 key is "CartStockLimit" or "CartUnavailable" ? 409 : 400;
 
-            return Results.Json(new
-            {
-                error = Storefront.Text(http, key, [.. values])
-            },
+            return Results.Json(
+                new
+                {
+                    error = Storefront.Text(http, key, [.. values])
+                },
                 statusCode: status
             );
         }

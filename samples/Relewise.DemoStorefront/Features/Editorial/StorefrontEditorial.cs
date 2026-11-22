@@ -8,7 +8,8 @@ namespace Relewise.DemoStorefront.Features.Editorial;
 
 internal static class StorefrontEditorial
 {
-    internal static string Render(object? value,
+    internal static string Render(
+        object? value,
         string culture)
     {
         var html = new StringBuilder();

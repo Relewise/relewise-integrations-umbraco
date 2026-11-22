@@ -20,8 +20,8 @@ internal static class ProductPage
         IPublishedContent[] variants =
             [.. product.Children().Where(node => node.ContentType.Alias == "productVariant")];
 
-        var lead = page.Value<string>("bodyText") ?? "";
-        var parentLead = product.Value<string>("bodyText") ?? "";
+        string lead = page.Value<string>("bodyText") ?? "";
+        string parentLead = product.Value<string>("bodyText") ?? "";
         var rawOption = page.Value<string>("size");
 
         if (page != product && !string.IsNullOrWhiteSpace(rawOption) &&
@@ -41,7 +41,7 @@ internal static class ProductPage
             (prices.List == null
                 ? ""
                 : $"<del>{Storefront.E(prices.List)}</del>" +
-                    $"<span class='offer-label'>{Storefront.E(prices.Savings)}</span>") +
+                  $"<span class='offer-label'>{Storefront.E(prices.Savings)}</span>") +
             "</div>");
         html.Append(PurchaseControls.Availability(product, http));
 
@@ -56,7 +56,7 @@ internal static class ProductPage
                     : "size";
             }
 
-            var key = option switch
+            string key = option switch
             {
                 "colour" => "ChooseColour",
                 "capacity" => "ChooseCapacity",
@@ -71,7 +71,7 @@ internal static class ProductPage
 
             foreach (IPublishedContent variant in variants)
             {
-                var label = ProductOptions.Label(variant);
+                string label = ProductOptions.Label(variant);
 
                 html.Append(
                     $"<a href='{Storefront.E(variant.Url())}' " +
@@ -94,7 +94,7 @@ internal static class ProductPage
         html.Append(PurchaseControls.AddForm(page, http));
 
         var weight = product.Value<int>("weightGrams");
-        var capacity = page.Value<string>("capacity") ?? product.Value<string>("capacity");
+        string? capacity = page.Value<string>("capacity") ?? product.Value<string>("capacity");
 
         if (weight > 0 || !string.IsNullOrWhiteSpace(capacity))
         {

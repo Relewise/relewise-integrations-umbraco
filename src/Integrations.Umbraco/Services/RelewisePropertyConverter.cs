@@ -144,7 +144,7 @@ internal class RelewisePropertyConverter(
             {
                 var localizedProperties = new Dictionary<string, Dictionary<string, DataValue?>>();
 
-                foreach (var culture in cultures)
+                foreach (string culture in cultures)
                 {
                     var localizedDataKeys = new Dictionary<string, DataValue?>();
 

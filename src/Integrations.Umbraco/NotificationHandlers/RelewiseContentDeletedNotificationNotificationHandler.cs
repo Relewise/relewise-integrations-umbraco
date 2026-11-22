@@ -33,7 +33,7 @@ internal class
             return;
         }
 
-        var ids = notification.DeletedEntities
+        string[] ids = notification.DeletedEntities
             .Where(x => _configuration.CanMap(x))
             .Select(x => _configuration.GetContentId(x))
             .ToArray();

@@ -13,7 +13,7 @@ internal static class BuiltInPropertyConversion
     {
         context.CancellationToken.ThrowIfCancellationRequested();
 
-        var culture = context.CulturesToPublish.Count > 0
+        string culture = context.CulturesToPublish.Count > 0
             ? context.CulturesToPublish[0]
             : throw new InvalidOperationException("A published culture is required.");
 
@@ -21,9 +21,9 @@ internal static class BuiltInPropertyConversion
         {
             var values = new List<Multilingual.Value>();
 
-            foreach (var publishedCulture in context.CulturesToPublish)
+            foreach (string publishedCulture in context.CulturesToPublish)
             {
-                var raw =
+                object? raw =
                     context.Property.GetValue(
                         context.Property.PropertyType.VariesByCulture()
                             ? publishedCulture
@@ -47,7 +47,7 @@ internal static class BuiltInPropertyConversion
             context.CancellationToken.ThrowIfCancellationRequested();
         }
 
-        var value = context.Property.GetValue(context.Property.PropertyType.VariesByCulture() ? culture : null);
+        object? value = context.Property.GetValue(context.Property.PropertyType.VariesByCulture() ? culture : null);
 
         if (value is TValue typed)
         {

@@ -36,7 +36,7 @@ public class MediaPickerValueConverter : IDefaultPropertyValueConverter, IRelewi
     [Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        var isMultiple = context.Property.PropertyType.EditorAlias != "Umbraco.MediaPicker.Single";
+        bool isMultiple = context.Property.PropertyType.EditorAlias != "Umbraco.MediaPicker.Single";
 
         if (isMultiple)
         {
@@ -55,7 +55,7 @@ public class MediaPickerValueConverter : IDefaultPropertyValueConverter, IRelewi
         else
         {
             var item = context.Property.GetValue<IPublishedContent>(context.Culture);
-            var mediaObject = item?.Url();
+            string? mediaObject = item?.Url();
 
             if (mediaObject != null)
             {

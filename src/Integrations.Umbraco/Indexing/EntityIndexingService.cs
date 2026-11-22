@@ -41,7 +41,7 @@ internal sealed class EntityIndexingService(
 
     internal static string SiteId(IServiceProvider services)
     {
-        var id = services.GetRequiredService<IOptions<GlobalSettings>>().Value.Id;
+        string id = services.GetRequiredService<IOptions<GlobalSettings>>().Value.Id;
 
         return !string.IsNullOrWhiteSpace(id)
             ? id
@@ -136,7 +136,7 @@ internal sealed class EntityIndexingService(
 
         token.ThrowIfCancellationRequested();
 
-        var started = Stopwatch.GetTimestamp();
+        long started = Stopwatch.GetTimestamp();
         var mappedCount = 0;
 
         try
@@ -152,7 +152,7 @@ internal sealed class EntityIndexingService(
             var tracker = clients.GetClient<ITracker>(Constants.NamedClientName);
             var strategy = services.GetRequiredService<IPublishedContentChangeStrategy>();
 
-            var site = SiteId(services);
+            string site = SiteId(services);
 
             var collected = new IndexingKeyCollector();
             HashSet<Guid> requested = [.. keys];
@@ -237,9 +237,9 @@ internal sealed class EntityIndexingService(
             var mapper = new EntityMapper(configuration);
 
             var generation = Guid.NewGuid().ToString("N");
-            var version = feedVersion ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long version = feedVersion ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-            var siteCultures = (await services.GetRequiredService<ILanguageService>().GetAllAsync())
+            string[] siteCultures = (await services.GetRequiredService<ILanguageService>().GetAllAsync())
                 .Select(language => language.IsoCode)
                 .ToArray();
 
@@ -270,7 +270,7 @@ internal sealed class EntityIndexingService(
                     continue;
                 }
 
-                var cultures = entry.Value.Variations.Any(value => value.Culture == null)
+                string[]? cultures = entry.Value.Variations.Any(value => value.Culture == null)
                     ? null
                     : entry.Value.Variations.Select(value => value.Culture!)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -291,8 +291,8 @@ internal sealed class EntityIndexingService(
                     version,
                     contentUpdateKind: contentUpdateKind,
                     publishedCultures: cultures);
-                var claim = mapping.EntityType.Name + ":" +
-                            (mapping.EntityType == typeof(Brand) ? mapped.Id.ToLowerInvariant() : mapped.Id);
+                string claim = mapping.EntityType.Name + ":" +
+                               (mapping.EntityType == typeof(Brand) ? mapped.Id.ToLowerInvariant() : mapped.Id);
 
                 if (!claims.Add(claim))
                 {

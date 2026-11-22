@@ -21,9 +21,9 @@ internal static class ProductPrices
                        CultureInfo.GetCultureInfo(market.Culture));
         }
 
-        var sale = Read(product, "salesPrice", market.Currency);
-        var list = Read(product, "listPrice", market.Currency);
-        var percent = DiscountPercentage(sale, list);
+        decimal? sale = Read(product, "salesPrice", market.Currency);
+        decimal? list = Read(product, "listPrice", market.Currency);
+        int? percent = DiscountPercentage(sale, list);
         string? savings = null;
 
         if (percent.HasValue)

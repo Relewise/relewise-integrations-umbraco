@@ -64,7 +64,7 @@ internal static class CoreSearchMetadata
                     {
                         data[field.Key] = field.Value;
 
-                        foreach (var culture in siteCultures ??
+                        foreach (string culture in siteCultures ??
                                  [
                                      .. document.Variations
                                          .Select(value => value.Culture)
@@ -90,7 +90,7 @@ internal static class CoreSearchMetadata
         IndexField[] fields,
         string[] siteCultures)
     {
-        var localizedCultures = fields
+        string[] localizedCultures = fields
             .Select(field => field.Culture)
             .OfType<string>()
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -106,7 +106,7 @@ internal static class CoreSearchMetadata
 
         var localized = new Dictionary<string, List<(string Culture, DataValue Value)>>();
 
-        foreach (var culture in localizedCultures.Concat(siteCultures).Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (string culture in localizedCultures.Concat(siteCultures).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             IndexValue[] values =
             [

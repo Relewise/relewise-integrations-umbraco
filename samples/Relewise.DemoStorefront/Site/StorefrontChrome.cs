@@ -26,7 +26,7 @@ internal static class StorefrontChrome
         http.RequestServices.GetRequiredService<IVariationContextAccessor>().VariationContext =
             new VariationContext(market.Culture);
 
-        var checkout = http.Items.ContainsKey("Fieldwork:Checkout");
+        bool checkout = http.Items.ContainsKey("Fieldwork:Checkout");
         using UmbracoContextReference context =
             http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
         IPublishedContent home = SiteContent.Home(http.RequestServices);
@@ -146,13 +146,13 @@ internal static class StorefrontChrome
         };
 
         var versions = http.RequestServices.GetRequiredService<IFileVersionProvider>();
-        var css = versions.AddFileVersionToPath(http.Request.PathBase, "/storefront.css");
-        var script = versions.AddFileVersionToPath(http.Request.PathBase, "/storefront/listing.js");
+        string css = versions.AddFileVersionToPath(http.Request.PathBase, "/storefront.css");
+        string script = versions.AddFileVersionToPath(http.Request.PathBase, "/storefront/listing.js");
 
-        var previewNotice = DemoConnection.IsConfigured(http) ? "" : DemoConnection.PreviewNotice(http);
+        string previewNotice = DemoConnection.IsConfigured(http) ? "" : DemoConnection.PreviewNotice(http);
 
-        var shellJson = JsonSerializer.Serialize(model, Json);
-        var pageClass = checkout ? "checkout-page" : "shopping-page";
+        string shellJson = JsonSerializer.Serialize(model, Json);
+        string pageClass = checkout ? "checkout-page" : "shopping-page";
 
         return $$"""
                  <!doctype html>

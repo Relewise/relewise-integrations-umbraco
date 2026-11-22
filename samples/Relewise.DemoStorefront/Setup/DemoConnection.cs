@@ -42,7 +42,7 @@ internal static class DemoConnection
         http.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
         http.Response.Headers.CacheControl = "no-store";
 
-        var message = Storefront.Text(http, IsConfigured(http) ? "SearchNotEnabled" : "PreviewModeHelp");
+        string message = Storefront.Text(http, IsConfigured(http) ? "SearchNotEnabled" : "PreviewModeHelp");
 
         if (json)
         {
@@ -53,7 +53,7 @@ internal static class DemoConnection
                 });
         }
 
-        var title = Storefront.Text(http, IsConfigured(http) ? "SearchDisabled" : "FeatureUnavailable");
+        string title = Storefront.Text(http, IsConfigured(http) ? "SearchDisabled" : "FeatureUnavailable");
         var body = $"<h1>{Storefront.E(title)}</h1>";
 
         if (IsConfigured(http))
@@ -73,7 +73,7 @@ internal static class DemoConnection
             return null;
         }
 
-        var body = Unavailable(http, json);
+        string body = Unavailable(http, json);
 
         return Results.Content(
             body,
@@ -114,7 +114,7 @@ internal static class DemoConnection
             http.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
             http.Response.Headers.CacheControl = "no-store";
 
-            var message = Storefront.Text(http, "ConnectionUnavailable");
+            string message = Storefront.Text(http, "ConnectionUnavailable");
 
             if (http.Request.Path.Value?.EndsWith("/suggestions", StringComparison.Ordinal) == true ||
                 http.Request.Path.Value?.EndsWith("/results", StringComparison.Ordinal) == true)
@@ -130,7 +130,7 @@ internal static class DemoConnection
                 return;
             }
 
-            var body =
+            string body =
                 $"<section class='notice notice-error' role='alert'><h1>" +
                 $"{Storefront.E(Storefront.Text(http, "ConnectionProblem"))}</h1><p>{Storefront.E(message)}" +
                 $"</p><a href='{SetupUrl}'>{Storefront.E(Storefront.Text(http, "ConfigureRelewise"))}" +

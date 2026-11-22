@@ -101,7 +101,7 @@ public static class UmbracoBuilderExtensions
                     true,
                     UmbracoObjectTypes.Document);
 
-                foreach (var alias in configuration.SearchProviders.Providers.Keys)
+                foreach (string alias in configuration.SearchProviders.Providers.Keys)
                 {
                     if (indexes.GetIndexRegistration(alias) != null)
                     {

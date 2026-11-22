@@ -91,7 +91,7 @@ internal class RelewiseContentMiddleware
         IPublishedContent content,
         User user)
     {
-        var id = _configuration.GetContentId(content);
+        string id = _configuration.GetContentId(content);
 
         if (!_configuration.Mappings.TryGetValue(content.ContentType.Alias, out MappingDefinition? mapping))
         {

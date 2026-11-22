@@ -14,7 +14,8 @@ public class DemoConnectionTests
     [Theory]
     [InlineData(true, false)]
     [InlineData(false, true)]
-    public async Task DisabledSearchAndPredictionsReturnUnavailableWithoutResolvingASearchClient(bool dataOnly,
+    public async Task DisabledSearchAndPredictionsReturnUnavailableWithoutResolvingASearchClient(
+        bool dataOnly,
         bool suggestionsOnly)
     {
         var dictionary = new Mock<ICultureDictionary>();
@@ -30,7 +31,7 @@ public class DemoConnectionTests
 
         http.Request.Path = "/en/store/results";
 
-        var result = await StorefrontListing.RenderAsync(http, suggestionsOnly: suggestionsOnly, dataOnly: dataOnly);
+        string result = await StorefrontListing.RenderAsync(http, suggestionsOnly: suggestionsOnly, dataOnly: dataOnly);
 
         Assert.Equal(503, http.Response.StatusCode);
         Assert.Contains("Configure Relewise", result);
@@ -53,7 +54,8 @@ public class DemoConnectionTests
     [InlineData("Relewise:DatasetId", "not-a-guid")]
     [InlineData("Relewise:ApiKey", "example")]
     [InlineData("Relewise:ServerUrl", "https://localhost:5000")]
-    public void PartialConfigurationIsRejectedInsteadOfSilentlyEnteringPreview(string key,
+    public void PartialConfigurationIsRejectedInsteadOfSilentlyEnteringPreview(
+        string key,
         string value)
     {
         IConfigurationRoot configuration = new ConfigurationBuilder()
@@ -69,12 +71,16 @@ public class DemoConnectionTests
         var failure = new HttpRequestException("Rejected credential", null, System.Net.HttpStatusCode.Unauthorized);
 
         Assert.True(DemoConnection.IsConnectionFailure(failure, CancellationToken.None));
-        Assert.True(DemoConnection.IsConnectionFailure(new InvalidOperationException("Wrapper", failure),
-            CancellationToken.None));
+        Assert.True(
+            DemoConnection.IsConnectionFailure(
+                new InvalidOperationException("Wrapper", failure),
+                CancellationToken.None));
         Assert.True(DemoConnection.IsConnectionFailure(new TaskCanceledException(), CancellationToken.None));
         Assert.False(DemoConnection.IsConnectionFailure(failure, new CancellationToken(true)));
-        Assert.False(DemoConnection.IsConnectionFailure(new InvalidOperationException("Programming error"),
-            CancellationToken.None));
+        Assert.False(
+            DemoConnection.IsConnectionFailure(
+                new InvalidOperationException("Programming error"),
+                CancellationToken.None));
     }
 
     [Fact]

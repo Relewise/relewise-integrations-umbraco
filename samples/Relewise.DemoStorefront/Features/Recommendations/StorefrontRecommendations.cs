@@ -60,7 +60,7 @@ internal static class StorefrontRecommendations
 
         IPublishedContent product = page.ContentType.Alias == "productVariant" ? page.Parent()! : page;
         IPublishedContent? category = product.Parent();
-        var isHome = page.ContentType.Alias == "home";
+        bool isHome = page.ContentType.Alias == "home";
 
         if (!Available(product) || (!isHome && category?.ContentType.Alias != "productCategory"))
         {
@@ -73,11 +73,11 @@ internal static class StorefrontRecommendations
         }
 
         User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser();
-        var site = http.RequestServices.GetRequiredService<IOptions<GlobalSettings>>().Value.Id;
+        string site = http.RequestServices.GetRequiredService<IOptions<GlobalSettings>>().Value.Id;
 
         var productType = product.Value<string>("productType");
-        var emptyCart = isHome && http.Request.Query["placement"] == "cart";
-        var similarEnabled = !isHome && !string.IsNullOrWhiteSpace(productType);
+        bool emptyCart = isHome && http.Request.Query["placement"] == "cart";
+        bool similarEnabled = !isHome && !string.IsNullOrWhiteSpace(productType);
 
         ProductRecommendationRequestCollection batch = !similarEnabled
             ? new ProductRecommendationRequestCollection(

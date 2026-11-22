@@ -35,7 +35,7 @@ internal static class Program
             throw new InvalidOperationException("This example must run in Development.");
         }
 
-        var connected = DemoSetup.HasRelewiseConfiguration(builder.Configuration);
+        bool connected = DemoSetup.HasRelewiseConfiguration(builder.Configuration);
 
         DemoSetup.ConfigureLocalInstallation(builder);
 

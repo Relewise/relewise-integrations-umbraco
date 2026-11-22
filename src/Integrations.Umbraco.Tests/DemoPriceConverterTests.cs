@@ -81,7 +81,8 @@ public class DemoPriceConverterTests
 
     private static BlockListModel Entries(params (string? Currency, decimal? Amount)[] prices)
     {
-        return new BlockListModel([
+        return new BlockListModel(
+        [
             .. prices.Select(price =>
             {
                 var currency = new Mock<IPublishedProperty>();

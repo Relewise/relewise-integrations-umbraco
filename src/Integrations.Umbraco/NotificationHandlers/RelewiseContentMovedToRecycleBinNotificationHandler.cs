@@ -36,7 +36,7 @@ internal class
             return;
         }
 
-        var ids = notification.MoveInfoCollection
+        string[] ids = notification.MoveInfoCollection
             .Where(x => _configuration.CanMap(x.Entity))
             .Select(x => _configuration.GetContentId(x.Entity))
             .ToArray();

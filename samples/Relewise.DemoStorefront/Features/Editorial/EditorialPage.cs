@@ -17,7 +17,7 @@ internal static class EditorialPage
         html.Append($"<p class='eyebrow'>{T(http, "Journal")}</p><h1>{Storefront.E(Title(page))}</h1>");
         html.Append($"<p class='lead'>{Storefront.E(page.Value<string>("bodyText"))}</p></header>");
 
-        foreach (var alias in new[] { "contentRows", "pageGrid" })
+        foreach (string alias in new[] { "contentRows", "pageGrid" })
         {
             html.Append(StorefrontEditorial.Render(page.GetProperty(alias)?.GetValue(), market.Culture));
         }

@@ -83,7 +83,7 @@ internal static class CartOperations
 
             if (action == "checkout")
             {
-                var token = current.CheckoutToken;
+                string? token = current.CheckoutToken;
                 OrderReceipt? previous = current.Receipt;
 
                 if (previous != null && previous.CheckoutToken == form["checkoutToken"].ToString())
@@ -103,9 +103,9 @@ internal static class CartOperations
                     return Error(http, "CartUnavailable");
                 }
 
-                var orderNumber = "FW-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant();
-                var total = priced.Sum(line => line.Amount * line.Line.Quantity);
-                var currency = DemoMarket.Current(http).Currency;
+                string orderNumber = "FW-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant();
+                decimal total = priced.Sum(line => line.Amount * line.Line.Quantity);
+                string currency = DemoMarket.Current(http).Currency;
 
                 await TrackOrderAsync(priced, orderNumber, http);
 
@@ -132,7 +132,7 @@ internal static class CartOperations
             }
             else
             {
-                var remove = form["remove"] == "true";
+                bool remove = form["remove"] == "true";
                 var quantity = 0;
 
                 if (!Guid.TryParse(form["product"], out Guid productKey) ||
@@ -163,7 +163,7 @@ internal static class CartOperations
 
                     signature = $"{productKey:D}|{variantKey:D}|{quantity}";
 
-                    if (current.Additions.TryGetValue(commandId, out var previousCommand))
+                    if (current.Additions.TryGetValue(commandId, out string? previousCommand))
                     {
                         if (previousCommand != signature)
                         {
@@ -205,8 +205,8 @@ internal static class CartOperations
                 }
             }
 
-            var removing = action == "clear" || form["remove"] == "true" ||
-                           (action == "update" && form["quantity"] == "0");
+            bool removing = action == "clear" || form["remove"] == "true" ||
+                            (action == "update" && form["quantity"] == "0");
             PricedCartLine[]? updated = Price(lines, context.UmbracoContext.Content, http, removing);
 
             if (updated == null)

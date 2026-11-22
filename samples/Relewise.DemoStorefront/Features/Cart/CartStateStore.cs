@@ -17,12 +17,13 @@ internal static class CartStateStore
             http.Session.SetString(SessionMarkerKey, "active");
         }
 
-        var key = "fieldwork-basket-" + http.Session.Id;
+        string key = "fieldwork-basket-" + http.Session.Id;
         var cache = http.RequestServices.GetRequiredService<IMemoryCache>();
 
         lock (StateCreation)
         {
-            return cache.GetOrCreate(key,
+            return cache.GetOrCreate(
+                key,
                 entry =>
                 {
                     entry.SlidingExpiration = TimeSpan.FromHours(8);

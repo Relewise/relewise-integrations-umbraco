@@ -74,7 +74,7 @@ internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvi
                 return;
             }
 
-            var stringCollection = properties
+            string[] stringCollection = properties
                 .Select(x => x?.Value?.ToString())
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Select(x => x!)

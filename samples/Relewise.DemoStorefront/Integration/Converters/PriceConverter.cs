@@ -17,7 +17,8 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
         return ValueTask.FromResult(Read(context.Property.GetValue(), cancellationToken));
     }
 
-    internal static MultiCurrency? Read(object? source,
+    internal static MultiCurrency? Read(
+        object? source,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -39,8 +40,8 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var code = entry.Content.GetProperty("currency")?.GetValue()?.ToString()?.Trim().ToUpperInvariant();
-            var amount = entry.Content.GetProperty("amount")?.GetValue();
+            string? code = entry.Content.GetProperty("currency")?.GetValue()?.ToString()?.Trim().ToUpperInvariant();
+            object? amount = entry.Content.GetProperty("amount")?.GetValue();
 
             if (code is not { Length: 3 } || !code.All(char.IsAsciiLetterUpper) || amount == null)
             {

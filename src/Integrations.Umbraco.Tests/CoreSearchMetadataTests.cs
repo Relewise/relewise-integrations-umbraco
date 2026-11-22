@@ -15,18 +15,23 @@ public class CoreSearchMetadataTests
         var content = new Content("article");
         var mapped = new MappedEntity(Guid.NewGuid(), "article", "article", content, true);
 
-        CoreSearchMetadata.Apply(mapped,
-            new CoreSearchDocument([new Variation("en-US", null), new Variation("da-DK", null)],
+        CoreSearchMetadata.Apply(
+            mapped,
+            new CoreSearchDocument(
+                [new Variation("en-US", null), new Variation("da-DK", null)],
                 [
-                    new IndexField("blocks",
+                    new IndexField(
+                        "blocks",
                         new IndexValue { Texts = ["Shared text"], Keywords = ["shared"] },
                         null,
                         null),
-                    new IndexField("blocks",
+                    new IndexField(
+                        "blocks",
                         new IndexValue { Texts = ["English text"], Keywords = ["english"] },
                         "en-US",
                         null),
-                    new IndexField("blocks",
+                    new IndexField(
+                        "blocks",
                         new IndexValue { Texts = ["Dansk tekst"], Keywords = ["dansk"] },
                         "da-DK",
                         null)
@@ -43,7 +48,8 @@ public class CoreSearchMetadataTests
         var keywords = content.Data[CoreSearchTranslation.Field("blocks", "keyword")]!
             .ValueAs<MultilingualCollection>();
 
-        Assert.Equal(new[] { "shared", "dansk" },
+        Assert.Equal(
+            new[] { "shared", "dansk" },
             keywords.Values!.Single(value => value.Language.Value == "da-dk").Values);
     }
 
@@ -54,8 +60,10 @@ public class CoreSearchMetadataTests
         { Data = new Dictionary<string, DataValue?> { ["customerField"] = "retained" } };
         var mapped = new MappedEntity(Guid.NewGuid(), "article", "article", content, true);
 
-        CoreSearchMetadata.Apply(mapped,
-            new CoreSearchDocument([new Variation("en-US", null), new Variation("en-US", "vip")],
+        CoreSearchMetadata.Apply(
+            mapped,
+            new CoreSearchDocument(
+                [new Variation("en-US", null), new Variation("en-US", "vip")],
                 [
                     new IndexField("price", new IndexValue { Decimals = [12.5m] }, "en-US", null),
                     new IndexField("body", new IndexValue { Texts = ["Default text"] }, "en-US", null),
@@ -63,7 +71,8 @@ public class CoreSearchMetadataTests
                 ],
                 null));
         Assert.Equal("retained", content.Data["customerField"]!.ValueAs<string>());
-        Assert.Equal(12.5d,
+        Assert.Equal(
+            12.5d,
             content.Data[CoreSearchTranslation.Field("price", "decimalMin", "en-US")]!.ValueAs<double>());
 
         var text = content.Data[CoreSearchTranslation.Field("body", "text")]!.ValueAs<Multilingual>();
@@ -78,8 +87,10 @@ public class CoreSearchMetadataTests
         var product = new Product("sku");
         var mapped = new MappedEntity(Guid.NewGuid(), "product", "sku", product, true);
 
-        CoreSearchMetadata.Apply(mapped,
-            new CoreSearchDocument([new Variation(null, null), new Variation("da-DK", null)],
+        CoreSearchMetadata.Apply(
+            mapped,
+            new CoreSearchDocument(
+                [new Variation(null, null), new Variation("da-DK", null)],
                 [],
                 new ContentProtection([group])));
         Assert.True(product.Data![CoreSearchTranslation.ProtectedKey]!.ValueAs<bool>());

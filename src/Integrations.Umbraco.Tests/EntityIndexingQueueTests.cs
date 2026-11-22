@@ -111,8 +111,9 @@ public class EntityIndexingQueueTests
                 finally { scopeDisposed = true; }
             })
             .Returns(Task.CompletedTask);
-        fixture.Writer.EnqueueChanges(Enumerable.Range(0, 200)
-            .Select(_ => Refresh(Guid.NewGuid())));
+        fixture.Writer.EnqueueChanges(
+            Enumerable.Range(0, 200)
+                .Select(_ => Refresh(Guid.NewGuid())));
 
         using var cancellation = new CancellationTokenSource();
         Task export = fixture.Writer.ExportAsync([Guid.NewGuid()], token: cancellation.Token);
@@ -162,7 +163,8 @@ public class EntityIndexingQueueTests
             await earlier;
         }
 
-        fixture.Operations.Verify(value => value.RebuildAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+        fixture.Operations.Verify(
+            value => value.RebuildAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -177,7 +179,8 @@ public class EntityIndexingQueueTests
         fixture.Operations.Verify(
             value => value.ExportAsync(It.IsAny<IEnumerable<Guid>>(), null, null, It.IsAny<CancellationToken>()),
             Times.Once);
-        fixture.Queue.Verify(value => value.QueueBackgroundWorkItem(It.IsAny<Func<CancellationToken, Task>>()),
+        fixture.Queue.Verify(
+            value => value.QueueBackgroundWorkItem(It.IsAny<Func<CancellationToken, Task>>()),
             Times.Never);
         fixture.Queue.Setup(value => value.QueueBackgroundWorkItem(It.IsAny<Func<CancellationToken, Task>>()))
             .Callback<Func<CancellationToken, Task>>(fixture.Scheduled.Enqueue);
@@ -217,7 +220,8 @@ public class EntityIndexingQueueTests
         fixture.Operations.Verify(
             value => value.ExportAsync(It.IsAny<IEnumerable<Guid>>(), null, null, It.IsAny<CancellationToken>()),
             Times.Once);
-        Assert.DoesNotContain(fixture.Logger.Invocations,
+        Assert.DoesNotContain(
+            fixture.Logger.Invocations,
             invocation => invocation.Method.Name == "Log" && Equals(invocation.Arguments[0], LogLevel.Error));
     }
 
@@ -236,14 +240,16 @@ public class EntityIndexingQueueTests
                 .GetAwaiter()
                 .GetResult());
 
-        var writer = new EntityIndexingQueue(operations.Object,
+        var writer = new EntityIndexingQueue(
+            operations.Object,
             queue.Object,
             Mock.Of<IHostApplicationLifetime>(),
             Mock.Of<ILogger<EntityIndexingQueue>>());
 
         await Task.Run(() => writer.EnqueueChanges([Refresh(Guid.NewGuid())]))
             .WaitAsync(TimeSpan.FromSeconds(3));
-        operations.Verify(value => value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()),
+        operations.Verify(
+            value => value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -290,8 +296,9 @@ public class EntityIndexingQueueTests
     {
         var fixture = new Fixture();
 
-        fixture.Writer.EnqueueChanges(Enumerable.Range(0, 250)
-            .Select(_ => Refresh(Guid.NewGuid())));
+        fixture.Writer.EnqueueChanges(
+            Enumerable.Range(0, 250)
+                .Select(_ => Refresh(Guid.NewGuid())));
         fixture.Scheduled.Enqueue(_ =>
         {
             fixture.Calls.Add("other Umbraco work");
@@ -370,7 +377,8 @@ public class EntityIndexingQueueTests
         var identities = new List<Guid> { Guid.NewGuid() };
         Guid expected = identities[0];
 
-        fixture.Operations.Setup(value => value.ExportAsync(It.IsAny<IEnumerable<Guid>>(),
+        fixture.Operations.Setup(value => value.ExportAsync(
+                It.IsAny<IEnumerable<Guid>>(),
                 ContentUpdate.UpdateKind.ClearAndReplace,
                 42,
                 It.IsAny<CancellationToken>()))
@@ -378,7 +386,8 @@ public class EntityIndexingQueueTests
                 Assert.Equal(expected, Assert.Single(keys)))
             .Returns(delivered.Task);
 
-        Task export = fixture.Writer.ExportAsync(identities,
+        Task export = fixture.Writer.ExportAsync(
+            identities,
             ContentUpdate.UpdateKind.ClearAndReplace,
             42);
 
@@ -428,14 +437,16 @@ public class EntityIndexingQueueTests
 
         fixture.Operations.Setup(value =>
                 value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(timeout
-                ? new OperationCanceledException("Transport timeout")
-                : new InvalidOperationException("Failed export"));
+            .ThrowsAsync(
+                timeout
+                    ? new OperationCanceledException("Transport timeout")
+                    : new InvalidOperationException("Failed export"));
         fixture.Writer.EnqueueChanges([Refresh(Guid.NewGuid())]);
         fixture.Writer.EnqueueDeletion([new DeletedEntity(typeof(Product), "product", Guid.NewGuid(), true)], []);
         await fixture.DrainAsync();
         Assert.Equal("delete", Assert.Single(fixture.Calls));
-        Assert.Contains(fixture.Logger.Invocations,
+        Assert.Contains(
+            fixture.Logger.Invocations,
             invocation => invocation.Method.Name == "Log" && Equals(invocation.Arguments[0], LogLevel.Error));
     }
 
@@ -451,7 +462,8 @@ public class EntityIndexingQueueTests
         var error = await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rebuild);
 
         Assert.Equal("Transport timeout", error.Message);
-        Assert.Contains(fixture.Logger.Invocations,
+        Assert.Contains(
+            fixture.Logger.Invocations,
             invocation => invocation.Method.Name == "Log" && Equals(invocation.Arguments[0], LogLevel.Error));
         await fixture.DrainAsync();
     }
@@ -502,7 +514,8 @@ public class EntityIndexingQueueTests
                     value.DeleteAsync(It.IsAny<IEnumerable<DeletedEntity>>(), It.IsAny<CancellationToken>()))
                 .Callback(() => Calls.Add("delete"))
                 .Returns(Task.CompletedTask);
-            Operations.Setup(value => value.ExportAsync(It.IsAny<IEnumerable<Guid>>(),
+            Operations.Setup(value => value.ExportAsync(
+                    It.IsAny<IEnumerable<Guid>>(),
                     It.IsAny<ContentUpdate.UpdateKind?>(),
                     It.IsAny<long?>(),
                     It.IsAny<CancellationToken>()))

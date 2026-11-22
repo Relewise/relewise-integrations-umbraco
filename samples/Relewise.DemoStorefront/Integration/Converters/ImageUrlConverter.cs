@@ -19,7 +19,7 @@ internal sealed class ImageUrlConverter(IConfiguration configuration) : IAsyncRe
         var path = context.Property
             .GetValue(context.Property.PropertyType.VariesByCulture() ? context.Culture : null)
             ?.ToString();
-        var url = string.IsNullOrWhiteSpace(path)
+        string? url = string.IsNullOrWhiteSpace(path)
             ? null
             : new Uri(new Uri(configuration["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!), path).AbsoluteUri;
 

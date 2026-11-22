@@ -32,7 +32,7 @@ internal class RelewiseContentUnpublishedNotificationHandler : INotificationAsyn
             return;
         }
 
-        var ids = notification.UnpublishedEntities
+        string[] ids = notification.UnpublishedEntities
             .Where(x => _configuration.CanMap(x))
             .Select(x => _configuration.GetContentId(x))
             .ToArray();

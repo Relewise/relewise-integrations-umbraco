@@ -68,7 +68,7 @@ internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentI
         Dictionary<string, decimal> sales =
             StoredPriceReader.Read(product.GetValue<string>("salesPrice", published: published));
 
-        foreach (var (currency, amount) in sales)
+        foreach ((string currency, decimal amount) in sales)
         {
             fields.Add(
                 new IndexField(

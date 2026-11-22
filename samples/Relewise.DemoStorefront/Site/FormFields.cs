@@ -11,7 +11,8 @@ internal static class FormFields
         return Hidden(token.FormFieldName, token.RequestToken ?? "");
     }
 
-    internal static string Hidden(string name,
+    internal static string Hidden(
+        string name,
         string value)
     {
         return $"<input type='hidden' name='{Storefront.E(name)}' value='{Storefront.E(value)}'>";

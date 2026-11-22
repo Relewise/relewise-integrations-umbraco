@@ -78,7 +78,8 @@ internal static class EditorialBlockText
         }
     }
 
-    private static void VisitGridItem(BlockGridItem item,
+    private static void VisitGridItem(
+        BlockGridItem item,
         string culture,
         List<string> fragments,
         CancellationToken token)
@@ -107,10 +108,10 @@ internal static class EditorialBlockText
         List<string> fragments,
         CancellationToken token)
     {
-        foreach (var alias in TextFields)
+        foreach (string alias in TextFields)
         {
-            var value = element.GetProperty(alias)?.GetValue(culture);
-            var text = value switch
+            object? value = element.GetProperty(alias)?.GetValue(culture);
+            string text = value switch
             {
                 IHtmlEncodedString html => PlainText(html.ToHtmlString() ?? string.Empty),
                 string plain => plain,
@@ -125,7 +126,7 @@ internal static class EditorialBlockText
             }
         }
 
-        foreach (var alias in NestedFields)
+        foreach (string alias in NestedFields)
         {
             Visit(element.GetProperty(alias)?.GetValue(culture), culture, fragments, token);
         }

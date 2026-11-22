@@ -61,7 +61,8 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            return string.Join("\n",
+            return string.Join(
+                "\n",
                 new[] { ConvertedText("bodyText", culture) }
                     .Concat(BlockFields.Select(alias => BlockText(alias, culture)))
                     .Where(text => !string.IsNullOrWhiteSpace(text)));
@@ -70,9 +71,11 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
         // Always overwrite the field, including when all relevant text was removed.
         context.Entity.Data["searchText"] = context.CulturesToPublish.Count == 1
             ? new DataValue(TextFor(context.CulturesToPublish[0]))
-            : new DataValue(new Multilingual(context.CulturesToPublish
-                .Select(culture => new Multilingual.Value(culture, TextFor(culture)))
-                .ToArray()));
+            : new DataValue(
+                new Multilingual(
+                    context.CulturesToPublish
+                        .Select(culture => new Multilingual.Value(culture, TextFor(culture)))
+                        .ToArray()));
         context.Entity.Data["editorialSource"] = "Umbraco demo storefront";
 
         return Task.CompletedTask;

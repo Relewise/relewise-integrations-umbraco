@@ -7,9 +7,9 @@ internal static class DemoSetup
 {
     internal static bool HasRelewiseConfiguration(IConfiguration configuration)
     {
-        var id = configuration["Relewise:DatasetId"];
-        var key = configuration["Relewise:ApiKey"];
-        var server = configuration["Relewise:ServerUrl"];
+        string? id = configuration["Relewise:DatasetId"];
+        string? key = configuration["Relewise:ApiKey"];
+        string? server = configuration["Relewise:ServerUrl"];
 
         if (string.IsNullOrWhiteSpace(id) && string.IsNullOrWhiteSpace(key) && string.IsNullOrWhiteSpace(server))
         {
@@ -33,13 +33,13 @@ internal static class DemoSetup
     internal static void ConfigureLocalInstallation(WebApplicationBuilder builder)
     {
         // The location separates independently cloned demo databases without adding integration-owned records.
-        var root = builder.Environment.ContentRootPath;
+        string root = builder.Environment.ContentRootPath;
         var id = new Guid(SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(root)))[..16]).ToString();
-        var data = Path.Combine(root, "umbraco", "Data");
+        string data = Path.Combine(root, "umbraco", "Data");
 
         Directory.CreateDirectory(data);
 
-        var imagingKeyFile = Path.Combine(data, "demo-imaging.key");
+        string imagingKeyFile = Path.Combine(data, "demo-imaging.key");
 
         if (!File.Exists(imagingKeyFile))
         {

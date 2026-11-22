@@ -32,8 +32,8 @@ internal static class StorefrontListing
             return Invalid(http, Text(http, "InvalidSearch"), dataOnly || suggestionsOnly);
         }
 
-        var searchPage = view == "search";
-        var offersPage = view == "offers";
+        bool searchPage = view == "search";
+        bool offersPage = view == "offers";
 
         if (!DemoConnection.SearchConfigured(http))
         {
@@ -58,15 +58,15 @@ internal static class StorefrontListing
         var searchers = services.GetRequiredService<ISearcherResolver>();
         var contexts = services.GetRequiredService<IUmbracoContextFactory>();
 
-        var requestedType =
+        string requestedType =
             !offersPage && request.Query["type"].FirstOrDefault() == "article" ? "article" : "product";
-        var alias = offersPage ? "offers" : requestedType == "article" ? "articles" : "catalogue";
-        var offers = offersPage;
+        string alias = offersPage ? "offers" : requestedType == "article" ? "articles" : "catalogue";
+        bool offers = offersPage;
 
         string? query = request.Query["q"];
 
         DemoMarket market = DemoMarket.Current(request.HttpContext);
-        var culture = market.Culture;
+        string culture = market.Culture;
 
         services.GetRequiredService<IVariationContextAccessor>().VariationContext = new VariationContext(culture);
 
@@ -86,9 +86,9 @@ internal static class StorefrontListing
             return Invalid(http, Text(http, "InvalidSearch"), dataOnly || suggestionsOnly);
         }
 
-        var editorial = requestedType == "article";
-        var listingPath = collection?.Url(culture) ??
-                          (view == "store" ? market.StoreUrl : market.LanguagePath + "/" + view);
+        bool editorial = requestedType == "article";
+        string listingPath = collection?.Url(culture) ??
+                             (view == "store" ? market.StoreUrl : market.LanguagePath + "/" + view);
         var browsing = new StorefrontSearch(request, editorial, offers, collection, listingPath);
         IPublishedContent home = SiteContent.Home(services);
 
@@ -114,14 +114,14 @@ internal static class StorefrontListing
             return JsonSerializer.Serialize(result.Suggestions ?? []);
         }
 
-        var lastPage = Math.Max(1, (result.Total - 1) / pageSize + 1);
+        long lastPage = Math.Max(1, (result.Total - 1) / pageSize + 1);
 
         if (page > lastPage)
         {
             return Redirect(http, PageUrl(request, lastPage));
         }
 
-        var heading = Text(
+        string heading = Text(
             http,
             searchPage ? "SearchResults" : offers ? "OffersNavigation" : editorial ? "Journal" : "Collection");
 

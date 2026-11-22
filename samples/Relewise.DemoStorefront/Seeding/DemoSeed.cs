@@ -120,7 +120,7 @@ internal static class DemoSeed
             await templates.CreateAsync(template, Constants.Security.SuperUserKey);
         }
 
-        foreach (var alias in new[]
+        foreach (string alias in new[]
                      { "home", "article", "guide", "folder", "brand", "productCategory", "product", "productVariant" })
         {
             IContentType? type = types.Get(alias);
@@ -129,7 +129,7 @@ internal static class DemoSeed
             {
                 type = new ContentType(strings, -1) { Alias = alias, Name = alias, AllowedAsRoot = true };
 
-                foreach (var property in new[]
+                foreach (string property in new[]
                              { "heading", "bodyText", "heroImage", "sku", "categoryId", "brandId", "color" })
                 {
                     type.AddPropertyType(new PropertyType(strings, text, property) { Name = property });
@@ -192,7 +192,7 @@ internal static class DemoSeed
                 Variations = ContentVariation.Culture
             };
 
-            foreach (var alias in new[] { "heading", "bodyText", "score" })
+            foreach (string alias in new[] { "heading", "bodyText", "score" })
             {
                 localized.AddPropertyType(
                     new PropertyType(strings, alias == "score" ? numeric : text, alias)
@@ -218,7 +218,7 @@ internal static class DemoSeed
         IDomainService domains,
         IConfiguration configuration)
     {
-        var templateId = types.Get("article")!.AllowedTemplates!.Single().Id;
+        int templateId = types.Get("article")!.AllowedTemplates!.Single().Id;
         Guid priceType = types.Get("currencyPrice")!.Key;
 
         IContent Node(

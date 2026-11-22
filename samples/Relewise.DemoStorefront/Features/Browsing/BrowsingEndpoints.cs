@@ -7,27 +7,31 @@ internal static class BrowsingEndpoints
 {
     internal static void MapBrowsing(this WebApplication app)
     {
-        app.MapGet("/store",
+        app.MapGet(
+            "/store",
             (HttpContext http) => Results.LocalRedirect(DemoMarket.Current(http).StoreUrl + http.Request.QueryString));
 
-        foreach (var operation in new[] { "suggestions", "results" })
+        foreach (string operation in new[] { "suggestions", "results" })
         {
-            app.MapGet("/{language:regex(^(en|da)$)}/store/" + operation,
+            app.MapGet(
+                "/{language:regex(^(en|da)$)}/store/" + operation,
                 async Task<IResult> (HttpContext http) =>
                 {
                     http.Response.Headers.CacheControl = "no-store";
 
                     IPublishedContent? collection = null;
 
-                    if (http.Request.Query.TryGetValue("collection",
+                    if (http.Request.Query.TryGetValue(
+                            "collection",
                             out Microsoft.Extensions.Primitives.StringValues selected))
                     {
                         if (!Guid.TryParse(selected, out Guid key))
                         {
-                            return Results.BadRequest(new
-                            {
-                                error = "Invalid collection."
-                            });
+                            return Results.BadRequest(
+                                new
+                                {
+                                    error = "Invalid collection."
+                                });
                         }
 
                         collection = SiteContent.Home(http.RequestServices)
@@ -37,16 +41,18 @@ internal static class BrowsingEndpoints
 
                         if (collection == null)
                         {
-                            return Results.NotFound(new
-                            {
-                                error = "Unknown collection."
-                            });
+                            return Results.NotFound(
+                                new
+                                {
+                                    error = "Unknown collection."
+                                });
                         }
                     }
 
-                    var suggestions = operation == "suggestions";
+                    bool suggestions = operation == "suggestions";
 
-                    return Results.Content(await StorefrontListing.RenderAsync(
+                    return Results.Content(
+                        await StorefrontListing.RenderAsync(
                             http,
                             collection,
                             suggestions,
@@ -57,16 +63,18 @@ internal static class BrowsingEndpoints
                 });
         }
 
-        foreach (var view in new[] { "store", "search", "offers" })
+        foreach (string view in new[] { "store", "search", "offers" })
         {
-            app.MapGet("/{language:regex(^(en|da)$)}/" + view,
+            app.MapGet(
+                "/{language:regex(^(en|da)$)}/" + view,
                 async Task<IResult> (HttpContext http) =>
                 {
                     if (view == "store" && http.Request.Query["provider"] == "offers")
                     {
-                        return Results.LocalRedirect(DemoMarket.Current(http).LanguagePath + "/offers" +
-                                                     QueryString.Create(
-                                                         http.Request.Query.Where(pair => pair.Key != "provider")));
+                        return Results.LocalRedirect(
+                            DemoMarket.Current(http).LanguagePath + "/offers" +
+                            QueryString.Create(
+                                http.Request.Query.Where(pair => pair.Key != "provider")));
                     }
 
                     return Results.Content(await StorefrontListing.RenderAsync(http, view: view), "text/html");

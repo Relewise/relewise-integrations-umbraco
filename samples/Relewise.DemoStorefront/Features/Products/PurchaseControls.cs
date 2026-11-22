@@ -16,7 +16,7 @@ internal static class PurchaseControls
 
         if (stock <= 0)
         {
-            var path = product.Parent()?.ContentType.Alias == "productCategory"
+            string path = product.Parent()?.ContentType.Alias == "productCategory"
                 ? product.Parent()!.Url()
                 : DemoMarket.Current(http).StoreUrl;
 
@@ -45,7 +45,7 @@ internal static class PurchaseControls
             return $"<p class='muted'>{T(http, "ShoppingDisabled")}</p>";
         }
 
-        var isVariant = page.ContentType.Alias == "productVariant";
+        bool isVariant = page.ContentType.Alias == "productVariant";
         IPublishedContent product = isVariant ? page.Parent()! : page;
         var stock = product.Value<int>("stock");
 
@@ -67,7 +67,7 @@ internal static class PurchaseControls
             ["variant"] = isVariant ? page.Key.ToString() : ""
         };
         string[] keys = ["Quantity", "AddCart", "AddingToCart", "PurchaseFailed", "CartUpdated"];
-        var json = JsonSerializer.Serialize(
+        string json = JsonSerializer.Serialize(
             new
             {
                 url = DemoMarket.Current(http).LanguagePath + "/cart/add",

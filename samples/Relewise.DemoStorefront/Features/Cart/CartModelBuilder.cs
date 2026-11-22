@@ -18,7 +18,7 @@ internal static class CartModelBuilder
         int? quantity = null)
     {
         IPublishedContent? page = priced?.Variant ?? priced?.Product;
-        var amount = quantity ?? line.Quantity;
+        int amount = quantity ?? line.Quantity;
 
         return new CartLineModel
         {
@@ -44,7 +44,7 @@ internal static class CartModelBuilder
         List<CartLine> lines,
         PricedCartLine[] priced)
     {
-        var path = DemoMarket.Current(http).LanguagePath;
+        string path = DemoMarket.Current(http).LanguagePath;
         AntiforgeryTokenSet token = http.RequestServices.GetRequiredService<IAntiforgery>().GetAndStoreTokens(http);
         string[] labels =
         [

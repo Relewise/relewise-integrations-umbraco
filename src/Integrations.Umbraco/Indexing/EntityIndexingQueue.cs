@@ -261,7 +261,7 @@ internal sealed class EntityIndexingQueue(
         }
         catch (Exception error)
         {
-            var cancelled =
+            bool cancelled =
                 error is OperationCanceledException &&
                 (token.IsCancellationRequested || work is Boundary { Token.IsCancellationRequested: true });
 

@@ -38,7 +38,7 @@ internal sealed class MappingDefinition(Type entityType)
 
     internal void Validate()
     {
-        var explicitFields = DataMappings.Count > 0 || Properties.Count > 0;
+        bool explicitFields = DataMappings.Count > 0 || Properties.Count > 0;
 
         if (AutomaticData && explicitFields)
         {

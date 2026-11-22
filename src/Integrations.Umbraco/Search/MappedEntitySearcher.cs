@@ -63,7 +63,7 @@ internal sealed class MappedEntitySearcher(
         ArgumentOutOfRangeException.ThrowIfNegative(take);
         ArgumentOutOfRangeException.ThrowIfNegative(maxSuggestions);
 
-        var alias = indexAlias == UmbracoConstants.Search.IndexAliases.PublishedContent
+        string alias = indexAlias == UmbracoConstants.Search.IndexAliases.PublishedContent
             ? configuration.SearchProviders.DefaultPublishedContentProviderAlias ?? indexAlias
             : indexAlias;
 
@@ -86,7 +86,7 @@ internal sealed class MappedEntitySearcher(
             }
         }
 
-        var requirePublishedPage = provider.Options is not ProductSearchProviderOptions
+        bool requirePublishedPage = provider.Options is not ProductSearchProviderOptions
         {
             RequirePublishedPage: false
         };
@@ -95,9 +95,9 @@ internal sealed class MappedEntitySearcher(
         IServiceProvider services = http.HttpContext?.RequestServices ?? scope.ServiceProvider;
 
         User user = await services.GetRequiredService<IRelewiseUserLocator>().GetUser();
-        var language = culture ?? await services.GetRequiredService<ILanguageService>().GetDefaultIsoCodeAsync();
+        string language = culture ?? await services.GetRequiredService<ILanguageService>().GetDefaultIsoCodeAsync();
         var context = new SearchRequestContext(services, user, language);
-        var site = EntityIndexingService.SiteId(services);
+        string site = EntityIndexingService.SiteId(services);
 
         UFilter[] supplied = filters?.ToArray() ?? [];
         UFacet[] selectedFacets = facets?.ToArray() ?? [];
@@ -124,7 +124,7 @@ internal sealed class MappedEntitySearcher(
             }
         }
 
-        var sourceAliases = provider.ContentOptions?.DocumentTypeAliases ??
+        string[] sourceAliases = provider.ContentOptions?.DocumentTypeAliases ??
         [
             .. configuration.Mappings.Values
                 .Where(mapping => mapping.Export && mapping.EntityType == provider.EntityType)
@@ -487,15 +487,15 @@ internal sealed class MappedEntitySearcher(
             case IntegerExactFacet:
             case DecimalExactFacet:
             case DateTimeOffsetExactFacet:
-                var kind = facet switch
+                string kind = facet switch
                 {
                     KeywordFacet => "keyword",
                     IntegerExactFacet => "integerExact",
                     DecimalExactFacet => "decimalExact",
                     _ => "dateExact"
                 };
-                var dataKey = booleanDataFields != null &&
-                              booleanDataFields.TryGetValue(facet.FieldName, out var directKey)
+                string dataKey = booleanDataFields != null &&
+                                 booleanDataFields.TryGetValue(facet.FieldName, out string? directKey)
                     ? directKey
                     : Field(facet.FieldName, kind, culture);
                 request.Facets!.AddDataString(dataKey);

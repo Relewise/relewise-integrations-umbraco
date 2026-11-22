@@ -134,7 +134,7 @@ public class AsyncConversionTests
     [Fact]
     public void DeclarativeFieldsAndCustomMapperCanBeCombinedInEitherRegistrationOrder()
     {
-        foreach (var mapperFirst in new[] { true, false })
+        foreach (bool mapperFirst in new[] { true, false })
         {
             var options = new RelewiseUmbracoOptionsBuilder();
 
@@ -219,7 +219,7 @@ public class AsyncConversionTests
 
     private static void Add(RelewisePropertyConverterContext context)
     {
-        var value = context.Property.GetValue(context.Culture);
+        object? value = context.Property.GetValue(context.Culture);
 
         context.Add(
             context.Property.Alias,

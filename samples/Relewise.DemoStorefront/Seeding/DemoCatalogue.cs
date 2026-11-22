@@ -47,7 +47,7 @@ internal static class DemoCatalogue
             node.GetValue<string>("categoryId") == "U19-SMOKE-EQUIPMENT");
         IContent brand = nodes.Single(node =>
             node.ContentType.Alias == "brand" && node.GetValue<string>("brandId") == "U19-SMOKE-BRAND");
-        var template = types.Get("product")!.AllowedTemplates!.Single().Id;
+        int template = types.Get("product")!.AllowedTemplates!.Single().Id;
         Guid prices = types.Get("currencyPrice")!.Key;
 
         void Publish(IContent node)
@@ -71,11 +71,11 @@ internal static class DemoCatalogue
         }
 
         var brands = new Dictionary<string, IContent> { ["U19-SMOKE-BRAND"] = brand };
-        var distributeExisting = !nodes.Any(node => node.ContentType.Alias == "brand" &&
-                                                    node.GetValue<string>("brandId") is "FIELDWORK-RIDGEWAY"
-                                                        or "FIELDWORK-EMBERCAMP");
+        bool distributeExisting = !nodes.Any(node => node.ContentType.Alias == "brand" &&
+                                                     node.GetValue<string>("brandId") is "FIELDWORK-RIDGEWAY"
+                                                         or "FIELDWORK-EMBERCAMP");
 
-        foreach (var (id, name, description) in new[]
+        foreach ((string id, string name, string description) in new[]
                  {
                      ("FIELDWORK-RIDGEWAY", "Ridgeway", "Practical packs and equipment for days on the trail."),
                      ("FIELDWORK-EMBERCAMP", "Embercamp", "Thoughtful essentials for relaxed days outdoors.")
@@ -99,13 +99,13 @@ internal static class DemoCatalogue
 
         var categories = new Dictionary<string, IContent>();
 
-        foreach (var (code, name) in new[]
+        foreach ((string code, string name) in new[]
                  {
                      ("packs", "Packs and bags"), ("drinkware", "Drinkware"), ("camping", "Camping"),
                      ("accessories", "Accessories")
                  })
         {
-            var id = "FIELDWORK-" + code.ToUpperInvariant();
+            string id = "FIELDWORK-" + code.ToUpperInvariant();
             IContent? category = nodes.FirstOrDefault(node =>
                 node.ContentType.Alias == "productCategory" && node.GetValue<string>("categoryId") == id);
 
@@ -218,7 +218,7 @@ internal static class DemoCatalogue
             // Stable SKUs make startup additive: keep edits to existing Products and Variants.
             foreach (VariantSeed option in item.Variants)
             {
-                var sku = item.Sku + "-" + option.Label.Replace(' ', '-').ToUpperInvariant();
+                string sku = item.Sku + "-" + option.Label.Replace(' ', '-').ToUpperInvariant();
 
                 if (nodes.Any(node =>
                         node.ContentType.Alias == "productVariant" && node.GetValue<string>("sku") == sku))
@@ -258,9 +258,9 @@ internal static class DemoCatalogue
         string currency,
         decimal amount)
     {
-        var discounted = item.OfferCurrency == currency ||
-                         item.Sku is "FIELDWORK-SUMMIT-PACK" or "FIELDWORK-HIP-PACK" or "FIELDWORK-CAMP-CHAIR"
-                             or "FIELDWORK-LANTERN";
+        bool discounted = item.OfferCurrency == currency ||
+                          item.Sku is "FIELDWORK-SUMMIT-PACK" or "FIELDWORK-HIP-PACK" or "FIELDWORK-CAMP-CHAIR"
+                              or "FIELDWORK-LANTERN";
 
         return discounted ? decimal.Round(amount * .8m, 2) : amount;
     }

@@ -29,10 +29,10 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         ContentUpdate.UpdateKind? contentUpdateKind = null,
         string[]? publishedCultures = null)
     {
-        var cultures = publishedCultures ?? Cultures(source, operation);
-        var id = configuration.GetContentId(source);
-        var entity = Create(definition.EntityType, id);
-        var synchronize = definition.AdministrativeActions.Enabled && parentAdministrativeActions;
+        string[] cultures = publishedCultures ?? Cultures(source, operation);
+        string id = configuration.GetContentId(source);
+        object entity = Create(definition.EntityType, id);
+        bool synchronize = definition.AdministrativeActions.Enabled && parentAdministrativeActions;
         Dictionary<string, DataValue?> data = Data(entity);
 
         if (synchronize && entity is not Brand)
@@ -139,7 +139,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                     {
                         throw new InvalidOperationException(
                             $"No converter supports '{property.Alias}' on '{source.Key}'. " +
-                        "Configure a field-specific converter.");
+                            "Configure a field-specific converter.");
                     }
 
                     data.Add(mapping.Options.DataKey, null);
@@ -148,14 +148,14 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
 
                 foreach (KeyValuePair<string, DataValue?> field in converted.Data)
                 {
-                    var destination = field.Key == property.Alias ? mapping.Options.DataKey : field.Key;
+                    string destination = field.Key == property.Alias ? mapping.Options.DataKey : field.Key;
 
                     if (field.Key != property.Alias && mapping.Options.DataKey != property.Alias)
                     {
                         throw new InvalidOperationException(
                             $"Converter for '{property.Alias}" +
                             $"' emits multiple/custom keys; DataKey remapping requires " +
-                        "a value under the source alias.");
+                            "a value under the source alias.");
                     }
 
                     if (!data.TryAdd(destination, field.Value))
@@ -245,10 +245,10 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                     continue;
                 }
 
-                var childCultures = Cultures(child, operation);
-                var parentInvariant = !source.ContentType.VariesByCulture();
-                var childInvariant = !child.ContentType.VariesByCulture();
-                var effective = childInvariant ? cultures :
+                string[] childCultures = Cultures(child, operation);
+                bool parentInvariant = !source.ContentType.VariesByCulture();
+                bool childInvariant = !child.ContentType.VariesByCulture();
+                string[] effective = childInvariant ? cultures :
                     parentInvariant ? childCultures :
                     [.. childCultures.Intersect(cultures, StringComparer.OrdinalIgnoreCase)];
 
@@ -365,7 +365,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                 $"' must be culture and segment invariant; Relewise entity relationships have global IDs.");
         }
 
-        var value = property.GetValue(culture);
+        object? value = property.GetValue(culture);
 
         if (value is IPublishedContent single)
         {
@@ -414,7 +414,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         IPublishedContent source,
         MappingOperation operation)
     {
-        var published = source.Cultures.Keys.Where(culture => !string.IsNullOrWhiteSpace(culture)).ToArray();
+        string[] published = source.Cultures.Keys.Where(culture => !string.IsNullOrWhiteSpace(culture)).ToArray();
 
         if (published.Length > 0)
         {

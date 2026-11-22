@@ -62,9 +62,9 @@ internal static class DemoEditorial
         {
             var changed = false;
 
-            foreach (var culture in new[] { "en-US", "da-DK" })
+            foreach (string culture in new[] { "en-US", "da-DK" })
             {
-                foreach (var alias in new[] { "contentRows", "pageGrid" })
+                foreach (string alias in new[] { "contentRows", "pageGrid" })
                 {
                     if (node.GetValue<string>(alias, culture) is { } json && RefreshCopy(json) is { } updated)
                     {
@@ -87,7 +87,7 @@ internal static class DemoEditorial
 
         var homeChanged = false;
 
-        foreach (var (culture, oldTitle, title, intro) in new[]
+        foreach ((string culture, string oldTitle, string title, string intro) in new[]
                  {
                      ("en-US", "Fieldwork storefront", "Make room for the outdoors",
                          "Thoughtful equipment and fresh ideas for days on the trail, nights under canvas and " +
@@ -145,7 +145,7 @@ internal static class DemoEditorial
                 {
                     if (field.Value is JsonValue scalar && scalar.TryGetValue(out string? text))
                     {
-                        if (replacements.TryGetValue(text, out var replacement))
+                        if (replacements.TryGetValue(text, out string? replacement))
                         {
                             obj[field.Key] = replacement;
                             changed = true;

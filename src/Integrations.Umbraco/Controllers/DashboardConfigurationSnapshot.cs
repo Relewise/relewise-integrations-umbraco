@@ -63,8 +63,8 @@ internal static class DashboardConfigurationSnapshot
         SearchProviderDefinition provider,
         RelewiseUmbracoConfiguration configuration)
     {
-        var restrictions = provider.ContentOptions?.DocumentTypeAliases ?? [];
-        var configuredLocation = provider.Options switch
+        string[] restrictions = provider.ContentOptions?.DocumentTypeAliases ?? [];
+        string? configuredLocation = provider.Options switch
         {
             ContentSearchProviderOptions content => content.DisplayedAtLocation,
             ProductSearchProviderOptions productLocation => productLocation.DisplayedAtLocation,

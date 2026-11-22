@@ -19,14 +19,14 @@ internal sealed class MappingOperation(
     internal object Resolve(Type type)
     {
         // DI owns registered services; this operation disposes only instances it creates itself.
-        var registered = Services.GetService(type);
+        object? registered = Services.GetService(type);
 
         if (registered != null)
         {
             return registered;
         }
 
-        if (_instances.TryGetValue(type, out var instance))
+        if (_instances.TryGetValue(type, out object? instance))
         {
             return instance;
         }
@@ -46,7 +46,7 @@ internal sealed class MappingOperation(
 
     internal async Task<string> DefaultCultureAsync(string[] publishedCultures)
     {
-        var culture = await (_defaultCulture ??= Services
+        string culture = await (_defaultCulture ??= Services
             .GetRequiredService<ILanguageService>()
             .GetDefaultIsoCodeAsync());
 
@@ -58,7 +58,7 @@ internal sealed class MappingOperation(
     {
         List<Exception>? errors = null;
 
-        foreach (var instance in _instances.Values.Reverse())
+        foreach (object instance in _instances.Values.Reverse())
         {
             try
             {

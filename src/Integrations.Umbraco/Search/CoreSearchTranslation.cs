@@ -32,7 +32,7 @@ internal static class CoreSearchTranslation
         string? culture = null,
         IReadOnlyDictionary<string, string>? booleanDataFields = null)
     {
-        if (booleanDataFields != null && booleanDataFields.TryGetValue(filter.FieldName, out var key))
+        if (booleanDataFields != null && booleanDataFields.TryGetValue(filter.FieldName, out string? key))
         {
             if (filter is not KeywordFilter keyword)
             {
@@ -41,7 +41,7 @@ internal static class CoreSearchTranslation
 
             RFilter boolean = Any(
                 keyword.Values.Select(value =>
-                    bool.TryParse(value, out var parsed)
+                    bool.TryParse(value, out bool parsed)
                         ? new ContentDataFilter(key, new EqualsCondition(parsed))
                         : throw new ArgumentException(
                             $"Boolean query field '{filter.FieldName}' requires true or false values.")));
@@ -99,8 +99,8 @@ internal static class CoreSearchTranslation
 
         // Relewise ranges are inclusive. The previous representable double makes the upper
         // endpoint exclusive without arbitrary epsilons, for integers, decimals and dates alike.
-        var lower = min ?? double.MinValue;
-        var upper = max.HasValue ? Math.BitDecrement(max.Value) : double.MaxValue;
+        double lower = min ?? double.MinValue;
+        double upper = max.HasValue ? Math.BitDecrement(max.Value) : double.MaxValue;
 
         if (lower > upper)
         {
@@ -181,7 +181,7 @@ internal static class CoreSearchTranslation
         string kind,
         IEnumerable<string> source)
     {
-        var values = source.Distinct().ToArray();
+        string[] values = source.Distinct().ToArray();
 
         if (values.Length == 0)
         {
@@ -198,7 +198,7 @@ internal static class CoreSearchTranslation
         string kind,
         IEnumerable<double> source)
     {
-        var values = source.Distinct().ToArray();
+        double[] values = source.Distinct().ToArray();
 
         if (values.Length == 0)
         {

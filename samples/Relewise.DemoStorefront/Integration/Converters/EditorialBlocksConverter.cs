@@ -15,7 +15,8 @@ internal sealed class EditorialBlocksConverter(IVariationContextAccessor variati
     public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        context.Add(context.Property.Alias,
+        context.Add(
+            context.Property.Alias,
             EditorialBlockText.ExtractProperty(
                 context.Property,
                 context.Culture,

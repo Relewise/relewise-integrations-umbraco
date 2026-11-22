@@ -8,8 +8,8 @@ internal static class DemoIllustrations
         IPublishedContent content,
         string image)
     {
-        var name = image.StartsWith("/images/", StringComparison.Ordinal) &&
-                   image.EndsWith(".svg", StringComparison.Ordinal)
+        string? name = image.StartsWith("/images/", StringComparison.Ordinal) &&
+                       image.EndsWith(".svg", StringComparison.Ordinal)
             ? image[8..^4]
             : null;
 
@@ -18,7 +18,7 @@ internal static class DemoIllustrations
             return null;
         }
 
-        var colour = content.Value<string>("color", "en-US") switch
+        string colour = content.Value<string>("color", "en-US") switch
         {
             "Sand" => "#aa8e62",
             "Slate" => "#4b6070",

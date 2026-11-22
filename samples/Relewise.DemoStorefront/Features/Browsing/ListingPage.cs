@@ -17,7 +17,7 @@ internal static class ListingPage
         ListingModel model,
         string heading)
     {
-        var section = model.SearchPage ? "search" :
+        string section = model.SearchPage ? "search" :
             model.View == "offers" ? "offers" :
             model.Editorial ? "journal" : "shop";
         var body = new StringBuilder(
@@ -38,7 +38,7 @@ internal static class ListingPage
                     http));
         }
 
-        var json = JsonSerializer.Serialize(model, StorefrontChrome.Json);
+        string json = JsonSerializer.Serialize(model, StorefrontChrome.Json);
 
         // Default JSON escaping protects the script boundary even when CMS values contain markup.
         body.Append(
@@ -66,8 +66,8 @@ internal static class ListingPage
         using UmbracoContextReference context =
             http.RequestServices.GetRequiredService<IUmbracoContextFactory>().EnsureUmbracoContext();
         IPublishedContent home = SiteContent.Home(http.RequestServices);
-        var editorial = http.Request.Query["type"] == "article";
-        var heading = collection == null
+        bool editorial = http.Request.Query["type"] == "article";
+        string heading = collection == null
             ? Text(http, editorial ? "Journal" : "Collection")
             : SiteContent.Title(collection);
         IEnumerable<IPublishedContent> pages = (collection?.ContentType.Alias == "brand" ? home : collection ?? home)
@@ -86,12 +86,12 @@ internal static class ListingPage
 
         pages = pages.Where(node => !access.IsProtected(node.Path).Success);
 
-        var body = StorefrontNavigation.Breadcrumb(collection, http, editorial ? "journal" : "shop") +
-                   $"<h1>{E(heading)}</h1><p>{E(Text(http, "ContentPreview"))}</p><div class='grid'>" +
-                   string.Concat(
-                       pages.OrderBy(SiteContent.Title, StringComparer.CurrentCulture)
-                           .Take(6)
-                           .Select(page => ListingCards.Card(page, http))) + "</div>";
+        string body = StorefrontNavigation.Breadcrumb(collection, http, editorial ? "journal" : "shop") +
+                      $"<h1>{E(heading)}</h1><p>{E(Text(http, "ContentPreview"))}</p><div class='grid'>" +
+                      string.Concat(
+                          pages.OrderBy(SiteContent.Title, StringComparer.CurrentCulture)
+                              .Take(6)
+                              .Select(page => ListingCards.Card(page, http))) + "</div>";
 
         return Layout(heading, body, false, http, editorial ? "journal" : "shop");
     }

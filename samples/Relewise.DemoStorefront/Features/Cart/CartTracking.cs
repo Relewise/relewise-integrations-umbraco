@@ -50,8 +50,8 @@ internal static class CartTracking
     {
         ITracker tracker = RequiredTracker(http);
         User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUser();
-        var currency = DemoMarket.Current(http).Currency;
-        var total = lines.Sum(line => line.Amount * line.Line.Quantity);
+        string currency = DemoMarket.Current(http).Currency;
+        decimal total = lines.Sum(line => line.Amount * line.Line.Quantity);
         Trackable[] events =
         [
             new Order(user, new Money(currency, total), orderNumber, Items(lines, http)),

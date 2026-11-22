@@ -12,15 +12,15 @@ internal static class ListingCards
         IPublishedContent page,
         HttpContext http)
     {
-        var product = page.ContentType.Alias == "product";
-        var image = page.ContentType.Alias is "product" or "article" &&
-                    !string.IsNullOrWhiteSpace(page.Value<string>("heroImage"))
+        bool product = page.ContentType.Alias == "product";
+        string image = page.ContentType.Alias is "product" or "article" &&
+                       !string.IsNullOrWhiteSpace(page.Value<string>("heroImage"))
             ? Storefront.Image(page)
             : Storefront.Icon();
         (string Sale, string? List, string? Savings) prices =
             product ? ProductPrices.Display(page, http) : (Sale: "", List: null, Savings: null);
         var stock = page.Value<int>("stock");
-        var options = product
+        string[] options = product
             ? page.Children()
                 .Where(node => node.ContentType.Alias == "productVariant")
                 .Select(ProductOptions.Label)
@@ -52,7 +52,7 @@ internal static class ListingCards
         HttpContext http)
     {
         ListingCard card = CardData(page, http);
-        var details = card.Product
+        string details = card.Product
             ? $"<span class='card-price'><strong>{Storefront.E(card.Price)}</strong>" +
               (card.ListPrice == null
                   ? ""
@@ -62,7 +62,7 @@ internal static class ListingCards
               (card.Options == null ? "" : $"<span class='card-options'>{Storefront.E(card.Options)}</span>")
             : $"<strong>{T(http, "ReadStory")}</strong>";
 
-        var label = card.Brand == null
+        string label = card.Brand == null
             ? T(http, card.Product ? "Equipment" : "FieldNotes")
             : Storefront.E(card.Brand);
 

@@ -52,7 +52,7 @@ internal sealed class StorefrontSearch(
             }
             else
             {
-                var scopeCategories = collection.DescendantsOrSelf()
+                string[] scopeCategories = collection.DescendantsOrSelf()
                     .Where(node => node.ContentType.Alias == "productCategory")
                     .Select(node => node.Key.ToString("D"))
                     .DefaultIfEmpty(collection.Key.ToString("D"))
@@ -68,7 +68,7 @@ internal sealed class StorefrontSearch(
             filters.Add(new KeywordFilter(SaleField, ["true"], false));
         }
 
-        var categories = request.Query["category"]
+        string[] categories = request.Query["category"]
             .Where(value => Guid.TryParse(value, out _))
             .OfType<string>()
             .Select(value => Guid.Parse(value)
@@ -81,7 +81,7 @@ internal sealed class StorefrontSearch(
             filters.Add(new KeywordFilter("shopCategory", categories, false));
         }
 
-        var brands = request.Query["brand"]
+        string[] brands = request.Query["brand"]
             .Where(value => Guid.TryParse(value, out _))
             .OfType<string>()
             .Select(value => Guid.Parse(value)
@@ -99,9 +99,9 @@ internal sealed class StorefrontSearch(
             filters.Add(new KeywordFilter("inStock", ["true"], false));
         }
 
-        var validMinimum = TryBudget("minPrice", out var minimum);
-        var validMaximum = TryBudget("maxPrice", out var maximum);
-        var custom = validMinimum && validMaximum && (minimum.HasValue || maximum.HasValue);
+        bool validMinimum = TryBudget("minPrice", out decimal? minimum);
+        bool validMaximum = TryBudget("maxPrice", out decimal? maximum);
+        bool custom = validMinimum && validMaximum && (minimum.HasValue || maximum.HasValue);
         DecimalRangeFilterRange[] ranges =
         [
             .. PriceRanges
@@ -249,7 +249,7 @@ internal sealed class StorefrontSearch(
                     ))
                 ]));
 
-        var available = result.Facets.FirstOrDefault(facet => facet.FieldName == "inStock")
+        long available = result.Facets.FirstOrDefault(facet => facet.FieldName == "inStock")
             ?.Values
             .OfType<KeywordFacetValue>()
             .FirstOrDefault(value => value.Key == "true")
@@ -267,7 +267,7 @@ internal sealed class StorefrontSearch(
 
         if (!offers)
         {
-            var onSale = result.Facets.FirstOrDefault(facet => facet.FieldName == SaleField)
+            long onSale = result.Facets.FirstOrDefault(facet => facet.FieldName == SaleField)
                 ?.Values
                 .OfType<KeywordFacetValue>()
                 .FirstOrDefault(value => value.Key == "true")
@@ -322,7 +322,7 @@ internal sealed class StorefrontSearch(
             Add("price", range.Key, PriceLabel(range.MinValue, range.MaxValue));
         }
 
-        if (TryBudget("minPrice", out var minimum) && TryBudget("maxPrice", out var maximum) &&
+        if (TryBudget("minPrice", out decimal? minimum) && TryBudget("maxPrice", out decimal? maximum) &&
             (minimum.HasValue || maximum.HasValue))
         {
             DemoMarket market = DemoMarket.Current(request.HttpContext);
@@ -332,7 +332,7 @@ internal sealed class StorefrontSearch(
                 return value.ToString("0.##", CultureInfo.GetCultureInfo(market.Culture));
             }
 
-            var label = market.Currency + " " + (minimum.HasValue && maximum.HasValue
+            string label = market.Currency + " " + (minimum.HasValue && maximum.HasValue
                 ? Amount(minimum.Value) + "–" + Amount(maximum.Value)
                 : minimum.HasValue
                     ? Amount(minimum.Value) + "+"
@@ -382,7 +382,7 @@ internal sealed class StorefrontSearch(
         Dictionary<string, StringValues> query = request.Query
             .Where(pair => pair.Key is not ("page" or "collection" or "view"))
             .ToDictionary(pair => pair.Key, pair => pair.Value);
-        var remaining = request.Query[name]
+        string[] remaining = request.Query[name]
             .OfType<string>()
             .Where(item => !string.Equals(item, value, StringComparison.OrdinalIgnoreCase))
             .ToArray();
@@ -421,7 +421,7 @@ internal sealed class StorefrontSearch(
     {
         string[] sorts = editorial ? ["", "name", "name-desc"] : ["", "name", "name-desc", "price-asc", "price-desc"];
 
-        if (!TryBudget("minPrice", out var minimum) || !TryBudget("maxPrice", out var maximum) ||
+        if (!TryBudget("minPrice", out decimal? minimum) || !TryBudget("maxPrice", out decimal? maximum) ||
             (minimum.HasValue && maximum.HasValue && minimum.Value > maximum.Value) ||
             ((minimum.HasValue || maximum.HasValue) &&
              request.Query["price"].Any(value => !string.IsNullOrWhiteSpace(value))))
@@ -463,7 +463,7 @@ internal sealed class StorefrontSearch(
                 values[0],
                 NumberStyles.AllowDecimalPoint,
                 CultureInfo.InvariantCulture,
-                out var parsed
+                out decimal parsed
             ) || parsed < 0 || parsed > 1000000m || decimal.Round(parsed, 2) != parsed)
         {
             return false;

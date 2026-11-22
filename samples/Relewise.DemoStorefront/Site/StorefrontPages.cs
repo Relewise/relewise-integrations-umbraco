@@ -18,18 +18,19 @@ internal static class StorefrontPages
         return Render(page, http);
     }
 
-    private static string Render(IPublishedContent page,
+    private static string Render(
+        IPublishedContent page,
         HttpContext http)
     {
-        var html = page.ContentType.Alias switch
+        string html = page.ContentType.Alias switch
         {
             "home" => HomePage.Render(page, http),
             "product" or "productVariant" => ProductPage.Render(page, http),
             _ => EditorialPage.Render(page, http)
         };
-        var section = page.ContentType.Alias is "article" or "localizedArticle" or "guide" ? "journal" :
+        string section = page.ContentType.Alias is "article" or "localizedArticle" or "guide" ? "journal" :
             page.ContentType.Alias == "home" ? "home" : "shop";
-        var connected =
+        bool connected =
             http.RequestServices.GetService<Relewise.Integrations.Umbraco.RelewiseUmbracoConfiguration>() != null;
 
         return Storefront.Layout(SiteContent.Title(page), html, connected, http, section);

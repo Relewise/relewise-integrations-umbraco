@@ -18,7 +18,7 @@ internal static class DemoVariantDetails
         IContentType productType = types.Get("product")!;
         var productSchemaChanged = false;
 
-        foreach (var alias in new[] { "optionType", "sizeGuide" })
+        foreach (string alias in new[] { "optionType", "sizeGuide" })
         {
             if (!productType.PropertyTypes.Any(property => property.Alias == alias))
             {
@@ -40,7 +40,7 @@ internal static class DemoVariantDetails
         IContentType variantType = types.Get("productVariant")!;
         var schemaChanged = false;
 
-        foreach (var alias in new[] { "optionLabel", "capacity" })
+        foreach (string alias in new[] { "optionLabel", "capacity" })
         {
             if (!variantType.PropertyTypes.Any(property => property.Alias == alias))
             {
@@ -101,7 +101,7 @@ internal static class DemoVariantDetails
 
             if (product.GetValue<string>("sku") == "FIELDWORK-HIKING-GLOVES")
             {
-                foreach (var culture in product.PublishedCultures)
+                foreach (string culture in product.PublishedCultures)
                 {
                     if (culture is "en-US" or "da-DK" &&
                         string.IsNullOrWhiteSpace(product.GetValue<string>("sizeGuide", culture)))
@@ -110,12 +110,12 @@ internal static class DemoVariantDetails
                             "sizeGuide",
                             culture == "en-US"
                                 ? "Measure around your palm at its widest point, excluding your thumb. " +
-                                        "The options show " +
+                                  "The options show " +
                                   "hand circumference in centimetres. Choose the larger size if between sizes."
                                 : "Mål rundt om håndfladen på det bredeste sted uden tommelfingeren. " +
-                                        "Størrelserne viser " +
+                                  "Størrelserne viser " +
                                   "håndens omkreds i centimeter. Vælg den største størrelse, " +
-                                        "hvis du ligger mellem to " +
+                                  "hvis du ligger mellem to " +
                                   "størrelser.",
                             culture
                         );
@@ -139,8 +139,8 @@ internal static class DemoVariantDetails
 
             foreach (IContent variant in children.Where(node => node.Published && !node.Edited))
             {
-                var sku = variant.GetValue<string>("sku") ?? "";
-                var index = Array.FindIndex(suffixes, suffix => sku == product.GetValue<string>("sku") + "-" + suffix);
+                string sku = variant.GetValue<string>("sku") ?? "";
+                int index = Array.FindIndex(suffixes, suffix => sku == product.GetValue<string>("sku") + "-" + suffix);
 
                 if (index < 0)
                 {
@@ -149,7 +149,7 @@ internal static class DemoVariantDetails
 
                 var changed = false;
 
-                foreach (var culture in variant.PublishedCultures.ToArray())
+                foreach (string culture in variant.PublishedCultures.ToArray())
                 {
                     if (culture is not ("en-US" or "da-DK"))
                     {
@@ -165,9 +165,9 @@ internal static class DemoVariantDetails
                         changed = true;
                     }
 
-                    var parentName = product.GetCultureName(culture) ?? product.Name ?? string.Empty;
-                    var previousHeading = parentName + " " + variant.GetValue<string>("size", culture);
-                    var heading = (product.GetValue<string>("heading", culture) ?? parentName) + " · " + label;
+                    string parentName = product.GetCultureName(culture) ?? product.Name ?? string.Empty;
+                    string previousHeading = parentName + " " + variant.GetValue<string>("size", culture);
+                    string heading = (product.GetValue<string>("heading", culture) ?? parentName) + " · " + label;
 
                     if (variant.GetValue<string>("heading", culture) == previousHeading && heading != previousHeading)
                     {

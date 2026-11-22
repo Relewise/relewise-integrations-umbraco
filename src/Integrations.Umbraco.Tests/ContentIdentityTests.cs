@@ -45,7 +45,7 @@ public class ContentIdentityTests
         RelewiseUmbracoConfiguration configuration = Configuration(setting);
         IPublishedContent published = PublishedContent(1234, SharedKey);
         IContent editable = EditableContent(1234, SharedKey);
-        var expected = useKeys ? SharedKey.ToString("D") : "1234";
+        string expected = useKeys ? SharedKey.ToString("D") : "1234";
 
         Assert.Equal(useKeys, configuration.UseContentKeysAsIds);
         Assert.Equal(expected, configuration.GetContentId(published));

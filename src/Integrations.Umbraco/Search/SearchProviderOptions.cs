@@ -97,7 +97,7 @@ public class SearchProviderOptions
 
                 for (var i = 0; i < aliases.Length; i++)
                 {
-                    var alias = aliases[i];
+                    string alias = aliases[i];
 
                     if (string.IsNullOrWhiteSpace(alias) ||
                         !mappings.TryGetValue(alias, out MappingDefinition? mapping) ||
@@ -105,7 +105,7 @@ public class SearchProviderOptions
                     {
                         throw new InvalidOperationException(
                             $"Search provider '{registration.Key}' references an unknown " +
-                        $"or non-Content mapping '{alias}'.");
+                            $"or non-Content mapping '{alias}'.");
                     }
 
                     aliases[i] = mapping.DocumentTypeAlias;

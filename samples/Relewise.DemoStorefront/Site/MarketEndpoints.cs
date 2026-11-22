@@ -59,7 +59,7 @@ internal static class MarketEndpoints
             }
         );
 
-        var target = selected.ReturnUrl(returnUrl);
+        string target = selected.ReturnUrl(returnUrl);
 
         // Resolve translated detail-page slugs through Umbraco, keeping the same content item.
         if (!string.IsNullOrWhiteSpace(returnUrl) && Uri.TryCreate(

@@ -12,14 +12,14 @@ internal static class DemoDictionary
         var dictionaries = services.GetRequiredService<IDictionaryItemService>();
         ILanguage[] languages = [.. (await services.GetRequiredService<ILanguageService>().GetAllAsync())];
 
-        foreach (var (key, english, danish) in Labels)
+        foreach ((string key, string english, string danish) in Labels)
         {
-            var dictionaryKey = "Fieldwork." + key;
+            string dictionaryKey = "Fieldwork." + key;
             IDictionaryItem? existing = await dictionaries.GetAsync(dictionaryKey);
             IDictionaryItem item = existing ?? new DictionaryItem(dictionaryKey);
             List<IDictionaryTranslation> translations = [.. item.Translations];
 
-            foreach (var (culture, text) in new[] { ("en-US", english), ("da-DK", danish) })
+            foreach ((string culture, string text) in new[] { ("en-US", english), ("da-DK", danish) })
             {
                 ILanguage language = languages.Single(language =>
                     language.IsoCode.Equals(culture, StringComparison.OrdinalIgnoreCase));

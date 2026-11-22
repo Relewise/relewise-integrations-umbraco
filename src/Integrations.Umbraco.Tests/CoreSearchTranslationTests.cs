@@ -49,7 +49,7 @@ public class CoreSearchTranslationTests
         RFilter filter,
         Dictionary<string, DataValue?> data)
     {
-        var result = filter switch
+        bool result = filter switch
         {
             AndFilter f => f.Filters.All(x => Matches(x, data)),
             OrFilter f => f.Filters.Any(x => Matches(x, data)),
@@ -68,7 +68,7 @@ public class CoreSearchTranslationTests
         ValueCondition condition,
         DataValue data)
     {
-        var result = condition switch
+        bool result = condition switch
         {
             EqualsCondition c => JToken.DeepEquals(JToken.FromObject(c.Value!.Value!), JToken.FromObject(data.Value!)),
             ContainsCondition { ObjectFilter: { } objectFilter } => data.ValueAsListOf<DataObject>()!.Any(v =>
@@ -87,7 +87,7 @@ public class CoreSearchTranslationTests
         DataObject data)
     {
         var value = data.Data[condition.Key]!.ValueAs<double>();
-        var result = condition switch
+        bool result = condition switch
         {
             ObjectValueLessThanCondition c => value < c.Value,
             ObjectValueGreaterThanCondition c => value > c.Value,

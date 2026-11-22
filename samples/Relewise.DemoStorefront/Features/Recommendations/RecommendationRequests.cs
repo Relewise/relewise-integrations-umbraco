@@ -38,7 +38,8 @@ internal static class RecommendationRequests
                 SignificanceOfIdenticalProductDataValues = 0,
                 SignificantProductDataFields =
                 [
-                    new SignificantDataValue("capacity",
+                    new SignificantDataValue(
+                        "capacity",
                         SignificantDataValue.SignificantDataValueComparer.StringSimilarity),
                     new SignificantDataValue(
                         "weightGrams",
@@ -148,8 +149,10 @@ internal static class RecommendationRequests
         request.Filters.Add(new ProductDataFilter("contentTypeAlias", new EqualsCondition("product")));
         request.Filters.Add(new ProductDataFilter("rwUmbracoPublished", new EqualsCondition(true)));
         request.Filters.Add(new ProductDataFilter("rwUmbracoSearchProtected", new EqualsCondition(false)));
-        request.Filters.Add(new ProductDataFilter("rwUmbracoSearchCulture",
-            new ContainsCondition(market.Culture.ToLowerInvariant())));
+        request.Filters.Add(
+            new ProductDataFilter(
+                "rwUmbracoSearchCulture",
+                new ContainsCondition(market.Culture.ToLowerInvariant())));
         request.Settings.NumberOfRecommendations = VisibleCount;
         // Keep browsing history genuine: no fill or novelty replacement.
         request.Settings.AllowFillIfNecessaryToReachNumberOfRecommendations = false;

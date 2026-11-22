@@ -18,7 +18,7 @@ internal static class RecommendationPlacement
             return string.Empty;
         }
 
-        var json = JsonSerializer.Serialize(configuration, StorefrontChrome.Json);
+        string json = JsonSerializer.Serialize(configuration, StorefrontChrome.Json);
 
         return
             $"<div id='product-recommendations'></div><script id='recommendation-data' " +

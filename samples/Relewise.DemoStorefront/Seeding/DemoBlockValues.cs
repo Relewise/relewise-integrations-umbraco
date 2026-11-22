@@ -11,7 +11,7 @@ internal static class DemoBlockValues
     internal static string Story(IContentTypeService types, string body)
     {
         var key = Guid.NewGuid();
-        var markup = string.Concat(
+        string markup = string.Concat(
             body.Split('\n', StringSplitOptions.RemoveEmptyEntries)
                 .Select(paragraph => "<p>" + WebUtility.HtmlEncode(paragraph) + "</p>"));
 
@@ -84,10 +84,10 @@ internal static class DemoBlockValues
                 )
             ];
 
-        var nestedExposure = (localized ? ["en-US", "da-DK"] : new string?[] { null })
+        object[] nestedExposure = (localized ? ["en-US", "da-DK"] : new string?[] { null })
             .Select(culture => (object)new { contentKey = nestedKey, culture, segment = (string?)null })
             .ToArray();
-        var nested = Serialize(
+        string nested = Serialize(
             "Umbraco.BlockList",
             [new { contentKey = nestedKey }],
             [Element(nestedKey, nestedType, nestedValues)],
@@ -113,16 +113,18 @@ internal static class DemoBlockValues
                 Value("items", "Umbraco.BlockList", JsonSerializer.Deserialize<JsonElement>(nested))
             ];
 
-        var exposure = new[] { textKey, hiddenKey }.Select(key => (object)new
-        {
-            contentKey = key,
-            culture = (string?)null,
-            segment = (string?)null
-        })
-            .Concat(
-                (localized ? ["en-US", "da-DK"] : new string?[] { null })
-                .Select(culture => (object)new { contentKey = groupKey, culture, segment = (string?)null }))
-            .ToArray();
+        object[] exposure =
+        [
+            .. new[] { textKey, hiddenKey }.Select(key => (object)new
+                {
+                    contentKey = key,
+                    culture = (string?)null,
+                    segment = (string?)null
+                })
+                .Concat(
+                    (localized ? ["en-US", "da-DK"] : new string?[] { null })
+                    .Select(culture => (object)new { contentKey = groupKey, culture, segment = (string?)null }))
+        ];
 
         return Serialize(
             "Umbraco.BlockList",

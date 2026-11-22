@@ -24,7 +24,7 @@ internal sealed record DemoMarket(
         }
 
         DemoMarket? saved = All.FirstOrDefault(market => market.Id == context?.Request.Cookies[CookieName]);
-        var prefix = context?.Request.Path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries)
+        string? prefix = context?.Request.Path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault();
 
         // Explicit language URLs win over a remembered market; English still permits both EUR and USD.
@@ -49,9 +49,9 @@ internal sealed record DemoMarket(
             return StoreUrl;
         }
 
-        var suffix = value.IndexOfAny(['?', '#']);
-        var path = (suffix < 0 ? value : value[..suffix]).TrimEnd('/');
-        var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        int suffix = value.IndexOfAny(['?', '#']);
+        string path = (suffix < 0 ? value : value[..suffix]).TrimEnd('/');
+        string[] parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
         if (parts.Length > 0 && parts[0] is "en" or "da")
         {

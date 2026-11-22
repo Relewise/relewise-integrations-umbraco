@@ -51,7 +51,7 @@ internal static class DemoProductTypes
             if (!product.Published || product.Edited ||
                 !product.AvailableCultures.All(culture => product.PublishedCultures.Contains(culture)) ||
                 !string.IsNullOrWhiteSpace(product.GetValue<string>("productType")) ||
-                !Types.TryGetValue(product.GetValue<string>("sku") ?? "", out var type))
+                !Types.TryGetValue(product.GetValue<string>("sku") ?? "", out string? type))
             {
                 continue;
             }

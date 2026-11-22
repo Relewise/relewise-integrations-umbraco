@@ -85,7 +85,7 @@ public class MappedEntitySearchTests
         await root.GetRequiredService<MappedEntitySearcher>()
             .SearchAsync("profile", culture: "DA-dk", accessContext: access);
 
-        var json = JsonConvert.SerializeObject(sent);
+        string json = JsonConvert.SerializeObject(sent);
 
         Assert.Contains("protected-site", json);
         Assert.Contains("rwUmbracoPublished", json);
@@ -194,7 +194,7 @@ public class MappedEntitySearchTests
         accessor.HttpContext = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
 
         User expected = await scope.ServiceProvider.GetRequiredService<IRelewiseUserLocator>().GetUser();
-        var alias = product ? "catalogue" : UmbracoConstants.Search.IndexAliases.PublishedContent;
+        string alias = product ? "catalogue" : UmbracoConstants.Search.IndexAliases.PublishedContent;
 
         try
         {
@@ -234,7 +234,7 @@ public class MappedEntitySearchTests
                     !product || requirePublishedPage != false,
                     predicates.Any(filter => filter.Key == "rwUmbracoPublished"));
 
-                foreach (var key in new[]
+                foreach (string key in new[]
                          {
                              "rwUmbracoSite", "contentTypeAlias", "rwUmbracoSearchCulture", "rwUmbracoSearchSegments",
                              "rwUmbracoSearchProtected"
@@ -395,7 +395,7 @@ public class MappedEntitySearchTests
             Assert.Single(prediction.Settings!.TargetEntityTypes!));
         Assert.Null(prediction.IndexSelector);
 
-        var json = JsonConvert.SerializeObject(prediction.Filters);
+        string json = JsonConvert.SerializeObject(prediction.Filters);
 
         Assert.Contains("prediction-site", json);
         Assert.Contains("rwUmbracoPublished", json);

@@ -7,7 +7,7 @@ internal static class ProductOptions
 {
     internal static string Label(IPublishedContent page)
     {
-        foreach (var alias in new[] { "optionLabel", "color", "size" })
+        foreach (string alias in new[] { "optionLabel", "color", "size" })
         {
             var value = page.Value<string>(alias);
 

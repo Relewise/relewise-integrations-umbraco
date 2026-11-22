@@ -36,7 +36,7 @@ internal static class DemoLocalization
                             .PropertyType.VariesByCulture())
                         .ToDictionary(alias => alias, alias => node.GetValue(alias))));
 
-        foreach (var alias in new[]
+        foreach (string alias in new[]
                  {
                      "home", "article", "guide", "folder", "brand", "productCategory", "product", "productVariant",
                      "localizedArticle"
@@ -62,7 +62,7 @@ internal static class DemoLocalization
             await types.UpdateAsync(type, Constants.Security.SuperUserKey);
         }
 
-        foreach (var (parent, children) in new (string Parent, string[] Children)[]
+        foreach ((string parent, string[] children) in new (string Parent, string[] Children)[]
                  {
                      ("home", ["article", "localizedArticle", "guide", "folder", "brand", "productCategory"]),
                      ("folder", ["article", "localizedArticle", "guide", "folder", "productCategory"]),
@@ -73,7 +73,7 @@ internal static class DemoLocalization
             IContentType type = types.Get(parent)!;
             List<ContentTypeSort> allowed = [.. (type.AllowedContentTypes ?? [])];
 
-            foreach (var child in children)
+            foreach (string child in children)
             {
                 IContentType childType = types.Get(child)!;
 
@@ -115,7 +115,7 @@ internal static class DemoLocalization
             {
                 IContent node = content.GetById(original.Key)!;
                 var changed = false;
-                var publish = original.Published && !original.Edited;
+                bool publish = original.Published && !original.Edited;
 
                 if (snapshots.TryGetValue(
                         node.Key,
@@ -147,7 +147,7 @@ internal static class DemoLocalization
 
                         if (node.ContentType.Alias == "productVariant")
                         {
-                            foreach (var alias in new[] { "color", "size" })
+                            foreach (string alias in new[] { "color", "size" })
                             {
                                 node.SetValue(alias, TranslateOption(node.GetValue<string>(alias, "en-US")), "da-DK");
                             }
@@ -162,9 +162,9 @@ internal static class DemoLocalization
                         node.Key,
                         out (string? Name, bool Invariant, Dictionary<string, object?> Values) blocks))
                 {
-                    foreach (var alias in new[] { "contentRows", "pageGrid" })
+                    foreach (string alias in new[] { "contentRows", "pageGrid" })
                     {
-                        if (blocks.Values.TryGetValue(alias, out var value) && value is string json)
+                        if (blocks.Values.TryGetValue(alias, out object? value) && value is string json)
                         {
                             node.SetValue(alias, DemoBlockValues.InDanish(json), "da-DK");
                         }
@@ -199,7 +199,7 @@ internal static class DemoLocalization
             scope.Complete();
         }
 
-        var baseUrl = services.GetRequiredService<IConfiguration>()["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!
+        string baseUrl = services.GetRequiredService<IConfiguration>()["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!
             .TrimEnd('/');
         Attempt<DomainUpdateResult, DomainOperationStatus> resultDomains = await domains.UpdateDomainsAsync(
             home.Key,
@@ -250,7 +250,7 @@ internal static class DemoLocalization
                 return null;
             }
 
-            var option = TranslateOption(raw)!;
+            string option = TranslateOption(raw)!;
 
             return (product.Name + " " + option, product.Body + " Fås i " + option.ToLowerInvariant() + ".");
         }

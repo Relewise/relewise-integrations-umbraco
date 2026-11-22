@@ -15,7 +15,7 @@ public static class Storefront
         params object[] values)
     {
         var culture = CultureInfo.GetCultureInfo(DemoMarket.Current(http).Culture);
-        var text =
+        string text =
             http.RequestServices.GetRequiredService<ICultureDictionaryFactory>().CreateDictionary(culture)[
                 "Fieldwork." + key];
 

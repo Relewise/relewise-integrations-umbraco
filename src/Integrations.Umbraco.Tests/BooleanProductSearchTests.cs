@@ -86,7 +86,7 @@ public class BooleanProductSearchTests
 
         Assert.Equal(2, sent.Count);
 
-        var main = JsonConvert.SerializeObject(sent[0].Filters);
+        string main = JsonConvert.SerializeObject(sent[0].Filters);
 
         Assert.Contains("onSale_EUR", main);
         Assert.Contains("\"Value\":true", main);
@@ -97,7 +97,7 @@ public class BooleanProductSearchTests
             sent,
             request =>
             {
-                var json = JsonConvert.SerializeObject(request.Filters);
+                string json = JsonConvert.SerializeObject(request.Filters);
 
                 Assert.Contains("boolean-site", json);
                 Assert.Contains("rwUmbracoPublished", json);
@@ -122,7 +122,7 @@ public class BooleanProductSearchTests
         Client.Requests.Filters.Filter filter = CoreSearchTranslation.MapFilter(
             new KeywordFilter("sale", [value], negate),
             booleanDataFields: new Dictionary<string, string> { ["sale"] = "onSale_EUR" });
-        var json = JsonConvert.SerializeObject(filter);
+        string json = JsonConvert.SerializeObject(filter);
 
         Assert.Contains("onSale_EUR", json);
         Assert.Contains("\"Value\":" + value, json);
