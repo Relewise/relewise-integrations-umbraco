@@ -1,10 +1,10 @@
 import { createApp } from 'vue';
-import Header from './Header.vue';
-import Footer from './Footer.vue';
-import Listing from './Listing.vue';
-import Purchase from './Purchase.vue';
-import Cart from './Cart.vue';
-import Recommendations from './Recommendations.vue';
+import Header from './shell/Header.vue';
+import Footer from './shell/Footer.vue';
+import Listing from './browsing/Listing.vue';
+import Purchase from './cart/Purchase.vue';
+import Cart from './cart/Cart.vue';
+import Recommendations from './recommendations/Recommendations.vue';
 
 for (const [rootId, dataId, component] of [
     ['storefront-shell', 'shell-data', Header],

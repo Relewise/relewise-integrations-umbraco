@@ -41,7 +41,7 @@ connection error instead of silently changing providers. Optional recommendation
 prediction failures leave the rest of the page usable.
 
 For backoffice editing, open `/umbraco`. The default account is `demo@example.invalid`;
-[DemoSetup.cs](DemoSetup.cs) defines its generated local password. To use your own
+[DemoSetup.cs](Setup/DemoSetup.cs) defines its generated local password. To use your own
 account, set Umbraco's unattended installation credentials in `local.settings.json`
 **before first startup**.
 
@@ -52,18 +52,18 @@ so seeded language domains use the same host and port.
 
 ## Mapping and converter examples
 
-[DemoConfiguration.cs](DemoConfiguration.cs) is the starting point for the fixed C#
+[DemoConfiguration.cs](Integration/DemoConfiguration.cs) is the starting point for the fixed C#
 registration and named Content/Product search providers.
 
 | Example | What it demonstrates | Source |
 | --- | --- | --- |
-| Products and Variants | SKU-based canonical IDs, built-in properties, child Variants, Brand and additional Category references | [DemoConfiguration.cs](DemoConfiguration.cs) |
-| Multi-currency prices | An asynchronous typed converter reads native Umbraco Block List currency/amount entries | [PriceConverter.cs](PriceConverter.cs) |
-| Product enrichment | An entity mapper runs last and writes native Boolean availability and per-currency sale flags | [DemoProductMapper.cs](DemoProductMapper.cs) |
-| Localized editorial content | Culture-aware conversion of rich text, nested Block Lists and Block Grid areas; hidden blocks are excluded | [EditorialBlocksConverter.cs](EditorialBlocksConverter.cs), [EditorialBlockText.cs](EditorialBlockText.cs) |
-| Content enrichment | A custom mapper combines converted editorial fields into searchable text | [EditorialMapper.cs](EditorialMapper.cs) |
-| Media URLs | A globally registered converter resolves media properties into URLs | [ImageUrlConverter.cs](ImageUrlConverter.cs) |
-| Legacy compatibility | The guide uses the obsolete Content mapper through the compatibility adapter | [LegacyGuideMapper.cs](LegacyGuideMapper.cs) |
+| Products and Variants | SKU-based canonical IDs, built-in properties, child Variants, Brand and additional Category references | [DemoConfiguration.cs](Integration/DemoConfiguration.cs) |
+| Multi-currency prices | An asynchronous typed converter reads native Umbraco Block List currency/amount entries | [PriceConverter.cs](Integration/Converters/PriceConverter.cs) |
+| Product enrichment | An entity mapper runs last and writes native Boolean availability and per-currency sale flags | [DemoProductMapper.cs](Integration/Mapping/DemoProductMapper.cs) |
+| Localized editorial content | Culture-aware conversion of rich text, nested Block Lists and Block Grid areas; hidden blocks are excluded | [EditorialBlocksConverter.cs](Integration/Converters/EditorialBlocksConverter.cs), [EditorialBlockText.cs](Integration/Converters/EditorialBlockText.cs) |
+| Content enrichment | A custom mapper combines converted editorial fields into searchable text | [EditorialMapper.cs](Integration/Mapping/EditorialMapper.cs) |
+| Media URLs | A globally registered converter resolves media properties into URLs | [ImageUrlConverter.cs](Integration/Converters/ImageUrlConverter.cs) |
+| Legacy compatibility | The guide uses the obsolete Content mapper through the compatibility adapter | [LegacyGuideMapper.cs](Integration/Mapping/LegacyGuideMapper.cs) |
 
 Edit these published properties in Umbraco to explore the examples. Integration details
 on detail pages show the document type, culture, node ID/key and canonical Relewise IDs;
@@ -78,7 +78,7 @@ owns its publication lifecycle.
 Search and facets use Umbraco's search abstraction with three named Relewise providers:
 `articles`, `catalogue` and `offers`. Ordinary published-content searches use `articles`.
 [The search guide](../../docs/search.md) covers provider configuration; the demo's
-[query code](StorefrontSearch.cs) shows Category/Brand filters, stock, currency-specific
+[query code](Features/Browsing/StorefrontSearch.cs) shows Category/Brand filters, stock, currency-specific
 sale flags, price ranges, sorting and facets.
 
 The shared search field uses real Relewise predictions, with keyboard navigation,
@@ -86,8 +86,8 @@ editable suggestions and a dedicated results page. Category and Brand landing pa
 keep their fixed scope when shoppers apply other filters. The footer links to all
 published Brands and Categories.
 
-[StorefrontRecommendations.cs](StorefrontRecommendations.cs) uses the C# Recommender
-SDK directly: Similar Products on Product pages, genuine Recently Viewed history,
+[StorefrontRecommendations.cs](Features/Recommendations/StorefrontRecommendations.cs) uses the C# Recommender
+SDK directly, with request examples in [RecommendationRequests.cs](Features/Recommendations/RecommendationRequests.cs): Similar Products on Product pages, genuine Recently Viewed history,
 and views-based Popular Products/Categories on the homepage. Empty carts show history
 first, then a separately labelled popular fallback. Popularity uses the last 30 days;
 a fresh Dataset without activity may return nothing, and empty sections stay hidden.
@@ -95,7 +95,7 @@ The editable `productType` field distinguishes functional alternatives. Results 
 checked against current publication, access, canonical identity and market prices.
 
 Search, recommendations, page views, Cart and Order events share
-[StorefrontUserLocator.cs](StorefrontUserLocator.cs). Product and Variant views use the
+[StorefrontUserLocator.cs](Integration/Tracking/StorefrontUserLocator.cs). Product and Variant views use the
 same canonical IDs as export. Recommendations do not create extra Product views.
 The cart updates asynchronously and validates quantities/prices on the server.
 Tracking failures prevent Cart/Order changes from being saved. Retry deduplication and
@@ -104,6 +104,24 @@ cart state are in memory and are illustrative rather than a production commerce 
 Relewise's footer strip and Demo information dialog remain English across markets.
 The dialog shows configuration and documentation links without exposing credentials.
 Checkout uses compact navigation and a shorter demo notice.
+
+## Project structure
+
+Everything stays in this one project; namespaces follow the folders.
+
+| Area | Responsibility |
+| --- | --- |
+| [Integration](Integration) | Package registration, mapper/converter examples, indexing and tracking identity |
+| [Features](Features) | Browsing, Products, editorial pages, recommendations and Cart; related models stay with their feature |
+| [Site](Site) | Shared page shell, published-content lookup, navigation and market selection |
+| [Setup](Setup) / [Seeding](Seeding) | Local installation/connection checks and initial Umbraco schema/content |
+| [Client/src](Client/src) | Vue components grouped into shell, browsing, Cart and recommendations |
+
+`Program.cs` composes startup and registers endpoints. Cart HTTP endpoints delegate
+shopping operations, pricing, state and Relewise event construction to separate files;
+page renderers handle HTML. Listings, detail pages and Cart share
+[ProductPrices](Features/Products/ProductPrices.cs); reusable form fields live in `Site`.
+`Views` and `wwwroot` retain their conventional locations.
 
 ## Developing the sample
 

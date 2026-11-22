@@ -26,7 +26,6 @@
 
 	<ItemGroup>
 		<Using Include="Xunit" />
-        <Using Include="Relewise.DemoStorefront" />
 	</ItemGroup>
 
 </Project>

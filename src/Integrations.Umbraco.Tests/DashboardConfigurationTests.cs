@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Relewise.Client.Extensions;
 using Relewise.Client.Extensions.DependencyInjection;
+using Relewise.DemoStorefront.Integration.Converters;
+using Relewise.DemoStorefront.Integration.Mapping;
 using Relewise.Integrations.Umbraco.Controllers;
 using Relewise.Integrations.Umbraco.Controllers.Messages;
 

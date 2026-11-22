@@ -49,7 +49,7 @@ registrations remain usable through obsolete compatibility contracts. Use
 ```
 
 `MediaUrlConverter` is an illustrative application type. The demo provides a working
-[PriceConverter](../samples/Relewise.DemoStorefront/PriceConverter.cs) for a Block List
+[PriceConverter](../samples/Relewise.DemoStorefront/Integration/Converters/PriceConverter.cs) for a Block List
 containing `currency` and `amount` properties. A decimal alone
 does not identify a currency; conversion must supply currency codes explicitly.
 

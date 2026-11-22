@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Relewise.DemoStorefront.Features.Browsing;
+using Relewise.DemoStorefront.Setup;
 using Umbraco.Cms.Core.Dictionary;
 
 namespace Relewise.Integrations.Umbraco.Tests;

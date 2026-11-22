@@ -1,4 +1,5 @@
 using Relewise.Client.DataTypes;
+using Relewise.DemoStorefront.Integration.Mapping;
 
 namespace Relewise.Integrations.Umbraco.Tests;
 

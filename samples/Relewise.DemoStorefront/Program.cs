@@ -1,4 +1,14 @@
 using Relewise.Client.Extensions.DependencyInjection;
+using Relewise.DemoStorefront.Features.Browsing;
+using Relewise.DemoStorefront.Features.Cart;
+using Relewise.DemoStorefront.Features.Recommendations;
+using Relewise.DemoStorefront.Integration;
+using Relewise.DemoStorefront.Integration.Converters;
+using Relewise.DemoStorefront.Integration.Indexing;
+using Relewise.DemoStorefront.Integration.Tracking;
+using Relewise.DemoStorefront.Seeding;
+using Relewise.DemoStorefront.Setup;
+using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
 
 namespace Relewise.DemoStorefront;
@@ -85,7 +95,8 @@ internal static class Program
             umbraco.UseWebsiteEndpoints();
         });
         app.MapGet("/", (HttpContext http) => Results.Redirect(DemoMarket.Current(http).HomeUrl));
-        app.MapStorefront();
+        app.MapMarket();
+        app.MapBrowsing();
         app.MapCart();
         app.MapRecommendations();
         await app.RunAsync();

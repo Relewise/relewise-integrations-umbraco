@@ -1,0 +1,44 @@
+using System.Globalization;
+using Relewise.DemoStorefront.Features.Products;
+using Relewise.DemoStorefront.Site;
+using Umbraco.Cms.Core.Models.PublishedContent;
+
+namespace Relewise.DemoStorefront.Features.Cart;
+
+internal static class CartPricing
+{
+    internal static PricedCartLine[]? Price(List<CartLine> lines, Umbraco.Cms.Core.PublishedCache.IPublishedContentCache cache, HttpContext http, bool availableOnly = false)
+    {
+        var market = DemoMarket.Current(http);
+        var result = new List<PricedCartLine>();
+        foreach (CartLine line in lines)
+        {
+            IPublishedContent? product = cache.GetById(line.ProductKey);
+            IPublishedContent? variant = line.VariantKey.HasValue ? cache.GetById(line.VariantKey.Value) : null;
+            if (product?.ContentType.Alias != "product" || !product.Cultures.ContainsKey(market.Culture) ||
+                line.Quantity < 1 || line.Quantity > 99 ||
+                line.VariantKey.HasValue && (variant?.ContentType.Alias != "productVariant" || variant.Parent()?.Key != product.Key ||
+                    !variant.Cultures.ContainsKey(market.Culture)) ||
+                !line.VariantKey.HasValue && product.Children().Any(node => node.ContentType.Alias == "productVariant") ||
+                ProductPrices.Read(product, "salesPrice", market.Currency) is not decimal amount)
+            {
+                if (availableOnly)
+                {
+                    continue;
+                }
+
+                return null;
+            }
+
+            result.Add(new PricedCartLine(line, product, variant, amount));
+        }
+
+        return result.ToArray();
+    }
+
+    internal static bool InStock(PricedCartLine[] lines) => lines.GroupBy(line => line.Product.Key)
+        .All(group => group.Sum(line => line.Line.Quantity) <= group.First().Product.Value<int>("stock"));
+
+    internal static string ReviewKey(PricedCartLine[] lines, HttpContext http) => DemoMarket.Current(http).Currency + "|" +
+        string.Join("|", lines.Select(line => $"{line.Line.ProductKey:D}/{line.Line.VariantKey:D}/{line.Line.Quantity}/{line.Amount.ToString("G29", CultureInfo.InvariantCulture)}"));
+}

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Relewise.DemoStorefront.Site;
 
 namespace Relewise.Integrations.Umbraco.Tests;
 

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Moq;
+using Relewise.DemoStorefront.Features.Browsing;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Search.Querying.Filtering;

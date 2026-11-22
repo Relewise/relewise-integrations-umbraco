@@ -59,7 +59,7 @@ This is useful for simple supported values, but it is not a general recursive pl
 
 Source: [Block List converter](../src/Integrations.Umbraco/PropertyValueConverters/BlockListPropertyValueConverter.cs).
 
-For editorial control, use a content mapper and read the Block List's published value. The [demo extractor](../samples/Relewise.DemoStorefront/EditorialBlockText.cs) explicitly handles both `BlockListModel` and `BlockListItem`, visits selected child fields, and recursively visits selected nested block properties.
+For editorial control, use a content mapper and read the Block List's published value. The [demo extractor](../samples/Relewise.DemoStorefront/Integration/Converters/EditorialBlockText.cs) explicitly handles both `BlockListModel` and `BlockListItem`, visits selected child fields, and recursively visits selected nested block properties.
 
 ## Block Grid and areas
 

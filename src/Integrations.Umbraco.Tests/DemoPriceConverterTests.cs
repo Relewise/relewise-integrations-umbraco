@@ -1,5 +1,7 @@
 using Moq;
 using Relewise.Client.DataTypes;
+using Relewise.DemoStorefront.Features.Products;
+using Relewise.DemoStorefront.Integration.Converters;
 using Umbraco.Cms.Core.Models.Blocks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
@@ -46,6 +48,23 @@ public class DemoPriceConverterTests
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
         Assert.ThrowsAny<OperationCanceledException>(() => PriceConverter.Read(Entries(("DKK", 899m)), cancellation.Token));
+    }
+
+    [Fact]
+    public void ProductPriceReadsDoNotSubstituteAnotherCurrencyOrProperty()
+    {
+        var sales = new Mock<IPublishedProperty>();
+        sales.Setup(value => value.GetValue(null, null)).Returns(Entries(("EUR", 10m), ("DKK", 75m)));
+        var list = new Mock<IPublishedProperty>();
+        list.Setup(value => value.GetValue(null, null)).Returns(Entries(("EUR", 20m), ("USD", 22m)));
+        var product = new Mock<IPublishedContent>();
+        product.Setup(value => value.GetProperty("salesPrice")).Returns(sales.Object);
+        product.Setup(value => value.GetProperty("listPrice")).Returns(list.Object);
+
+        Assert.Equal(75m, ProductPrices.Read(product.Object, "salesPrice", "DKK"));
+        Assert.Equal(20m, ProductPrices.Read(product.Object, "listPrice", "EUR"));
+        Assert.Null(ProductPrices.Read(product.Object, "salesPrice", "USD"));
+        Assert.Null(ProductPrices.Read(product.Object, "missingPrice", "EUR"));
     }
 
     private static BlockListModel Entries(params (string? Currency, decimal? Amount)[] prices)

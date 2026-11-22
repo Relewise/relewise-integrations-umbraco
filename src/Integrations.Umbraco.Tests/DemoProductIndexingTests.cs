@@ -1,4 +1,6 @@
 using Moq;
+using Relewise.DemoStorefront.Integration.Converters;
+using Relewise.DemoStorefront.Integration.Indexing;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Services;
@@ -40,7 +42,7 @@ public class DemoProductIndexingTests
     [Fact]
     public void DuplicateCurrencyEntriesAreRejected()
     {
-        Assert.Throws<ArgumentException>(() => StorefrontProductIndexer.ReadPrices(Prices(("EUR", 40m), ("eur", 50m))));
+        Assert.Throws<ArgumentException>(() => StoredPriceReader.Read(Prices(("EUR", 40m), ("eur", 50m))));
     }
 
     [Theory]
@@ -50,7 +52,7 @@ public class DemoProductIndexingTests
     {
         decimal value = (decimal)amount;
         Assert.Throws<InvalidOperationException>(() => PriceConverter.ValidateAmount(value));
-        Assert.Throws<InvalidOperationException>(() => StorefrontProductIndexer.ReadPrices(Prices(("EUR", value))));
+        Assert.Throws<InvalidOperationException>(() => StoredPriceReader.Read(Prices(("EUR", value))));
     }
 
     private static string Prices(params (string Currency, decimal Amount)[] values) => System.Text.Json.JsonSerializer.Serialize(new

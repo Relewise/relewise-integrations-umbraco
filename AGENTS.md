@@ -15,6 +15,7 @@
 ## Examples, tests and local material
 
 - Keep runnable examples and their mapping/converter implementations centralized in `samples/Relewise.DemoStorefront`. Link guides to those source files rather than adding separate example projects or duplicate implementations. Preserve culture-aware mapping, nested block extraction and legacy compatibility examples when updating the demo.
+- Organize the DemoStorefront by feature, with package examples in `Integration`, shared site presentation/context in `Site`, installation in `Setup` and seeded schema/content in `Seeding`. Match namespaces to folders; keep HTTP adapters separate from shopping operations and rendering. Keep Vue components grouped by feature under `Client/src`.
 - Keep credentials, generated Umbraco databases, ad hoc smoke-test tooling and raw execution reports in ignored local files. Do not publish them with the package.
 - Keep permanent backend tests focused on observable behavior, regressions and compatibility. The DemoStorefront deliberately has no frontend test suite; verify its UI in a browser. Build affected projects and run relevant backend tests after code changes.
 - Build the dashboard with `npm run build` in `src/Integrations.Umbraco/Client` when changing frontend code.
