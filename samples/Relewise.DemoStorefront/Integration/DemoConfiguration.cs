@@ -3,6 +3,7 @@ using Relewise.DemoStorefront.Integration.Converters;
 using Relewise.DemoStorefront.Integration.Mapping;
 using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
+using Relewise.Integrations.Umbraco.Search;
 
 namespace Relewise.DemoStorefront.Integration;
 

@@ -1,7 +1,7 @@
 using System;
 using Relewise.Client.DataTypes;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Search;
 
 internal sealed class SearchProviderDefinition
 {

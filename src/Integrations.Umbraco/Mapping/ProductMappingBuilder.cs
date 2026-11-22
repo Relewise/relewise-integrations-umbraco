@@ -2,7 +2,7 @@
 using System;
 using Relewise.Client.DataTypes;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 /// <summary>Maps a Product and its directly nested Variant documents.</summary>
 public class ProductMappingBuilder : EntityMappingBuilder<Product>

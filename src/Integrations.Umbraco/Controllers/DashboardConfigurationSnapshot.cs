@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Controllers.Messages;
+using Relewise.Integrations.Umbraco.Mapping;
+using Relewise.Integrations.Umbraco.Search;
 
 namespace Relewise.Integrations.Umbraco.Controllers;
 

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Relewise.Client.Requests.Search;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Search;
 
 /// <summary>Query settings for the single Product mapping.</summary>
 public class ProductSearchProviderOptions

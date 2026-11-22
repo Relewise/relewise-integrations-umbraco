@@ -7,6 +7,8 @@ using Relewise.DemoStorefront.Integration.Converters;
 using Relewise.DemoStorefront.Integration.Mapping;
 using Relewise.Integrations.Umbraco.Controllers;
 using Relewise.Integrations.Umbraco.Controllers.Messages;
+using Relewise.Integrations.Umbraco.Mapping;
+using Relewise.Integrations.Umbraco.Search;
 
 namespace Relewise.Integrations.Umbraco.Tests;
 

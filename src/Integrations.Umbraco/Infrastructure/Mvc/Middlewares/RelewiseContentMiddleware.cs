@@ -10,6 +10,7 @@ using Relewise.Client;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Extensions;
 using Relewise.Client.Requests;
+using Relewise.Integrations.Umbraco.Mapping;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Web;

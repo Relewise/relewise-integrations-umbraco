@@ -3,7 +3,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 /// <summary>Defines source identity, built-in properties, and Data fields for an entity mapping.</summary>
 /// <typeparam name="TEntity">The Relewise entity type.</typeparam>

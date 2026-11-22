@@ -6,7 +6,7 @@ using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core.Search.Indexing;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Indexing;
 
 internal interface IEntityIndexingOperations
 {

@@ -6,7 +6,7 @@ using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search;
 using Umbraco.Cms.Core.Search.Indexing;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Indexing;
 
 internal sealed class IndexingKeyCollector : IIndexer
 {

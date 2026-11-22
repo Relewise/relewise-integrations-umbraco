@@ -3,6 +3,7 @@ using Relewise.Client.DataTypes;
 using Relewise.DemoStorefront.Features.Editorial;
 using Relewise.DemoStorefront.Integration.Converters;
 using Relewise.DemoStorefront.Integration.Mapping;
+using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.Blocks;

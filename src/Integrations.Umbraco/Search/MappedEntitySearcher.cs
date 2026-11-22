@@ -19,6 +19,7 @@ using Relewise.Client.Requests.Search.Settings;
 using Relewise.Client.Requests.Shared;
 using Relewise.Client.Responses.Search;
 using Relewise.Client.Search;
+using Relewise.Integrations.Umbraco.Indexing;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;

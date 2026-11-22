@@ -1,6 +1,6 @@
 using System;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 /// <summary>Destination key and optional converter for an explicitly mapped Data field.</summary>
 public class DataMappingOptions

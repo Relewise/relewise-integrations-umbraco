@@ -8,7 +8,8 @@
 - Put control-flow bodies on separate, indented lines. Never put `return`, `continue` or `break` on the same line as its condition. Use braces for multiline bodies and all branches of an `if` with `else`/`else if`.
 - Simple method/constructor argument guards may remain on one line; prefer `ArgumentNullException.ThrowIfNull` and similar helpers.
 - Separate logical steps with blank lines. Expand long calls with one argument per line; keep short calls compact. Expand enum members and empty constructors onto separate lines.
-- Every C# type must belong to a namespace. Prefer file-scoped namespaces. Use `var` for built-in or apparent types; use explicit types when a method result does not make the type apparent. Follow `.editorconfig` for target-typed construction and formatting.
+- Every C# type must belong to a namespace matching the project root namespace plus its physical folders. This is mandatory across the repository, not only in the sample. Prefer file-scoped namespaces. Use `var` for built-in or apparent types; use explicit types when a method result does not make the type apparent. Follow `.editorconfig` for target-typed construction and formatting.
+- Keep using directives outside namespaces, sorted with `System` first, followed by other namespaces, static imports and aliases; do not add blank import groups. Apply ReSharper's Adjust Namespaces / Optimize Usings or the shared `dotnet format` rules before delivery. Namespace and import checks must pass in CI.
 - Keep the public surface small. Document public contracts with useful XML comments matching the existing package, and preserve compatibility unless a breaking change is explicitly agreed.
 - Do not rename existing public members as part of formatting or file organization.
 

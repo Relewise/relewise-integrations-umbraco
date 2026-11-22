@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 internal sealed class MappingOperation(IServiceProvider services, CancellationToken cancellationToken) : IAsyncDisposable
 {

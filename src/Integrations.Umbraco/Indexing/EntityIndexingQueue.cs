@@ -10,7 +10,7 @@ using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core.HostedServices;
 using Umbraco.Cms.Core.Search.Indexing;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Indexing;
 
 // Umbraco owns the worker. Only immutable change records/identities are retained between callbacks.
 internal sealed class EntityIndexingQueue(

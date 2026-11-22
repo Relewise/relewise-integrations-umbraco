@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Relewise.Client.DataTypes;
+using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core.Models.PublishedContent;

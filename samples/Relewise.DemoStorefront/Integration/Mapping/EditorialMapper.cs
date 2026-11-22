@@ -1,6 +1,6 @@
 using Relewise.Client.DataTypes;
 using Relewise.DemoStorefront.Integration.Converters;
-using Relewise.Integrations.Umbraco;
+using Relewise.Integrations.Umbraco.Mapping;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Relewise.DemoStorefront.Integration.Mapping;

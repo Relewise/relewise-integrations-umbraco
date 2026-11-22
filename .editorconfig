@@ -9,7 +9,15 @@ insert_final_newline = true
 indent_style = space
 indent_size = 4
 trim_trailing_whitespace = true
+# Keep imports outside namespaces, sorted with System first and no blank groups.
 dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:error
+# Namespaces follow the project root namespace and physical folders.
+dotnet_style_namespace_match_folder = true:error
+dotnet_diagnostic.IDE0065.severity = error
+dotnet_diagnostic.IDE0130.severity = error
+resharper_check_namespace_highlighting = error
 csharp_preserve_single_line_statements = false
 csharp_preserve_single_line_blocks = true
 csharp_prefer_braces = true:suggestion

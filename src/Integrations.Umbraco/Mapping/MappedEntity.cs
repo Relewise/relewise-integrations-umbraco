@@ -4,9 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Relewise.Client.DataTypes;
 using Relewise.Client.Requests;
-using Umbraco.Extensions;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 internal sealed class MappedEntity(Guid nodeKey, string documentTypeAlias, string id, object entity, bool synchronize)
 {

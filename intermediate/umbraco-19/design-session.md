@@ -59,8 +59,16 @@ suppresses automatic views for a mapping.
 
 ## 3. Entity and field mapping
 
-Each example replaces or extends the `AddRelewise` callback. SDK entity types come
-from `Relewise.Client.DataTypes`; named converters below are application code.
+Each example replaces or extends the `AddRelewise` callback. Add these imports for
+mapping contracts/policies and search options/segment policies used below:
+
+```csharp
+using Relewise.Integrations.Umbraco.Mapping;
+using Relewise.Integrations.Umbraco.Search;
+```
+
+SDK entity types come from `Relewise.Client.DataTypes`; named converters below are
+application code.
 
 ```csharp
 .AddRelewise(options =>

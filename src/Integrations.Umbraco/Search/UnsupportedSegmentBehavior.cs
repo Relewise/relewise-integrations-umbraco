@@ -1,4 +1,4 @@
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Search;
 
 /// <summary>Controls queries requesting an unsupported Umbraco segment.</summary>
 public sealed class UnsupportedSegmentBehavior

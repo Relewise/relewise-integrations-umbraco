@@ -204,6 +204,13 @@ Contact [Relewise](https://www.relewise.com) to learn more or get access to the 
 Pull requests are welcome. Fork the repository and open a PR with your changes,
 or report a problem in the [issue tracker](https://github.com/Relewise/relewise-integrations-umbraco/issues).
 
+C# namespaces must match their folders, and using directives must follow the shared
+[EditorConfig](.editorconfig) ordering. CI verifies both. Before submitting, run:
+
+```shell
+dotnet format Relewise.Integrations.Umbraco.slnx --verify-no-changes --diagnostics IDE0005 IDE0065 IDE0130 --severity info
+```
+
 ## License
 
 Relewise.Integrations.Umbraco is [MIT licensed](./LICENSE).

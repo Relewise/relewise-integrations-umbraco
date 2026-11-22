@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 internal sealed class MappingDefinition(Type entityType)
 {

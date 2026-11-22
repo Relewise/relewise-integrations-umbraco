@@ -1,4 +1,4 @@
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 /// <summary>Controls whether publication and removal may change an entity's administrative state.</summary>
 public class AdministrativeActionPolicy

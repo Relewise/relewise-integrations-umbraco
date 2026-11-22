@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client.DataTypes;
+using Relewise.Integrations.Umbraco.Mapping;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Extensions;
 

@@ -1,6 +1,6 @@
 using System;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 /// <summary>Conversion settings for a strongly typed built-in destination property.</summary>
 /// <typeparam name="TValue">The value selected by the destination expression.</typeparam>

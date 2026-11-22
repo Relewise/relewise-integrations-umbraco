@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 /// <summary>Maps application fields on a strongly typed destination within an export operation.</summary>
 /// <typeparam name="TEntity">The SDK entity type.</typeparam>

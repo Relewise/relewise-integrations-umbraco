@@ -3,6 +3,7 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Relewise.Client.Extensions.DependencyInjection;
+using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 using Relewise.Integrations.Umbraco.Search;

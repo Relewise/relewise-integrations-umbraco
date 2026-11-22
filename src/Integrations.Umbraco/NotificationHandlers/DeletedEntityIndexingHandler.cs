@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Relewise.Client.DataTypes;
+using Relewise.Integrations.Umbraco.Indexing;
+using Relewise.Integrations.Umbraco.Mapping;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;

@@ -1,7 +1,7 @@
 using System;
 using Relewise.Client.Requests.Search;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Search;
 
 /// <summary>Query settings for mapped Content documents.</summary>
 public class ContentSearchProviderOptions

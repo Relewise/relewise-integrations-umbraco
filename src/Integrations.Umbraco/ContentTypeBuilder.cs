@@ -1,6 +1,7 @@
 #pragma warning disable CS0618 // Compatibility bridge for pre-existing synchronous converters and Content mappers.
 using System;
 using Relewise.Client.DataTypes;
+using Relewise.Integrations.Umbraco.Mapping;
 
 namespace Relewise.Integrations.Umbraco;
 

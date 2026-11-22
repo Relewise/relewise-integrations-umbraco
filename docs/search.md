@@ -11,6 +11,10 @@ Configure the SDK connection as shown in the [README](../README.md), then config
 mapping and query providers independently:
 
 ```csharp
+using Relewise.Client.DataTypes;
+using Relewise.Integrations.Umbraco;
+using Relewise.Integrations.Umbraco.Search;
+
 builder.CreateUmbracoBuilder()
     .AddBackOffice()
     .AddWebsite()
@@ -37,9 +41,9 @@ builder.CreateUmbracoBuilder()
     .Build();
 ```
 
-Use `Relewise.Client.DataTypes.Currency` in this example. Only Content and Product
-query providers are supported. Each provider requires an exported mapping for its
-entity type. For Content, omit `DocumentTypeAliases` (leave it `null`) to include all
+Search options, request contexts and segment policies use the `Search` namespace.
+Only Content and Product query providers are supported. Each provider requires an
+exported mapping for its entity type. For Content, omit `DocumentTypeAliases` (leave it `null`) to include all
 exported Content types, or provide a nonempty list of exported Content aliases.
 An empty array, unknown alias or non-exported mapping is rejected.
 Several named providers may query the same entity type with different request

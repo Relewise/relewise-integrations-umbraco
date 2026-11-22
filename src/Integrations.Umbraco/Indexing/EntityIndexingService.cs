@@ -14,6 +14,7 @@ using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
 using Relewise.Client.Requests.Queries;
 using Relewise.Client.Responses;
+using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Models;
@@ -24,7 +25,7 @@ using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
 using Content = Relewise.Client.DataTypes.Content;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Indexing;
 
 // The writer keeps no integration-owned database records. Rebuilds reconcile source metadata in Relewise.
 internal sealed class EntityIndexingService(IServiceScopeFactory scopeFactory, RelewiseUmbracoConfiguration configuration, ILogger<EntityIndexingService> logger) : IEntityIndexingOperations

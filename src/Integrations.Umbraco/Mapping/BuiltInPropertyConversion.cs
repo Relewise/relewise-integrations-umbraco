@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Relewise.Client.DataTypes;
 using Umbraco.Extensions;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 internal static class BuiltInPropertyConversion
 {

@@ -1,6 +1,6 @@
 using Relewise.Client.DataTypes;
 using Relewise.DemoStorefront.Site;
-using Relewise.Integrations.Umbraco;
+using Relewise.Integrations.Umbraco.Mapping;
 
 namespace Relewise.DemoStorefront.Integration.Mapping;
 

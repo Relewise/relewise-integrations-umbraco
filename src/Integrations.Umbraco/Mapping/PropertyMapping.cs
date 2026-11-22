@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 internal sealed class PropertyMapping<TEntity, TValue>(string sourcePropertyAlias, string destinationProperty,
     Action<TEntity, TValue> assign, Func<PropertyMappingContext, ValueTask<TValue>>? converter, Type? converterType) : IPropertyMapping where TEntity : class

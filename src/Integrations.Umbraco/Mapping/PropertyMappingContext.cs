@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Models.PublishedContent;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 /// <summary>Read-only source information for conversion of a built-in destination property.</summary>
 public class PropertyMappingContext

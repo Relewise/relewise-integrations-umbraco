@@ -17,6 +17,14 @@ registrations remain usable through obsolete compatibility contracts. Use
 [custom Content mapping](custom-content-mapping.md) for the legacy API, and
 [block editors](block-editors.md) for extraction behavior and current examples.
 
+Use these namespaces for registration, typed mapper/converter contracts, mapping
+contexts and administrative policies:
+
+```csharp
+using Relewise.Integrations.Umbraco;
+using Relewise.Integrations.Umbraco.Mapping;
+```
+
 ## Fields and IDs
 
 ```csharp

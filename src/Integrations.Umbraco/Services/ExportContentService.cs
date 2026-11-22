@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client;
 using Relewise.Client.Extensions;
+using Relewise.Integrations.Umbraco.Indexing;
 
 namespace Relewise.Integrations.Umbraco.Services;
 

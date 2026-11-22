@@ -9,6 +9,7 @@ using Relewise.Client.Extensions;
 using Relewise.Client.Requests;
 using Relewise.Client.Requests.Queries;
 using Relewise.Client.Responses;
+using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Events;

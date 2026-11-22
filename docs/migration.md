@@ -36,6 +36,11 @@ Keep the existing ID strategy during the upgrade unless an identity migration is
 planned. Changing IDs does not merge entities or transfer behavioral history; see
 [content identity](content-identity.md#switching-an-existing-installation).
 
+New mapping contracts and policies use `Relewise.Integrations.Umbraco.Mapping`;
+search options, contexts and segment policies use `Relewise.Integrations.Umbraco.Search`.
+Add these imports when using those types explicitly. Registration entry points and
+legacy mapping/converter contracts retain their existing namespaces.
+
 ### Indexing and search
 
 The integration uses one shared indexing pipeline for publication changes,

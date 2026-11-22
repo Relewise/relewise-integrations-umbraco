@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Umbraco.Cms.Core.Search.Indexing;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Indexing;
 
 // A distinct strategy type isolates the background work from Examine's strategy group.
 internal sealed class MappedEntityChangeStrategy(EntityIndexingQueue indexing) : IContentChangeStrategy

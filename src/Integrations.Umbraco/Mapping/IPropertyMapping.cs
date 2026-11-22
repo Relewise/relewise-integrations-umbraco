@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Mapping;
 
 internal interface IPropertyMapping
 {

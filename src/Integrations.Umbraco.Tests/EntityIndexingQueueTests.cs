@@ -2,6 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Relewise.Client.DataTypes;
+using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core.HostedServices;
 using Umbraco.Cms.Core.Search.Indexing;

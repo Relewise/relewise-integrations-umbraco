@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Relewise.Client.DataTypes;
+using Relewise.Integrations.Umbraco.Mapping;
 using Umbraco.Cms.Core.Search.Indexing;
 using static Relewise.Integrations.Umbraco.Search.CoreSearchTranslation;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Indexing;
 
 internal static class CoreSearchMetadata
 {

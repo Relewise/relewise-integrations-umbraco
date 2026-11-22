@@ -1,7 +1,7 @@
 using System;
 using Relewise.Client.DataTypes;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Search;
 
 /// <summary>Runtime information for request customization; services belong to the current operation.</summary>
 public class SearchRequestContext

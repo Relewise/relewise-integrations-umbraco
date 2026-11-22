@@ -5,6 +5,8 @@ using System.Globalization;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Relewise.Integrations.Umbraco.Mapping;
+using Relewise.Integrations.Umbraco.Search;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Extensions;

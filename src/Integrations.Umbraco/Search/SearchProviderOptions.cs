@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Relewise.Client.DataTypes;
+using Relewise.Integrations.Umbraco.Mapping;
 
-namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco.Search;
 
 /// <summary>Named query providers, independently configured from indexing.</summary>
 public class SearchProviderOptions
