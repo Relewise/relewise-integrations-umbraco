@@ -67,13 +67,16 @@ key-building method; package metadata uses the integration's `RelewiseDataKeys`.
 | Content enrichment | A custom mapper combines converted editorial fields into searchable text | [EditorialMapper.cs](Integration/Mapping/EditorialMapper.cs) |
 | Media URLs | A globally registered converter resolves media properties into URLs | [ImageUrlConverter.cs](Integration/Converters/ImageUrlConverter.cs) |
 | Legacy compatibility | The guide uses the obsolete Content mapper through the compatibility adapter | [LegacyGuideMapper.cs](Integration/Mapping/LegacyGuideMapper.cs) |
+| Entity replacement | Articles, Products and Variants replace omitted fields on rebuild; localized articles do so on delta updates too. Brand/Category and legacy examples retain partial updates | [DemoConfiguration.cs](Integration/DemoConfiguration.cs), [update policy](../../docs/entity-mapping.md#entity-update-policy) |
 
 Edit these published properties in Umbraco to explore the examples. Integration details
 on detail pages show the document type, culture, node ID/key and canonical Relewise IDs;
 Variant pages include both Product and Variant IDs.
 
-For externally managed Products, change the mapping's administrative-action policy in
-C#; see the [mapping guide](../../docs/entity-mapping.md). The demo's default Product mapping
+For externally managed Products, use `EntityUpdatePolicy.ReplaceProvidedProperties()`
+on the Product and any configured Variants, and set the Product's
+`AdministrativeActionPolicy.None()` in C#; see the [mapping guide](../../docs/entity-mapping.md).
+The demo's default Product mapping
 owns its publication lifecycle.
 
 ## Search, recommendations and tracking

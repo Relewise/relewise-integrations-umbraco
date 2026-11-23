@@ -22,7 +22,9 @@ internal sealed class MappingDefinition(Type entityType)
     internal string? BrandPropertyAlias { get; set; }
     internal string? CategoryPropertyAlias { get; set; }
     internal MappingDefinition? Variant { get; set; }
+    internal bool ReplaceExistingVariants => Variant is { Export: true, AdministrativeActions.Enabled: true };
     internal AdministrativeActionPolicy AdministrativeActions { get; set; } = AdministrativeActionPolicy.Synchronize();
+    internal EntityUpdatePolicy UpdatePolicy { get; set; } = EntityUpdatePolicy.ReplaceProvidedProperties();
     internal List<IPropertyMapping> Properties { get; } = new();
     internal List<DataMapping> DataMappings { get; } = new();
 
@@ -36,8 +38,17 @@ internal sealed class MappingDefinition(Type entityType)
         Properties.Add(mapping);
     }
 
-    internal void Validate()
+    internal void Validate(bool parentAdministrativeActions = true)
     {
+        bool synchronize = parentAdministrativeActions && AdministrativeActions.Enabled;
+
+        if (UpdatePolicy.CanClear && !synchronize)
+        {
+            throw new InvalidOperationException(
+                $"Mapping '{DocumentTypeAlias}' cannot use ClearAndReplace with AdministrativeActionPolicy.None, " +
+                "including on its parent Product.");
+        }
+
         bool explicitFields = DataMappings.Count > 0 || Properties.Count > 0;
 
         if (AutomaticData && explicitFields)
@@ -73,6 +84,6 @@ internal sealed class MappingDefinition(Type entityType)
             }
         }
 
-        Variant?.Validate();
+        Variant?.Validate(synchronize);
     }
 }

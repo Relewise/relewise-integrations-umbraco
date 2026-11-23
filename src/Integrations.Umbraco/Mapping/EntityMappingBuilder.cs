@@ -47,6 +47,16 @@ public class EntityMappingBuilder<TEntity> where TEntity : class
     }
 
     /// <summary>
+    /// How delta updates and full rebuilds replace entity properties. Defaults to preserving omitted properties.
+    /// ClearAndReplace requires administrative-action synchronization, including for nested Variants.
+    /// </summary>
+    public EntityUpdatePolicy UpdatePolicy
+    {
+        get => Definition.UpdatePolicy;
+        set => Definition.UpdatePolicy = value ?? throw new ArgumentNullException(nameof(value));
+    }
+
+    /// <summary>
     /// Run a scoped mapper after declarative fields and configured relationships, allowing final
     /// application-field customization.
     /// </summary>

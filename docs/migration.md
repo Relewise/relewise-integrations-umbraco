@@ -102,3 +102,9 @@ published entities. Reconciliation only removes or disables entities with source
 metadata and matching configured mappings. Stale entities from earlier releases that are
 no longer published and lack that metadata require deliberate cleanup; the integration
 does not infer their ownership from a Document Type alias alone.
+
+Entity updates remain partial by default, including full exports. The optional
+[`UpdatePolicy`](entity-mapping.md#entity-update-policy) can replace complete
+Umbraco-owned entities during delta updates, rebuilds, or both. Existing explicit
+Content update kinds and legacy mapper-returned update kinds retain precedence.
+Keep the default policy when commerce contributes to the same entity.

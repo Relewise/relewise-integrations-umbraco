@@ -253,6 +253,32 @@ previous contributions remain. A partial update can create a missing entity, so
 this is not atomic update-if-existing behavior. `ClearAndReplace` is incompatible
 with `None()`; declared collections are not an automatic merge with external values.
 
+### Entity update policy
+
+`mapping.UpdatePolicy` defaults to `EntityUpdatePolicy.ReplaceProvidedProperties()`
+for both delta updates and full rebuilds, preserving omitted fields and commerce
+contributions. For complete Umbraco-owned entities:
+
+```csharp
+mapping.UpdatePolicy = EntityUpdatePolicy.ClearAndReplace(policy =>
+{
+    policy.DeltaUpdates = false; // Preserve omitted fields during routine publication/selected-node exports.
+    policy.FullRebuilds = true; // Replace complete entity information during ExportAllAsync/index rebuilds.
+});
+```
+
+`ClearAndReplace()` defaults both options to true. Either may be disabled, but
+both false is invalid. The policy is immutable after construction. Replacement
+removes omitted built-in properties and Data and can re-enable an entity;
+`AdministrativeActionPolicy.None()` is incompatible, including on a Variant's
+parent. Combined commerce mappings retain the default partial-update policy.
+Variants select their own field-update policy; Product policy does not cascade.
+Missing Variants are removed only when both Product and Variant mappings synchronize
+lifecycle; `None()` on either preserves externally managed Variants. Referenced Brands/Categories follow
+their own mappings. Explicit Content export update kinds and legacy mapper-returned
+update kinds retain precedence. A partial full rebuild reconciles entities but
+does not remove obsolete field names; full replacement can do so for owned entities.
+
 ## 7. One indexing pipeline; independent search providers
 
 One shared writer handles core change events, dashboard/explicit exports and

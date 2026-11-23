@@ -15,6 +15,7 @@ internal sealed class MappingOperation(
     private readonly Dictionary<Type, object> _instances = new();
     internal IServiceProvider Services { get; } = services;
     internal CancellationToken CancellationToken { get; } = cancellationToken;
+    internal bool FullRebuild { get; init; }
 
     internal object Resolve(Type type)
     {

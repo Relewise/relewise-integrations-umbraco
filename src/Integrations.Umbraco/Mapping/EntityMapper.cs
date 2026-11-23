@@ -228,8 +228,10 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
 
         var result = new MappedEntity(source.Key, source.ContentType.Alias, id, entity, synchronize)
         {
-            VariantsConfigured = definition.Variant?.Export == true,
-            ContentUpdateKind = mappedContentKind
+            // Collection replacement must respect the child mapping even when no Variants remain published.
+            ReplaceExistingVariants = definition.ReplaceExistingVariants,
+            ContentUpdateKind = mappedContentKind,
+            ClearAndReplace = definition.UpdatePolicy.Clears(operation.FullRebuild)
         };
 
         if (entity is Product && definition.Variant is { Export: true } variantMapping)

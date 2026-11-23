@@ -4,6 +4,7 @@ using Relewise.DemoStorefront.Integration.Converters;
 using Relewise.DemoStorefront.Integration.Mapping;
 using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
+using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.Search;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using static Relewise.DemoStorefront.DemoConstants;
@@ -36,6 +37,7 @@ internal static class DemoConfiguration
             DocumentTypeAliases.Article,
             mapping =>
             {
+                mapping.UpdatePolicy = EntityUpdatePolicy.ClearAndReplace(policy => policy.DeltaUpdates = false);
                 mapping.Map(entity => entity.DisplayName, PropertyAliases.Heading);
                 mapping.MapData(PropertyAliases.BodyText);
                 mapping.MapData(PropertyAliases.HeroImage);
@@ -48,6 +50,7 @@ internal static class DemoConfiguration
             DocumentTypeAliases.LocalizedArticle,
             mapping =>
             {
+                mapping.UpdatePolicy = EntityUpdatePolicy.ClearAndReplace(); // Full entity in both export flows.
                 mapping.Map(entity => entity.DisplayName, PropertyAliases.Heading);
                 mapping.MapData(PropertyAliases.BodyText);
                 mapping.MapData(PropertyAliases.Score);
@@ -71,7 +74,8 @@ internal static class DemoConfiguration
             mapping =>
             {
                 mapping.IdFromProperty(PropertyAliases.Sku);
-                // For externally managed Products, use AdministrativeActionPolicy.None() here.
+                mapping.UpdatePolicy = EntityUpdatePolicy.ClearAndReplace(policy => policy.DeltaUpdates = false);
+                // Commerce contributions use the default partial-update policy and AdministrativeActionPolicy.None().
 
                 mapping.Map(product => product.DisplayName, PropertyAliases.Heading);
                 mapping.Map(
@@ -103,6 +107,9 @@ internal static class DemoConfiguration
                     variant =>
                     {
                         variant.IdFromProperty(PropertyAliases.Sku);
+                        // Variant fields have their own update policy; the Product policy does not cascade.
+                        variant.UpdatePolicy =
+                            EntityUpdatePolicy.ClearAndReplace(policy => policy.DeltaUpdates = false);
 
                         variant.Map(productVariant => productVariant.DisplayName, PropertyAliases.Heading);
 

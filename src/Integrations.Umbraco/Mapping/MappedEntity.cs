@@ -21,12 +21,14 @@ internal sealed class MappedEntity(
     internal object Entity { get; } = entity;
     internal bool Synchronize { get; set; } = synchronize;
     internal List<MappedEntity> Variants { get; } = new();
+    internal bool ClearAndReplace { get; init; }
 
     internal Trackable Update(ContentUpdate.UpdateKind? contentUpdateKind = null)
     {
         contentUpdateKind ??= ContentUpdateKind;
 
-        if (!Synchronize && contentUpdateKind == ContentUpdate.UpdateKind.ClearAndReplace)
+        if ((!Synchronize && (ClearAndReplace || contentUpdateKind == ContentUpdate.UpdateKind.ClearAndReplace)) ||
+            Variants.Any(variant => variant.ClearAndReplace && !variant.Synchronize))
         {
             throw new InvalidOperationException(
                 "ClearAndReplace is incompatible with AdministrativeActionPolicy.None.");
@@ -36,27 +38,39 @@ internal sealed class MappedEntity(
         {
             Content content => new ContentUpdate(
                 content,
-                contentUpdateKind ?? ContentUpdate.UpdateKind.ReplaceProvidedProperties),
+                contentUpdateKind ?? (ClearAndReplace
+                    ? ContentUpdate.UpdateKind.ClearAndReplace
+                    : ContentUpdate.UpdateKind.ReplaceProvidedProperties)),
             Product product => new ProductUpdate(
                 product,
                 Variants.Select(variant => (ProductVariant)variant.Entity),
-                ProductUpdate.UpdateKind.ReplaceProvidedProperties,
-                ProductUpdate.UpdateKind.ReplaceProvidedProperties,
-                Synchronize && VariantsConfigured)
+                ClearAndReplace
+                    ? ProductUpdate.UpdateKind.ClearAndReplace
+                    : ProductUpdate.UpdateKind.ReplaceProvidedProperties,
+                Variants.Any(variant => variant.ClearAndReplace)
+                    ? ProductUpdate.UpdateKind.ClearAndReplace
+                    : ProductUpdate.UpdateKind.ReplaceProvidedProperties,
+                Synchronize && ReplaceExistingVariants)
             {
                 BrandUpdateKind = BrandUpdate.UpdateKind.None
             },
-            Brand brand => new BrandUpdate(brand, BrandUpdate.UpdateKind.ReplaceProvidedProperties),
+            Brand brand => new BrandUpdate(brand, ClearAndReplace
+                ? BrandUpdate.UpdateKind.ClearAndReplace
+                : BrandUpdate.UpdateKind.ReplaceProvidedProperties),
             ProductCategory category => new ProductCategoryUpdate(
                 category,
-                CategoryUpdate.UpdateKind.ReplaceProvidedProperties),
+                ClearAndReplace
+                    ? CategoryUpdate.UpdateKind.ClearAndReplace
+                    : CategoryUpdate.UpdateKind.ReplaceProvidedProperties),
             ContentCategory category => new ContentCategoryUpdate(
                 category,
-                CategoryUpdate.UpdateKind.ReplaceProvidedProperties),
+                ClearAndReplace
+                    ? CategoryUpdate.UpdateKind.ClearAndReplace
+                    : CategoryUpdate.UpdateKind.ReplaceProvidedProperties),
             _ => throw new InvalidOperationException("Variants must be exported through their Product.")
         };
     }
 
     internal ContentUpdate.UpdateKind? ContentUpdateKind { get; set; }
-    internal bool VariantsConfigured { get; set; }
+    internal bool ReplaceExistingVariants { get; init; }
 }

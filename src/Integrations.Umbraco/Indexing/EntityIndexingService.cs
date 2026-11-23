@@ -219,7 +219,7 @@ internal sealed class EntityIndexingService(
                 }
             }
 
-            await using var operation = new MappingOperation(services, token);
+            await using var operation = new MappingOperation(services, token) { FullRebuild = rebuild };
             var mapper = new EntityMapper(configuration);
 
             long version = feedVersion ?? NextVersion();

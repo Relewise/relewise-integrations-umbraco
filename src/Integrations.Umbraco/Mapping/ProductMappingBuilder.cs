@@ -47,6 +47,10 @@ public class ProductMappingBuilder : EntityMappingBuilder<Product>
     /// <summary>
     /// Map direct child documents as Variants within this Product.
     /// </summary>
+    /// <remarks>
+    /// Missing Variants are removed only when both Product and Variant mappings synchronize lifecycle.
+    /// The Variant mapping selects its own field-update policy independently of the Product.
+    /// </remarks>
     public void VariantsFromChildren(
         string documentTypeAlias,
         Action<EntityMappingBuilder<ProductVariant>>? configure = null)

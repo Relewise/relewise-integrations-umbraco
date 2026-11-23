@@ -163,6 +163,59 @@ of those collections with values supplied by another integration. An empty
 `BrandFrom` picker currently omits Brand from the partial update, retaining an
 existing Relewise Brand relationship.
 
+## Entity update policy
+
+Mappings default to `EntityUpdatePolicy.ReplaceProvidedProperties()` for both
+delta updates and full rebuilds. Supplied fields replace their previous values;
+omitted fields remain, including fields contributed by commerce. Empty current
+Umbraco properties explicitly clear their internal search projections.
+
+When Umbraco supplies the complete entity, a rebuild can also remove obsolete fields:
+
+```csharp
+options.MapProduct("product", mapping =>
+{
+    mapping.IdFromProperty("sku"); // Canonical Product identity.
+    mapping.UpdatePolicy = EntityUpdatePolicy.ClearAndReplace(policy =>
+    {
+        policy.DeltaUpdates = false; // Routine updates preserve omitted fields.
+        policy.FullRebuilds = true; // A rebuild replaces the complete entity information.
+    });
+    mapping.Map(entity => entity.DisplayName, "heading");
+    mapping.MapData("description");
+    mapping.VariantsFromChildren("productVariant", variant =>
+    {
+        variant.IdFromProperty("sku"); // Unique within the Product.
+        variant.UpdatePolicy = EntityUpdatePolicy.ClearAndReplace(policy => policy.DeltaUpdates = false);
+        variant.Map(entity => entity.DisplayName, "heading");
+    });
+});
+```
+
+`ClearAndReplace()` enables both operations by default. Its optional callback can
+disable either `DeltaUpdates` or `FullRebuilds`, but not both. Publication changes
+and explicit selected-node exports are delta updates; `ExportAllAsync` and Umbraco
+index rebuilds use `FullRebuilds`. The callback options are copied when the policy
+is created. An explicit `ExportContent.UpdateKind` overrides the mapping policy
+for Content. Legacy mappers receive that kind when supplied and retain control
+of the kind on their returned update, as before.
+Unpublication and deletion still follow `AdministrativeActions`; this policy
+controls the entity updates sent when published source data is exported.
+
+Replacement removes omitted **built-in properties as well as Data**, and can
+re-enable disabled entities. It requires `AdministrativeActionPolicy.Synchronize()`;
+configuration rejects `None()` on the mapping or a Variant's parent. Keep the
+default partial-update policy for combined commerce contributions. References do
+not replace their Brand/Category targets; those mappings have their own policies.
+
+Variant field policies are independent of the Product policy. They do not change
+which child documents supply Variants. Missing Variants are removed only when
+both Product and Variant mappings synchronize lifecycle; `None()` on either
+preserves the externally managed Variant collection, including when no children remain published.
+With the default policy, renaming/removing an Umbraco property can leave its old
+Data/search keys even after a rebuild. Full replacement removes omitted keys when
+Umbraco owns the complete entity; otherwise arrange explicit migration cleanup.
+
 Search providers are configured separately; see [Umbraco core search](search.md).
 
 ## Publication and rebuilds
@@ -194,6 +247,6 @@ also share reconciliation scope.
 
 Changed Brand/Category references are not automatically propagated to other entities.
 Re-export the affected Product or rebuild. Changed canonical IDs can leave an earlier
-entity until the next full export. Previously contributed business fields are retained
-unless explicitly updated/cleared. Interrupted background work can require a rebuild;
+entity until the next full export. With the default update policy, previously contributed
+business fields are retained unless explicitly updated/cleared. Interrupted background work can require a rebuild;
 coordinate full rebuilds across processes sharing the same source/Dataset scope.
