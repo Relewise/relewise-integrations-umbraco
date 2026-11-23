@@ -14,6 +14,7 @@ public class ProductSearchProviderOptions
     }
 
     internal Action<ProductSearchRequest, SearchRequestContext>? Configure { get; private set; }
+    internal string? SalesPriceFieldName { get; private set; }
     internal Dictionary<string, string> BooleanDataFields { get; } = new(StringComparer.Ordinal);
 
     /// <summary>
@@ -30,10 +31,32 @@ public class ProductSearchProviderOptions
         dataKey ??= fieldName;
         ArgumentException.ThrowIfNullOrWhiteSpace(dataKey);
 
-        if (!BooleanDataFields.TryAdd(fieldName, dataKey))
+        if (fieldName == SalesPriceFieldName || !BooleanDataFields.TryAdd(fieldName, dataKey))
         {
             throw new InvalidOperationException($"Boolean query field '{fieldName}' has already been bound.");
         }
+    }
+
+    /// <summary>
+    /// Bind an Umbraco decimal query field to the Product's built-in SalesPrice for filters,
+    /// range facets and sorting, using the currency configured on each request.
+    /// </summary>
+    /// <param name="fieldName">
+    /// The field used by DecimalRangeFilter, DecimalRangeFacet and DecimalSorter queries.
+    /// </param>
+    /// <remarks>
+    /// Configure the request currency with ConfigureRequest. This binding does not export price data.
+    /// </remarks>
+    public void MapSalesPrice(string fieldName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fieldName);
+
+        if (SalesPriceFieldName != null || BooleanDataFields.ContainsKey(fieldName))
+        {
+            throw new InvalidOperationException("SalesPrice is already bound or the query field is in use.");
+        }
+
+        SalesPriceFieldName = fieldName;
     }
 
     /// <summary>

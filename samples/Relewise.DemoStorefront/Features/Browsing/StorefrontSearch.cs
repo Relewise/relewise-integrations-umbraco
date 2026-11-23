@@ -22,7 +22,7 @@ internal sealed class StorefrontSearch(
     private bool FixedCategory => collection?.ContentType.Alias is DocumentTypeAliases.ProductCategory
         or DocumentTypeAliases.Folder;
     private bool FixedBrand => collection?.ContentType.Alias == DocumentTypeAliases.Brand;
-    private string PriceField => SearchFields.Price(DemoMarket.Current(request.HttpContext).Currency);
+    private const string PriceField = SearchFields.Price;
     private string SaleField => DataKeys.OnSale(DemoMarket.Current(request.HttpContext).Currency);
 
     private DecimalRangeFacetRange[] PriceRanges => DemoMarket.Current(request.HttpContext).Currency == "DKK"

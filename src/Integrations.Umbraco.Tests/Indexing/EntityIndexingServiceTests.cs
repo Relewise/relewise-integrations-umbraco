@@ -235,7 +235,7 @@ public class EntityIndexingServiceTests
     [Fact]
     public async Task FullExportsUseDistinctNumericVersionsWhenTheClockDoesNotAdvance()
     {
-        var time = DateTimeOffset.FromUnixTimeMilliseconds(1800000000000);
+        DateTimeOffset time = DateTimeOffset.FromUnixTimeMilliseconds(1800000000000);
         await using var fixture = new Fixture(clock: new FrozenClock(time));
 
         await fixture.Writer.RebuildAsync();
@@ -246,7 +246,7 @@ public class EntityIndexingServiceTests
         foreach (Trackable[] batch in fixture.Tracked)
         {
             var action = Assert.IsType<ContentAdministrativeAction>(Assert.Single(batch));
-            DataFilter version = action.Filters!.Items!.OfType<DataFilter>()
+            DataFilter version = action.Filters.Items!.OfType<DataFilter>()
                 .Single(filter => filter.Key == "UmbracoVersionId");
             var condition = Assert.IsType<EqualsCondition>(Assert.Single(version.Conditions!.Items!));
 
@@ -255,7 +255,7 @@ public class EntityIndexingServiceTests
             versions.Add(condition.Value.ValueAs<double>());
         }
 
-        Assert.Equal(new[] { (double)time.ToUnixTimeMilliseconds(), time.ToUnixTimeMilliseconds() + 1d }, versions);
+        Assert.Equal(new[] { time.ToUnixTimeMilliseconds(), time.ToUnixTimeMilliseconds() + 1d }, versions);
     }
 
     [Fact]
@@ -265,7 +265,7 @@ public class EntityIndexingServiceTests
         using var cancellation = new CancellationTokenSource();
 
         fixture.Strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
-            .Callback(() => cancellation.Cancel())
+            .Callback(cancellation.Cancel)
             .Returns(Task.CompletedTask);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
@@ -278,14 +278,14 @@ public class EntityIndexingServiceTests
     [Fact]
     public async Task FullExportDoesNotReuseThePrecedingExplicitDeltaVersion()
     {
-        var time = DateTimeOffset.FromUnixTimeMilliseconds(1800000000000);
+        DateTimeOffset time = DateTimeOffset.FromUnixTimeMilliseconds(1800000000000);
         await using var fixture = new Fixture(clock: new FrozenClock(time));
 
         await fixture.Writer.ExportAsync([], feedVersion: time.ToUnixTimeMilliseconds());
         await fixture.Writer.RebuildAsync();
 
         var action = Assert.IsType<ContentAdministrativeAction>(Assert.Single(Assert.Single(fixture.Tracked)));
-        DataFilter version = action.Filters!.Items!.OfType<DataFilter>()
+        DataFilter version = action.Filters.Items!.OfType<DataFilter>()
             .Single(filter => filter.Key == "UmbracoVersionId");
         var condition = Assert.IsType<EqualsCondition>(Assert.Single(version.Conditions!.Items!));
 
@@ -308,7 +308,7 @@ public class EntityIndexingServiceTests
         await fixture.Writer.RebuildAsync();
 
         Trackable[] actions = [.. fixture.Tracked.SelectMany(batch => batch)];
-        var update = Assert.Single(actions.OfType<ProductUpdate>());
+        ProductUpdate update = Assert.Single(actions.OfType<ProductUpdate>());
 
         Assert.Equal("commerce-product", update.Product.Id);
         Assert.False(update.Product.Data![RelewiseDataKeys.Published]!.ValueAs<bool>());

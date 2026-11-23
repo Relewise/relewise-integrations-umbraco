@@ -114,7 +114,7 @@ async function load(target, { historyMode = 'push', scrollResults = false, scrol
         if (!previousFocus.isConnected) results.value?.querySelector('h2')?.focus({ preventScroll: true });
         if (scrollResults) results.value?.scrollIntoView({ block: 'start' });
         else window.scrollTo(position.x, position.y);
-        announcement.value = labels.ResultsUpdated + ': ' + data.resultLabel;
+        announcement.value = data.unavailablePageUrl ? labels.PageUnavailableHeading : labels.ResultsUpdated + ': ' + data.resultLabel;
     } catch (failure) {
         if (controller.signal.aborted || version !== revision) return;
         error.value = true;
@@ -274,14 +274,18 @@ onUnmounted(() => {
                 <section v-if="model.searchPage" class="result-heading"><h2 tabindex="-1">{{ model.heading }}</h2></section>
                 <section class="grid"><ListingCard v-for="card in model.cards" :key="card.key" :card="card" :labels="labels" /></section>
                 <p v-if="model.updating" class="empty">{{ labels.Updating }}</p>
-                <div v-if="model.total === 0" class="empty">
+                <div v-if="model.unavailablePageUrl" class="empty">
+                    <h2>{{ labels.PageUnavailableHeading }}</h2><p>{{ labels.PageUnavailableHelp }}</p>
+                    <a class="button" :href="model.unavailablePageUrl" @click="follow($event, model.unavailablePageUrl, true)">{{ labels.ReturnToResults }}</a>
+                </div>
+                <div v-else-if="model.total === 0" class="empty">
                     <h2>{{ labels.NoMatchesHeading }}</h2><p>{{ labels.NoMatchesHelp }}</p>
                     <div class="actions">
                         <a v-if="model.chips.length" class="button secondary" :href="model.resetUrl" @click="follow($event, model.resetUrl)">{{ labels.ClearFilters }}</a>
                         <a v-if="model.parameters.q?.[0]" class="text-link" :href="model.clearQueryUrl" @click="follow($event, model.clearQueryUrl)">{{ labels.BrowseWithoutQuery }}</a>
                     </div>
                 </div>
-                <nav v-if="model.lastPage > 1" class="pagination" :aria-label="labels.Pagination">
+                <nav v-if="!model.unavailablePageUrl && model.lastPage > 1" class="pagination" :aria-label="labels.Pagination">
                     <a v-if="model.previousUrl" rel="prev" :href="model.previousUrl" @click="follow($event, model.previousUrl, true)">{{ labels.Previous }}</a>
                     <span>{{ model.rangeLabel ?? model.resultLabel }} · {{ model.pageLabel }}</span>
                     <a v-if="model.nextUrl" rel="next" :href="model.nextUrl" @click="follow($event, model.nextUrl, true)">{{ labels.Next }}</a>

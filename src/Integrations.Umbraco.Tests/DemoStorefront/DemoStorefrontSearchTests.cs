@@ -25,8 +25,8 @@ public class DemoStorefrontSearchTests
 
         Assert.Contains(filters, filter => filter is KeywordFilter && filter.FieldName == "onSale_" + currency);
         Assert.Contains(filters, filter => filter is KeywordFilter && filter.FieldName == "inStock");
-        Assert.Contains(filters, filter => filter is DecimalRangeFilter && filter.FieldName == "shopPrice" + currency);
-        Assert.Equal("shopPrice" + currency, Assert.IsType<DecimalSorter>(search.Sorters()[0]).FieldName);
+        Assert.Contains(filters, filter => filter is DecimalRangeFilter && filter.FieldName == "shopPrice");
+        Assert.Equal("shopPrice", Assert.IsType<DecimalSorter>(search.Sorters()[0]).FieldName);
         Assert.Equal(Direction.Descending, search.Sorters()[0].Direction);
         Assert.Equal(4, search.Facets().Length);
     }
@@ -133,7 +133,7 @@ public class DemoStorefrontSearchTests
 
         Assert.DoesNotContain(search.Facets(), facet => facet.FieldName == "shopCategory");
         Assert.Contains(search.Facets(), facet => facet.FieldName == "inStock");
-        Assert.Contains(search.Facets(), facet => facet.FieldName == "shopPriceEUR");
+        Assert.Contains(search.Facets(), facet => facet.FieldName == "shopPrice");
     }
 
     [Fact]

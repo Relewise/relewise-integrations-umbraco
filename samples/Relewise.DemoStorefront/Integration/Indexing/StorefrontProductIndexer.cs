@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Relewise.DemoStorefront.Integration.Converters;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search.Indexing;
@@ -53,32 +52,16 @@ internal sealed class StorefrontProductIndexer(IIdKeyMap identities) : IContentI
             ));
 
         var brandReference = product.GetValue<string>(PropertyAliases.Brand, published: published);
+        string[] brands = [];
 
         if (!string.IsNullOrWhiteSpace(brandReference) && UdiParser.TryParse(brandReference, out Udi? brand) &&
             brand is GuidUdi brandId)
         {
-            fields.Add(
-                new IndexField(
-                    SearchFields.Brand,
-                    new IndexValue { Keywords = [brandId.Guid.ToString("D")] },
-                    null,
-                    null
-                ));
+            brands = [brandId.Guid.ToString("D")];
         }
 
-        Dictionary<string, decimal> sales =
-            StoredPriceReader.Read(product.GetValue<string>(PropertyAliases.SalesPrice, published: published));
-
-        foreach ((string currency, decimal amount) in sales)
-        {
-            fields.Add(
-                new IndexField(
-                    SearchFields.Price(currency),
-                    new IndexValue { Decimals = [amount] },
-                    null,
-                    null
-                ));
-        }
+        // Emit an empty field too, so clearing the picker removes its earlier search projection.
+        fields.Add(new IndexField(SearchFields.Brand, new IndexValue { Keywords = brands }, null, null));
 
         return Task.FromResult<IEnumerable<IndexField>>(fields);
     }

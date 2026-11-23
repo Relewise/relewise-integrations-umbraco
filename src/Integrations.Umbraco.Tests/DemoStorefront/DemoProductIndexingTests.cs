@@ -13,7 +13,19 @@ namespace Relewise.Integrations.Umbraco.Tests.DemoStorefront;
 public class DemoProductIndexingTests
 {
     [Fact]
-    public async Task PublishedPricesAndRelationshipsIgnoreDraftEdits()
+    public async Task EmptyBrandPickerStillEmitsTheFieldForSearchCleanup()
+    {
+        var product = new Mock<IContent>();
+        product.SetupGet(value => value.ContentType.Alias).Returns("product");
+        var indexer = new StorefrontProductIndexer(Mock.Of<IIdKeyMap>());
+
+        IEnumerable<IndexField> fields = await indexer.GetIndexFieldsAsync(product.Object, ["en-US"], true);
+
+        Assert.Empty(Assert.Single(fields, field => field.FieldName == "shopBrand").Value.Keywords!);
+    }
+
+    [Fact]
+    public async Task PublishedRelationshipsIgnoreDraftEditsAndPricesStayInTheProductModel()
     {
         var type = new Mock<ISimpleContentType>();
 
@@ -23,10 +35,6 @@ public class DemoProductIndexingTests
 
         product.SetupGet(value => value.ContentType).Returns(type.Object);
         product.SetupGet(value => value.ParentId).Returns(42);
-        product.Setup(value => value.GetValue<string>("salesPrice", null, null, true))
-            .Returns(Prices(("EUR", 40m), ("DKK", 400m)));
-        product.Setup(value => value.GetValue<string>("salesPrice", null, null, false)).Returns(Prices(("EUR", 999m)));
-
         var brand = Guid.NewGuid();
 
         product.Setup(value => value.GetValue<string>("brand", null, null, true))
@@ -43,7 +51,7 @@ public class DemoProductIndexingTests
         Dictionary<string, IndexField> fields = (await new StorefrontProductIndexer(identities.Object)
             .GetIndexFieldsAsync(product.Object, ["en-US", "da-DK"], true)).ToDictionary(field => field.FieldName);
 
-        Assert.Equal([40m], fields["shopPriceEUR"].Value.Decimals);
+        Assert.DoesNotContain(fields.Keys, key => key.StartsWith("shopPrice", StringComparison.Ordinal));
         Assert.DoesNotContain(fields.Keys, key => key.StartsWith("shopOffer", StringComparison.Ordinal));
         Assert.DoesNotContain(fields.Keys, key => key.StartsWith("onSale", StringComparison.Ordinal));
         Assert.DoesNotContain("shopAvailable", fields.Keys);
@@ -65,7 +73,7 @@ public class DemoProductIndexingTests
     [Theory]
     [InlineData(-0.01)]
     [InlineData(10.001)]
-    public void InvalidDemoPricePrecisionIsRejectedByConversionAndIndexing(double amount)
+    public void InvalidDemoPricePrecisionIsRejectedByConversionAndStoredPriceReading(double amount)
     {
         var value = (decimal)amount;
 

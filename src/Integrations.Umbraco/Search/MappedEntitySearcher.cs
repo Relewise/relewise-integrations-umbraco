@@ -26,8 +26,6 @@ using Umbraco.Cms.Core.Search.Querying.Sorting;
 using Umbraco.Cms.Core.Services;
 using static Relewise.Integrations.Umbraco.Search.CoreSearchTranslation;
 using Language = Relewise.Client.DataTypes.Language;
-using RelewiseFacet = Relewise.Client.DataTypes.Search.Facets.Queries.Facet;
-using RelewiseFacetResult = Relewise.Client.DataTypes.Search.Facets.Result.FacetResult;
 using RFilter = Relewise.Client.Requests.Filters.Filter;
 using UFacet = Umbraco.Cms.Core.Search.Querying.Faceting.Facet;
 using UFacetResult = Umbraco.Cms.Core.Search.Querying.Faceting.FacetResult;
@@ -122,6 +120,13 @@ internal sealed class MappedEntitySearcher(
             }
         }
 
+        string? priceField = (provider.Options as ProductSearchProviderOptions)?.SalesPriceFieldName;
+        ProductPriceQuery? prices = priceField == null
+            ? null
+            : new ProductPriceQuery(priceField, supplied, selectedFacets, selectedSorters);
+        UFacet[] dataFacets = [.. selectedFacets.Where(facet => prices?.Matches(facet.FieldName) != true)];
+        UFilter[] dataFilters = [.. supplied.Where(filter => prices?.Matches(filter.FieldName) != true)];
+
         string[] sourceAliases = provider.ContentOptions?.DocumentTypeAliases ??
         [
             .. configuration.Mappings.Values
@@ -199,7 +204,7 @@ internal sealed class MappedEntitySearcher(
 
         async Task<ContentSearchResponse> Execute(ContentSearchRequest source)
         {
-            // A fresh typed SDK request is configured for every execution, including facet queries.
+            // Configure one request containing both results and facets.
             int pagingSkip = source.Skip, pagingTake = source.Take;
             RFilter[] mandatory = [.. source.Filters!.Items!];
 
@@ -215,7 +220,7 @@ internal sealed class MappedEntitySearcher(
                     pagingTake)
                 {
                     Filters = new FilterCollection(),
-                    Facets = new ContentFacetQuery { Items = source.Facets?.Items.ToList() ?? [] },
+                    Facets = new ContentFacetQuery(),
                     Sorting = source.Sorting,
                     Settings = new ContentSearchSettings
                     {
@@ -225,6 +230,8 @@ internal sealed class MappedEntitySearcher(
                 };
 
                 content.Configure?.Invoke(outgoing, context);
+                outgoing.Facets ??= new ContentFacetQuery();
+                outgoing.Facets.Items = CoreSearchFacets.Merge(source.Facets!.Items, outgoing.Facets.Items);
                 outgoing.Filters =
                     new FilterCollection([.. (outgoing.Filters?.Items ?? []).Concat(mandatory).Distinct()]);
                 outgoing.User = user;
@@ -272,30 +279,16 @@ internal sealed class MappedEntitySearcher(
 
             if (source.Sorting?.Value != null)
             {
-                target.Sorting!.Value = ProductSort(source.Sorting.Value);
-            }
-
-            foreach (RelewiseFacet sourceFacet in source.Facets!.Items)
-            {
-                if (sourceFacet is not ContentDataStringValueFacet facet)
-                {
-                    throw new NotSupportedException(
-                        $"Cannot translate facet '{sourceFacet.GetType().Name}' to Product search.");
-                }
-
-                if (booleanDataFields.Values.Contains(facet.Key))
-                {
-                    target.Facets!.AddDataBoolean(DataSelectionStrategy.Product, facet.Key);
-                }
-                else
-                {
-                    target.Facets!.AddDataString(DataSelectionStrategy.Product, facet.Key);
-                }
+                target.Sorting!.Value = ProductSort(source.Sorting.Value, priceField, culture);
             }
 
             options.Configure?.Invoke(target, context);
+            target.Facets ??= new ProductFacetQuery();
+            target.Facets.Items = CoreSearchFacets.Merge(
+                source.Facets!.Items.Select(CoreSearchFacets.ForProduct), target.Facets.Items);
             target.Filters =
                 new FilterCollection([.. target.Filters?.Items ?? [], .. mandatory.Select(ProductFilter)]);
+            prices?.Apply(target);
             target.User = user;
             target.Language = new Language(language);
             target.IndexSelector = null;
@@ -338,55 +331,25 @@ internal sealed class MappedEntitySearcher(
                 ],
                 Facets = new ContentFacetResult
                 {
-                    Items =
-                    [
-                        .. (response.Facets?.Items ?? []).Select(f => f switch
-                        {
-                            ProductDataStringValueFacetResult text => (
-                                RelewiseFacetResult)new
-                                ContentDataStringValueFacetResult(
-                                    text.Key,
-                                    text.Selected,
-                                    text.CollectionFilterType,
-                                    text.Available),
-                            ProductDataBooleanValueFacetResult boolean => new ContentDataStringValueFacetResult(
-                                boolean.Key,
-                                [.. (boolean.Selected ?? []).Select(value => value ? "true" : "false")],
-                                null,
-                                [
-                                    .. (boolean.Available ?? []).Select(value =>
-                                        new AvailableFacetValue<string>(
-                                            value.Value ? "true" : "false",
-                                            value.Selected,
-                                            value.Hits))
-                                ]),
-                            _ => null
-                        })
-                        .OfType<RelewiseFacetResult>()
-                    ]
+                    Items = [.. (response.Facets?.Items ?? []).Select(CoreSearchFacets.ForContent)]
                 }
             };
 #pragma warning restore CS0618
         }
 
-        ContentSearchRequest request = Create(supplied, skip, take);
+        var facetQuery = new ContentFacetQuery();
+        UFilter[] remainingFilters = CoreSearchFacets.Configure(
+            facetQuery, dataFacets, dataFilters, culture, booleanDataFields);
+        ContentSearchRequest request = Create(remainingFilters, skip, take);
+        request.Facets = facetQuery;
 
         ApplySorting(request, selectedSorters, culture);
 
         ContentSearchResponse result = await Execute(request);
-        var facetResults = new List<UFacetResult>();
-
-        // Facet counts exclude their own selected values while retaining the other filters.
-        foreach (UFacet facet in selectedFacets)
-        {
-            facetResults.Add(
-                await ComputeFacet(
-                    Create(supplied.Where(f => f.FieldName != facet.FieldName), 0, 0),
-                    facet,
-                    Execute,
-                    culture,
-                    booleanDataFields));
-        }
+        var dataResults = new Queue<UFacetResult>(CoreSearchFacets.Read(
+            result.Facets, dataFacets, culture, booleanDataFields));
+        UFacetResult[] facetResults = [.. selectedFacets.Select(facet =>
+            prices?.Matches(facet.FieldName) == true ? prices.Read(result.Facets) : dataResults.Dequeue())];
 
         string[] suggestions = [];
 
@@ -403,7 +366,13 @@ internal sealed class MappedEntitySearcher(
                 // Predictions retain the fully configured query scope, including protection and provider filters.
                 Filters = new FilterCollection(
                 [
-                    .. predictionSource.Filters?.Items ?? [], .. predictionSource.PostFilters?.Items ?? []
+                    .. predictionSource.Filters?.Items ?? [], .. predictionSource.PostFilters?.Items ?? [],
+                    .. supplied.Select(filter =>
+                        prices?.Matches(filter.FieldName) == true
+                            ? prices.MapFilter(filter, predictionSource.Currency)
+                            : provider.EntityType == typeof(Product)
+                                ? ProductFilter(MapFilter(filter, culture, booleanDataFields))
+                                : MapFilter(filter, culture, booleanDataFields))
                 ]),
                 RelevanceModifiers = predictionSource.RelevanceModifiers,
                 ContextValues = predictionSource.ContextValues,
@@ -457,10 +426,17 @@ internal sealed class MappedEntitySearcher(
         };
     }
 
-    private static ProductSorting ProductSort(ContentSorting sorting)
+    private static ProductSorting ProductSort(
+        ContentSorting sorting,
+        string? priceField,
+        string? culture)
     {
         ProductSorting target = sorting switch
         {
+            ContentDataSorting s when priceField != null &&
+                                      (s.Key == Field(priceField, "decimalMin", culture) ||
+                                       s.Key == Field(priceField, "decimalMax", culture)) =>
+                new ProductAttributeSorting(ProductAttributeSorting.SortableAttribute.SalesPrice, s.Order),
             ContentDataSorting s => new ProductDataSorting(s.Key, DataSelectionStrategy.Product, s.Order, s.Mode),
             ContentRelevanceSorting s => new ProductRelevanceSorting(s.Order),
             _ => throw new NotSupportedException($"Unsupported core sorting '{sorting.GetType().Name}'.")
@@ -468,136 +444,10 @@ internal sealed class MappedEntitySearcher(
 
         if (sorting.ThenBy != null)
         {
-            target.ThenBy = ProductSort(sorting.ThenBy);
+            target.ThenBy = ProductSort(sorting.ThenBy, priceField, culture);
         }
 
         return target;
     }
 
-    private static async Task<UFacetResult> ComputeFacet(
-        ContentSearchRequest request,
-        UFacet facet,
-        Func<ContentSearchRequest, Task<ContentSearchResponse>> execute,
-        string? culture = null,
-        IReadOnlyDictionary<string, string>? booleanDataFields = null)
-    {
-        var values = new List<FacetValue>();
-
-        switch (facet)
-        {
-            case KeywordFacet:
-            case IntegerExactFacet:
-            case DecimalExactFacet:
-            case DateTimeOffsetExactFacet:
-                string kind = facet switch
-                {
-                    KeywordFacet => "keyword",
-                    IntegerExactFacet => "integerExact",
-                    DecimalExactFacet => "decimalExact",
-                    _ => "dateExact"
-                };
-                string dataKey = booleanDataFields != null &&
-                                 booleanDataFields.TryGetValue(facet.FieldName, out string? directKey)
-                    ? directKey
-                    : Field(facet.FieldName, kind, culture);
-                request.Facets!.AddDataString(dataKey);
-                ContentSearchResponse response = await execute(request);
-                foreach (AvailableFacetValue<string>? bucket in response.Facets?.DataString(dataKey)?.Available ?? [])
-                {
-                    values.Add(
-                        facet switch
-                        {
-                            KeywordFacet => new KeywordFacetValue(bucket.Value, bucket.Hits),
-                            IntegerExactFacet => new IntegerExactFacetValue(
-                                checked((int)ParseNumber(bucket.Value)),
-                                bucket.Hits),
-                            DecimalExactFacet => new DecimalExactFacetValue(
-                                (decimal)ParseNumber(bucket.Value),
-                                bucket.Hits),
-                            _ => new DateTimeOffsetExactFacetValue(
-                                DateTimeOffset.FromUnixTimeMilliseconds(checked((long)ParseNumber(bucket.Value))),
-                                bucket.Hits)
-                        });
-                }
-
-                break;
-            case IntegerRangeFacet f:
-                foreach (IntegerRangeFacetRange range in f.Ranges)
-                {
-                    values.Add(
-                        new IntegerRangeFacetValue(
-                            range.Key,
-                            range.MinValue,
-                            range.MaxValue,
-                            await CountRange(
-                                request,
-                                execute,
-                                NumberRange(f.FieldName, "integer", range.MinValue, range.MaxValue, culture))));
-                }
-
-                break;
-            case DecimalRangeFacet f:
-                foreach (DecimalRangeFacetRange range in f.Ranges)
-                {
-                    values.Add(
-                        new DecimalRangeFacetValue(
-                            range.Key,
-                            range.MinValue,
-                            range.MaxValue,
-                            await CountRange(
-                                request,
-                                execute,
-                                NumberRange(
-                                    f.FieldName,
-                                    "decimal",
-                                    (double?)range.MinValue,
-                                    (double?)range.MaxValue,
-                                    culture))));
-                }
-
-                break;
-            case DateTimeOffsetRangeFacet f:
-                foreach (DateTimeOffsetRangeFacetRange range in f.Ranges)
-                {
-                    values.Add(
-                        new DateTimeOffsetRangeFacetValue(
-                            range.Key,
-                            range.MinValue,
-                            range.MaxValue,
-                            await CountRange(
-                                request,
-                                execute,
-                                NumberRange(
-                                    f.FieldName,
-                                    "date",
-                                    range.MinValue.HasValue ? DateNumber(range.MinValue.Value) : null,
-                                    range.MaxValue.HasValue ? DateNumber(range.MaxValue.Value) : null,
-                                    culture))));
-                }
-
-                break;
-            default:
-                throw new NotSupportedException(
-                    $"The Relewise provider does not support facet '{facet.GetType().Name}'.");
-        }
-
-        return new UFacetResult(facet.FieldName, values);
-    }
-
-    private static async Task<long> CountRange(
-        ContentSearchRequest request,
-        Func<ContentSearchRequest, Task<ContentSearchResponse>> execute,
-        RFilter filter)
-    {
-        request.Filters!.Items!.Add(filter);
-
-        try
-        {
-            return (await execute(request)).Hits;
-        }
-        finally
-        {
-            request.Filters!.Items!.Remove(filter);
-        }
-    }
 }

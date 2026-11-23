@@ -146,6 +146,7 @@ internal static class DemoConfiguration
 
     private static void ConfigureProductSearch(ProductSearchProviderOptions provider)
     {
+        provider.MapSalesPrice(SearchFields.Price); // Native price facets and sorting use the active market currency.
         provider.MapBooleanData(DataKeys.InStock); // Query the same business value written by DemoProductMapper.
 
         foreach (DemoMarket market in DemoMarket.All)

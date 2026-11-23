@@ -43,6 +43,6 @@ public static class UmbracoApplicationBuilderContextExtensions
                 $"servicecollection? It is required to automatically track page views.");
         }
 
-        builder.AppBuilder.UseMiddleware<RelewiseContentMiddleware>();
+        builder.AppBuilder.UseMiddleware<RelewiseViewTrackingMiddleware>();
     }
 }

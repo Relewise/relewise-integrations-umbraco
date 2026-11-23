@@ -112,6 +112,35 @@ published-content provider keep their existing search implementation. Setting it
 replaces query resolution for that alias; Examine's indexer and change strategy remain registered. Draft content, media,
 members, and elements retain their existing search providers.
 
+## Product prices
+
+Bind a decimal query field to the Product's built-in `SalesPrice`:
+
+```csharp
+options.SearchProviders.AddProduct("catalogue", provider =>
+{
+    provider.MapSalesPrice("price"); // Query field for native Product prices, not a Data key.
+    provider.ConfigureRequest((request, context) =>
+    {
+        request.Currency = new Currency("EUR"); // Use the active site's or shopper's currency.
+    });
+});
+```
+
+Use `DecimalRangeFilter("price", ...)`, `DecimalRangeFacet("price", ...)` and
+`DecimalSorter("price", ...)` through Umbraco. The provider translates them to
+native SalesPrice filters, price-range facets and price sorting. Results and all
+supported facet counts come back in one search request. No duplicate price Data
+is exported, and prices are not converted between currencies.
+
+A request currency is required whenever the bound field is queried. Only one
+SalesPrice field can be bound per provider. Its buckets must be nonempty and
+nonoverlapping, with inclusive lower and exclusive upper bounds. A single
+positive price filter becomes the native facet selection, including custom bounds
+that differ from the displayed buckets. Multiple or negated price filters remain
+filters and constrain all facet counts. Other filter, facet and sorter types on
+this field are rejected before a search is sent.
+
 ## Boolean Product Data
 
 Bind a keyword query field to Boolean Data already written by an entity mapper:
@@ -177,7 +206,7 @@ builder.Services.AddScoped<IRelewiseUserLocator, MyUserLocator>();
 Search and automatic views call `GetUserAsync()` on the locator resolved from the
 HTTP request's service scope. Return the same identifiers and consent-aware User values used by the rest
 of your site. The default locator returns an anonymous User; the integration does
-not create visitor cookies. Facet requests reuse the main query's resolved User.
+not create visitor cookies. Results and facets share the same request and resolved User.
 Automatic views and exports use the integration's Tracker. Search uses its Searcher;
 entity reconciliation uses its Data accessor. They resolve through the integration's
 reserved named SDK registration, inheriting default connection settings unless
@@ -206,10 +235,19 @@ retains mapping restrictions.
 - Relewise ingestion is asynchronous. Publication changes may take time to appear
   in searches. Repeated exports update canonical entities rather than adding a
   separate set of search entities.
-- Keyword/text filters, numeric/date exact and range filters, sorting, and facets
-  are translated from core fields. A range includes its lower bound and excludes
-  its upper bound. Facets omit filters on their own field; range buckets require
-  separate count requests.
+- Results and supported facet counts use **one Relewise search request**. There
+  are no supplementary searches per facet or range bucket.
+- Keyword/text filters, numeric/date exact and range filters, and sorting are
+  translated from core fields. Keyword and numeric/date exact-value facets are
+  supported. Generic numeric/date **range facets over Data are unsupported** and
+  throw before an API call. Product SalesPrice range facets use the explicit
+  [price binding](#product-prices) above.
+- A single positive filter matching a supported facet's type becomes a native
+  facet selection: counts exclude its own selection while retaining other
+  selections. Negated predicates, multiple filters on the same field, filters
+  of a different type and fields with several facet definitions remain ordinary
+  filters and constrain all counts. Mandatory mapping, publication and access
+  restrictions always remain filters.
 - For a nonblank query, `maxSuggestions > 0` adds one Relewise prediction request.
   `SearchResult.Suggestions` contains the returned terms, restricted to the provider's
   Content or Product target, language, visitor and configured filters, including

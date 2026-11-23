@@ -114,10 +114,11 @@ public class IndexMetadataServiceTests
         fixture.Reader.Setup(value => value.QueryAsync(It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()))
             .Returns(pending.Task);
 
+        IndexMetadataService metadata = fixture.Metadata;
         Task<IndexMetadata>[] requests =
         [
             .. Enumerable.Range(0, 20)
-                .Select(_ => fixture.Metadata.GetMetadataAsync(EntityIndexingService.IndexAlias))
+                .Select(_ => metadata.GetMetadataAsync(EntityIndexingService.IndexAlias))
         ];
 
         Assert.Single(fixture.Reader.Invocations);

@@ -20,7 +20,6 @@ internal static class StorefrontListing
     internal static async Task<StorefrontResponse> GetAsync(
         HttpContext http,
         IPublishedContent? collection = null,
-        bool suggestionsOnly = false,
         bool dataOnly = false,
         string? view = null)
     {
@@ -30,7 +29,7 @@ internal static class StorefrontListing
 
         if (view is not ("store" or "search" or "offers"))
         {
-            return Invalid(http, Text(http, "InvalidSearch"), dataOnly || suggestionsOnly);
+            return Invalid(http, Text(http, "InvalidSearch"), dataOnly);
         }
 
         bool searchPage = view == "search";
@@ -41,18 +40,13 @@ internal static class StorefrontListing
             string[] searchParameters =
                 ["q", "category", "brand", "price", "available", "onSale", "minPrice", "maxPrice", "sort", "page"];
 
-            if (DemoConnection.IsConfigured(http) || dataOnly || suggestionsOnly || searchPage || offersPage ||
+            if (DemoConnection.IsConfigured(http) || dataOnly || searchPage || offersPage ||
                 searchParameters.Any(request.Query.ContainsKey))
             {
-                return DemoConnection.Unavailable(http, dataOnly || suggestionsOnly);
+                return DemoConnection.Unavailable(http, dataOnly);
             }
 
             return new StorefrontResponse(ListingPage.Preview(http, collection));
-        }
-
-        if (suggestionsOnly && request.Query["q"].ToString().Trim().Length is < 2 or > 80)
-        {
-            return new StorefrontResponse(Json: "[]");
         }
 
         IServiceProvider services = http.RequestServices;
@@ -86,7 +80,7 @@ internal static class StorefrontListing
 
         if (searcher == null)
         {
-            return Invalid(http, Text(http, "InvalidSearch"), dataOnly || suggestionsOnly);
+            return Invalid(http, Text(http, "InvalidSearch"), dataOnly);
         }
 
         bool editorial = requestedType == "article";
@@ -97,32 +91,22 @@ internal static class StorefrontListing
 
         if ((collection != null && editorial) || !browsing.IsValid(home))
         {
-            return Invalid(http, Text(http, "InvalidSearch"), dataOnly || suggestionsOnly);
+            return Invalid(http, Text(http, "InvalidSearch"), dataOnly);
         }
 
         SearchResult result = await searcher.SearchAsync(
             alias,
             query,
             browsing.Filters(),
-            suggestionsOnly ? [] : browsing.Facets(),
-            suggestionsOnly ? [] : browsing.Sorters(),
+            browsing.Facets(),
+            browsing.Sorters(),
             culture,
-            skip: suggestionsOnly ? 0 : (page - 1) * pageSize,
-            take: suggestionsOnly ? 0 : pageSize,
-            maxSuggestions: suggestionsOnly ? 5 : 0
+            skip: (page - 1) * pageSize,
+            take: pageSize
         );
 
-        if (suggestionsOnly)
-        {
-            return new StorefrontResponse(Json: JsonSerializer.Serialize(result.Suggestions ?? []));
-        }
-
         long lastPage = Math.Max(1, (result.Total - 1) / pageSize + 1);
-
-        if (page > lastPage)
-        {
-            return Redirect(http, PageUrl(request, lastPage));
-        }
+        bool pageUnavailable = page > lastPage;
 
         string heading = Text(
             http,
@@ -153,7 +137,7 @@ internal static class StorefrontListing
             "Browse", "NoMatchesHeading", "NoMatchesHelp", "BrowseWithoutQuery", "Previous", "Next",
             "Pagination", "Equipment", "FieldNotes", "ReadStory", "OnOffer", "Updating", "Recommended",
             "RecommendedRelewise", "NameAscending", "NameDescending", "PriceAscending", "PriceDescending", "Products",
-            "Journal", "SearchResults"
+            "Journal", "SearchResults", "PageUnavailableHeading", "PageUnavailableHelp", "ReturnToResults"
         ];
 
         string[] queryKeys =
@@ -166,7 +150,7 @@ internal static class StorefrontListing
                 pair => pair.Value.OfType<string>()
                     .ToArray());
 
-        string PageLink(int target)
+        string PageLink(long target)
         {
             Dictionary<string, StringValues> values = parameters.ToDictionary(
                 pair => pair.Key,
@@ -200,7 +184,9 @@ internal static class StorefrontListing
             Cards = cards,
             Heading = string.IsNullOrWhiteSpace(query) ? Text(http, "Browse") : Text(http, "ResultsFor", query),
             ResultLabel = Text(http, result.Total == 1 ? "Result" : "Results", result.Total),
-            RangeLabel = cards.Length == 0
+            RangeLabel = pageUnavailable
+                ? Text(http, "PageUnavailableHeading")
+                : cards.Length == 0
                 ? Text(http, "Results", 0)
                 : Text(
                     http,
@@ -217,7 +203,8 @@ internal static class StorefrontListing
             Updating = cards.Length < result.Documents.Count(),
             ResetUrl = browsing.ResetUrl(),
             ClearQueryUrl = browsing.ClearQueryUrl(),
-            PreviousUrl = page > 1 ? PageLink(page - 1) : null,
+            UnavailablePageUrl = pageUnavailable ? PageLink(lastPage) : null,
+            PreviousUrl = !pageUnavailable && page > 1 ? PageLink(page - 1) : null,
             NextUrl = page < lastPage ? PageLink(page + 1) : null
         };
 

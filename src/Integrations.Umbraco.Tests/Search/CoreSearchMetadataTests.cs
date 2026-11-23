@@ -113,7 +113,56 @@ public class CoreSearchMetadataTests
                 null));
 
         Assert.Empty(content.Data![RelewiseDataKeys.Search.Culture]!.ValueAsListOf<string>());
-        Assert.DoesNotContain(CoreSearchTranslation.Field("body", "text"), content.Data.Keys);
+        Assert.Null(content.Data[CoreSearchTranslation.Field("body", "text")]);
+    }
+
+    [Fact]
+    public void EmptyAndOmittedPropertiesExplicitlyClearTheirSearchFieldsOnly()
+    {
+        var content = new Content("article")
+        { Data = new Dictionary<string, DataValue?> { ["commerceField"] = "retained" } };
+        var mapped = new MappedEntity(Guid.NewGuid(), "article", "article", content, true);
+        Variation[] variations = [new Variation("en-US", null), new Variation("da-DK", null)];
+        string[] cultures = ["en-US", "da-DK"];
+
+        CoreSearchMetadata.Apply(mapped, new CoreSearchDocument(variations,
+        [
+            new IndexField("body", new IndexValue { Keywords = ["old"], Texts = ["old text"] }, null, null),
+            new IndexField("number", new IndexValue { Integers = [42], Decimals = [12.5m],
+                DateTimeOffsets = [DateTimeOffset.UnixEpoch] }, "en-US", null)
+        ], null), cultures);
+        string[] previousKeys = [.. content.Data!.Keys.Where(key =>
+            key.StartsWith(RelewiseDataKeys.Search.FieldPrefix, StringComparison.Ordinal))];
+        Assert.Contains(previousKeys, key => content.Data[key] != null);
+
+        CoreSearchMetadata.Apply(mapped, new CoreSearchDocument(variations,
+            [new IndexField("number", new IndexValue(), "en-US", null)], null), cultures, ["body", "number"]);
+
+        Assert.All(previousKeys, key => Assert.Null(content.Data[key]));
+        Assert.Equal("retained", content.Data["commerceField"]!.ValueAs<string>());
+    }
+
+    [Fact]
+    public void ClearingOneCultureRetainsOtherCulturesAndSharedBlockValues()
+    {
+        var content = new Content("article");
+        var mapped = new MappedEntity(Guid.NewGuid(), "article", "article", content, true);
+
+        CoreSearchMetadata.Apply(mapped, new CoreSearchDocument(
+            [new Variation("en-US", null), new Variation("da-DK", null)],
+            [
+                new IndexField("body", new IndexValue { Texts = ["English"] }, "en-US", null),
+                new IndexField("body", new IndexValue(), "da-DK", null),
+                new IndexField("blocks", new IndexValue { Texts = ["Shared"] }, null, null),
+                new IndexField("blocks", new IndexValue(), "da-DK", null)
+            ], null), ["en-US", "da-DK"]);
+
+        var text = content.Data![CoreSearchTranslation.Field("body", "text")]!.ValueAs<Multilingual>();
+        Assert.Equal("English", Assert.Single(text.Values!).Text);
+        Assert.Equal("en-us", text.Values![0].Language.Value);
+        var blocks = content.Data[CoreSearchTranslation.Field("blocks", "text")]!.ValueAs<Multilingual>();
+        Assert.All(blocks.Values!, value => Assert.Equal("Shared", value.Text));
+        Assert.Null(content.Data[CoreSearchTranslation.Field("body", "keyword")]);
     }
 
     [Fact]

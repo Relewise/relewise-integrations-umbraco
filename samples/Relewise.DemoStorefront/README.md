@@ -55,8 +55,8 @@ so seeded language domains use the same host and port.
 [DemoConfiguration.cs](Integration/DemoConfiguration.cs) is the starting point for the fixed C#
 registration and named Content/Product search providers.
 [DemoConstants.cs](DemoConstants.cs) groups the sample's document types, property aliases,
-business Data keys and provider names. Currency-specific sale and price fields use
-shared key-building methods; package metadata uses the integration's `RelewiseDataKeys`.
+business Data keys and provider names. Currency-specific sale fields use a shared
+key-building method; package metadata uses the integration's `RelewiseDataKeys`.
 
 | Example | What it demonstrates | Source |
 | --- | --- | --- |
@@ -82,7 +82,10 @@ Search and facets use Umbraco's search abstraction with three named Relewise pro
 `articles`, `catalogue` and `offers`. Ordinary published-content searches use `articles`.
 [The search guide](../../docs/search.md) covers provider configuration; the demo's
 [query code](Features/Browsing/StorefrontSearch.cs) shows Category/Brand filters, stock, currency-specific
-sale flags, price ranges, sorting and facets.
+sale flags, price ranges, sorting and facets. The `shopPrice` query field binds to
+the Product's built-in SalesPrice in the active market currency; it does not
+require a duplicate indexed price field. Results and all displayed facet counts
+use one Relewise search request. See [supported search capabilities](../../docs/search.md#product-prices).
 
 To search text extracted from editorial blocks, include the Content Data key
 `searchText` in the Dataset's search configuration. Exporting custom Data does not

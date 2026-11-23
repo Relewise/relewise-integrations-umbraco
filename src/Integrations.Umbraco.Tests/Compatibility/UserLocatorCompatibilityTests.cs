@@ -103,7 +103,7 @@ public class UserLocatorCompatibilityTests
     {
         IRelewiseUserLocator locator = new MissingUserLocator();
 
-        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             legacy ? locator.GetUser() : locator.GetUserAsync());
 
         Assert.Contains(nameof(MissingUserLocator), error.Message);

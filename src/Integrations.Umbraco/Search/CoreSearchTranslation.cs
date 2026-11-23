@@ -181,6 +181,9 @@ internal static class CoreSearchTranslation
 
         if (values.Length == 0)
         {
+            data[Field(field, kind)] = null;
+            data[Field(field, kind + "Sort")] = null;
+
             return;
         }
 
@@ -198,6 +201,11 @@ internal static class CoreSearchTranslation
 
         if (values.Length == 0)
         {
+            data[Field(field, kind + "Exact")] = null;
+            data[Field(field, kind + "Values")] = null;
+            data[Field(field, kind + "Min")] = null;
+            data[Field(field, kind + "Max")] = null;
+
             return;
         }
 

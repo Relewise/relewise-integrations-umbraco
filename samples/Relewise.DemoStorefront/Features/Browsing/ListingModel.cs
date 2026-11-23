@@ -30,6 +30,7 @@ public sealed class ListingModel
     public bool Updating { get; init; }
     public string ResetUrl { get; init; } = "";
     public string ClearQueryUrl { get; init; } = "";
+    public string? UnavailablePageUrl { get; init; }
     public string? PreviousUrl { get; init; }
     public string? NextUrl { get; init; }
 }

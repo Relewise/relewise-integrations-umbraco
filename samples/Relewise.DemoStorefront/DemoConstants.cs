@@ -67,7 +67,7 @@ internal static class DemoConstants
         internal const string Category = "shopCategory";
         internal const string Brand = "shopBrand";
 
-        internal static string Price(string currency) => "shopPrice" + currency;
+        internal const string Price = "shopPrice";
     }
 
     internal static class SearchProviders

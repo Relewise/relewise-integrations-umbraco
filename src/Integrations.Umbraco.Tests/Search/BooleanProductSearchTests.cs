@@ -81,15 +81,16 @@ public class BooleanProductSearchTests
                 culture: "en-US",
                 take: 0);
 
-        Assert.Equal(2, sent.Count);
+        Assert.Single(sent);
 
         string main = JsonConvert.SerializeObject(sent[0].Filters);
 
-        Assert.Contains("onSale_EUR", main);
-        Assert.Contains("\"Value\":true", main);
+        Assert.DoesNotContain("onSale_EUR", main);
         Assert.DoesNotContain("rwUmbracoField_sale", main);
-        Assert.DoesNotContain("onSale_EUR", JsonConvert.SerializeObject(sent[1].Filters));
-        Assert.IsType<ProductDataBooleanValueFacet>(Assert.Single(sent[1].Facets!.Items));
+        Assert.DoesNotContain("onSale_EUR", JsonConvert.SerializeObject(sent[0].Filters));
+        var selected = Assert.IsType<ProductDataBooleanValueFacet>(
+            Assert.Single(sent[0].Facets!.Items));
+        Assert.Equal(new[] { true }, selected.Selected);
         Assert.All(
             sent,
             request =>

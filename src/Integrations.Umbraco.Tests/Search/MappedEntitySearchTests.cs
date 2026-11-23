@@ -136,6 +136,11 @@ public class MappedEntitySearchTests
             if (request is ProductSearchRequest productRequest)
             {
                 productRequest.Settings = new ProductSearchSettings();
+                productRequest.Facets = null;
+            }
+            else if (request is ContentSearchRequest contentRequest)
+            {
+                contentRequest.Facets = null;
             }
         }
 
@@ -192,9 +197,7 @@ public class MappedEntitySearchTests
                     take: 3,
                     facets:
                     [
-                        new IntegerRangeFacet(
-                            "number",
-                            [new IntegerRangeFacetRange("first", 0, 10), new IntegerRangeFacetRange("second", 10, 20)])
+                        new IntegerExactFacet("number")
                     ]);
         }
         finally
@@ -202,8 +205,8 @@ public class MappedEntitySearchTests
             accessor.HttpContext = null;
         }
 
-        Assert.Equal(3, sent.Count);
-        Assert.Equal(3, configured.Distinct(ReferenceEqualityComparer.Instance).Count());
+        Assert.Single(sent);
+        Assert.Single(configured);
         Assert.All(
             sent,
             request =>
@@ -233,12 +236,17 @@ public class MappedEntitySearchTests
                 if (request is ProductSearchRequest productRequest)
                 {
                     Assert.Equal(0, productRequest.Settings!.VariantRequestSettings!.MaxVariantsPerProduct);
+                    Assert.Single(productRequest.Facets!.Items);
+                }
+                else
+                {
+                    Assert.Single(Assert.IsType<ContentSearchRequest>(request).Facets!.Items);
                 }
 
                 Assert.Equal("en-us", request.Language!.Value);
             });
         Assert.Single(sent, request => request.Skip == 2 && request.Take == 3);
-        Assert.Equal(2, sent.Count(request => request.Skip == 0 && request.Take == 0));
+        Assert.DoesNotContain(sent, request => request.Skip == 0 && request.Take == 0);
         Assert.All(
             sent,
             request => Assert.Equal(

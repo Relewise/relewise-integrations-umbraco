@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Relewise.Client;
@@ -86,7 +87,7 @@ public class ContentTrackingTests
 
         using ServiceProvider provider = services.BuildServiceProvider();
         var nextCalled = false;
-        var middleware = new RelewiseContentMiddleware(
+        var middleware = new RelewiseViewTrackingMiddleware(
             _ =>
             {
                 nextCalled = true;
@@ -94,7 +95,14 @@ public class ContentTrackingTests
             },
             Configuration(useKeys.ToString()));
 
-        await middleware.InvokeAsync(new DefaultHttpContext { RequestServices = provider });
+        var completion = new ResponseCompletion();
+        var http = new DefaultHttpContext { RequestServices = provider };
+        http.Request.Method = HttpMethods.Get;
+        http.Features.Set<IHttpResponseFeature>(completion);
+        http.Response.ContentType = "text/html";
+        await middleware.InvokeAsync(http);
+        Assert.Null(captured); // Tracking must not delay the page handler.
+        await completion.CompleteAsync();
 
         Assert.True(nextCalled);
         clients.Verify(
@@ -201,7 +209,7 @@ public class ContentTrackingTests
             root.GetRequiredService<RelewiseUmbracoConfiguration>(),
             root.GetRequiredService<IServiceScopeFactory>(),
             accessor);
-        var middleware = new RelewiseContentMiddleware(_ => Task.CompletedTask, Configuration("true"));
+        var middleware = new RelewiseViewTrackingMiddleware(_ => Task.CompletedTask, Configuration("true"));
         var requestScopes = root.GetRequiredService<IServiceScopeFactory>();
 
         await Task.WhenAll(
@@ -220,7 +228,12 @@ public class ContentTrackingTests
 
                         accessor.HttpContext = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
                         accessor.HttpContext.Items["User"] = currentUser;
+                        var completion = new ResponseCompletion();
+                        accessor.HttpContext.Request.Method = HttpMethods.Get;
+                        accessor.HttpContext.Features.Set<IHttpResponseFeature>(completion);
+                        accessor.HttpContext.Response.ContentType = "text/html";
                         await middleware.InvokeAsync(accessor.HttpContext);
+                        await completion.CompleteAsync();
 
                         var query = $"article-{visitor}";
 
@@ -230,12 +243,7 @@ public class ContentTrackingTests
                             facets:
                             [
                                 new KeywordFacet("tag"),
-                                new IntegerRangeFacet(
-                                    "number",
-                                    [
-                                        new IntegerRangeFacetRange("low", 0, 10),
-                                        new IntegerRangeFacetRange("high", 10, null)
-                                    ])
+                                new IntegerExactFacet("number")
                             ],
                             culture: "en-US",
                             accessContext: new AccessContext(Guid.NewGuid(), []));
@@ -243,7 +251,7 @@ public class ContentTrackingTests
 
                         ContentSearchRequest[] visitorSearches = [.. searches.Where(search => search.Term == query)];
 
-                        Assert.Equal(4, visitorSearches.Length); // Main search, keyword facet, two range buckets.
+                        Assert.Single(visitorSearches); // Results and all facet counts share the same search.
                         Assert.All(visitorSearches, search => Assert.Same(currentUser, search.User));
                     }
                     finally

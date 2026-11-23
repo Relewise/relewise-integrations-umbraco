@@ -186,6 +186,10 @@ internal static class DemoDictionary
         ("InvalidSearch", "This search could not be completed. Check your filters and try again.",
             "Søgningen kunne ikke gennemføres. Tjek dine filtre, og prøv igen."),
         ("NoMatchesHeading", "No matching products or stories", "Ingen matchende produkter eller fortællinger"),
+        ("PageUnavailableHeading", "This page is no longer available", "Denne side er ikke længere tilgængelig"),
+        ("PageUnavailableHelp", "The results have changed. Return to the last available page to continue browsing.",
+            "Resultaterne er ændret. Gå til den sidste tilgængelige side for at fortsætte."),
+        ("ReturnToResults", "Return to results", "Tilbage til resultaterne"),
         ("NoMatchesHelp",
             "Try a shorter search or check the spelling. If you selected filters, remove one or " +
             "clear them to see more results.",

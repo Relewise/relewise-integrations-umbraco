@@ -104,7 +104,8 @@ internal static class CartOperations
                     return Error(http, "CartUnavailable");
                 }
 
-                string orderNumber = "FW-" + Guid.NewGuid().ToString("N")[..12].ToUpperInvariant();
+                // Reuse the checkout attempt's identity if tracking succeeded but its response was lost.
+                string orderNumber = "FW-" + token[..12].ToUpperInvariant();
                 decimal total = priced.Sum(line => line.Amount * line.Line.Quantity);
                 string currency = DemoMarket.Current(http).Currency;
 

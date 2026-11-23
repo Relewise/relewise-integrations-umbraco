@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,12 +18,12 @@ using Umbraco.Extensions;
 
 namespace Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
 
-internal class RelewiseContentMiddleware
+internal class RelewiseViewTrackingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly RelewiseUmbracoConfiguration _configuration;
 
-    public RelewiseContentMiddleware(RequestDelegate next, RelewiseUmbracoConfiguration configuration)
+    public RelewiseViewTrackingMiddleware(RequestDelegate next, RelewiseUmbracoConfiguration configuration)
     {
         _next = next;
         _configuration = configuration;
@@ -35,57 +35,68 @@ internal class RelewiseContentMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var umbracoContextFactory =
-            context.RequestServices.GetRequiredService<IUmbracoContextFactory>();
-
-        using (UmbracoContextReference umbracoContextReference = umbracoContextFactory.EnsureUmbracoContext())
+        if (HttpMethods.IsGet(context.Request.Method))
         {
-            if (IsNotInPreview(umbracoContextReference))
+            var contexts = context.RequestServices.GetRequiredService<IUmbracoContextFactory>();
+
+            using UmbracoContextReference reference = contexts.EnsureUmbracoContext();
+            IPublishedContent? content = reference.UmbracoContext.PublishedRequest?.PublishedContent;
+
+            if (IsNotInPreview(reference) && content != null && EnsureContentAndIsTrackable(content))
             {
-                IPublishedContent? content = umbracoContextReference.UmbracoContext.PublishedRequest?.PublishedContent;
+                ITracker? tracker = SafeGetTracker(context);
 
-                if (content != null && EnsureContentAndIsTrackable(content))
+                if (tracker != null)
                 {
-                    ITracker? tracker = SafeGetTracker(context);
+                    User user = await context.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUserAsync();
+                    Trackable view = CreateView(content, user);
+                    var logger = context.RequestServices.GetService<ILogger<RelewiseViewTrackingMiddleware>>();
 
-                    if (tracker != null)
-                    {
-                        User user = await context.RequestServices.GetRequiredService<IRelewiseUserLocator>()
-                            .GetUserAsync();
-
-                        try
-                        {
-                            Trackable view = CreateView(content, user);
-
-                            await (view switch
-                            {
-                                ContentView value => tracker.TrackAsync(value, context.RequestAborted),
-                                ProductView value => tracker.TrackAsync(value, context.RequestAborted),
-                                BrandView value => tracker.TrackAsync(value, context.RequestAborted),
-                                ProductCategoryView value => tracker.TrackAsync(value, context.RequestAborted),
-                                ContentCategoryView value => tracker.TrackAsync(value, context.RequestAborted),
-                                _ => throw new InvalidOperationException("Unknown entity view type.")
-                            });
-                        }
-                        catch (HttpRequestException ex)
-                        {
-                            if (ex.StatusCode == HttpStatusCode.NotFound)
-                            {
-                                throw new InvalidOperationException(
-                                    $"The Dataset Id '{tracker.DatasetId}" +
-                                    $"' is not known by Relewise - You can always find your available dataset " +
-                                    $"id's on https://my.relewise.com",
-                                    ex);
-                            }
-
-                            throw;
-                        }
-                    }
+                    // Snapshot the entity/user while the Umbraco context is alive. OnCompleted runs
+                    // after page delivery and before request-service disposal; no detached task is started.
+                    context.Response.OnCompleted(() => TrackViewAsync(context, tracker, view, logger));
                 }
             }
         }
 
         await _next.Invoke(context);
+    }
+
+    private static async Task TrackViewAsync(
+        HttpContext context,
+        ITracker tracker,
+        Trackable view,
+        ILogger<RelewiseViewTrackingMiddleware>? logger)
+    {
+        if (context.Response.StatusCode is < 200 or >= 300 || context.RequestAborted.IsCancellationRequested ||
+            context.Response.ContentType?.StartsWith("text/html", StringComparison.OrdinalIgnoreCase) != true)
+        {
+            return;
+        }
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
+        timeout.CancelAfter(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            await (view switch
+            {
+                ContentView value => tracker.TrackAsync(value, timeout.Token),
+                ProductView value => tracker.TrackAsync(value, timeout.Token),
+                BrandView value => tracker.TrackAsync(value, timeout.Token),
+                ProductCategoryView value => tracker.TrackAsync(value, timeout.Token),
+                ContentCategoryView value => tracker.TrackAsync(value, timeout.Token),
+                _ => throw new InvalidOperationException("Unknown entity view type.")
+            });
+        }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            // The visitor disconnected; this optional event is not retried.
+        }
+        catch (Exception error) when (error is HttpRequestException or TimeoutException or OperationCanceledException)
+        {
+            logger?.LogWarning(error, "Relewise entity view tracking failed.");
+        }
     }
 
     private Trackable CreateView(
@@ -161,7 +172,7 @@ internal class RelewiseContentMiddleware
         catch (Exception ex)
         {
             var logger =
-                context.RequestServices.GetService<ILogger<RelewiseContentMiddleware>>();
+                context.RequestServices.GetService<ILogger<RelewiseViewTrackingMiddleware>>();
 
             logger?.LogError(ex, $"Unable to resolve {nameof(ITracker)}-instance. {{Message}}", ex.Message);
 

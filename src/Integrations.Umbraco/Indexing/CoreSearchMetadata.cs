@@ -13,7 +13,8 @@ internal static class CoreSearchMetadata
     internal static void Apply(
         MappedEntity entity,
         CoreSearchDocument document,
-        string[]? siteCultures = null)
+        string[]? siteCultures = null,
+        IEnumerable<string>? propertyAliases = null)
     {
         Dictionary<string, DataValue?> data = EntityMapper.Data(entity.Entity);
 
@@ -26,19 +27,39 @@ internal static class CoreSearchMetadata
         data[RelewiseDataKeys.Search.Access] = new DataValue(
             document.Protection?.AccessIds.Select(id => id.ToString("D")) ?? []);
 
-        // Retain supported default-segment metadata without blocking business-data export.
-        foreach (IGrouping<string, IndexField> group in document.Fields.GroupBy(field => field.FieldName))
+        string[] cultures = siteCultures ?? [.. document.Variations.Select(value => value.Culture).OfType<string>()];
+        HashSet<string> supplied = [.. document.Fields.Select(field => field.FieldName)];
+        IEnumerable<IndexField> fields = document.Fields.Concat(
+            (propertyAliases ?? []).Where(alias => !supplied.Contains(alias))
+                .Select(alias => new IndexField(alias, new IndexValue(), null, null)));
+
+        // Empty/omitted properties must clear our search projections in a partial entity update.
+        foreach (IGrouping<string, IndexField> group in fields.GroupBy(field => field.FieldName))
         {
+            foreach (string kind in new[] { "integer", "decimal", "date" })
+            {
+                foreach (string suffix in new[] { "Exact", "Values", "Min", "Max" })
+                {
+                    string key = Field(group.Key, kind + suffix);
+                    data[key] = null;
+
+                    foreach (string culture in cultures)
+                    {
+                        data[key + "_" + Uri.EscapeDataString(culture.ToLowerInvariant())] = null;
+                    }
+                }
+            }
+
             StoreText(
                 data,
                 group.Key,
                 [.. group.Where(field => field.Segment == null)],
-                siteCultures ?? [.. document.Variations.Select(value => value.Culture).OfType<string>()]);
+                cultures);
 
             foreach (IGrouping<string?, IndexField> cultureGroup in group
                          .Where(field => field.Segment == null)
                          .GroupBy(field => field.Culture)
-                         .OrderBy(fields => fields.Key != null))
+                         .OrderBy(values => values.Key != null))
             {
                 var converted = new Dictionary<string, DataValue?>();
 
@@ -66,12 +87,7 @@ internal static class CoreSearchMetadata
                     {
                         data[field.Key] = field.Value;
 
-                        foreach (string culture in siteCultures ??
-                                 [
-                                     .. document.Variations
-                                         .Select(value => value.Culture)
-                                         .OfType<string>()
-                                 ])
+                        foreach (string culture in cultures)
                         {
                             data[field.Key + "_" + Uri.EscapeDataString(culture.ToLowerInvariant())] = field.Value;
                         }
@@ -106,7 +122,7 @@ internal static class CoreSearchMetadata
             return;
         }
 
-        var localized = new Dictionary<string, List<(string Culture, DataValue Value)>>();
+        var localized = new Dictionary<string, List<(string Culture, DataValue? Value)>>();
 
         foreach (string culture in localizedCultures.Concat(siteCultures).Distinct(StringComparer.OrdinalIgnoreCase))
         {
@@ -126,27 +142,29 @@ internal static class CoreSearchMetadata
 
             foreach (KeyValuePair<string, DataValue?> field in converted)
             {
-                if (!localized.TryGetValue(field.Key, out List<(string Culture, DataValue Value)>? entries))
+                if (!localized.TryGetValue(field.Key, out List<(string Culture, DataValue? Value)>? entries))
                 {
                     localized[field.Key] = entries = [];
                 }
 
-                entries.Add((culture, field.Value!));
+                entries.Add((culture, field.Value));
             }
         }
 
-        foreach (KeyValuePair<string, List<(string Culture, DataValue Value)>> field in localized)
+        foreach (KeyValuePair<string, List<(string Culture, DataValue? Value)>> field in localized)
         {
-            data[field.Key] = field.Value[0].Value.Type == DataValue.DataValueTypes.String
+            (string Culture, DataValue? Value)[] values = [.. field.Value.Where(value => value.Value != null)];
+
+            data[field.Key] = values.Length == 0 ? null : values[0].Value!.Type == DataValue.DataValueTypes.String
                 ? new DataValue(
                     new Multilingual(
-                        field.Value
-                            .Select(value => new Multilingual.Value(value.Culture, value.Value))
+                        values
+                            .Select(value => new Multilingual.Value(value.Culture, value.Value!))
                             .ToArray()))
                 : new DataValue(
                     new MultilingualCollection(
-                        field.Value
-                            .Select(value => new MultilingualCollection.Value(value.Culture, value.Value))
+                        values
+                            .Select(value => new MultilingualCollection.Value(value.Culture, value.Value!))
                             .ToArray()));
         }
     }

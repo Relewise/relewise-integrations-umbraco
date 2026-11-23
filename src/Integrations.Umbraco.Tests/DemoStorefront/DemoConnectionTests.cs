@@ -32,10 +32,9 @@ public class DemoConnectionTests
 
         http.Request.Path = "/en/store/results";
 
-        StorefrontResponse result = await StorefrontListing.GetAsync(
-            http,
-            suggestionsOnly: suggestionsOnly,
-            dataOnly: dataOnly);
+        StorefrontResponse result = suggestionsOnly
+            ? Assert.IsType<StorefrontResponse>(await StorefrontPredictions.GetAsync(http))
+            : await StorefrontListing.GetAsync(http, dataOnly: dataOnly);
 
         Assert.Equal(503, http.Response.StatusCode);
         Assert.Contains("Configure Relewise", result.Json);

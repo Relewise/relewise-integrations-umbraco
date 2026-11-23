@@ -306,6 +306,7 @@ options.SearchProviders.AddContent("editorial", provider =>
 options.SearchProviders.AddProduct("catalogue", provider =>
 {
     provider.DisplayedAtLocation = "Website product search"; // Stable analytics/merchandising label.
+    provider.MapSalesPrice("price"); // Decimal price queries use built-in SalesPrice in the request currency.
     provider.ConfigureRequest((request, context) =>
     {
         request.Currency = new Currency("DKK"); // Per-request Product search defaults.
@@ -327,8 +328,13 @@ identify query configurations, not Document Types. Only Content and Product prov
 types are exposed. Content aliases become a source-metadata filter before paging
 and facets; Product providers use the one Product mapping.
 
-Each execution, including facet queries, creates a fresh typed SDK request. The
-callback gets `Services`, `User` and `Culture`; mandatory mapping/access,
+Results and supported facet counts share one typed SDK search request. Value
+facets are supported; generic numeric/date Data range facets are rejected before
+an API call. Product providers can bind one query field with `MapSalesPrice` for
+native SalesPrice range filtering, faceting and sorting in the request currency.
+Price buckets must be nonempty and nonoverlapping. A single positive facet
+selection excludes itself from its counts; other predicates remain filters.
+There are no supplementary facet-count searches. The callback gets `Services`, `User` and `Culture`; mandatory mapping/access,
 request user, language, caller query, paging and the default Relewise index remain enforced. Language
 follows the query culture with the site's default as the SDK-language fallback;
 a null query culture selects invariant documents only. There is no installation-wide

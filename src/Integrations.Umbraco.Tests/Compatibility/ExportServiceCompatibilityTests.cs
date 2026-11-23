@@ -55,7 +55,7 @@ public class ExportServiceCompatibilityTests
     {
         var delivery = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var operations = new Mock<IEntityIndexingOperations>(MockBehavior.Strict);
-        Guid key = Guid.NewGuid();
+        var key = Guid.NewGuid();
         var page = new Mock<IContent>();
 
         page.SetupGet(content => content.Key).Returns(key);
@@ -151,7 +151,7 @@ public class ExportServiceCompatibilityTests
         var content = new ExportContent([], ContentUpdate.UpdateKind.ReplaceProvidedProperties);
         var rebuild = new ExportAllContent(false);
 
-        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             all
                 ? legacy
                     ? service.ExportAll(rebuild, default)
@@ -172,7 +172,7 @@ public class ExportServiceCompatibilityTests
         IExportContentService service = new SingleExportService();
 
         await service.ExportAsync(new ExportContent([], ContentUpdate.UpdateKind.ReplaceProvidedProperties), default);
-        InvalidOperationException error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.ExportAllAsync(new ExportAllContent(false), default));
 
         Assert.Contains(nameof(IExportContentService.ExportAllAsync), error.Message);
@@ -254,7 +254,7 @@ public class ExportServiceCompatibilityTests
 
         if (cancelled)
         {
-            OperationCanceledException error =
+            var error =
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending);
 
             Assert.Equal(cancellation.Token, error.CancellationToken);
