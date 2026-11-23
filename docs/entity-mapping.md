@@ -223,7 +223,9 @@ Search providers are configured separately; see [Umbraco core search](search.md)
 In **Settings → Relewise Dashboard**, review the configured entity targets, ID sources,
 automatic indexing and view tracking, and named search providers. Open **Details** beside
 a mapping to inspect its fields, relationships, custom mapper type, and publication
-and removal behavior. The overview does not execute custom mappers, converters or
+and removal behavior. Entity update details show delta and full-rebuild policies,
+independent Variant policies, and Content update-kind precedence.
+The overview does not execute custom mappers, converters or
 request callbacks. Connection settings do not constitute a connectivity
 or credentials check.
 

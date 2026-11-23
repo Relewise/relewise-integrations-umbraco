@@ -209,9 +209,36 @@ export class RelewiseDashboardElement extends UmbLitElement {
                             : html`<p>No custom entity mapper is configured.</p>`}
                     ${mapping.customMapper ? html`<p>Custom mapper output is determined during export.</p>` : ''}
                 </section>
+                <section><h3>Entity updates</h3>
+                    <dl class="overview">
+                        <div><dt>Delta updates</dt>
+                            <dd>${mapping.clearOnDeltaUpdates ? 'Clear and replace' : 'Replace provided properties'}</dd>
+                        </div>
+                        <div><dt>Full rebuilds</dt>
+                            <dd>${mapping.clearOnFullRebuilds ? 'Clear and replace' : 'Replace provided properties'}</dd>
+                        </div>
+                    </dl>
+                    <p>Replace provided properties retains omitted fields.
+                        Clear and replace removes omitted built-in properties and Data.</p>
+                    ${mapping.legacyMapper
+                        ? html`<p>For this legacy Content mapper, the <code>UpdateKind</code> on its returned update
+                            takes precedence over the mapping policy shown above.
+                            An explicit <code>ExportContent.UpdateKind</code> is passed to the mapper.</p>`
+                        : mapping.entityType === 'Content'
+                            ? html`<p>An explicit <code>ExportContent.UpdateKind</code> overrides this policy
+                                for selected Content exports.</p>`
+                            : ''}
+                    ${mapping.parentDocumentTypeAlias
+                        ? html`<p>Applies to Variant fields independently of the parent Product's update policy.</p>`
+                        : ''}
+                </section>
                 <section><h3>Publication and removal</h3>
                     ${mapping.parentDocumentTypeAlias
-                        ? html`<p>Variants are exported with their parent Product. Its mapping determines whether missing Variants are removed.</p>`
+                        ? mapping.synchronizeLifecycle
+                            ? html`<p>Variants are exported with their parent Product.
+                                Missing Variants are removed because both mappings synchronize lifecycle.</p>`
+                            : html`<p>Variants are exported with their parent Product. Missing Variants are retained
+                                because lifecycle synchronization is disabled on this mapping or its parent Product.</p>`
                         : mapping.synchronizeLifecycle
                             ? html`<p>Umbraco manages availability and removal in Relewise, following publication, unpublication and deletion of the source document.</p>`
                             : html`<p>Umbraco updates entity data but does not enable, disable or delete the entity. These actions remain under external control.</p>`}

@@ -41,6 +41,8 @@ export type DashboardMappingViewModel = {
     export: boolean;
     trackViews: boolean;
     synchronizeLifecycle: boolean;
+    clearOnDeltaUpdates: boolean;
+    clearOnFullRebuilds: boolean;
     autoMap: boolean;
     customMapper: boolean;
     customMapperTypeName?: null | string;

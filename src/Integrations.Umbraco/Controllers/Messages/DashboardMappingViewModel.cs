@@ -38,9 +38,19 @@ public class DashboardMappingViewModel
     public bool TrackViews { get; internal set; }
 
     /// <summary>
-    /// Whether publication controls administrative entity state.
+    /// Whether publication controls administrative entity state, including the parent Product's policy for Variants.
     /// </summary>
     public bool SynchronizeLifecycle { get; internal set; }
+
+    /// <summary>
+    /// Whether the mapping policy clears omitted properties during delta updates, before Content update-kind overrides.
+    /// </summary>
+    public bool ClearOnDeltaUpdates { get; internal set; }
+
+    /// <summary>
+    /// Whether the mapping policy clears omitted properties during full rebuilds, before legacy mapper overrides.
+    /// </summary>
+    public bool ClearOnFullRebuilds { get; internal set; }
 
     /// <summary>
     /// Whether existing automatic Content field mapping is selected.

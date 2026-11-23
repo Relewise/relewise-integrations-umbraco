@@ -99,6 +99,7 @@ public class DashboardConfigurationTests
             Assert.Single(snapshot.Mappings, mapping => mapping.ParentDocumentTypeAlias == "product");
 
         Assert.Equal("Property: variantSku", variant.IdSource);
+        Assert.False(variant.SynchronizeLifecycle);
         Assert.Contains(variant.Relationships, relationship => relationship.Contains("parent Product"));
 
         DashboardSearchProviderViewModel editorial =
@@ -110,6 +111,71 @@ public class DashboardConfigurationTests
         Assert.False(
             Assert.Single(snapshot.SearchProviders, provider => provider.Alias == "commerce")
                 .RequirePublishedPage);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void SnapshotReportsDeltaAndFullPoliciesIndependentlyForProductsAndVariants(bool delta, bool full)
+    {
+        static EntityUpdatePolicy Policy(bool clearDelta, bool clearFull)
+        {
+            return clearDelta || clearFull
+                ? EntityUpdatePolicy.ClearAndReplace(options =>
+                {
+                    options.DeltaUpdates = clearDelta;
+                    options.FullRebuilds = clearFull;
+                })
+                : EntityUpdatePolicy.ReplaceProvidedProperties();
+        }
+
+        using ServiceProvider services = Services(options => options.MapProduct("product", mapping =>
+        {
+            mapping.UpdatePolicy = Policy(delta, full);
+            mapping.VariantsFromChildren("variant", variant => variant.UpdatePolicy = Policy(!delta, !full));
+        }));
+        ConfigurationViewModel snapshot = DashboardConfigurationSnapshot.Create(
+            services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            [],
+            true);
+        DashboardMappingViewModel product =
+            Assert.Single(snapshot.Mappings, mapping => mapping.EntityType == "Product");
+        DashboardMappingViewModel variant =
+            Assert.Single(snapshot.Mappings, mapping => mapping.EntityType == "ProductVariant");
+
+        Assert.Equal(delta, product.ClearOnDeltaUpdates);
+        Assert.Equal(full, product.ClearOnFullRebuilds);
+        Assert.Equal(!delta, variant.ClearOnDeltaUpdates);
+        Assert.Equal(!full, variant.ClearOnFullRebuilds);
+        Assert.True(variant.SynchronizeLifecycle);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void VariantSnapshotReflectsBothMappingsLifecyclePolicies(bool parent, bool child)
+    {
+        using ServiceProvider services = Services(options => options.MapProduct("product", mapping =>
+        {
+            mapping.AdministrativeActions = parent
+                ? AdministrativeActionPolicy.Synchronize()
+                : AdministrativeActionPolicy.None();
+            mapping.VariantsFromChildren("variant", variant => variant.AdministrativeActions = child
+                ? AdministrativeActionPolicy.Synchronize()
+                : AdministrativeActionPolicy.None());
+        }));
+        ConfigurationViewModel snapshot = DashboardConfigurationSnapshot.Create(
+            services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            [],
+            true);
+        DashboardMappingViewModel variant =
+            Assert.Single(snapshot.Mappings, mapping => mapping.EntityType == "ProductVariant");
+
+        Assert.Equal(parent && child, variant.SynchronizeLifecycle);
     }
 
     [Fact]
@@ -303,7 +369,11 @@ public class DashboardConfigurationTests
                 mapping => mapping.MapData("blocks", data => data.UseConverter<EditorialBlocksConverter>()));
             options.MapBrand("brand");
 #pragma warning disable CS0618 // Verify the retained legacy mapper is described accurately.
-            options.AddContentType("legacy", mapping => mapping.UseMapper(legacyMapper.Object));
+            options.AddContentType("legacy", mapping =>
+            {
+                mapping.UpdatePolicy = EntityUpdatePolicy.ClearAndReplace();
+                mapping.UseMapper(legacyMapper.Object);
+            });
 #pragma warning restore CS0618
         });
         ConfigurationViewModel snapshot =
@@ -335,6 +405,8 @@ public class DashboardConfigurationTests
 
         Assert.True(legacy.LegacyMapper);
         Assert.True(legacy.CustomMapper);
+        Assert.True(legacy.ClearOnDeltaUpdates);
+        Assert.True(legacy.ClearOnFullRebuilds);
         Assert.Equal(legacyMapper.Object.GetType().Name, legacy.CustomMapperTypeName);
         legacyMapper.VerifyNoOtherCalls();
     }

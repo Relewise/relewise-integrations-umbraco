@@ -173,7 +173,10 @@ internal static class DashboardConfigurationSnapshot
                 : $"Property: {mapping.IdPropertyAlias}",
             Export = mapping.Export,
             TrackViews = mapping.TrackViews,
-            SynchronizeLifecycle = mapping.AdministrativeActions.Enabled,
+            SynchronizeLifecycle = mapping.AdministrativeActions.Enabled &&
+                                   (parent?.AdministrativeActions.Enabled ?? true),
+            ClearOnDeltaUpdates = mapping.UpdatePolicy.Clears(false),
+            ClearOnFullRebuilds = mapping.UpdatePolicy.Clears(true),
             AutoMap = mapping.AutomaticData,
             CustomMapper = mapping.Mapper != null || mapping.LegacyMapper != null,
             CustomMapperTypeName = (mapping.MapperType ?? mapping.LegacyMapper?.GetType())?.Name,
