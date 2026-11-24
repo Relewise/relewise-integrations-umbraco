@@ -5,6 +5,11 @@ charset = utf-8
 end_of_line = crlf
 insert_final_newline = true
 
+# Umbraco's template service writes this bootstrap view with a BOM and no final newline.
+[samples/Relewise.DemoStorefront/Views/storefront.cshtml]
+charset = utf-8-bom
+insert_final_newline = false
+
 [*.cs]
 indent_style = space
 indent_size = 4

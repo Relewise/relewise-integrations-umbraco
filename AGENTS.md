@@ -4,7 +4,7 @@
 
 - Inspect nearby implementations and preserve existing conventions. Keep changes focused on the requested behavior.
 - Put each top-level class, interface, record, struct and enum in its own file, named after the type. Private nested implementation types may stay at the bottom of their containing type.
-- Use four-space indentation, UTF-8, CRLF line endings and a final newline. Remove trailing whitespace and unused imports.
+- Use four-space indentation, UTF-8, CRLF line endings and a final newline. The DemoStorefront bootstrap view `Views/storefront.cshtml` follows Umbraco's generated format (UTF-8 BOM, no final newline), as scoped in `.editorconfig`. Remove trailing whitespace and unused imports.
 - Put control-flow bodies on separate, indented lines. Never put `return`, `continue` or `break` on the same line as its condition. Use braces for multiline bodies and all branches of an `if` with `else`/`else if`.
 - Simple method/constructor argument guards may remain on one line; prefer `ArgumentNullException.ThrowIfNull` and similar helpers.
 - Group scope ownership, service resolution, input preparation and working state into distinct paragraphs. Declare locals near their first use; avoid consecutive setup blocks that mix these responsibilities. Prefer imports or descriptive type aliases over fully qualified type names in method bodies.
