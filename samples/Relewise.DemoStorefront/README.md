@@ -17,28 +17,12 @@ Open [the homepage](http://localhost:5521/en/). The market selector switches lan
 and currency together: Europe (English/EUR), Denmark (Danish/DKK) and US (English/USD).
 Prices are authored per currency rather than converted.
 
-Without Relewise credentials, the site provides a clearly labelled CMS content preview.
-Search, recommendations, Offers, cart and checkout require a local Relewise Dataset.
-The demo does not substitute Examine for Relewise.
+The seeded CMS content preview starts without Relewise credentials. Browse the
+published pages and inspect the mapping and converter examples below. The sample
+code also demonstrates Relewise search, facets, predictions, recommendations and
+behavioral tracking, with shopping flows implemented in Razor and Vue.
 
-### Connect a local Relewise Dataset
-
-Create an ignored `local.settings.json` in this project directory:
-
-```json
-{
-  "Relewise": {
-    "DatasetId": "<local-dataset-guid>",
-    "ApiKey": "<local-api-key>",
-    "ServerUrl": "https://localhost:5000/"
-  }
-}
-```
-
-All three values are required. The demo accepts local API endpoints only. Restart after
-changing configuration; startup exports published content. Invalid credentials show a
-connection error instead of silently changing providers. Optional recommendation or
-prediction failures leave the rest of the page usable.
+### Backoffice and seeded data
 
 For backoffice editing, open `/umbraco`. The default account is `demo@example.invalid`;
 [DemoSetup.cs](Setup/DemoSetup.cs) defines its generated local password. To use your own
@@ -143,8 +127,8 @@ image payload uses a small, encoded `TagBuilder` adapter rather than page templa
 ## Developing the sample
 
 Run `npm run build` in `Client` after frontend changes, or use `npm run watch` while
-editing. The sample intentionally has no frontend test suite; verify shopping flows,
-keyboard interactions and responsive layouts in a browser against a local Dataset.
+editing. The sample intentionally has no frontend test suite; inspect the CMS preview's
+keyboard interactions and responsive layouts in a browser.
 [Storefront regression tests](../../src/Integrations.Umbraco.Tests/DemoStorefront) cover
 mapping, shopping/search rules and Razor encoding within the shared backend test project.
 Run `dotnet test Relewise.Integrations.Umbraco.slnx` from the repository root.

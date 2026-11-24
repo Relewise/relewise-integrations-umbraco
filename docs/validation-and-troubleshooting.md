@@ -10,9 +10,9 @@ Validate the mapped data before diagnosing search results. A successful export r
 2. **Exercise an actual export.** Register the mapper for the page's document type, restart the application, and publish a test page or use the Relewise dashboard's export action with a test dataset. Check the exported page ID, metadata, languages, field types, and text. Exercise both publish-triggered export and a full export.
 3. **Exercise search.** Search for a distinctive phrase appearing only inside a nested block. Confirm the search configuration includes your derived field, the request language matches the exported language, and the intended page appears. Check that deliberately excluded text does not contribute through another exported field.
 
-The [demo storefront](../samples/Relewise.DemoStorefront/README.md) contains the
-buildable examples and local acceptance-test setup. Building requires no Dataset;
-live Relewise checks require local connection settings.
+The [demo storefront](../samples/Relewise.DemoStorefront/README.md) provides a seeded
+CMS content preview and buildable mapping, converter, search and tracking examples.
+Building the sample and browsing its CMS preview require no Dataset credentials.
 
 ## Repository regression tests
 
@@ -26,8 +26,8 @@ dotnet test Relewise.Integrations.Umbraco.slnx
 ```
 
 These isolated and in-process tests require no running Umbraco site or Relewise API.
-They complement local storefront smoke testing; they do not replace verification
-of installation, live ingestion, search and tracking against a local Dataset.
+They do not replace verification of installation, live ingestion, search and tracking
+in your application's test environment with a test Dataset.
 
 ## Connection settings
 
@@ -63,12 +63,12 @@ For pure extraction tests, construct Block List / Block Grid items with fake `IP
 
 ## Removed fields and update semantics
 
-Publishing uses `ContentUpdate.UpdateKind.ReplaceProvidedProperties`. A regular full export also uses this update kind. A field that your mapper no longer provides can therefore remain on previously exported Content. Assigning a new dictionary locally does not itself clear every old remote field.
+By default, publication and full exports use partial updates. A field that your mapper no longer provides can therefore remain on previously exported Content. Assigning a new dictionary locally does not itself clear every old remote field. Configure [UpdatePolicy](entity-mapping.md#entity-update-policy) when Umbraco owns the complete entity and omitted fields should be removed.
 
 The example always supplies `searchText`, including an empty string when all relevant text disappears, so removal does not merely omit that field. Verify the resulting stored value and search behavior in your dataset.
 
-When changing field names or data types, plan an explicit migration. A full export
-continues to replace only provided properties; **permanently delete** does not
+When changing field names or data types, plan an explicit migration. With the default
+update policy, a full export replaces only provided properties; **permanently delete** does not
 clear omitted fields from retained entities. After successful ingestion, it deletes
 missing entities identified by a different export version, restricted to configured entity types
 and Document Types with source-node metadata and permitted administrative actions. A full

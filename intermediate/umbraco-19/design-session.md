@@ -398,13 +398,11 @@ Empty Brand pickers retain the existing relationship under SDK partial updates.
 
 The maintained [Relewise.DemoStorefront](../../samples/Relewise.DemoStorefront/README.md)
 centralizes runnable mapping, converter, search and tracking examples. F5 creates a local
-SQLite database and seeds content, blocks, languages and bundled images. Valid
-local Relewise settings in an ignored
-`local.settings.json` connect the demo to an existing local Dataset; without those
-settings, the demo exposes published CMS content preview with setup guidance.
-Search, facets, predictions, Offers, cart and checkout require Relewise; disabled
-features are also rejected by their backend routes. Invalid credentials remain an
-explicit connection failure. The demo does not substitute another search provider.
+SQLite database and seeds content, blocks, languages and bundled images. The seeded
+CMS preview starts without credentials. The sample code demonstrates search, facets,
+predictions, Offers, cart and checkout using Relewise. Feature gates are enforced by
+the backend routes; invalid credentials produce an explicit connection failure.
+The demo does not substitute another search provider.
 `DemoProductMapper` writes `inStock` and per-currency `onSale_EUR`, `onSale_DKK`
 and `onSale_USD` Boolean Data after price mapping, including `false` for no discount.
 `provider.MapBooleanData(fieldName, dataKey)` binds an Umbraco keyword filter/facet
@@ -452,7 +450,7 @@ IDs and tracking remain on the server. See the
 [demo guide](../../samples/Relewise.DemoStorefront/README.md) for build and interaction details.
 
 Local review covers desktop and mobile navigation, Product/Journal search, Offers,
-market changes, asynchronous cart updates and checkout with a local Relewise
+market changes, asynchronous cart updates and checkout with a Relewise
 Dataset, plus content preview and backend feature gates without credentials. Concurrent add retries, shared stock across
 Variants, CSRF rejection, canonical tracking IDs and repeated checkout submissions
 are also exercised. Invalid credentials return an explicit error without switching
@@ -479,8 +477,8 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | [Installed Product search](images/13-installed-product-search.jpg) | Named Product provider in the maintained storefront. |
 | [Installed Variant page](images/14-installed-variant-view.jpg) | Canonical Product and Variant IDs alongside Umbraco node, document type and culture context. |
 | [Installed tracking correlation](images/15-installed-identity-correlation.jpg) | One visitor across searches and all supported view events. |
-| [Local My Relewise Product](images/16-local-my-relewise-product.jpg) | Exported display name, image and Brand. |
-| [Local My Relewise Variants](images/17-local-my-relewise-variants.jpg) | Both canonical child Variant IDs. |
+| [My Relewise Product](images/16-local-my-relewise-product.jpg) | Exported display name, image and Brand. |
+| [My Relewise Variants](images/17-local-my-relewise-variants.jpg) | Both canonical child Variant IDs. |
 | [English nested blocks](images/18-localized-nested-blocks-en.png) | Published nested editorial text in English. |
 | [Danish nested blocks](images/19-localized-nested-blocks-da.png) | The same nested elements resolve their Danish values. |
 | [Multiple currencies](images/20-multi-currency-product.png) | Independently entered list and sales prices in DKK, EUR and USD. |
@@ -491,7 +489,7 @@ storefront is included as a sample; raw execution reports and credentials stay l
 | [Custom mapper details](images/26-dashboard-mapper-names-and-publication.png) | Mapper type names and publication/removal behavior. |
 | [Export and Maintenance](images/29-dashboard-export-and-maintenance.png) | Full export and scoped permanent-deletion controls. |
 | [Connection details](images/30-dashboard-connection-details.png) | Current separate default/named tables and usage explanations. |
-| [Stored entity counts](images/32-dashboard-final-review.png) | Umbraco Search reports Healthy and 116 stored entities matching the configured mappings from the local Dataset. |
+| [Stored entity counts](images/32-dashboard-final-review.png) | Umbraco Search reports Healthy and 116 stored entities matching the configured mappings from the test Dataset. |
 | [Brand filters](images/33-storefront-brand-filters.jpg) | Multiple Brand selections, counts, removable chips and actual Brand labels on Product cards. |
 | [Brand page](images/37-storefront-brand-page.jpg) | Ridgeway's fixed Brand scope retains other facets and omits redundant Brand selection. |
 | [Shopping on desktop](images/38-storefront-shopping-desktop.jpg) | Shared search header, separate navigation row, compact introduction and reactive listings. |
