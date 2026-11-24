@@ -167,7 +167,8 @@ To use the connected shopping features, follow the
 [Relewise connection setup](samples/Relewise.DemoStorefront/README.md#connect-to-relewise)
 with a dedicated test Dataset.
 
-[Run the demo and explore the examples →](samples/Relewise.DemoStorefront/README.md)
+Follow the [DemoStorefront setup guide](samples/Relewise.DemoStorefront/README.md)
+for prerequisites, installation, connecting Relewise and exploring the examples.
 
 ### Guides
 
