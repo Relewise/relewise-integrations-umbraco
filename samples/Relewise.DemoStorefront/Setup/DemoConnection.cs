@@ -11,7 +11,7 @@ internal static class DemoConnection
 {
     internal const string SetupUrl =
         "https://github.com/Relewise/relewise-integrations-umbraco/tree/main/" +
-        "samples/Relewise.DemoStorefront#connect-a-local-relewise-dataset";
+        "samples/Relewise.DemoStorefront#connect-to-relewise";
 
     internal static bool IsConfigured(HttpContext http)
     {

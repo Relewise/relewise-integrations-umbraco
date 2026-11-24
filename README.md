@@ -163,6 +163,9 @@ and Categories, Recently Viewed recommendations, an asynchronous cart and a demo
 Set **Relewise.DemoStorefront** as the startup project and press **F5**. It runs with
 a seeded CMS content preview out of the box. Browse the published pages and inspect
 the sample code for search, facets, predictions, recommendations, export and tracking.
+To use the connected shopping features, follow the
+[Relewise connection setup](samples/Relewise.DemoStorefront/README.md#connect-to-relewise)
+with a dedicated test Dataset.
 
 [Run the demo and explore the examples →](samples/Relewise.DemoStorefront/README.md)
 

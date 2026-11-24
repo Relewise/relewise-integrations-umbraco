@@ -6,6 +6,13 @@ or fulfilling purchases.
 
 ## Run locally
 
+Clone the repository and open the solution:
+
+```powershell
+git clone https://github.com/Relewise/relewise-integrations-umbraco.git
+cd relewise-integrations-umbraco
+```
+
 Install .NET 11, Node 24.13+ and npm 11+. Open the solution, select
 **Relewise.DemoStorefront** as the startup project and press **F5**.
 The build installs frontend dependencies and builds the Vue components; no separate
@@ -21,6 +28,41 @@ The seeded CMS content preview starts without Relewise credentials. Browse the
 published pages and inspect the mapping and converter examples below. The sample
 code also demonstrates Relewise search, facets, predictions, recommendations and
 behavioral tracking, with shopping flows implemented in Razor and Vue.
+
+### Connect to Relewise
+
+1. Use a dedicated test Dataset. The sample exports fictional catalog data and sends
+   behavioral events. In My Relewise, obtain its **Dataset ID**, **API Key** and
+   **Server URL**. The key must permit entity updates and administrative actions,
+   entity reads, search and predictions, recommendations and behavioral tracking.
+2. Create an ignored `local.settings.json` in `samples/Relewise.DemoStorefront`:
+
+   ```json
+   {
+     "Relewise": {
+       "DatasetId": "<dataset-id>",
+       "ApiKey": "<api-key>",
+       "ServerUrl": "<server-url>"
+     }
+   }
+   ```
+
+   Replace all placeholders with the Dataset's values. Use the complete Server URL
+   from My Relewise. Keep the file out of source control.
+3. Start or restart the project with **F5**, or run from the repository root:
+
+   ```powershell
+   dotnet run --project samples/Relewise.DemoStorefront --launch-profile Relewise.DemoStorefront
+   ```
+
+   Startup installs and seeds Umbraco, then queues an export of published data.
+   Allow ingestion to finish before checking search results. The same export runs
+   on subsequent starts.
+4. Open `http://localhost:5521/en/` and verify the exported entities in My Relewise.
+   Try search, facets, market selection, recommendations, cart and simulated checkout.
+   Invalid credentials produce a connection error; the sample does not substitute
+   another search provider. Recently viewed and popularity examples need activity
+   before they return results.
 
 ### Backoffice and seeded data
 

@@ -62,9 +62,9 @@ internal static class DemoDictionary
         ("PreviewMode", "Content preview", "Indholdsvisning"),
         ("PreviewModeHelp",
             "Relewise is not configured. You can explore the seeded pages, but search, filters, " +
-            "offers, cart and checkout require a local Relewise connection.",
+            "offers, cart and checkout require a Relewise connection.",
             "Relewise er ikke konfigureret. Du kan udforske de oprettede sider, men søgning, " +
-            "filtre, tilbud, kurv og bestilling kræver en lokal Relewise-forbindelse."),
+            "filtre, tilbud, kurv og bestilling kræver en Relewise-forbindelse."),
         ("ContentPreview",
             "A small selection of published CMS pages. Connect Relewise to search and filter the " +
             "complete catalogue.",
@@ -93,16 +93,16 @@ internal static class DemoDictionary
         ("SearchProvider", "Search provider", "Søgeudbyder"),
         ("RelewiseActionFailed",
             "The Relewise connection could not complete this action. Check the Dataset ID, API " +
-            "credentials and local API server; see the application logs for details.",
+            "credentials and API server; see the application logs for details.",
             "Relewise-forbindelsen kunne ikke fuldføre handlingen. Kontroller Dataset-ID, " +
-            "API-oplysninger og den lokale API-server; se detaljer i applikationens log."),
+            "API-oplysninger og API-serveren; se detaljer i applikationens log."),
         ("ConnectionProblem", "Relewise connection problem", "Problem med forbindelsen til Relewise"),
         ("ConnectionUnavailable",
             "The configured Relewise connection could not complete this request. Check the " +
-            "Dataset ID, API credentials and local API server. See the application logs for " +
+            "Dataset ID, API credentials and API server. See the application logs for " +
             "details.",
             "Den konfigurerede Relewise-forbindelse kunne ikke fuldføre denne forespørgsel. " +
-            "Kontroller Dataset-ID, API-oplysninger og den lokale API-server. Se detaljer i " +
+            "Kontroller Dataset-ID, API-oplysninger og API-serveren. Se detaljer i " +
             "applikationens log."),
         ("Menu", "Menu", "Menu"),
         ("Close", "Close", "Luk"),

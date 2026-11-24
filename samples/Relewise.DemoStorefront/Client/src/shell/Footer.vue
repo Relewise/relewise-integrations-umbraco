@@ -43,7 +43,7 @@ function chooseMarket() {
         <div class="footer-demo" lang="en">
             <div class="footer-powered-by">
                 <a href="https://www.relewise.com/" target="_blank" rel="noopener noreferrer"><img :src="logoUrl" alt="Relewise" width="162" height="23"></a>
-                <p v-if="!initial.checkout">{{ initial.shoppingConfigured ? (initial.searchConfigured ? 'Demo storefront with search and recommendations powered by Relewise.' : 'Demo storefront with recommendations powered by Relewise.') : 'A Relewise demo storefront. Connect a local Dataset to explore search and recommendations.' }}</p>
+                <p v-if="!initial.checkout">{{ initial.shoppingConfigured ? (initial.searchConfigured ? 'Demo storefront with search and recommendations powered by Relewise.' : 'Demo storefront with recommendations powered by Relewise.') : 'A Relewise demo storefront. Connect Relewise to explore search and recommendations.' }}</p>
             </div>
             <button class="demo-information-trigger" aria-haspopup="dialog" aria-controls="demo-information-dialog" @click="information.showModal()">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v1"/></svg>Demo information
@@ -64,7 +64,7 @@ function chooseMarket() {
         </dl>
         <nav class="demo-information-links" aria-label="Demo information">
             <a :href="guide" target="_blank" rel="noopener noreferrer">Demo storefront guide ↗</a>
-            <a :href="`${guide}#connect-a-local-relewise-dataset`" target="_blank" rel="noopener noreferrer">Configure Relewise ↗</a>
+            <a :href="`${guide}#connect-to-relewise`" target="_blank" rel="noopener noreferrer">Configure Relewise ↗</a>
             <a :href="searchGuide" target="_blank" rel="noopener noreferrer">Search provider guide ↗</a>
             <a v-if="initial.datasetId" :href="`https://my.relewise.com/${initial.datasetId}`" target="_blank" rel="noopener noreferrer">Open My Relewise ↗</a>
         </nav>

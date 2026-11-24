@@ -13,6 +13,8 @@ Validate the mapped data before diagnosing search results. A successful export r
 The [demo storefront](../samples/Relewise.DemoStorefront/README.md) provides a seeded
 CMS content preview and buildable mapping, converter, search and tracking examples.
 Building the sample and browsing its CMS preview require no Dataset credentials.
+For connected checks, follow the [sample connection setup](../samples/Relewise.DemoStorefront/README.md#connect-to-relewise)
+with a dedicated test Dataset.
 
 ## Repository regression tests
 

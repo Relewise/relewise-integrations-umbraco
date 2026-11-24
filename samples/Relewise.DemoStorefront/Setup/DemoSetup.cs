@@ -21,11 +21,11 @@ internal static class DemoSetup
                 server,
                 UriKind.Absolute,
                 out Uri? endpoint
-            ) || !endpoint.IsLoopback)
+            ) || endpoint.Scheme is not ("http" or "https"))
         {
             throw new InvalidOperationException(
-                "Configure DatasetId, ApiKey and a local ServerUrl together in local.settings.json. " +
-                "The demo only supports local Datasets.");
+                "Configure a valid DatasetId, ApiKey and absolute HTTP or HTTPS ServerUrl " +
+                "together in local.settings.json.");
         }
 
         return true;

@@ -69,6 +69,58 @@ public class DemoConnectionTests
     }
 
     [Fact]
+    public void HostedConfigurationIsAcceptedWithoutMakingAnApiRequest()
+    {
+        IConfigurationRoot configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Relewise:DatasetId"] = Guid.NewGuid().ToString(),
+                ["Relewise:ApiKey"] = "configuration-test-key",
+                ["Relewise:ServerUrl"] = "https://dataset-api.example.com/"
+            })
+            .Build();
+
+        Assert.True(DemoSetup.HasRelewiseConfiguration(configuration));
+    }
+
+    [Theory]
+    [InlineData("http://localhost:5000/")]
+    [InlineData("https://127.0.0.1:5004/")]
+    [InlineData("https://[::1]:5004/")]
+    public void LoopbackHttpEndpointsRemainAccepted(string serverUrl)
+    {
+        IConfigurationRoot configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Relewise:DatasetId"] = Guid.NewGuid().ToString(),
+                ["Relewise:ApiKey"] = "configuration-test-key",
+                ["Relewise:ServerUrl"] = serverUrl
+            })
+            .Build();
+
+        Assert.True(DemoSetup.HasRelewiseConfiguration(configuration));
+    }
+
+    [Theory]
+    [InlineData("relative/path")]
+    [InlineData("file:///C:/example")]
+    [InlineData("ftp://localhost/")]
+    [InlineData("")]
+    public void CompleteCredentialsStillRequireAnAbsoluteHttpEndpoint(string serverUrl)
+    {
+        IConfigurationRoot configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Relewise:DatasetId"] = Guid.NewGuid().ToString(),
+                ["Relewise:ApiKey"] = "configuration-test-key",
+                ["Relewise:ServerUrl"] = serverUrl
+            })
+            .Build();
+
+        Assert.Throws<InvalidOperationException>(() => DemoSetup.HasRelewiseConfiguration(configuration));
+    }
+
+    [Fact]
     public void UpstreamFailuresAreRecognizedWithoutSwallowingRequestCancellationOrProgrammingErrors()
     {
         var failure = new HttpRequestException("Rejected credential", null, System.Net.HttpStatusCode.Unauthorized);
