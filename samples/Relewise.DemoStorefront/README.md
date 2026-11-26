@@ -41,7 +41,7 @@ open the DemoStorefront folder and run `dotnet run` in its integrated terminal.
    behavioral events. In My Relewise, obtain its **Dataset ID**, **API Key** and
    **Server URL**. The key must permit entity updates and administrative actions,
    entity reads, search and predictions, recommendations and behavioral tracking.
-2. Create an ignored `local.settings.json` in the current DemoStorefront directory
+2. Create `local.settings.json` in the current DemoStorefront directory
    (`samples/Relewise.DemoStorefront`):
 
    ```json
@@ -55,7 +55,10 @@ open the DemoStorefront folder and run `dotnet run` in its integrated terminal.
    ```
 
    Replace all placeholders with the Dataset's values. Use the complete Server URL
-   from My Relewise. Keep the file out of source control.
+   from My Relewise. The repository's `.gitignore` excludes this file from Git.
+
+   In production applications using the integration, store API credentials in a
+   managed secret store such as Azure Key Vault and load them through configuration.
 3. Stop the site with **Ctrl+C** if it is running, then restart it from the
    DemoStorefront directory:
 
