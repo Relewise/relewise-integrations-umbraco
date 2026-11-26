@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Relewise.Client.Extensions;
 
 namespace Relewise.Integrations.Umbraco.Controllers.Messages;
@@ -9,7 +9,8 @@ namespace Relewise.Integrations.Umbraco.Controllers.Messages;
 public class ClientOptionsViewObject
 {
     /// <summary>
-    /// Creates a new instance of <see cref="ClientOptionsViewObject"/> from the provided <see cref="RelewiseClientOptions"/>
+    /// Creates a new instance of <see cref="ClientOptionsViewObject"/> from the provided <see
+    /// cref="RelewiseClientOptions"/>
     /// </summary>
     /// <param name="options"></param>
     public ClientOptionsViewObject(RelewiseClientOptions options)
@@ -23,6 +24,7 @@ public class ClientOptionsViewObject
     /// Unique identifier for the dataset this client is configured to use
     /// </summary>
     public Guid DatasetId { get; }
+
     /// <summary>
     /// URL of the Relewise server this client connects to
     /// </summary>

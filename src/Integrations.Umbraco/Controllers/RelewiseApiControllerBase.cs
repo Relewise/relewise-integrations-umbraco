@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Umbraco.Cms.Api.Common.Attributes;
 using Umbraco.Cms.Web.Common.Authorization;
@@ -12,5 +12,5 @@ namespace Relewise.Integrations.Umbraco.Controllers;
 [ApiController]
 [BackOfficeRoute("relewisedashboard/api/v{version:apiVersion}")]
 [Authorize(Policy = AuthorizationPolicies.SectionAccessContent)]
-[MapToApi(Constants.ApiName)]
+[MapToApi(Constants.Api.Name)]
 public abstract class RelewiseApiControllerBase : ControllerBase;

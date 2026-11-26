@@ -1,0 +1,10 @@
+@model StorefrontLink[]
+@if (Model.Length > 0)
+{
+    <nav class="categories" aria-label="@Text(Context, "Categories")">
+        @foreach (StorefrontLink link in Model)
+        {
+            <a href="@link.Url">@link.Label</a>
+        }
+    </nav>
+}

@@ -1,0 +1,36 @@
+@inject IFileVersionProvider Versions
+@{
+    string section = (string)ViewData["Section"]!;
+    StorefrontShellModel shell = StorefrontChrome.Create(Context, section);
+    DemoMarket market = DemoMarket.Current(Context);
+    string css = Versions.AddFileVersionToPath(Context.Request.PathBase, "/storefront.css");
+    string script = Versions.AddFileVersionToPath(Context.Request.PathBase, "/storefront/listing.js");
+    string pageClass = shell.Checkout ? "checkout-page" : "shopping-page";
+}
+<!doctype html>
+<html lang="@market.Culture">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>@ViewData["Title"] | Fieldwork</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="@css">
+    <script type="module" src="@script"></script>
+</head>
+<body class="@pageClass">
+    <div id="storefront-shell"></div>
+    @* Default JSON escaping protects script boundaries containing CMS values. *@
+    <script id="shell-data" type="application/json">
+        @Html.Raw(JsonSerializer.Serialize(shell, StorefrontChrome.Json))
+    </script>
+    <main>
+        @if (!DemoConnection.IsConfigured(Context))
+        {
+            @await Html.PartialAsync("/Views/Shared/_PreviewNotice.cshtml")
+        }
+        @await Html.PartialAsync("/Views/Shared/_Feedback.cshtml", StorefrontNavigation.Feedback(Context))
+        @RenderBody()
+    </main>
+    <div id="storefront-footer"></div>
+</body>
+</html>

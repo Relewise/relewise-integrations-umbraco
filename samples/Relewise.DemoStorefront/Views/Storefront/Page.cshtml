@@ -1,0 +1,7 @@
+@model StorefrontPage
+@{
+    Layout = "/Views/Shared/_StorefrontLayout.cshtml";
+    ViewData["Title"] = Model.Title;
+    ViewData["Section"] = Model.Section;
+}
+@await Html.PartialAsync(Model.View, Model.Model)

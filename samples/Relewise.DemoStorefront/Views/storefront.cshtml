@@ -1,0 +1,11 @@
+﻿@inherits Umbraco.Cms.Web.Common.Views.UmbracoViewPage
+@inject IVariationContextAccessor Variations
+@{
+    Layout = null;
+    Variations.VariationContext = new VariationContext(DemoMarket.Current(Context).Culture);
+    StorefrontPage? page = await StorefrontPages.CreateAsync(Model, Context);
+}
+@if (page != null)
+{
+    @await Html.PartialAsync("/Views/Storefront/Page.cshtml", page)
+}

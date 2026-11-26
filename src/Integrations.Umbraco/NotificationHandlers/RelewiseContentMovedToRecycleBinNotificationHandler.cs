@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client;
@@ -10,23 +10,31 @@ using Umbraco.Cms.Core.Notifications;
 
 namespace Relewise.Integrations.Umbraco.NotificationHandlers;
 
-internal class RelewiseContentMovedToRecycleBinNotificationHandler : INotificationAsyncHandler<ContentMovedToRecycleBinNotification>
+internal class
+    RelewiseContentMovedToRecycleBinNotificationHandler : INotificationAsyncHandler<
+    ContentMovedToRecycleBinNotification>
 {
     private readonly IExportContentService _exportContentService;
     private readonly RelewiseUmbracoConfiguration _configuration;
 
-    public RelewiseContentMovedToRecycleBinNotificationHandler(IExportContentService exportContentService, RelewiseUmbracoConfiguration configuration)
+    public RelewiseContentMovedToRecycleBinNotificationHandler(
+        IExportContentService exportContentService,
+        RelewiseUmbracoConfiguration configuration)
     {
         _exportContentService = exportContentService;
         _configuration = configuration;
     }
 
-    public async Task HandleAsync(ContentMovedToRecycleBinNotification notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(
+        ContentMovedToRecycleBinNotification notification,
+        CancellationToken cancellationToken)
     {
         ITracker? tracker = _exportContentService.GetTrackerOrNull();
 
         if (tracker == null)
+        {
             return;
+        }
 
         string[] ids = notification.MoveInfoCollection
             .Where(x => _configuration.CanMap(x.Entity))
@@ -34,7 +42,9 @@ internal class RelewiseContentMovedToRecycleBinNotificationHandler : INotificati
             .ToArray();
 
         if (ids.Length == 0)
+        {
             return;
+        }
 
         var action = new ContentAdministrativeAction(
             Language.Undefined,

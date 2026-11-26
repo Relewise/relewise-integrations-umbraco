@@ -1,0 +1,66 @@
+@using Relewise.DemoStorefront.Features.Products
+@model ProductPageModel
+@await Html.PartialAsync(
+    "/Views/Shared/_Breadcrumb.cshtml",
+    StorefrontNavigation.Breadcrumb(Model.Page, Context, "shop"))
+<section class="detail">
+    <div class="illustration">@Html.Raw(Image(Model.Page))</div>
+    <div class="details">
+        <p class="eyebrow">@(Model.Brand?.Name ?? "Fieldwork")</p>
+        <h1>@Title(Model.Page)</h1>
+        <p class="lead">@Model.Lead</p>
+        <div class="price">
+            <strong>@Model.Prices.Sale</strong>
+            @if (Model.Prices.List != null)
+            {
+                <del>@Model.Prices.List</del><span class="offer-label">@Model.Prices.Savings</span>
+            }
+        </div>
+        <p class="availability @(Model.Purchase.AvailableUrl != null ? "sold-out" : "")">
+            @Model.Purchase.Availability
+        </p>
+        @if (Model.Purchase.AvailableUrl != null)
+        {
+            <a class="text-link" href="@Model.Purchase.AvailableUrl">@Text(Context, "ShopAvailable")</a>
+        }
+        @if (Model.Variants.Length > 0)
+        {
+            <p class="option-label">@Text(Context, Model.OptionLabel)</p>
+            <div class="variants">
+                @foreach (StorefrontLink variant in Model.Variants)
+                {
+                    <a href="@variant.Url" class="@(variant.Active ? "selected" : null)"
+                       aria-current="@(variant.Active ? "page" : null)">@variant.Label</a>
+                }
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.SizeGuide))
+        {
+            <details class="size-guide"><summary>@Text(Context, "SizeGuide")</summary><p>@Model.SizeGuide</p></details>
+        }
+        @await Html.PartialAsync("/Views/Products/_Purchase.cshtml", Model.Purchase)
+        @if (Model.Weight > 0 || !string.IsNullOrWhiteSpace(Model.Capacity))
+        {
+            <section class="product-specifications">
+                <h2>@Text(Context, "Specifications")</h2>
+                <dl>
+                    @if (Model.Weight > 0)
+                    {
+                        <dt>@Text(Context, "Weight")</dt><dd>@Model.Weight g</dd>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Capacity))
+                    {
+                        <dt>@Text(Context, "Capacity")</dt><dd>@Model.Capacity</dd>
+                    }
+                </dl>
+            </section>
+        }
+        @if (Model.Brand != null)
+        {
+            <p class="muted">@Text(Context, "Brand"): <a class="text-link"
+                href="@Model.Brand.Url()">@Title(Model.Brand)</a></p>
+        }
+    </div>
+</section>
+@await Html.PartialAsync("/Views/Recommendations/_Placement.cshtml", Model.Recommendations)
+@await Html.PartialAsync("/Views/Shared/_IntegrationDetails.cshtml", IntegrationDetails.Fields(Model.Page, Context))

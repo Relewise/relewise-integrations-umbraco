@@ -1,4 +1,9 @@
-﻿using Relewise.Client.DataTypes;
+#pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
@@ -6,18 +11,29 @@ namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 /// <summary>
 /// Handles extracting property values for 'Umbraco.TextArea'
 /// </summary>
-public class TextAreaPropertyValueConverter : IRelewisePropertyValueConverter
+public class TextAreaPropertyValueConverter : IDefaultPropertyValueConverter, IRelewisePropertyValueConverter
 {
-    /// <inheritdoc />
+    /// <inheritdoc cref="IRelewisePropertyValueConverter.CanHandle" />
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
         return context.Property.PropertyType.EditorAlias.Equals("Umbraco.TextArea");
     }
 
     /// <inheritdoc />
+    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Convert(context);
+
+        return default;
+    }
+
+    /// <inheritdoc/>
+    [Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        string? value = context.Property.GetValue<string>(context.Culture);
+        var value = context.Property.GetValue<string>(context.Culture);
+
         context.Add(context.Property.Alias, new DataValue(value));
     }
 }

@@ -1,9 +1,14 @@
-﻿namespace Relewise.Integrations.Umbraco;
+namespace Relewise.Integrations.Umbraco;
 
-internal struct Constants
+internal static class Constants
 {
-    internal static readonly string VersionKey = "UmbracoVersionId";
-    internal static readonly string NamedClientName = "Relewise_UmbracoClientName";
+    internal static class ClientNames
+    {
+        internal const string Integration = "Relewise_UmbracoClientName";
+    }
 
-    internal const string ApiName = "relewisedashboard";
+    internal static class Api
+    {
+        internal const string Name = "relewisedashboard";
+    }
 }

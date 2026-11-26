@@ -1,10 +1,12 @@
-﻿using Relewise.Client.DataTypes;
+using Relewise.Client.DataTypes;
 
 namespace Relewise.Integrations.Umbraco.Services;
 
 internal class MapContentResult
 {
-    private MapContentResult() {}
+    private MapContentResult()
+    {
+    }
 
     public MapContentResult(ContentUpdate? contentUpdate)
     {

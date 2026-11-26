@@ -1,0 +1,9 @@
+@using Relewise.DemoStorefront.Features.Recommendations
+@model RecommendationModel?
+@if (Model != null)
+{
+    <div id="product-recommendations"></div>
+    <script id="recommendation-data" type="application/json">
+        @Html.Raw(JsonSerializer.Serialize(Model, StorefrontChrome.Json))
+    </script>
+}

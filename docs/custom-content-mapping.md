@@ -2,6 +2,14 @@
 
 [Documentation home](README.md) · [Block editors](block-editors.md) · [Validation](validation-and-troubleshooting.md)
 
+This guide documents the existing Content mapper/converter API, retained for
+compatibility. `IContentTypeMapping`, `IRelewisePropertyValueConverter` and the instance-based
+`UseMapper(...)` overload are obsolete and produce warnings.
+Legacy converters register through obsolete `AddLegacyValueConverter<T>()`;
+`AddValueConverter<T>()` now requires `IAsyncRelewisePropertyValueConverter`.
+For new code, start with [entity mapping](entity-mapping.md) and
+the [demo storefront](../samples/Relewise.DemoStorefront/README.md#mapping-and-converter-examples).
+
 A content mapper decides which values from one published Umbraco page become Relewise content data. Use it when your export needs editorial rules: extracting text from blocks, combining properties, excluding configuration, or producing a field such as `searchText`.
 
 ## Contents
@@ -10,7 +18,7 @@ A content mapper decides which values from one published Umbraco page become Rel
 - [Understand the mapping pipeline](#understand-the-mapping-pipeline)
 - [Write a minimal mapper](#write-a-minimal-mapper)
 - [Register a mapper](#register-a-mapper)
-- [Preserve ordinary property mapping](#preserve-ordinary-property-mapping)
+- [Preserve automatic property mapping](#preserve-automatic-property-mapping)
 - [Handle cultures](#handle-cultures)
 - [When a property converter is appropriate](#when-a-property-converter-is-appropriate)
 - [Design the exported data](#design-the-exported-data)
@@ -21,13 +29,16 @@ A content mapper decides which values from one published Umbraco page become Rel
 | --- | --- | --- |
 | Export supported properties without special rules | `contentType.AutoMap()` | A registered document type |
 | Decide what a page contributes, combine fields, or apply site-specific block rules | `contentType.UseMapper(...)` with `IContentTypeMapping` | A registered document type; one mapper can serve several types |
-| Teach automatic mapping about a new property editor | `IRelewisePropertyValueConverter` and `services.AddValueConverter<T>()` | Every matching property processed by the converter service |
+| Teach automatic mapping about a new property editor | `IRelewisePropertyValueConverter` and `services.AddLegacyValueConverter<T>()` | Every matching property processed by the converter service |
 
-A **document type alias** selects a mapper. A **property editor alias** selects a property converter. A **property alias** identifies a particular field such as `contentRows`. These are different names with different roles.
+A **document type alias** selects a page mapping. A **property alias** identifies a
+field such as `contentRows`; a **property editor alias** identifies its editor.
+Global converters decide whether to handle a field in `CanHandle`, commonly using
+the editor alias or property alias. These names have different roles.
 
-`UseMapper(...)` takes over property mapping; it is not a callback after `AutoMap()`. Calling both does not compose the two approaches: the current implementation chooses the custom mapper when one is registered. Reuse the property converter service inside your mapper if you want ordinary fields converted automatically.
+The legacy `UseMapper(IContentTypeMapping)` overload takes over property mapping; it does not run after `AutoMap()`. Calling both selects the legacy mapper instead of automatic property conversion. The new `UseMapper<TMapper>()` API is different: it runs after automatic or explicit fields and relationships. Reuse the property converter service inside your mapper if you want supported properties converted automatically.
 
-Registering a document type without `AutoMap()` or `UseMapper(...)` makes it available for tracking but does not configure its content export. Register the containing page type for blocks; block element types do not become separate exported pages simply because they occur inside it.
+With the legacy `AddContentType(...)` API, registration without `AutoMap()` or a legacy mapper enables tracking without export. In contrast, `MapContent(...)` enables export and tracking by default, even without explicit fields. Set `mapping.Export = false` for a tracking-only mapping in the new API. Register the containing page type for blocks; block element types do not become separate exported pages simply because they occur inside it.
 
 ## Understand the mapping pipeline
 
@@ -48,23 +59,24 @@ The integration supplies a `ContentMappingContext` with:
 | --- | --- |
 | `PublishedContent` | Published values for the page being exported. Work from these instead of raw editor storage JSON. |
 | `ContentUpdate` | The update already initialized with content ID, display name, category paths, and the requested update kind. |
-| `CulturesToPublish` | The page's published cultures, or the site's default culture for invariant pages. |
+| `CulturesToPublish` | Cultures selected for this export. In the shared indexing pipeline, invariant pages use all configured site languages. |
 | `GetService(...)` / `GetRequiredService<T>()` | Access to registered services. The context implements `IServiceProvider`. |
 
-**Modify and return `context.ContentUpdate`.** Do not construct a replacement update. In the current implementation, the outer mapping operation retains its original update reference. Returning a different instance is not a reliable way to replace the export, and can lose the changes you expected to send.
+**Modify and return `context.ContentUpdate` for the simplest migration path.** The shared indexing pipeline also honors a replacement `ContentUpdate` returned by a legacy mapper, including its update kind and Content ID. Changing that ID inside a mapper does not change the ID resolver used by references and automatic tracking. Move custom identity rules to `IdFromProperty(...)` when migrating to the new API.
 
-After mapping, the integration adds these reserved data keys using dictionary `Add`:
+The integration owns `UmbracoVersionId`, `contentTypeAlias`, `url`, `createdAt` and
+keys beginning with `rwUmbraco`. Source identity, publication and search metadata are
+maintained by the shared indexing pipeline. With the default synchronization policy,
+`url` and `createdAt` are supplied again after legacy mapping, even if the mapper
+replaces the Content or its Data dictionary.
 
-- `UmbracoVersionId`
-- `contentTypeAlias`
-- `url`
-- `createdAt`
-
-Do not emit these keys yourself, including through automatically converted properties with colliding aliases. They will cause duplicate-key errors. Use names such as `canonicalUrl` for your own fields.
+Do not use reserved keys for application fields. Depending on the mapping path, a
+collision can fail validation, cause a duplicate-key error or be overwritten by
+integration metadata. Use names such as `canonicalUrl` for your own fields.
 
 The mapper does not send a request to Relewise. The export service handles transport and publication lifecycle. Keep extraction independent of HTTP requests, Razor rendering, and the current visitor.
 
-Sources: [mapping pipeline](../src/Integrations.Umbraco/Services/ContentMapper.cs), [context](../src/Integrations.Umbraco/ContentMappingContext.cs), [configuration](../src/Integrations.Umbraco/RelewiseUmbracoConfiguration.cs).
+Sources: [shared mapping pipeline](../src/Integrations.Umbraco/Mapping/EntityMapper.cs), [context](../src/Integrations.Umbraco/ContentMappingContext.cs), [configuration](../src/Integrations.Umbraco/RelewiseUmbracoConfiguration.cs).
 
 ## Write a minimal mapper
 
@@ -96,7 +108,8 @@ public sealed class SummaryMapper : IContentTypeMapping
 }
 ```
 
-Only `summary` and the integration's metadata will be mapped by this example. Existing fields stored remotely are a separate concern; see [update semantics](validation-and-troubleshooting.md#removed-fields-and-update-semantics).
+The example supplies only `summary` as application-owned Data. The initialized
+DisplayName and category paths remain, and the integration maintains its metadata. Existing fields stored remotely are a separate concern; see [update semantics](validation-and-troubleshooting.md#removed-fields-and-update-semantics).
 
 ## Register a mapper
 
@@ -108,45 +121,50 @@ For a stateless mapper with no constructor dependencies, register an instance in
     .AddContentType("simplePage", type => type.AutoMap()))
 ```
 
-Use the overload that supplies `IServiceProvider` when your mapper is registered with dependency injection. The complete block example uses this pattern:
+Existing instance-based mappers can use the overload that supplies `IServiceProvider` when registered with dependency injection:
 
 ```csharp
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco;
-using Relewise.MappingExamples;
 
 // Before building the application:
-builder.Services.AddSingleton<EditorialContentMapper>();
+builder.Services.AddSingleton<SummaryMapper>();
 
 // Within your existing builder.CreateUmbracoBuilder() chain:
 .AddRelewise((options, services) =>
 {
-    var mapper = services.GetRequiredService<EditorialContentMapper>();
+    var mapper = services.GetRequiredService<SummaryMapper>();
     options.AddContentType("article", type => type.UseMapper(mapper));
     options.AddContentType("landingPage", type => type.UseMapper(mapper));
     options.AddContentType("simplePage", type => type.AutoMap());
 })
 ```
 
-The second snippet shows two insertion points, not a standalone `Program.cs`. Keep your existing Relewise client configuration, backoffice, website, and application startup. See the [complete registration instructions](examples/AdvancedContentMapping/README.md#register-in-your-application).
+The second snippet shows two insertion points, not a standalone `Program.cs`. Keep your existing Relewise client configuration, backoffice, website, and application startup. New implementations can use the scoped `IEntityMapper<Content>` API shown in the [demo's mapping examples](../samples/Relewise.DemoStorefront/README.md#mapping-and-converter-examples).
 
 Mapper instances are retained by the integration configuration. Treat them as shared services: keep per-page state in local variables, avoid capturing scoped services, and make dependencies safe to share. Do not store the current page or culture in an instance field. If extraction requires I/O, make it asynchronous and pass the cancellation token through.
 
-## Preserve ordinary property mapping
+## Preserve automatic property mapping
 
 Resolve `IRelewisePropertyConverter` from the mapping context and give it the properties you want to preserve:
 
 ```csharp
-// Inside Map; add Microsoft.Extensions.DependencyInjection,
+// Inside an async Task<ContentUpdate> Map method; add Microsoft.Extensions.DependencyInjection,
 // Relewise.Integrations.Umbraco.Services, and System.Linq imports.
 var converter = context.GetRequiredService<IRelewisePropertyConverter>();
 var ordinaryProperties = context.PublishedContent.Properties
     .Where(property => property.Alias is "title" or "summary" or "tags");
-var data = converter.Convert(ordinaryProperties, context.CulturesToPublish.ToArray())
+var data = (await converter.ConvertAsync(ordinaryProperties, context.CulturesToPublish.ToArray(), token))
     .ToDictionary(pair => pair.Key, pair => pair.Value);
 
 // Add your derived fields here, then assign data to context.ContentUpdate.Content.Data.
 ```
+
+This property-only overload preserves the selected fields but has no owning-page or
+source-element context. Converters that need that context should use the contextual
+`ConvertAsync(publishedContent, sourceElement, cultures, services, cancellationToken)`
+overload, which converts all properties of the supplied source element, or the new
+explicit field mappings.
 
 An explicit list is usually easiest to reason about: adding an editor-only field to Umbraco will not silently make it part of the exported data. To preserve a broader existing export, filter out the properties your mapper owns and reserved keys, then convert the rest. Conversion preserves the behavior of **registered converters**, not all possible editor types. An unsupported property can be omitted without an error.
 
@@ -166,9 +184,9 @@ var values = context.CulturesToPublish
 data["searchText"] = new DataValue(new Multilingual(values));
 ```
 
-The ordinary converter service applies its own rules: invariant properties use the first culture; variant strings with several values become `Multilingual`; string lists become `MultilingualCollection`; other variant types can get culture-suffixed keys. See [the implementation](../src/Integrations.Umbraco/Services/RelewisePropertyConverter.cs).
+The property converter service applies its own rules: invariant properties use the first culture; variant strings with several values become `Multilingual`; string lists become `MultilingualCollection`; other variant types can get culture-suffixed keys. See [the implementation](../src/Integrations.Umbraco/Services/RelewisePropertyConverter.cs).
 
-For derived block text, consider the whole composition. An invariant container can contain culture-dependent values or references. The complete example extracts once per published page culture. Decide your fallback rules explicitly, and test a missing translation. It reads published property values directly and does not add a custom fallback policy.
+For derived block text, consider the whole composition. An invariant container can contain culture-dependent values or references. The demo's final entity mapper extracts invariant outer blocks separately for each published page culture. Decide your fallback rules explicitly, and test a missing translation. It reads published property values directly and does not add a custom fallback policy.
 
 ## When a property converter is appropriate
 
@@ -194,14 +212,21 @@ public sealed class PlainTextPropertyConverter : IRelewisePropertyValueConverter
 Register it before the service provider is built:
 
 ```csharp
-builder.Services.AddValueConverter<PlainTextPropertyConverter>();
+builder.Services.AddLegacyValueConverter<PlainTextPropertyConverter>();
 ```
 
 This makes it available to automatic mapping and to custom mappers that call `IRelewisePropertyConverter`.
 
-**All matching converters run.** There is no first-match-wins override rule. `context.Add` uses a dictionary's `Add`, so matching the same editor and writing the same key as an existing converter can throw. Registration order does not make replacement safe. Prefer a content mapper for site-specific changes to built-in Block List behavior; do not remove internal converter classes by their type-name strings.
+**All matching legacy synchronous converters still run.** Their registration order
+does not provide a safe override: `context.Add` throws if two converters write the
+same key. New asynchronous global converters follow a different rule: the last
+matching custom registration takes precedence over built-in defaults. It does not
+suppress separately registered legacy custom converters. See
+[converter selection](entity-mapping.md#conversion-and-custom-mapping). Prefer a
+field-specific converter or entity mapper for page-specific Block List behavior.
+Do not remove internal converter classes by their type-name strings.
 
-If a custom converter needs the aggregate `IRelewisePropertyConverter`, constructor-injecting it creates a dependency cycle: the aggregate is constructed from all converters. The built-in nested converters resolve it during conversion through a service provider instead. For page-specific composition, a mapper avoids that converter-level cycle altogether.
+If a legacy synchronous converter needs the aggregate `IRelewisePropertyConverter`, constructor-injecting it creates a dependency cycle: the aggregate is constructed from the registered legacy converters. The built-in nested converters resolve it during conversion through a service provider instead. For page-specific composition, a mapper avoids that converter-level cycle altogether.
 
 ## Design the exported data
 
@@ -217,4 +242,4 @@ Choose a stable, intentional schema before writing a recursive walker:
 
 A mapper does not configure search weights, filters, or which fields your search setup searches. Verify those separately in your Relewise setup. Exporting a field and making it influence search are separate steps.
 
-Next: [map Block List and Block Grid](block-editors.md), or open the [complete example](examples/AdvancedContentMapping/README.md).
+Next: [map Block List and Block Grid](block-editors.md), or open the [demo's mapping examples](../samples/Relewise.DemoStorefront/README.md#mapping-and-converter-examples).

@@ -1,0 +1,16 @@
+@model StorefrontNotice?
+@if (Model != null)
+{
+    <section class="notice @(Model.Error ? "notice-error" : "")" role="@(Model.Error ? "alert" : "status")">
+        <p>@Model.Text</p>
+        @if (Model.CartAdded)
+        {
+            <div class="notice-actions">
+                <a class="text-link"
+                    href="@(DemoMarket.Current(Context).LanguagePath)/cart">@Text(Context, "ViewCart")</a>
+                <a class="text-link"
+                    href="@StorefrontNavigation.ShoppingUrl(Context)">@Text(Context, "ContinueShopping")</a>
+            </div>
+        }
+    </section>
+}

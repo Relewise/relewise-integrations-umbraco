@@ -1,0 +1,74 @@
+@using Relewise.DemoStorefront.Features.Cart
+@model CartPageModel
+@{
+    DemoMarket market = DemoMarket.Current(Context);
+}
+@if (!Model.Checkout)
+{
+    @await Html.PartialAsync("/Views/Shared/_Breadcrumb.cshtml",
+        StorefrontNavigation.Breadcrumb(null, Context, "shop", Text(Context, "Cart")))
+}
+<section class="hero">
+    <h1>@Text(Context, Model.Checkout ? "ReviewOrder" : "Cart")</h1>
+    @if (Model.Checkout)
+    {
+        <p>@Text(Context, "ReviewIntro")</p>
+    }
+</section>
+@if (!Model.Checkout)
+{
+    <div id="cart-page"></div>
+    <script id="cart-data" type="application/json">
+        @Html.Raw(JsonSerializer.Serialize(Model.Cart, StorefrontChrome.Json))
+    </script>
+}
+else if (Model.Empty)
+{
+    <p class="empty">@Text(Context, "CartEmpty")</p>
+    <a class="button" href="@StorefrontNavigation.ShoppingUrl(Context)">@Text(Context, "ContinueShopping")</a>
+}
+else
+{
+    <ol class="checkout-steps">
+        <li><a href="@(market.LanguagePath)/cart">@Text(Context, "Cart")</a></li>
+        <li aria-current="step">@Text(Context, "ReviewOrder")</li>
+        <li>@Text(Context, "Confirmation")</li>
+    </ol>
+    <section class="checkout-review">
+        <div class="checkout-items">
+            <h2>@Text(Context, "CartItems")</h2>
+            @foreach (CheckoutLineModel line in Model.Lines)
+            {
+                if (line.Title == null)
+                {
+                    <p role="alert">@Text(Context, "UnavailableItem")</p>
+                }
+                else
+                {
+                    <div class="review-item">
+                        <div class="illustration">@Html.Raw(line.ImageHtml)</div>
+                        <span>@line.Title<small>@Text(Context, "Quantity"): @line.Quantity</small></span>
+                        <strong>@line.Total</strong>
+                    </div>
+                }
+            }
+        </div>
+        <aside class="checkout-summary">
+            <h2>@Text(Context, "OrderSummary")</h2>
+            <div class="cart-total"><span>@Text(Context, "Total")</span><strong>@Model.Total</strong></div>
+            <p class="muted">@Text(Context, "DemoCheckout")</p>
+            @if (Model.CheckoutToken != null)
+            {
+                <form asp-antiforgery="false" method="post" action="@(market.LanguagePath)/checkout">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="checkoutToken" value="@Model.CheckoutToken">
+                    <button>@Text(Context, "PlaceOrder")</button>
+                </form>
+            }
+            else
+            {
+                <p role="alert">@Text(Context, "CartUnavailable")</p>
+            }
+        </aside>
+    </section>
+}

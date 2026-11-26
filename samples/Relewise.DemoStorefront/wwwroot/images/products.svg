@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+    <symbol id="accessories" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <circle cx="150" cy="155" r="90" />
+            <circle cx="150" cy="155" r="70" fill="#f7f5ed" />
+            <path d="m150 100 25 55-25 55-25-55z" />
+            <path d="m150 100 25 55h-25z" fill="#8a704b" />
+            <circle cx="150" cy="155" r="7" fill="#f7f5ed" />
+        </g>
+    </symbol>
+    <symbol id="beanie" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="M65 200V130q85-145 170 0v70z" />
+            <rect x="55" y="180" width="190" height="55" rx="12" fill="#8a704b" />
+            <path d="M110 100v80m40-95v95m40-80v80" stroke="#f7f5ed" stroke-width="5" />
+        </g>
+    </symbol>
+    <symbol id="binoculars" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="m65 90-30 135h90l-10-135zm120 0-10 135h90L235 90z" />
+            <rect x="110" y="125" width="80" height="40" rx="15" />
+            <ellipse cx="80" cy="222" rx="43" ry="17" fill="#8a704b" />
+            <ellipse cx="220" cy="222" rx="43" ry="17" fill="#8a704b" />
+        </g>
+    </symbol>
+    <symbol id="blanket" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="m45 80 170-25 40 170-170 25z" />
+            <path d="m85 75 40 165m40-175 40 165M55 120l170-25M70 185l170-25" stroke="#8a704b" stroke-width="18" />
+            <path d="m85 250-5 15m20-18-5 15m20-18-5 15" stroke="currentColor" stroke-width="6" />
+        </g>
+    </symbol>
+    <symbol id="cap" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="M55 175q0-105 105-105t100 105z" />
+            <path d="M60 160q-35 20-30 45 40 25 120-30z" fill="#8a704b" />
+            <path d="M160 75v85" stroke="#f7f5ed" stroke-width="7" />
+        </g>
+    </symbol>
+    <symbol id="chair" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="m75 80 150 0-20 95H95z" />
+            <path d="M95 175h110l20 25H75z" />
+            <path d="m100 200-25 65m125-65 25 65m-120-65 95 65m-5-65-95 65" fill="none" stroke="currentColor" stroke-width="12" />
+        </g>
+    </symbol>
+    <symbol id="cookware" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="M65 115h150v95q-10 30-75 30-65 0-75-30z" />
+            <path d="M215 135h35q35 40-35 55" fill="none" stroke="currentColor" stroke-width="14" />
+            <ellipse cx="140" cy="115" rx="75" ry="20" fill="#8a704b" />
+            <path d="M115 85q25-30 50 0" fill="none" stroke="currentColor" stroke-width="10" />
+        </g>
+    </symbol>
+    <symbol id="daypack" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <rect x="75" y="65" width="150" height="180" rx="35" />
+            <path d="M110 65V45h80v20M85 175h130M110 140h80" fill="none" stroke="#f7f5ed" stroke-width="9" />
+        </g>
+    </symbol>
+    <symbol id="duffel" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <rect x="45" y="110" width="210" height="125" rx="30" />
+            <path d="M110 115V90q40-55 80 0v25M65 120v100m170-100v100" fill="none" stroke="#f7f5ed" stroke-width="12" />
+        </g>
+    </symbol>
+    <symbol id="first-aid" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <rect x="55" y="90" width="190" height="150" rx="25" />
+            <path d="M110 90V65h80v25" fill="none" stroke="currentColor" stroke-width="13" />
+            <path d="M138 120h24v30h30v24h-30v30h-24v-30h-30v-24h30z" fill="#f7f5ed" />
+        </g>
+    </symbol>
+    <symbol id="flask" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <rect x="105" y="65" width="90" height="190" rx="25" />
+            <rect x="115" y="40" width="70" height="35" rx="8" />
+        </g>
+    </symbol>
+    <symbol id="gloves" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="M75 245V130q0-25 16-20V70q0-25 17-10v50-65q0-25 17-8v73-52q0-22 17-6v61-31q0-20 17-5v75l17-27q20-18 25 1l-30 90v29z" />
+            <path d="M80 215h85" stroke="#f7f5ed" stroke-width="8" />
+        </g>
+    </symbol>
+    <symbol id="hammock" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="M35 80q115 220 230 0-115 100-230 0z" />
+            <path d="m35 80-15-30m245 30 15-30" stroke="currentColor" stroke-width="7" />
+            <path d="M65 110q85 140 170 0" fill="none" stroke="#f7f5ed" stroke-width="7" />
+        </g>
+    </symbol>
+    <symbol id="headlamp" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="M45 160q0-80 105-80t105 80" fill="none" stroke="currentColor" stroke-width="23" />
+            <rect x="100" y="100" width="100" height="100" rx="23" />
+            <circle cx="150" cy="150" r="33" fill="#f7f5ed" />
+            <circle cx="150" cy="150" r="20" fill="#8a704b" />
+        </g>
+    </symbol>
+    <symbol id="lantern" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="M115 70V45q35-40 70 0v25" fill="none" stroke="currentColor" stroke-width="12" />
+            <rect x="100" y="65" width="100" height="25" rx="8" />
+            <rect x="95" y="90" width="110" height="140" rx="22" />
+            <rect x="110" y="110" width="80" height="95" rx="12" fill="#f7f5ed" />
+            <path d="M100 235h100v20H100z" />
+        </g>
+    </symbol>
+    <symbol id="mug" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <rect x="75" y="85" width="125" height="140" rx="20" />
+            <path d="M200 110h20q45 45 0 90h-20" fill="none" stroke="currentColor" stroke-width="18" />
+            <path d="M105 55v-20m40 20v-20" stroke="currentColor" stroke-width="9" />
+        </g>
+    </symbol>
+    <symbol id="phone-pouch" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <rect x="75" y="50" width="150" height="210" rx="18" />
+            <rect x="95" y="85" width="110" height="140" rx="8" fill="#f7f5ed" />
+            <path d="M115 50V25h70v25" fill="none" stroke="currentColor" stroke-width="9" />
+        </g>
+    </symbol>
+    <symbol id="pillow" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <rect x="40" y="85" width="220" height="145" rx="50" />
+            <path d="M80 115q70-25 140 0m-140 85q70 25 140 0" fill="none" stroke="#f7f5ed" stroke-width="8" />
+        </g>
+    </symbol>
+    <symbol id="pouch" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <rect x="65" y="80" width="170" height="150" rx="18" />
+            <path d="M80 115h140M150 115v25" stroke="#f7f5ed" stroke-width="9" />
+            <circle cx="150" cy="145" r="7" fill="#f7f5ed" />
+        </g>
+    </symbol>
+    <symbol id="shelter" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="M25 250L150 50l125 200H25z" />
+            <path d="M110 250l40-110 40 110" fill="#f7f5ed" />
+        </g>
+    </symbol>
+    <symbol id="sleeping-bag" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <rect x="90" y="35" width="120" height="235" rx="48" />
+            <ellipse cx="150" cy="75" rx="32" ry="20" fill="#f7f5ed" />
+            <path d="M108 125h84m-84 40h84m-84 40h84m-84 35h84" stroke="#f7f5ed" stroke-width="5" />
+        </g>
+    </symbol>
+    <symbol id="socks" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="M75 45h75v145q-5 15-60 55-65 25-60-20l45-50zm100 0h65v145q-5 15-55 55-35 15-40-10l30-60z" />
+            <path d="M80 75h65m35 0h55" stroke="#f7f5ed" stroke-width="12" />
+        </g>
+    </symbol>
+    <symbol id="straps" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="M80 70q100-30 100 60v70q-100 60-100-30z" fill="none" stroke="currentColor" stroke-width="24" />
+            <rect x="130" y="170" width="65" height="55" rx="5" fill="#8a704b" />
+            <rect x="143" y="181" width="39" height="32" fill="#f7f5ed" />
+        </g>
+    </symbol>
+    <symbol id="sunglasses" viewBox="0 0 300 300">
+        <g fill="currentColor">
+            <path d="M40 125h90v50q-50 45-80 0zm130 0h90l-10 50q-30 45-80 0z" />
+            <path d="M125 140q25-25 50 0M40 125 20 105m240 20 20-20" fill="none" stroke="currentColor" stroke-width="12" />
+            <path d="m70 140-15 25m145-25-15 25" stroke="#f7f5ed" stroke-width="9" />
+        </g>
+    </symbol>
+</svg>

@@ -1,0 +1,8 @@
+local.settings.json
+umbraco/Data/
+umbraco/Logs/
+wwwroot/media/
+appsettings-schema*.json
+umbraco-package-schema.json
+wwwroot/storefront/
+Client/node_modules/

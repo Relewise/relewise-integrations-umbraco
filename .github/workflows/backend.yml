@@ -8,14 +8,21 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        dotnet-version: ["10.0.x"]
+        dotnet-version: ["11.0.x"]
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
 
       - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
 
+      - name: Verify namespaces and using directives
+        run: dotnet format Relewise.Integrations.Umbraco.slnx --verify-no-changes --diagnostics IDE0005 IDE0065 IDE0130 --severity info
+
       - name: Test with dotnet
-        run: dotnet test Relewise.Integrations.Umbraco.sln --configuration Debug
+        run: dotnet test Relewise.Integrations.Umbraco.slnx --configuration Debug

@@ -1,0 +1,92 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+
+# Umbraco's template service writes this bootstrap view with a BOM and no final newline.
+[samples/Relewise.DemoStorefront/Views/storefront.cshtml]
+charset = utf-8-bom
+insert_final_newline = false
+
+[*.cs]
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+# Keep imports outside namespaces, sorted with System first and no blank groups.
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:error
+# Namespaces follow the project root namespace and physical folders.
+dotnet_style_namespace_match_folder = true:error
+dotnet_diagnostic.IDE0065.severity = error
+dotnet_diagnostic.IDE0130.severity = error
+resharper_check_namespace_highlighting = error
+# Enforce shared type and collection style in ReSharper.
+resharper_suggest_var_or_type_built_in_types_highlighting = warning
+resharper_suggest_var_or_type_elsewhere_highlighting = warning
+resharper_suggest_var_or_type_simple_types_highlighting = warning
+resharper_arrange_object_creation_when_type_not_evident_highlighting = warning
+resharper_use_collection_expression_highlighting = warning
+max_line_length = 120
+resharper_csharp_wrap_arguments_style = chop_if_long
+resharper_csharp_wrap_parameters_style = chop_if_long
+resharper_csharp_wrap_after_invocation_lpar = true
+resharper_csharp_wrap_after_declaration_lpar = true
+resharper_csharp_align_multiline_argument = false
+resharper_csharp_align_multiline_parameter = false
+resharper_csharp_wrap_chained_method_calls = chop_if_long
+csharp_preserve_single_line_statements = false
+csharp_preserve_single_line_blocks = true
+csharp_prefer_braces = true:suggestion
+csharp_style_var_for_built_in_types = false
+csharp_style_var_when_type_is_apparent = true
+csharp_style_var_elsewhere = false
+# ReSharper applies the same evidence requirement to every type category.
+resharper_csharp_for_built_in_types = use_var_when_evident
+resharper_csharp_for_simple_types = use_var_when_evident
+resharper_csharp_for_other_types = use_var_when_evident
+resharper_csharp_use_roslyn_logic_for_evident_types = false
+csharp_style_implicit_object_creation_when_type_is_apparent = true
+dotnet_style_prefer_collection_expression = when_types_exactly_match:suggestion
+csharp_style_namespace_declarations = file_scoped:suggestion
+# Preserve the multiline XML summaries required by AGENTS.md, without expanding inline XML tags.
+resharper_xmldoc_keep_user_linebreaks = true
+resharper_xmldoc_linebreaks_inside_tags_for_multiline_elements = true
+resharper_xmldoc_linebreak_before_multiline_elements = true
+dotnet_diagnostic.IDE0007.severity = none
+# ReSharper owns type-style enforcement: Roslyn classifies generic factory calls differently.
+dotnet_diagnostic.IDE0008.severity = none
+dotnet_diagnostic.IDE0090.severity = warning
+dotnet_diagnostic.IDE0005.severity = suggestion
+# Cancellation tokens always follow all other parameters.
+dotnet_diagnostic.CA1068.severity = error
+dotnet_code_quality.CA1068.api_surface = all
+
+[*.sh]
+end_of_line = lf
+
+# Presentation contracts are read by Razor/JSON/Vue, not necessarily by C# callers.
+# Only non-private property-read checks are relaxed; unused types/methods, private
+# members, locals, nullability and code-style inspections remain enabled.
+[samples/Relewise.DemoStorefront/Features/**/*{Model,Card,Chip,Choice,Facet,Result}.cs]
+resharper_unused_auto_property_accessor_global_highlighting = none
+resharper_not_accessed_positional_property_global_highlighting = none
+
+[samples/Relewise.DemoStorefront/Site/Storefront{*Model,*Link,*Option}.cs]
+resharper_unused_auto_property_accessor_global_highlighting = none
+resharper_not_accessed_positional_property_global_highlighting = none
+
+# The backoffice reads these response contracts through JSON.
+[src/Integrations.Umbraco/Controllers/Messages/*.cs]
+resharper_unused_auto_property_accessor_global_highlighting = none
+resharper_not_accessed_positional_property_global_highlighting = none
+
+# Consuming applications read these public mapper/converter/search callback contexts.
+# Internal mapping definitions and execution services retain normal inspections.
+[src/Integrations.Umbraco/Mapping/*MappingContext.cs]
+resharper_unused_auto_property_accessor_global_highlighting = none
+
+[src/Integrations.Umbraco/Search/*RequestContext.cs]
+resharper_unused_auto_property_accessor_global_highlighting = none

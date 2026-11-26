@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -15,7 +15,7 @@ public class ContentMappingContext : IServiceProvider
     internal ContentMappingContext(
         IPublishedContent publishedContent,
         ContentUpdate contentUpdate,
-        List<string> culturesToPublish, 
+        List<string> culturesToPublish,
         IServiceProvider serviceProvider)
     {
         PublishedContent = publishedContent;
@@ -48,5 +48,3 @@ public class ContentMappingContext : IServiceProvider
         return _serviceProvider.GetService(serviceType);
     }
 }
-
-

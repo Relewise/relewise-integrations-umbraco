@@ -1,20 +1,23 @@
 # Integration documentation
 
-Use this integration to export published Umbraco pages to Relewise and track content views. Start with the [installation and connection setup](../README.md#installing-relewiseintegrationsumbraco), then choose how to map your site's content.
+Use this integration to export published Umbraco content and catalogue entities to Relewise for search, recommendations and behavioral tracking. Start with [installation](../README.md#installation) and [connection setup](../README.md#getting-started), then choose how to map your site's content.
 
 ## Guides
 
 | I want to… | Read |
 | --- | --- |
-| Choose numeric IDs or stable content keys across environments | [Content IDs across environments](../README.md#content-ids-across-environments) |
+| Upgrade an existing integration | [Migration](migration.md) |
+| Choose numeric IDs, stable content keys or plan an ID migration | [Content identity across environments](content-identity.md) |
+| Map Products, Variants, Categories and Brands | [Entity mapping](entity-mapping.md) |
+| Use Relewise through Umbraco's core search API | [Umbraco search](search.md) |
 | Understand automatic mapping and choose an extension point | [Custom content mapping](custom-content-mapping.md) |
 | Export readable text from Block List, Block Grid, or nested blocks | [Mapping block editors](block-editors.md) |
-| Copy and build a complete mapper | [Advanced content mapping example](examples/AdvancedContentMapping/README.md) |
+| Run mapping, converters, search and tracking together | [Demo storefront and mapping examples](../samples/Relewise.DemoStorefront/README.md) |
 | Verify exported data and diagnose missing or stale fields | [Validation and troubleshooting](validation-and-troubleshooting.md) |
 
 ## Version scope
 
-These guides describe the public APIs and implementation in this repository. The complete example targets .NET 10, Relewise.Integrations.Umbraco 17.0.0, and Umbraco 17.6.2. The repository's current source accepts Umbraco 17–18, but that does not mean every historical integration release or editor uses the same value types. Check the dependencies of your installed package and the documentation on its corresponding branch or tag before copying examples into older projects.
+These guides describe the public APIs and implementation in this repository. The package targets .NET 11 and accepts Umbraco versions in `[19.0.0-rc1,20)`. The demo is pinned to `19.0.0-rc1`, which is the version used for the implementation's smoke tests. For older Umbraco versions, use a compatible earlier release of `Relewise.Integrations.Umbraco` and the documentation on its corresponding branch or tag. See [migration](migration.md) for upgrade requirements and [Umbraco search](search.md) for provider configuration.
 
 “Grid” in these guides means **Block Grid**, unless explicitly described as the legacy Grid Layout editor. They have different data models.
 

@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client;
@@ -15,7 +15,9 @@ internal class RelewiseContentUnpublishedNotificationHandler : INotificationAsyn
     private readonly IExportContentService _exportContentService;
     private readonly RelewiseUmbracoConfiguration _configuration;
 
-    public RelewiseContentUnpublishedNotificationHandler(IExportContentService exportContentService, RelewiseUmbracoConfiguration configuration)
+    public RelewiseContentUnpublishedNotificationHandler(
+        IExportContentService exportContentService,
+        RelewiseUmbracoConfiguration configuration)
     {
         _exportContentService = exportContentService;
         _configuration = configuration;
@@ -26,7 +28,9 @@ internal class RelewiseContentUnpublishedNotificationHandler : INotificationAsyn
         ITracker? tracker = _exportContentService.GetTrackerOrNull();
 
         if (tracker == null)
+        {
             return;
+        }
 
         string[] ids = notification.UnpublishedEntities
             .Where(x => _configuration.CanMap(x))
@@ -34,7 +38,9 @@ internal class RelewiseContentUnpublishedNotificationHandler : INotificationAsyn
             .ToArray();
 
         if (ids.Length == 0)
+        {
             return;
+        }
 
         var action = new ContentAdministrativeAction(
             Language.Undefined,

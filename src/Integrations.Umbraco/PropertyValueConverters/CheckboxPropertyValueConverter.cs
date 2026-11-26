@@ -1,18 +1,34 @@
-﻿using Relewise.Client.DataTypes;
+#pragma warning disable CS0618 // Keep built-ins in their original registration order for legacy AutoMap converters.
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Infrastructure.Extensions;
 
 namespace Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-internal class CheckboxPropertyValueConverter : IRelewisePropertyValueConverter
+internal class CheckboxPropertyValueConverter : IDefaultPropertyValueConverter, IRelewisePropertyValueConverter
 {
     public bool CanHandle(RelewisePropertyConverterContext context)
     {
         return context.Property.PropertyType.EditorAlias.Equals("Umbraco.TrueFalse");
     }
 
+    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        Convert(context);
+
+        return default;
+    }
+
+    /// <inheritdoc/>
+    [Obsolete("Use ConvertAsync instead. Synchronous conversion will be removed in the next major version.")]
     public void Convert(RelewisePropertyConverterContext context)
     {
-        bool value = context.Property.GetValue<bool>(context.Culture);
+        var value = context.Property.GetValue<bool>(context.Culture);
+
         context.Add(context.Property.Alias, new DataValue(value));
     }
 }
