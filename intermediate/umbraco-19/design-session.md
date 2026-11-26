@@ -1,7 +1,7 @@
 # Umbraco 19 configuration â€” review draft
 
 **Intermediate review document, updated 2026-11-20.** These examples describe the
-API implemented on this branch, targeting Umbraco 19 / .NET 11. Review the API and
+implemented configuration API, targeting Umbraco 19 / .NET 11. Review the API and
 remaining decisions before treating it as a stable contract. Permanent documentation
 will be finalized after that review. This folder contains the design and screenshots
 so they can be removed together afterward.

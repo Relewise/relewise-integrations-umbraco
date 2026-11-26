@@ -10,7 +10,7 @@ Install Git, the .NET 11 SDK, Node 24.13+ and npm 11+. No IDE is required.
 Clone the repository, enter the DemoStorefront directory and start the site:
 
 ```text
-git clone --branch feature/umbraco-19-search-provider https://github.com/Relewise/relewise-integrations-umbraco.git
+git clone https://github.com/Relewise/relewise-integrations-umbraco.git
 cd relewise-integrations-umbraco/samples/Relewise.DemoStorefront
 dotnet run
 ```
