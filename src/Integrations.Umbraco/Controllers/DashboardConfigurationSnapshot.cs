@@ -21,20 +21,23 @@ internal static class DashboardConfigurationSnapshot
             clients,
             middlewareEnabled)
         {
+            SearchConfigured = configuration.UsesUmbracoSearch(),
             Mappings = configuration.Mappings.Values.OrderBy(mapping => MappingOrder(mapping.EntityType))
                 .ThenBy(mapping => mapping.EntityType == typeof(ProductVariant) ? 1 : 0)
                 .ThenBy(mapping => mapping.DocumentTypeAlias, StringComparer.OrdinalIgnoreCase)
                 .Select(mapping => Describe(mapping, configuration))
                 .ToArray(),
-            DefaultPublishedContentProviderAlias = configuration.SearchProviders.Providers.Keys.FirstOrDefault(alias =>
-                string.Equals(
-                    alias,
-                    configuration.SearchProviders.DefaultPublishedContentProviderAlias,
-                    StringComparison.OrdinalIgnoreCase)),
-            SearchProviders = configuration.SearchProviders.Providers
+            DefaultPublishedContentProviderAlias = configuration.GetSearchOptions()
+                .Providers.Keys.FirstOrDefault(alias =>
+                    string.Equals(
+                        alias,
+                        configuration.GetSearchOptions().DefaultPublishedContentProviderAlias,
+                        StringComparison.OrdinalIgnoreCase)),
+            SearchProviders = configuration.GetSearchOptions()
+                .Providers
                 .OrderBy(pair => string.Equals(
                     pair.Key,
-                    configuration.SearchProviders.DefaultPublishedContentProviderAlias,
+                    configuration.GetSearchOptions().DefaultPublishedContentProviderAlias,
                     StringComparison.OrdinalIgnoreCase)
                     ? 0
                     : 1)

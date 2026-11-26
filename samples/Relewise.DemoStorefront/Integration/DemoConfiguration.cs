@@ -122,36 +122,36 @@ internal static class DemoConfiguration
                     });
             });
 
-        options.SearchProviders.AddContent(
-            SearchProviders.Articles,
-            provider =>
-            {
-                provider.Map(content => content.DisplayName, UmbracoConstants.Search.FieldNames.Name);
-                provider.DocumentTypeAliases =
-                [
-                    DocumentTypeAliases.Article,
-                    DocumentTypeAliases.LocalizedArticle,
-                    DocumentTypeAliases.Guide
-                ];
-
-                provider.ConfigureRequest((request, context) =>
+        options.ConfigureSearch(search =>
+        {
+            search.AddContentProvider(
+                SearchProviders.Articles,
+                provider =>
                 {
-                    request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency);
+                    provider.Map(content => content.DisplayName, UmbracoConstants.Search.FieldNames.Name);
+                    provider.DocumentTypeAliases =
+                    [
+                        DocumentTypeAliases.Article,
+                        DocumentTypeAliases.LocalizedArticle,
+                        DocumentTypeAliases.Guide
+                    ];
+
+                    provider.ConfigureRequest((request, context) =>
+                    {
+                        request.Currency = new Currency(context.Services.GetRequiredService<DemoMarket>().Currency);
+                    });
                 });
-            });
+            search.AddProductProvider(SearchProviders.Catalogue, ConfigureProductSearch);
+            search.AddProductProvider(
+                SearchProviders.Offers,
+                provider =>
+                {
+                    ConfigureProductSearch(provider);
 
-        options.SearchProviders.AddProduct(SearchProviders.Catalogue, ConfigureProductSearch);
-
-        options.SearchProviders.AddProduct(
-            SearchProviders.Offers,
-            provider =>
-            {
-                ConfigureProductSearch(provider);
-
-                provider.DisplayedAtLocation = "Storefront offers";
-            });
-
-        options.SearchProviders.DefaultPublishedContentProviderAlias = SearchProviders.Articles;
+                    provider.DisplayedAtLocation = "Storefront offers";
+                });
+            search.DefaultPublishedContentProviderAlias = SearchProviders.Articles;
+        });
     }
 
     private static void ConfigureProductSearch(ProductSearchProviderOptions provider)

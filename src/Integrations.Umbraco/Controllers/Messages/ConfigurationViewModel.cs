@@ -38,6 +38,11 @@ public class ConfigurationViewModel
     public IReadOnlyCollection<DashboardSearchProviderViewModel> SearchProviders { get; internal set; } = [];
 
     /// <summary>
+    /// Whether Umbraco Search indexing is selected, independently of named query providers.
+    /// </summary>
+    public bool SearchConfigured { get; internal set; }
+
+    /// <summary>
     /// Relewise provider selected for ordinary published-content queries, if configured.
     /// </summary>
     public string? DefaultPublishedContentProviderAlias { get; internal set; }

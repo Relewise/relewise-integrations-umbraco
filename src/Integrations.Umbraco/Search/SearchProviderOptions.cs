@@ -25,7 +25,7 @@ public class SearchProviderOptions
     /// <summary>
     /// Register a Content search with optional Document Type selection.
     /// </summary>
-    public void AddContent(string providerAlias, Action<ContentSearchProviderOptions>? configure = null)
+    public void AddContentProvider(string providerAlias, Action<ContentSearchProviderOptions>? configure = null)
     {
         var options = new ContentSearchProviderOptions();
 
@@ -36,7 +36,7 @@ public class SearchProviderOptions
     /// <summary>
     /// Register a query over the single Product mapping.
     /// </summary>
-    public void AddProduct(string providerAlias, Action<ProductSearchProviderOptions>? configure = null)
+    public void AddProductProvider(string providerAlias, Action<ProductSearchProviderOptions>? configure = null)
     {
         var options = new ProductSearchProviderOptions();
 

@@ -17,6 +17,7 @@ export type ConfigurationViewModel = {
     contentMiddlewareEnabled: boolean;
     mappings: Array<DashboardMappingViewModel>;
     searchProviders: Array<DashboardSearchProviderViewModel>;
+    searchConfigured: boolean;
     defaultPublishedContentProviderAlias?: null | string;
     connection?: null | ClientOptionsViewObject;
     integrationClients: Array<DashboardClientViewModel>;

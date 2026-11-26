@@ -81,7 +81,17 @@ public class ExportServiceCompatibilityTests
             Mock.Of<IBackgroundTaskQueue>(),
             Mock.Of<IHostApplicationLifetime>(),
             NullLogger<EntityIndexingQueue>.Instance);
-        IExportContentService service = new ExportContentService(queue, Mock.Of<IServiceProvider>());
+        var exports = new Mock<IExportSystem>();
+        exports.Setup(value => value.ExportAsync(
+                It.IsAny<IEnumerable<Guid>>(),
+                It.IsAny<ContentUpdate.UpdateKind?>(),
+                It.IsAny<long?>(),
+                It.IsAny<CancellationToken>()))
+            .Returns((IEnumerable<Guid> keys, ContentUpdate.UpdateKind? kind, long? version, CancellationToken token) =>
+                queue.ExportAsync(keys, kind, version, token));
+        exports.Setup(value => value.RebuildAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+            .Returns((bool permanent, CancellationToken token) => queue.RebuildAsync(permanent, token));
+        IExportContentService service = new ExportContentService(exports.Object, Mock.Of<IServiceProvider>());
         var content = new ExportContent([page.Object], ContentUpdate.UpdateKind.ReplaceProvidedProperties, 42);
         var rebuild = new ExportAllContent(true);
 

@@ -154,29 +154,35 @@ public class DirectMappedSearchTests
             if (product)
             {
                 options.MapProduct("product");
-                options.SearchProviders.AddProduct(
-                    "native",
-                    fields =>
-                    {
-                        fields.Map(entity => entity.SalesPrice, "price");
-                        fields.MapData<int>("stock", field => field.DataKey = "inventory");
-                        fields.MapData<string[]>("tags");
-                        fields.MapData<int[]>("sizes");
-                        fields.MapData<bool>("available", field => field.DataKey = "inStock");
-                    });
+                options.ConfigureSearch(search =>
+                {
+                    search.AddProductProvider(
+                        "native",
+                        fields =>
+                        {
+                            fields.Map(entity => entity.SalesPrice, "price");
+                            fields.MapData<int>("stock", field => field.DataKey = "inventory");
+                            fields.MapData<string[]>("tags");
+                            fields.MapData<int[]>("sizes");
+                            fields.MapData<bool>("available", field => field.DataKey = "inStock");
+                        });
+                });
             }
             else
             {
                 options.MapContent("article");
-                options.SearchProviders.AddContent(
-                    "native",
-                    fields =>
-                    {
-                        fields.MapData<int>("stock", field => field.DataKey = "inventory");
-                        fields.MapData<string[]>("tags");
-                        fields.MapData<int[]>("sizes");
-                        fields.MapData<bool>("available", field => field.DataKey = "inStock");
-                    });
+                options.ConfigureSearch(search =>
+                {
+                    search.AddContentProvider(
+                        "native",
+                        fields =>
+                        {
+                            fields.MapData<int>("stock", field => field.DataKey = "inventory");
+                            fields.MapData<string[]>("tags");
+                            fields.MapData<int[]>("sizes");
+                            fields.MapData<bool>("available", field => field.DataKey = "inStock");
+                        });
+                });
             }
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();

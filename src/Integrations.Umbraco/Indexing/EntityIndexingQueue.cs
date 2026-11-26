@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core.HostedServices;
-using Umbraco.Cms.Core.Search.Indexing;
 
 namespace Relewise.Integrations.Umbraco.Indexing;
 
@@ -26,13 +25,13 @@ internal sealed class EntityIndexingQueue(
     private readonly AsyncLocal<Execution?> _execution = new();
     private bool _flushQueued;
 
-    internal void EnqueueChanges(IEnumerable<ContentChange> changes)
+    internal void EnqueueChanges(IEnumerable<ExportChange> changes)
     {
-        ContentChange[][] batches = [.. changes.Chunk(BatchSize)];
+        ExportChange[][] batches = [.. changes.Chunk(BatchSize)];
 
         lock (_sync)
         {
-            foreach (ContentChange[] batch in batches)
+            foreach (ExportChange[] batch in batches)
             {
                 _pending.Enqueue(new Changes(batch));
             }
@@ -204,7 +203,7 @@ internal sealed class EntityIndexingQueue(
                 return work;
             }
 
-            var combined = new List<ContentChange>(first.Items);
+            var combined = new List<ExportChange>(first.Items);
 
             while (_pending.TryPeek(out Work? next) && next is Changes changes &&
                    combined.Count + changes.Items.Length <= BatchSize)
@@ -301,7 +300,7 @@ internal sealed class EntityIndexingQueue(
 
     private abstract record Work;
 
-    private sealed record Changes(ContentChange[] Items) : Work;
+    private sealed record Changes(ExportChange[] Items) : Work;
 
     private sealed record Deletion(DeletedEntity[] Entities, Guid[] Parents) : Work;
 

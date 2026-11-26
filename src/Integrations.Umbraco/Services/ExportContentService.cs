@@ -10,7 +10,7 @@ using Relewise.Integrations.Umbraco.Indexing;
 namespace Relewise.Integrations.Umbraco.Services;
 
 internal class ExportContentService(
-    EntityIndexingQueue indexing,
+    IExportSystem exports,
     IServiceProvider services) : IExportContentService
 {
     public async Task<ExportContentResult> ExportAsync(
@@ -18,7 +18,7 @@ internal class ExportContentService(
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(exportContent);
-        await indexing.ExportAsync(
+        await exports.ExportAsync(
             exportContent.Contents.Select(content => content.Key),
             exportContent.UpdateKind,
             exportContent.Version,
@@ -32,7 +32,7 @@ internal class ExportContentService(
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(exportAllContent);
-        await indexing.RebuildAsync(exportAllContent.PermanentlyDelete, cancellationToken);
+        await exports.RebuildAsync(exportAllContent.PermanentlyDelete, cancellationToken);
 
         return new ExportAllContentResult();
     }
@@ -41,8 +41,9 @@ internal class ExportContentService(
     {
         try
         {
-            return services.GetRequiredService<IRelewiseClientFactory>().GetClient<ITracker>(
-                Constants.ClientNames.Integration);
+            return services.GetRequiredService<IRelewiseClientFactory>()
+                .GetClient<ITracker>(
+                    Constants.ClientNames.Integration);
         }
         catch (InvalidOperationException) { return null; }
         catch (ArgumentException) { return null; }

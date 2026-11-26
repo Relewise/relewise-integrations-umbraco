@@ -13,12 +13,12 @@ using Umbraco.Cms.Core.Services;
 
 namespace Relewise.Integrations.Umbraco.NotificationHandlers;
 
-// Capture terminal deletions while IContent still carries the configured ID, then use the shared writer after commit.
+// Capture the configured ID before deletion, then delegate to the selected export system after commit.
 internal sealed class DeletedEntityIndexingHandler(
     RelewiseUmbracoConfiguration configuration,
     IContentService content,
     ICoreScopeProvider scopes,
-    EntityIndexingQueue indexing,
+    IExportSystem indexing,
     ILogger<DeletedEntityIndexingHandler> logger) : INotificationHandler<ContentDeletedNotification>
 {
     public void Handle(ContentDeletedNotification notification)

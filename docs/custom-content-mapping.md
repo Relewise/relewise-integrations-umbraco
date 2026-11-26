@@ -59,14 +59,14 @@ The integration supplies a `ContentMappingContext` with:
 | --- | --- |
 | `PublishedContent` | Published values for the page being exported. Work from these instead of raw editor storage JSON. |
 | `ContentUpdate` | The update already initialized with content ID, display name, category paths, and the requested update kind. |
-| `CulturesToPublish` | Cultures selected for this export. In the shared indexing pipeline, invariant pages use all configured site languages. |
+| `CulturesToPublish` | Cultures selected for this export. In the selected export system, invariant pages use all configured site languages. |
 | `GetService(...)` / `GetRequiredService<T>()` | Access to registered services. The context implements `IServiceProvider`. |
 
-**Modify and return `context.ContentUpdate` for the simplest migration path.** The shared indexing pipeline also honors a replacement `ContentUpdate` returned by a legacy mapper, including its update kind and Content ID. Changing that ID inside a mapper does not change the ID resolver used by references and automatic tracking. Move custom identity rules to `IdFromProperty(...)` when migrating to the new API.
+**Modify and return `context.ContentUpdate` for the simplest migration path.** The selected export system also honors a replacement `ContentUpdate` returned by a legacy mapper, including its update kind and Content ID. Changing that ID inside a mapper does not change the ID resolver used by references and automatic tracking. Move custom identity rules to `IdFromProperty(...)` when migrating to the new API.
 
 The integration owns `UmbracoVersionId`, `contentTypeAlias`, `url`, `createdAt` and
 keys beginning with `rwUmbraco`. Source identity, publication and search metadata are
-maintained by the shared indexing pipeline. With the default synchronization policy,
+maintained by the selected export system. With the default synchronization policy,
 `url` and `createdAt` are supplied again after legacy mapping, even if the mapper
 replaces the Content or its Data dictionary.
 

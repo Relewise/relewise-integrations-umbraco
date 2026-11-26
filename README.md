@@ -92,8 +92,13 @@ To use Relewise through Umbraco's search abstraction, add a provider inside the
 `.AddRelewise(...)` callback:
 
 ```csharp
-options.SearchProviders.AddContent("site");
-options.SearchProviders.DefaultPublishedContentProviderAlias = "site";
+using Relewise.Integrations.Umbraco.Search;
+
+options.ConfigureSearch(search =>
+{
+    search.AddContentProvider("site");
+    search.DefaultPublishedContentProviderAlias = "site";
+});
 ```
 
 You can register Content and Product search providers with different request settings.

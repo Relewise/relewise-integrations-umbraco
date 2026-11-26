@@ -3,8 +3,8 @@
 using System;
 using System.Collections.Generic;
 using Relewise.Client.DataTypes;
+using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.Mapping;
-using Relewise.Integrations.Umbraco.Search;
 
 namespace Relewise.Integrations.Umbraco;
 
@@ -22,10 +22,7 @@ public class RelewiseUmbracoOptionsBuilder
     internal Dictionary<string, ContentTypeBuilder?> ContentBuilders { get; } = new(StringComparer.OrdinalIgnoreCase);
     internal Dictionary<string, MappingDefinition> EntityMappings { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// Named Content and Product query providers; registration does not add indexing pipelines.
-    /// </summary>
-    public SearchProviderOptions SearchProviders { get; } = new();
+    internal IExportSystemConfiguration? ExportSystemConfiguration { get; set; }
 
     /// <summary>
     /// Map a distinct Document Type to Relewise Content.

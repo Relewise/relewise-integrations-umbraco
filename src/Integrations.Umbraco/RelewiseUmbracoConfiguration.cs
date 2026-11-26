@@ -6,8 +6,8 @@ using System.Globalization;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.Mapping;
-using Relewise.Integrations.Umbraco.Search;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Extensions;
@@ -21,7 +21,7 @@ namespace Relewise.Integrations.Umbraco;
 public class RelewiseUmbracoConfiguration
 {
     internal IReadOnlyDictionary<string, MappingDefinition> Mappings { get; }
-    internal SearchProviderOptions SearchProviders { get; }
+    internal IExportSystemConfiguration? ExportSystemConfiguration { get; }
     private readonly HashSet<string> _trackableDocTypes;
     private readonly Dictionary<string, IContentTypeMapping?> _customMappers;
 
@@ -87,8 +87,8 @@ public class RelewiseUmbracoConfiguration
         }
 
         Mappings = mappings;
-        SearchProviders = options.SearchProviders;
-        SearchProviders.Validate(Mappings);
+        ExportSystemConfiguration = options.ExportSystemConfiguration;
+        ExportSystemConfiguration?.Validate(Mappings);
 
         _trackableDocTypes = mappings.Where(x => x.Value.TrackViews)
             .Select(x => x.Key)

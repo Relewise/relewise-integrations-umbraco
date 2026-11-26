@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Relewise.Integrations.Umbraco.Indexing;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search;
 using Umbraco.Cms.Core.Search.Indexing;
 
-namespace Relewise.Integrations.Umbraco.Indexing;
+namespace Relewise.Integrations.Umbraco.Search.Indexing;
 
-internal sealed class MappedEntityIndexer(EntityIndexingQueue indexing, IndexMetadataService metadata) : IIndexer
+internal sealed class MappedEntityIndexer(IExportSystem indexing, IndexMetadataService metadata) : IIndexer
 {
     public Task AddOrUpdateAsync(
         string indexAlias,
@@ -17,12 +18,12 @@ internal sealed class MappedEntityIndexer(EntityIndexingQueue indexing, IndexMet
         IEnumerable<IndexField> fields,
         ContentProtection? protection)
     {
-        return indexing.ExportAsync([id]);
+        return indexing.ExportAsync([id], null, null, default);
     }
 
     public Task DeleteAsync(string indexAlias, IEnumerable<Guid> ids)
     {
-        return indexing.ExportAsync(ids);
+        return indexing.ExportAsync(ids, null, null, default);
     }
 
     // Rebuild reconciliation belongs to the strategy, not a destructive reset of the remote Dataset.

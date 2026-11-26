@@ -59,10 +59,10 @@ internal sealed class MappedEntitySearcher(
         ArgumentOutOfRangeException.ThrowIfNegative(maxSuggestions);
 
         string alias = indexAlias == UmbracoConstants.Search.IndexAliases.PublishedContent
-            ? configuration.SearchProviders.DefaultPublishedContentProviderAlias ?? indexAlias
+            ? configuration.GetSearchOptions().DefaultPublishedContentProviderAlias ?? indexAlias
             : indexAlias;
 
-        if (!configuration.SearchProviders.Providers.TryGetValue(alias, out SearchProviderDefinition? provider))
+        if (!configuration.GetSearchOptions().Providers.TryGetValue(alias, out SearchProviderDefinition? provider))
         {
             throw new InvalidOperationException($"No Relewise query provider is configured for '{alias}'.");
         }

@@ -81,7 +81,8 @@ fields. Content/Product page-availability metadata is still updated.
 Review the mapped entity types, Document Types and administrative-action policies before
 permanent deletion, especially in a shared Dataset.
 Use a test Dataset for schema experiments. See the [export service](../src/Integrations.Umbraco/Services/ExportContentService.cs)
-and [shared indexing writer](../src/Integrations.Umbraco/Indexing/EntityIndexingService.cs).
+and [notification export](../src/Integrations.Umbraco/Indexing/NotificationExportOperations.cs)
+and [Umbraco Search export](../src/Integrations.Umbraco/Search/Indexing/SearchExportOperations.cs).
 
 ## Diagnose common symptoms
 

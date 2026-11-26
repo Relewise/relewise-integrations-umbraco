@@ -91,8 +91,10 @@ implementations are checked per operation. HTTP routes are unchanged.
 
 ### Indexing and search
 
-The integration uses one shared indexing pipeline for publication changes,
-rebuilds and explicit exports. Relewise search-provider registration is optional.
+The integration uses one selected export system for publication changes,
+rebuilds and explicit exports. Core uses notifications. Call `ConfigureSearch()`
+to select Umbraco Search indexing, optionally adding named query providers with
+`AddContentProvider` and `AddProductProvider` inside its callback.
 Queries through Umbraco's default published-content provider retain their existing
 search implementation unless `DefaultPublishedContentProviderAlias` is configured. See the
 [search guide](search.md) for provider registration and query behavior.

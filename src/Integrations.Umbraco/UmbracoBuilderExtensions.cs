@@ -1,7 +1,6 @@
+using Relewise.Integrations.Umbraco.Search.Indexing;
 // Retain legacy converter registration order; the execution pipeline awaits async built-ins.
-
 #pragma warning disable CS0618
-
 using System;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
@@ -84,10 +83,18 @@ public static class UmbracoBuilderExtensions
 
         builder.AddNotificationHandler<ContentDeletedNotification, DeletedEntityIndexingHandler>();
         builder.Services.AddHttpContextAccessor();
-        builder.Services.TryAddSingleton<EntityIndexingService>();
-        builder.Services.TryAddSingleton<IEntityIndexingOperations>(services =>
-            services.GetRequiredService<EntityIndexingService>());
-        builder.Services.TryAddSingleton<EntityIndexingQueue>();
+        builder.Services.TryAddSingleton<SearchExportOperations>();
+        builder.Services.TryAddScoped<UmbracoSearchExportSource>();
+        builder.Services.TryAddSingleton<NotificationExportOperations>();
+        builder.Services.TryAddSingleton<NotificationExportSystem>();
+        builder.Services.TryAddSingleton<UmbracoSearchExportSystem>();
+        builder.Services.TryAddSingleton<IExportSystem>(services =>
+            services.GetRequiredService<RelewiseUmbracoConfiguration>().ExportSystemConfiguration?.Resolve(services)
+            ?? services.GetRequiredService<NotificationExportSystem>());
+        builder.AddNotificationHandler<ContentPublishedNotification, ContentExportNotificationHandler>();
+        builder.AddNotificationHandler<ContentUnpublishedNotification, ContentExportNotificationHandler>();
+        builder.AddNotificationHandler<ContentMovedNotification, ContentExportNotificationHandler>();
+        builder.AddNotificationHandler<ContentMovedToRecycleBinNotification, ContentExportNotificationHandler>();
         builder.Services.TryAddSingleton<IndexMetadataService>();
         builder.Services.TryAddTransient<MappedEntityIndexer>();
         builder.Services.TryAddTransient<MappedEntityChangeStrategy>();
@@ -97,12 +104,15 @@ public static class UmbracoBuilderExtensions
                 indexes,
                 configuration) =>
             {
+                if (!configuration.UsesUmbracoSearch())
+                    return;
+
                 indexes.RegisterContentIndex<MappedEntityIndexer, MappedEntitySearcher, MappedEntityChangeStrategy>(
-                    EntityIndexingService.IndexAlias,
+                    SearchExportOperations.IndexAlias,
                     true,
                     UmbracoObjectTypes.Document);
 
-                foreach (string alias in configuration.SearchProviders.Providers.Keys)
+                foreach (string alias in configuration.GetSearchOptions().Providers.Keys)
                 {
                     if (indexes.GetIndexRegistration(alias) != null)
                     {
@@ -113,7 +123,7 @@ public static class UmbracoBuilderExtensions
                     indexes.RegisterIndex<MappedEntityIndexer, MappedEntitySearcher>(alias);
                 }
 
-                if (configuration.SearchProviders.DefaultPublishedContentProviderAlias != null)
+                if (configuration.GetSearchOptions().DefaultPublishedContentProviderAlias != null)
                 {
                     ContentIndexRegistration original =
                         indexes.GetContentIndexRegistration(

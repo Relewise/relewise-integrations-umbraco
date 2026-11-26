@@ -319,8 +319,9 @@ export class RelewiseDashboardElement extends UmbLitElement {
     }
 
     private renderSearch(configuration: ConfigurationViewModel) {
+        if (!configuration.searchConfigured) return html``;
         return html`<uui-box headline="Search providers">
-            <p>Search providers query the same Relewise Dataset. Indexing runs independently through one shared pipeline.</p>
+            <p>Search providers query the same Relewise Dataset. Umbraco Search handles indexing independently of the named query providers.</p>
             ${configuration.searchProviders.length ? html`<div class="table-scroll"><table class="configuration-table" aria-label="Search providers">
                 <thead><tr>
                     <th scope="col">Provider alias</th>

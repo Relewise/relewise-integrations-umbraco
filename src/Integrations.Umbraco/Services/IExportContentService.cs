@@ -12,7 +12,7 @@ namespace Relewise.Integrations.Umbraco.Services;
 public interface IExportContentService
 {
     /// <summary>
-    /// Export the supplied content through the shared indexing pipeline.
+    /// Export the supplied content through the selected export system.
     /// </summary>
     /// <param name="exportContent">The content and update options to export.</param>
     /// <param name="cancellationToken">Cancellation of this export operation.</param>
@@ -32,7 +32,7 @@ public interface IExportContentService
     }
 
     /// <summary>
-    /// Export all configured content through the shared indexing pipeline.
+    /// Export all configured content through the selected export system.
     /// </summary>
     /// <param name="exportAllContent">The full-export and reconciliation options.</param>
     /// <param name="cancellationToken">Cancellation of this export operation.</param>

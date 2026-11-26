@@ -4,13 +4,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
-using Umbraco.Cms.Core.Search.Indexing;
 
 namespace Relewise.Integrations.Umbraco.Indexing;
 
 internal interface IEntityIndexingOperations
 {
-    Task ApplyChangesAsync(ContentChange[] changes, CancellationToken token);
+    Task ApplyChangesAsync(ExportChange[] changes, CancellationToken token);
 
     Task ExportAsync(
         IEnumerable<Guid> keys,

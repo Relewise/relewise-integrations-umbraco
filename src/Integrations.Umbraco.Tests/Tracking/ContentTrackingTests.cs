@@ -211,14 +211,17 @@ public class ContentTrackingTests
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
         {
             options.MapContent("article");
-            options.SearchProviders.AddContent(
-                "articles",
-                fields =>
-                {
-                    fields.MapData<string[]>("tag");
-                    fields.MapData<int>("number");
-                });
-            options.SearchProviders.DefaultPublishedContentProviderAlias = "articles";
+            options.ConfigureSearch(search =>
+            {
+                search.AddContentProvider(
+                    "articles",
+                    fields =>
+                    {
+                        fields.MapData<string[]>("tag");
+                        fields.MapData<int>("number");
+                    });
+                search.DefaultPublishedContentProviderAlias = "articles";
+            });
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
 
