@@ -73,7 +73,7 @@ a disabled Product.
 For application-level SDK filters and selected Data fields, use the supported metadata
 constants in [RelewiseDataKeys](../src/Integrations.Umbraco/RelewiseDataKeys.cs). These
 cover source identity, document type, publication, culture and protection;
-export bookkeeping and search projection keys remain internal.
+export bookkeeping remains internal.
 
 The integration does not partition a Dataset by Umbraco installation. Entity IDs and
 Document Type mappings share the Dataset's scope; independent installations with overlapping
@@ -88,12 +88,10 @@ Integration metadata supports the following behavior:
 | `UmbracoVersionId` | Existing numeric export version; reconcile missing exports after a full export completes successfully. |
 | `rwUmbracoSearchCulture` | Published cultures available in the default segment. |
 | `rwUmbracoSearchProtected`, `rwUmbracoSearchAccess` | Apply Umbraco access restrictions before paging and facets. |
-| `rwUmbracoField_*` | Typed projections for core filters, sorting and facets; business Data remains unchanged. |
 
-Keyword/text projections retain matching values and a scalar sort value. Numeric/date
-projections retain exact facet values, object values for range matching and minimum/maximum
-sort values. Culture-varying numeric/date fields use culture-specific keys. Segment-specific
-values are not projected; no separate segment metadata is written.
+Querying uses the existing built-in SDK properties and mapped Data values. No additional
+field projections are exported. Invariant values such as stock remain one numeric Data
+value, regardless of the number of site languages. Legacy AutoMap output is unchanged.
 
 Full exports stamp one numeric `UmbracoVersionId` on their entities and reconcile matching
 source entities with a different version only after successful ingestion. The comparison
@@ -119,7 +117,7 @@ Bind a decimal query field to the Product's built-in `SalesPrice`:
 ```csharp
 options.SearchProviders.AddProduct("catalogue", provider =>
 {
-    provider.MapSalesPrice("price"); // Query field for native Product prices, not a Data key.
+    provider.Map(product => product.SalesPrice, "price"); // Query field for native Product prices, not a Data key.
     provider.ConfigureRequest((request, context) =>
     {
         request.Currency = new Currency("EUR"); // Use the active site's or shopper's currency.
@@ -133,35 +131,79 @@ native SalesPrice filters, price-range facets and price sorting. Results and all
 supported facet counts come back in one search request. No duplicate price Data
 is exported, and prices are not converted between currencies.
 
-A request currency is required whenever the bound field is queried. Only one
-SalesPrice field can be bound per provider. Its buckets must be nonempty and
+A request currency is required whenever the bound field is queried. Use one SalesPrice query alias within a request. Its buckets must be nonempty and
 nonoverlapping, with inclusive lower and exclusive upper bounds. A single
 positive price filter becomes the native facet selection, including custom bounds
 that differ from the displayed buckets. Multiple or negated price filters remain
 filters and constrain all facet counts. Other filter, facet and sorter types on
 this field are rejected before a search is sent.
 
-## Boolean Product Data
+## Direct field bindings
 
-Bind a keyword query field to Boolean Data already written by an entity mapper:
+The provider derives query fields from declarative export mappings. A source alias mapped
+to `DisplayName` queries that built-in property; an explicit `MapData` mapping queries its
+stored `DataKey`. Invariant integers/decimals, scalar strings, Boolean values and tags are
+inferred from the Umbraco schema. These inferred descriptions are cached in memory per
+provider; restart the site after changing a queried schema. No Dataset schema requests or
+persisted integration-owned schema are needed.
+
+Use explicit provider bindings for values produced by custom mappers/converters, legacy
+mappers, or a different query-field name:
 
 ```csharp
 options.SearchProviders.AddProduct("catalogue", provider =>
 {
-    provider.MapBooleanData("onSale_EUR"); // Data key defaults to the query field name.
-    provider.MapBooleanData("available", "inStock"); // Optional different Data key.
+    provider.Map(product => product.DisplayName, "name"); // Native name sorting.
+    provider.Map(product => product.CategoryPaths, "category"); // Canonical Category IDs anywhere in the paths.
+    provider.Map(product => product.Brand, "brand"); // Canonical Brand IDs.
+    provider.MapData<bool>("onSale_EUR"); // Boolean Data already exported by the mapper.
+    provider.MapData<bool>("available", field => field.DataKey = "inStock"); // Query alias and stored key differ.
+    provider.MapData<int>("quantity", field => field.DataKey = "stock"); // Existing numeric Data.
+    provider.MapData<string[]>("tags"); // List membership and keyword facets, without list sorting.
 });
 ```
 
-An Umbraco `KeywordFilter` with value `"true"` or `"false"` becomes a native Boolean
-Product Data filter. `KeywordFacet` uses the same Data key and returns keyword
-buckets `"true"` and `"false"` with native Boolean facet counts. Missing Data matches
-neither positive value; negation includes missing values. Keep writing `false`
-when a previously true condition stops applying.
+`Map` selects a direct built-in entity property. `MapData<TValue>` describes the stored
+scalar or array type; supported scalar types are `string`, `bool`, `int`, `long`, `float`,
+`double` and `decimal`. String/numeric arrays support exact membership and value facets.
+The same methods are available for Content providers using Content properties.
+Provider bindings configure queries only: they neither export nor duplicate values.
+Bind an existing `Multilingual` Data value as `string`; the request language selects
+its value. This does not rename or reshape legacy AutoMap output.
+Use `IntegerExactFacet` for `int` bindings and `DecimalExactFacet` for other numeric bindings.
 
-This is query configuration, not export mapping. Other filter/facet types and
-sorting on a bound field are rejected. Unbound fields retain the standard typed
-index-field translation.
+A Boolean query uses `KeywordFilter`/`KeywordFacet` with `"true"` or `"false"`. Missing
+Data matches neither positive value; negation includes missing values. Keep exporting
+`false` when a previously true business condition stops applying.
+
+Unknown fields and inconsistent automatic destinations across Content mappings fail
+explicitly. Supply one consistent explicit binding or separate providers. Custom converter
+output must be bound explicitly because it can change Data keys, types and cardinality.
+Culture-varying numeric and Boolean Data also require an explicit binding to a stable stored key;
+the adapter does not guess legacy culture suffixes or duplicate invariant values.
+
+| Query operation | Support |
+| --- | --- |
+| Ordinary search terms, relevance, paging and totals | Native Relewise search. |
+| Scalar keyword equality and StringList membership | Native exact filters and keyword facets. |
+| Boolean keyword filters/facets | Native Boolean Data. |
+| Scalar numeric exact/range filters and value/range facets | Native numeric Data; ranges have inclusive lower and exclusive upper bounds. |
+| Scalar string/numeric sorting | Native Data sorting; built-in ID, DisplayName, Brand ID and SalesPrice sorting are also supported where applicable. |
+| Brand/Category filtering and facets | Canonical IDs from native relationships; Categories match anywhere in the exported paths. |
+| Localized text Data | Existing Multilingual values and the request language. |
+| List sorting and numeric-list ranges | Rejected; no artificial min/max or object copies are exported. |
+| Field-specific full-text and date-specific operations | Rejected; use ordinary search terms or explicitly stored numeric timestamps with numeric operators. |
+| Nested-object traversal and unknown/incompatible fields | Rejected before sending a search. |
+
+Numeric buckets must be explicit, finite where bounded, nonempty and nonoverlapping.
+A single positive compatible filter becomes the native facet selection. Negated or
+multiple predicates remain hard filters and constrain all counts. Multiple facets on the
+same stored target are rejected. Results and all supported facet counts use one search;
+a missing facet response is an error, not a fabricated zero count. SalesPrice retains its
+specialized currency-aware behavior described above.
+
+The adapter does not discover or coerce externally stored values. Explicit bindings are
+contracts for that Data; keep converter/custom-mapper output consistent with them.
 
 ## Querying
 
@@ -237,27 +279,23 @@ retains mapping restrictions.
   separate set of search entities.
 - Results and supported facet counts use **one Relewise search request**. There
   are no supplementary searches per facet or range bucket.
-- Keyword/text filters, numeric/date exact and range filters, and sorting are
-  translated from core fields. Keyword and numeric/date exact-value facets are
-  supported. Generic numeric/date **range facets over Data are unsupported** and
-  throw before an API call. Product SalesPrice range facets use the explicit
-  [price binding](#product-prices) above.
+- Supported filters, facets and sorting use the [direct field bindings](#direct-field-bindings)
+  above, including native numeric Data range facets. Unsupported operations throw
+  before a search request.
 - A single positive filter matching a supported facet's type becomes a native
   facet selection: counts exclude its own selection while retaining other
   selections. Negated predicates, multiple filters on the same field, filters
-  of a different type and fields with several facet definitions remain ordinary
-  filters and constrain all counts. Mandatory mapping, publication and access
+  of an incompatible type remain ordinary filters and constrain all counts.
+  Multiple facets on the same stored field are rejected. Mandatory mapping, publication and access
   restrictions always remain filters.
 - For a nonblank query, `maxSuggestions > 0` adds one Relewise prediction request.
   `SearchResult.Suggestions` contains the returned terms, restricted to the provider's
   Content or Product target, language, visitor and configured filters, including
   mapping membership, access protection and publication requirements. Post-filters
   also constrain predictions. No prediction request is sent for a blank query.
-- Numeric Data uses doubles and dates use UTC milliseconds. Higher numeric or
-  sub-millisecond precision is not retained in these core filter representations.
-- Culture-specific numeric/date filters, sorters and facets use internal culture-specific
-  fields. AutoMap's business Data representations remain unchanged. Segment-specific
-  indexing is unsupported. Providers default to `UnsupportedSegmentBehavior.Throw()`;
+- Numeric Data uses SDK doubles; higher numeric precision is not retained.
+  Date-specific operations are unsupported.
+- Segment-specific indexing is unsupported. Providers default to `UnsupportedSegmentBehavior.Throw()`;
   set `provider.UnsupportedSegmentBehavior = UnsupportedSegmentBehavior.Ignore()` to
   execute the query without its segment argument.
 - New mappers and field-specific converters execute in an export scope. New global Data converters are scoped; legacy synchronous

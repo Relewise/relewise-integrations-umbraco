@@ -34,33 +34,46 @@ public class ProductPriceSearchTests
         var nodeKey = Guid.NewGuid();
         client.Setup(value => value.SearchAsync(It.IsAny<ProductSearchRequest>(), It.IsAny<CancellationToken>()))
             .Callback<ProductSearchRequest, CancellationToken>((request, _) => sent = request)
-            .ReturnsAsync(new ProductSearchResponse
-            {
-                Hits = 1,
-                Results =
-                [
-                    new ProductResult("sku-1", 1)
-                    {
-                        Data = new Dictionary<string, DataValue> { [RelewiseDataKeys.NodeKey] = nodeKey.ToString("D") }
-                    }
-                ],
-                Facets = new ProductFacetResult
+            .ReturnsAsync(
+                new ProductSearchResponse
                 {
-                    Items =
+                    Hits = 1,
+                    Results =
                     [
-                        new PriceRangesFacetResult(FacetingField.SalesPrice, PriceSelectionStrategy.Product, null, [],
+                        new ProductResult("sku-1", 1)
+                        {
+                            Data = new Dictionary<string, DataValue>
+                                { [RelewiseDataKeys.NodeKey] = nodeKey.ToString("D") }
+                        }
+                    ],
+                    Facets = new ProductFacetResult
+                    {
+                        Items =
                         [
-                            new AvailableFacetValue<ChainableRange<decimal?>>(
-                                new ChainableRange<decimal?>(null, 50), false, 3),
-                            new AvailableFacetValue<ChainableRange<decimal?>>(
-                                new ChainableRange<decimal?>(50, null), false, 7)
-                        ]),
-                        new ProductDataStringValueFacetResult(
-                            DataSelectionStrategy.Product, CoreSearchTranslation.Field("category", "keyword"),
-                            ["a"], CollectionFilterType.Or, [new AvailableFacetValue<string>("a", true, 1)])
-                    ]
-                }
-            });
+                            new PriceRangesFacetResult(
+                                FacetingField.SalesPrice,
+                                PriceSelectionStrategy.Product,
+                                null,
+                                [],
+                                [
+                                    new AvailableFacetValue<ChainableRange<decimal?>>(
+                                        new ChainableRange<decimal?>(null, 50),
+                                        false,
+                                        3),
+                                    new AvailableFacetValue<ChainableRange<decimal?>>(
+                                        new ChainableRange<decimal?>(50, null),
+                                        false,
+                                        7)
+                                ]),
+                            new ProductDataStringValueFacetResult(
+                                DataSelectionStrategy.Product,
+                                "category",
+                                ["a"],
+                                CollectionFilterType.Or,
+                                [new AvailableFacetValue<string>("a", true, 1)])
+                        ]
+                    }
+                });
         var factory = new Mock<IRelewiseClientFactory>();
         factory.Setup(value => value.GetClient<Relewise.Client.Search.ISearcher>(It.IsAny<string>()))
             .Returns(client.Object);
@@ -71,36 +84,45 @@ public class ProductPriceSearchTests
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
         {
             options.MapProduct("product");
-            options.SearchProviders.AddProduct("products", provider =>
-            {
-                provider.MapSalesPrice("price");
-                provider.ConfigureRequest((request, _) =>
+            options.SearchProviders.AddProduct(
+                "products",
+                provider =>
                 {
-                    request.Currency = new Currency(currency);
-                    request.Filters = null;
-                    request.Facets = null;
+                    provider.Map(product => product.SalesPrice, "price");
+                    provider.MapData<string[]>("category");
+                    provider.ConfigureRequest((request, _) =>
+                    {
+                        request.Currency = new Currency(currency);
+                        request.Filters = null;
+                        request.Facets = null;
+                    });
                 });
-            });
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();
         await using ServiceProvider root = services.BuildServiceProvider(
             new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
 
-        SearchResult result = await root.GetRequiredService<MappedEntitySearcher>().SearchAsync(
-            "products", "camp", culture: "en-US", skip: 2, take: 3,
-            filters:
-            [
-                new DecimalRangeFilter("price", [new DecimalRangeFilterRange(10, 50)], false),
-                new KeywordFilter("category", ["a"], false)
-            ],
-            facets:
-            [
-                new KeywordFacet("category"),
-                new DecimalRangeFacet("price",
-                    [new DecimalRangeFacetRange("low", null, 50), new DecimalRangeFacetRange("high", 50, null)])
-            ],
-            sorters: [new DecimalSorter("price", Direction.Ascending), new ScoreSorter(Direction.Descending)]);
+        SearchResult result = await root.GetRequiredService<MappedEntitySearcher>()
+            .SearchAsync(
+                "products",
+                "camp",
+                culture: "en-US",
+                skip: 2,
+                take: 3,
+                filters:
+                [
+                    new DecimalRangeFilter("price", [new DecimalRangeFilterRange(10, 50)], false),
+                    new KeywordFilter("category", ["a"], false)
+                ],
+                facets:
+                [
+                    new KeywordFacet("category"),
+                    new DecimalRangeFacet(
+                        "price",
+                        [new DecimalRangeFacetRange("low", null, 50), new DecimalRangeFacetRange("high", 50, null)])
+                ],
+                sorters: [new DecimalSorter("price", Direction.Ascending), new ScoreSorter(Direction.Descending)]);
 
         Assert.NotNull(sent);
         Assert.Equal(currency, sent.Currency!.Value);
@@ -120,7 +142,8 @@ public class ProductPriceSearchTests
         Assert.Equal(nodeKey, Assert.Single(result.Documents).Id);
         Assert.Equal(new[] { "category", "price" }, result.Facets.Select(facet => facet.FieldName));
         Assert.Equal(new long[] { 3, 7 }, result.Facets.Last().Values.Select(value => value.Count));
-        client.Verify(value => value.SearchAsync(It.IsAny<ProductSearchRequest>(), It.IsAny<CancellationToken>()),
+        client.Verify(
+            value => value.SearchAsync(It.IsAny<ProductSearchRequest>(), It.IsAny<CancellationToken>()),
             Times.Once);
         client.VerifyNoOtherCalls();
     }
@@ -137,10 +160,20 @@ public class ProductPriceSearchTests
             Results = [],
             Facets = new ProductFacetResult
             {
-                Items = [new PriceRangesFacetResult(
-                    FacetingField.SalesPrice, PriceSelectionStrategy.Product, null, [],
-                    [new AvailableFacetValue<ChainableRange<decimal?>>(
-                        new ChainableRange<decimal?>(null, 50), false, 3)])]
+                Items =
+                [
+                    new PriceRangesFacetResult(
+                        FacetingField.SalesPrice,
+                        PriceSelectionStrategy.Product,
+                        null,
+                        [],
+                        [
+                            new AvailableFacetValue<ChainableRange<decimal?>>(
+                                new ChainableRange<decimal?>(null, 50),
+                                false,
+                                3)
+                        ])
+                ]
             }
         };
         using var handler = new SearchResponseHandler(response, binary);
@@ -150,18 +183,32 @@ public class ProductPriceSearchTests
             OverriddenHttpClient = http,
             UseFastBinarySerializer = binary
         };
-        var request = new ProductSearchRequest(new Language("en-US"), new Currency("EUR"),
-            User.Anonymous(), "test", "camp", 0, 10);
-        var prices = new ProductPriceQuery("price", [],
-            [new DecimalRangeFacet("price", [new DecimalRangeFacetRange("low", null, 50)])], []);
+        var request = new ProductSearchRequest(
+            new Language("en-US"),
+            new Currency("EUR"),
+            User.Anonymous(),
+            "test",
+            "camp",
+            0,
+            10);
+        var prices = new ProductPriceQuery(
+            "price",
+            [],
+            [new DecimalRangeFacet("price", [new DecimalRangeFacetRange("low", null, 50)])],
+            []);
         prices.Apply(request);
 
         ProductSearchResponse result = await client.SearchAsync(request);
 
         Assert.Equal(1, handler.RequestCount);
         Assert.Equal(3, result.Hits);
-        Assert.Equal(3, Assert.Single(Assert.IsType<PriceRangesFacetResult>(
-            Assert.Single(result.Facets!.Items)).Available).Hits);
+        Assert.Equal(
+            3,
+            Assert.Single(
+                    Assert.IsType<PriceRangesFacetResult>(
+                            Assert.Single(result.Facets!.Items))
+                        .Available)
+                .Hits);
         Assert.Equal(binary, client.UseFastBinarySerializer);
     }
 
@@ -185,13 +232,25 @@ public class ProductPriceSearchTests
     public void UnsupportedPriceOperationsAndMissingCurrencyFailExplicitly()
     {
         Assert.Throws<NotSupportedException>(() => new ProductPriceQuery(
-            "price", [new IntegerExactFilter("price", [10], false)], [], []));
+            "price",
+            [new IntegerExactFilter("price", [10], false)],
+            [],
+            []));
         Assert.Throws<NotSupportedException>(() => new ProductPriceQuery(
-            "price", [], [new DecimalExactFacet("price")], []));
+            "price",
+            [],
+            [new DecimalExactFacet("price")],
+            []));
         Assert.Throws<NotSupportedException>(() => new ProductPriceQuery(
-            "price", [], [], [new KeywordSorter("price", Direction.Ascending)]));
+            "price",
+            [],
+            [],
+            [new KeywordSorter("price", Direction.Ascending)]));
         var query = new ProductPriceQuery(
-            "price", [new DecimalRangeFilter("price", [new DecimalRangeFilterRange(10, 20)], false)], [], []);
+            "price",
+            [new DecimalRangeFilter("price", [new DecimalRangeFilterRange(10, 20)], false)],
+            [],
+            []);
         var request = new ProductSearchRequest(new Language("en-US"), null, User.Anonymous(), "test", null, 0, 10);
         Assert.Throws<InvalidOperationException>(() => query.Apply(request));
     }
@@ -199,18 +258,25 @@ public class ProductPriceSearchTests
     [Fact]
     public void OverlappingPriceBucketsAreRejected()
     {
-        Assert.Throws<NotSupportedException>(() => new ProductPriceQuery("price", [],
-        [
-            new DecimalRangeFacet("price",
-                [new DecimalRangeFacetRange("first", 0, 100), new DecimalRangeFacetRange("second", 50, 150)])
-        ], []));
+        Assert.Throws<NotSupportedException>(() => new ProductPriceQuery(
+            "price",
+            [],
+            [
+                new DecimalRangeFacet(
+                    "price",
+                    [new DecimalRangeFacetRange("first", 0, 100), new DecimalRangeFacetRange("second", 50, 150)])
+            ],
+            []));
     }
 
     [Fact]
     public void MissingFacetResponseIsNotPresentedAsZeroCounts()
     {
-        var query = new ProductPriceQuery("price", [],
-            [new DecimalRangeFacet("price", [new DecimalRangeFacetRange("low", null, 50)])], []);
+        var query = new ProductPriceQuery(
+            "price",
+            [],
+            [new DecimalRangeFacet("price", [new DecimalRangeFacetRange("low", null, 50)])],
+            []);
 
         Assert.Throws<InvalidOperationException>(() => query.Read(new ContentFacetResult()));
     }
@@ -218,30 +284,35 @@ public class ProductPriceSearchTests
     [Fact]
     public async Task FailedSearchDoesNotRetryOrIssueFacetRequests()
     {
-        using var handler = new SearchResponseHandler(new ProductSearchResponse(), true,
+        using var handler = new SearchResponseHandler(
+            new ProductSearchResponse(),
+            true,
             HttpStatusCode.ServiceUnavailable);
         using var http = new HttpClient(handler);
         var client = new Relewise.Client.Search.Searcher(Guid.NewGuid(), "test-only-key", "https://test.invalid")
         {
             OverriddenHttpClient = http
         };
-        var request = new ProductSearchRequest(new Language("en-US"), new Currency("EUR"),
-            User.Anonymous(), "test", "camp", 0, 10);
+        var request = new ProductSearchRequest(
+            new Language("en-US"),
+            new Currency("EUR"),
+            User.Anonymous(),
+            "test",
+            "camp",
+            0,
+            10);
 
         await Assert.ThrowsAsync<HttpRequestException>(() => client.SearchAsync(request));
         Assert.Equal(1, handler.RequestCount);
     }
 
     [Fact]
-    public void BindingsCannotConflictWithBooleanFieldsOrBeRepeated()
+    public void NativeAndDataBindingsCannotShareAQueryName()
     {
         var options = new ProductSearchProviderOptions();
-        options.MapSalesPrice("price");
-        Assert.Throws<InvalidOperationException>(() => options.MapSalesPrice("other"));
-        Assert.Throws<InvalidOperationException>(() => options.MapBooleanData("price"));
-        var other = new ProductSearchProviderOptions();
-        other.MapBooleanData("price");
-        Assert.Throws<InvalidOperationException>(() => other.MapSalesPrice("price"));
+        options.Map(product => product.SalesPrice, "price");
+        Assert.Throws<InvalidOperationException>(() => options.MapData<bool>("price"));
+        Assert.Throws<InvalidOperationException>(() => options.Map(product => product.DisplayName, "price"));
     }
 
     private sealed class SearchResponseHandler(
@@ -260,8 +331,10 @@ public class ProductPriceSearchTests
             RequestCount++;
             HttpContent content = binary
                 ? new ByteArrayContent(MessagePackSerializer.Serialize(response))
-                : new StringContent(JsonConvert.SerializeObject(response,
-                    new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
+                : new StringContent(
+                    JsonConvert.SerializeObject(
+                        response,
+                        new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto }));
 
             return Task.FromResult(new HttpResponseMessage(status) { Content = content });
         }

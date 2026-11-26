@@ -287,11 +287,7 @@ internal sealed class EntityIndexingService(
 
                 if (mapped.Entity is Content or Product)
                 {
-                    CoreSearchMetadata.Apply(
-                        mapped,
-                        entry.Value,
-                        siteCultures,
-                        source.Properties.Select(property => property.Alias));
+                    CoreSearchMetadata.Apply(mapped, entry.Value);
                 }
 
                 desired.Add(mapped);

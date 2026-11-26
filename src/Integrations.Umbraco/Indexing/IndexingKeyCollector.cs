@@ -23,7 +23,7 @@ internal sealed class IndexingKeyCollector : IIndexer
     {
         Keys.Add(id);
 
-        Documents[id] = new CoreSearchDocument([.. variations], [.. fields], protection);
+        Documents[id] = new CoreSearchDocument([.. variations], protection);
 
         return Task.CompletedTask;
     }

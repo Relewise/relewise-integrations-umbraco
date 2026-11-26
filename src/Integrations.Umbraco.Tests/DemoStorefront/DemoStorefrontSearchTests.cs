@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Relewise.DemoStorefront.Features.Browsing;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
 using Umbraco.Cms.Core.Search.Querying.Sorting;
+using Umbraco.Cms.Core.Web;
 
 namespace Relewise.Integrations.Umbraco.Tests.DemoStorefront;
 
@@ -32,40 +35,55 @@ public class DemoStorefrontSearchTests
     }
 
     [Fact]
-    public void BrandSelectionsUseOneOrFilterAndFixedBrandPagesOmitTheFacet()
+    public void BrandSelectionsUseCanonicalIdsAndFixedBrandPagesOmitTheFacet()
     {
-        var http = new DefaultHttpContext();
         var first = Guid.NewGuid();
         var second = Guid.NewGuid();
+        var type = new Mock<IPublishedContentType>();
+        type.SetupGet(value => value.Alias).Returns("brand");
 
+        IPublishedContent Brand(Guid key, string canonical)
+        {
+            var property = new Mock<IPublishedProperty>();
+            property.SetupGet(value => value.PropertyType).Returns(Mock.Of<IPublishedPropertyType>());
+            property.Setup(value => value.GetValue(null, null)).Returns(canonical);
+            var node = new Mock<IPublishedContent>();
+            node.SetupGet(value => value.ContentType).Returns(type.Object);
+            node.SetupGet(value => value.Key).Returns(key);
+            node.Setup(value => value.GetProperty("brandId")).Returns(property.Object);
+            return node.Object;
+        }
+
+        IPublishedContent brand = Brand(first, "brand-one");
+        var cache = new Mock<IPublishedContentCache>();
+        cache.Setup(value => value.GetById(first)).Returns(brand);
+        cache.Setup(value => value.GetById(second)).Returns(Brand(second, "brand-two"));
+        var context = new Mock<IUmbracoContext>();
+        context.SetupGet(value => value.Content).Returns(cache.Object);
+        IUmbracoContext? current = context.Object;
+        var accessor = new Mock<IUmbracoContextAccessor>();
+        accessor.Setup(value => value.TryGetUmbracoContext(out current)).Returns(true);
+        var registrations = new ServiceCollection();
+        registrations.AddSingleton(accessor.Object);
+        registrations.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
+            options.MapBrand("brand", mapping => mapping.IdFromProperty("brandId")));
+        registrations.AddSingleton<RelewiseUmbracoConfiguration>();
+        using ServiceProvider services = registrations.BuildServiceProvider();
+        var http = new DefaultHttpContext { RequestServices = services };
         http.Request.QueryString = new QueryString($"?brand={first:D}&brand={second:D}");
 
         var search = new StorefrontSearch(http.Request, false, false);
         var filter = Assert.IsType<KeywordFilter>(Assert.Single(search.Filters()));
-
         Assert.Equal("shopBrand", filter.FieldName);
-        Assert.Equal(new[] { first.ToString("D"), second.ToString("D") }, filter.Values);
+        Assert.Equal(new[] { "brand-one", "brand-two" }, filter.Values);
         Assert.Contains(search.Facets(), facet => facet.FieldName == "shopBrand");
         Assert.DoesNotContain("brand=", search.ResetUrl());
         Assert.Contains("brand=", search.ClearQueryUrl());
 
         http.Request.QueryString = QueryString.Empty;
-
-        var type = new Mock<IPublishedContentType>();
-
-        type.SetupGet(value => value.Alias).Returns("brand");
-
-        var brand = new Mock<IPublishedContent>();
-
-        brand.SetupGet(value => value.ContentType).Returns(type.Object);
-        brand.SetupGet(value => value.Key).Returns(first);
-
-        var scoped = new StorefrontSearch(http.Request, false, false, brand.Object);
-
+        var scoped = new StorefrontSearch(http.Request, false, false, brand);
         Assert.DoesNotContain(scoped.Facets(), facet => facet.FieldName == "shopBrand");
-        Assert.Equal(
-            first.ToString("D"),
-            Assert.Single(Assert.IsType<KeywordFilter>(Assert.Single(scoped.Filters())).Values));
+        Assert.Equal("brand-one", Assert.Single(Assert.IsType<KeywordFilter>(Assert.Single(scoped.Filters())).Values));
     }
 
     [Fact]

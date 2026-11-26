@@ -8,6 +8,7 @@ using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.Search;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using static Relewise.DemoStorefront.DemoConstants;
+using UmbracoConstants = Umbraco.Cms.Core.Constants;
 
 namespace Relewise.DemoStorefront.Integration;
 
@@ -125,7 +126,9 @@ internal static class DemoConfiguration
             SearchProviders.Articles,
             provider =>
             {
-                provider.DocumentTypeAliases = [
+                provider.Map(content => content.DisplayName, UmbracoConstants.Search.FieldNames.Name);
+                provider.DocumentTypeAliases =
+                [
                     DocumentTypeAliases.Article,
                     DocumentTypeAliases.LocalizedArticle,
                     DocumentTypeAliases.Guide
@@ -153,12 +156,19 @@ internal static class DemoConfiguration
 
     private static void ConfigureProductSearch(ProductSearchProviderOptions provider)
     {
-        provider.MapSalesPrice(SearchFields.Price); // Native price facets and sorting use the active market currency.
-        provider.MapBooleanData(DataKeys.InStock); // Query the same business value written by DemoProductMapper.
+        provider.Map(product => product.CategoryPaths, SearchFields.Category); // Query canonical Category IDs.
+        provider.Map(product => product.Brand, SearchFields.Brand); // Query the native Brand relationship.
+        provider.Map(
+            product => product.DisplayName,
+            UmbracoConstants.Search.FieldNames.Name); // Preserve the storefront's name-sort query field.
+        provider.Map(
+            product => product.SalesPrice,
+            SearchFields.Price); // Native price facets and sorting use the active market currency.
+        provider.MapData<bool>(DataKeys.InStock); // Query the same business value written by DemoProductMapper.
 
         foreach (DemoMarket market in DemoMarket.All)
         {
-            provider.MapBooleanData(DataKeys.OnSale(market.Currency));
+            provider.MapData<bool>(DataKeys.OnSale(market.Currency));
         }
 
         provider.ConfigureRequest((request, context) =>

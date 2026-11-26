@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Concurrent;
 using Relewise.Client.DataTypes;
 
 namespace Relewise.Integrations.Umbraco.Search;
 
 internal sealed class SearchProviderDefinition
 {
+    internal ConcurrentDictionary<string, SearchFieldDefinition> ResolvedFields { get; } = new(StringComparer.Ordinal);
+
     internal object Options { get; }
     internal Type EntityType { get; }
     internal ContentSearchProviderOptions? ContentOptions { get; }

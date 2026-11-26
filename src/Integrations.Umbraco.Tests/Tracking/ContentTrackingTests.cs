@@ -158,7 +158,20 @@ public class ContentTrackingTests
 
         searcher.Setup(x => x.SearchAsync(It.IsAny<ContentSearchRequest>(), It.IsAny<CancellationToken>()))
             .Callback<ContentSearchRequest, CancellationToken>((search, _) => searches.Add(search))
-            .ReturnsAsync(new ContentSearchResponse { Hits = 0, Results = [], Facets = new ContentFacetResult() });
+            .ReturnsAsync(
+                new ContentSearchResponse
+                {
+                    Hits = 0,
+                    Results = [],
+                    Facets = new ContentFacetResult
+                    {
+                        Items =
+                        [
+                            new ContentDataDoubleValueFacetResult("number", [], null, []),
+                            new ContentDataStringValueFacetResult("tag", [], null, [])
+                        ]
+                    }
+                });
 
         var clients = new Mock<IRelewiseClientFactory>();
 
@@ -198,7 +211,13 @@ public class ContentTrackingTests
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
         {
             options.MapContent("article");
-            options.SearchProviders.AddContent("articles");
+            options.SearchProviders.AddContent(
+                "articles",
+                fields =>
+                {
+                    fields.MapData<string[]>("tag");
+                    fields.MapData<int>("number");
+                });
             options.SearchProviders.DefaultPublishedContentProviderAlias = "articles";
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();

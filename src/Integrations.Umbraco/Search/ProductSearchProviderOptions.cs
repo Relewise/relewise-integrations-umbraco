@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
+using Relewise.Client.DataTypes;
 using Relewise.Client.Requests.Search;
 
 namespace Relewise.Integrations.Umbraco.Search;
@@ -14,49 +16,29 @@ public class ProductSearchProviderOptions
     }
 
     internal Action<ProductSearchRequest, SearchRequestContext>? Configure { get; private set; }
-    internal string? SalesPriceFieldName { get; private set; }
-    internal Dictionary<string, string> BooleanDataFields { get; } = new(StringComparer.Ordinal);
+    internal Dictionary<string, SearchFieldDefinition> Fields { get; } = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// Bind an Umbraco keyword query field directly to Boolean Product Data, without an indexed search
-    /// projection.
+    /// Bind a query field to an existing built-in Product property, independently of export mapping.
     /// </summary>
-    /// <param name="fieldName">The field used by Umbraco KeywordFilter and KeywordFacet queries.</param>
-    /// <param name="dataKey">The Relewise Data key; defaults to <paramref name="fieldName"/>.</param>
-    /// <remarks>Filter values must be true or false. Missing Data matches neither positive value; negated filters
-    /// include missing values. This binding does not export Data or support sorting.</remarks>
-    public void MapBooleanData(string fieldName, string? dataKey = null)
+    /// <typeparam name="TValue">The selected SDK property's type.</typeparam>
+    /// <param name="destinationProperty">The direct SDK property to query.</param>
+    /// <param name="fieldName">The name used in Umbraco filters, facets and sorters.</param>
+    public void Map<TValue>(Expression<Func<Product, TValue>> destinationProperty, string fieldName)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(fieldName);
-        dataKey ??= fieldName;
-        ArgumentException.ThrowIfNullOrWhiteSpace(dataKey);
-
-        if (fieldName == SalesPriceFieldName || !BooleanDataFields.TryAdd(fieldName, dataKey))
-        {
-            throw new InvalidOperationException($"Boolean query field '{fieldName}' has already been bound.");
-        }
+        SearchFieldRegistration.Map(Fields, destinationProperty, fieldName);
     }
 
     /// <summary>
-    /// Bind an Umbraco decimal query field to the Product's built-in SalesPrice for filters,
-    /// range facets and sorting, using the currency configured on each request.
+    /// Bind a query field to existing Data. Supports scalar strings, Booleans and numbers,
+    /// and string/numeric arrays. Array sorting and numeric array ranges are not supported.
     /// </summary>
-    /// <param name="fieldName">
-    /// The field used by DecimalRangeFilter, DecimalRangeFacet and DecimalSorter queries.
-    /// </param>
-    /// <remarks>
-    /// Configure the request currency with ConfigureRequest. This binding does not export price data.
-    /// </remarks>
-    public void MapSalesPrice(string fieldName)
+    /// <typeparam name="TValue">The stored scalar type or array type; numeric Data uses SDK doubles.</typeparam>
+    /// <param name="fieldName">The name used in Umbraco filters, facets and sorters.</param>
+    /// <param name="configure">Optional stored Data key override. This does not export Data.</param>
+    public void MapData<TValue>(string fieldName, Action<SearchDataMappingOptions>? configure = null)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(fieldName);
-
-        if (SalesPriceFieldName != null || BooleanDataFields.ContainsKey(fieldName))
-        {
-            throw new InvalidOperationException("SalesPrice is already bound or the query field is in use.");
-        }
-
-        SalesPriceFieldName = fieldName;
+        SearchFieldRegistration.MapData<TValue>(Fields, fieldName, configure);
     }
 
     /// <summary>

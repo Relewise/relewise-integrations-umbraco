@@ -4,14 +4,12 @@ using Relewise.DemoStorefront.Features.Cart;
 using Relewise.DemoStorefront.Features.Recommendations;
 using Relewise.DemoStorefront.Integration;
 using Relewise.DemoStorefront.Integration.Converters;
-using Relewise.DemoStorefront.Integration.Indexing;
 using Relewise.DemoStorefront.Integration.Tracking;
 using Relewise.DemoStorefront.Seeding;
 using Relewise.DemoStorefront.Setup;
 using Relewise.DemoStorefront.Site;
 using Relewise.Integrations.Umbraco;
 using Umbraco.Cms.Core.HostedServices;
-using Umbraco.Cms.Core.Search.Indexing;
 using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront;
@@ -73,8 +71,6 @@ internal static class Program
 
             umbraco.AddRelewise(DemoConfiguration.Configure);
         }
-
-        builder.Services.AddTransient<IContentIndexer, StorefrontProductIndexer>();
 
         umbraco.Build();
 

@@ -167,8 +167,9 @@ existing Relewise Brand relationship.
 
 Mappings default to `EntityUpdatePolicy.ReplaceProvidedProperties()` for both
 delta updates and full rebuilds. Supplied fields replace their previous values;
-omitted fields remain, including fields contributed by commerce. Empty current
-Umbraco properties explicitly clear their internal search projections.
+omitted fields remain, including fields contributed by commerce. Empty source
+properties follow their converter's normal Data output; no separate search fields
+are maintained.
 
 When Umbraco supplies the complete entity, a rebuild can also remove obsolete fields:
 

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Newtonsoft.Json;
 using Relewise.Client.DataTypes;
+using Relewise.Client.DataTypes.Search.Facets.Enums;
 using Relewise.Client.DataTypes.Search.Facets.Result;
 using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Filters;
@@ -36,10 +37,34 @@ public class MappedEntitySearchTests
 
         sdk.Setup(client => client.SearchAsync(It.IsAny<ContentSearchRequest>(), It.IsAny<CancellationToken>()))
             .Callback<ContentSearchRequest, CancellationToken>((request, _) => sent = request.Filters)
-            .ReturnsAsync(new ContentSearchResponse { Hits = 0, Results = [], Facets = new ContentFacetResult() });
+            .ReturnsAsync(
+                new ContentSearchResponse
+                {
+                    Hits = 0,
+                    Results = [],
+                    Facets = new ContentFacetResult
+                    { Items = [new ContentDataDoubleValueFacetResult("number", [], null, [])] }
+                });
         sdk.Setup(client => client.SearchAsync(It.IsAny<ProductSearchRequest>(), It.IsAny<CancellationToken>()))
             .Callback<ProductSearchRequest, CancellationToken>((request, _) => sent = request.Filters)
-            .ReturnsAsync(new ProductSearchResponse { Hits = 0, Results = [], Facets = new ProductFacetResult() });
+            .ReturnsAsync(
+                new ProductSearchResponse
+                {
+                    Hits = 0,
+                    Results = [],
+                    Facets = new ProductFacetResult
+                    {
+                        Items =
+                        [
+                            new ProductDataDoubleValueFacetResult(
+                                DataSelectionStrategy.Product,
+                                "number",
+                                [],
+                                null,
+                                [])
+                        ]
+                    }
+                });
 
         var factory = new Mock<IRelewiseClientFactory>();
 
@@ -106,10 +131,34 @@ public class MappedEntitySearchTests
 
         searcher.Setup(client => client.SearchAsync(It.IsAny<ContentSearchRequest>(), It.IsAny<CancellationToken>()))
             .Callback<ContentSearchRequest, CancellationToken>((request, _) => sent.Add(request))
-            .ReturnsAsync(new ContentSearchResponse { Hits = 0, Results = [], Facets = new ContentFacetResult() });
+            .ReturnsAsync(
+                new ContentSearchResponse
+                {
+                    Hits = 0,
+                    Results = [],
+                    Facets = new ContentFacetResult
+                    { Items = [new ContentDataDoubleValueFacetResult("number", [], null, [])] }
+                });
         searcher.Setup(client => client.SearchAsync(It.IsAny<ProductSearchRequest>(), It.IsAny<CancellationToken>()))
             .Callback<ProductSearchRequest, CancellationToken>((request, _) => sent.Add(request))
-            .ReturnsAsync(new ProductSearchResponse { Hits = 0, Results = [], Facets = new ProductFacetResult() });
+            .ReturnsAsync(
+                new ProductSearchResponse
+                {
+                    Hits = 0,
+                    Results = [],
+                    Facets = new ProductFacetResult
+                    {
+                        Items =
+                        [
+                            new ProductDataDoubleValueFacetResult(
+                                DataSelectionStrategy.Product,
+                                "number",
+                                [],
+                                null,
+                                [])
+                        ]
+                    }
+                });
 
         var clients = new Mock<IRelewiseClientFactory>();
 
@@ -160,6 +209,7 @@ public class MappedEntitySearchTests
                             provider.RequirePublishedPage = requirePublishedPage.Value;
                         }
 
+                        provider.MapData<int>("number");
                         provider.ConfigureRequest((request, _) => Customize(request));
                     });
             }
@@ -168,7 +218,11 @@ public class MappedEntitySearchTests
                 options.MapContent("article");
                 options.SearchProviders.AddContent(
                     "articles",
-                    provider => provider.ConfigureRequest((request, _) => Customize(request)));
+                    provider =>
+                    {
+                        provider.MapData<int>("number");
+                        provider.ConfigureRequest((request, _) => Customize(request));
+                    });
                 options.SearchProviders.DefaultPublishedContentProviderAlias = "articles";
             }
         });
@@ -271,10 +325,34 @@ public class MappedEntitySearchTests
 
         sdk.Setup(client => client.SearchAsync(It.IsAny<ContentSearchRequest>(), It.IsAny<CancellationToken>()))
             .Callback<ContentSearchRequest, CancellationToken>((request, _) => sent = request)
-            .ReturnsAsync(new ContentSearchResponse { Hits = 0, Results = [], Facets = new ContentFacetResult() });
+            .ReturnsAsync(
+                new ContentSearchResponse
+                {
+                    Hits = 0,
+                    Results = [],
+                    Facets = new ContentFacetResult
+                    { Items = [new ContentDataDoubleValueFacetResult("number", [], null, [])] }
+                });
         sdk.Setup(client => client.SearchAsync(It.IsAny<ProductSearchRequest>(), It.IsAny<CancellationToken>()))
             .Callback<ProductSearchRequest, CancellationToken>((request, _) => sent = request)
-            .ReturnsAsync(new ProductSearchResponse { Hits = 0, Results = [], Facets = new ProductFacetResult() });
+            .ReturnsAsync(
+                new ProductSearchResponse
+                {
+                    Hits = 0,
+                    Results = [],
+                    Facets = new ProductFacetResult
+                    {
+                        Items =
+                        [
+                            new ProductDataDoubleValueFacetResult(
+                                DataSelectionStrategy.Product,
+                                "number",
+                                [],
+                                null,
+                                [])
+                        ]
+                    }
+                });
 
         using var cancellation = new CancellationTokenSource();
         CancellationToken cancellationToken = cancellation.Token;

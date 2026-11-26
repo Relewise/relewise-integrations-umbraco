@@ -31,7 +31,6 @@ public static class RelewiseDataKeys
     public static class Search
     {
         internal const string Access = "rwUmbracoSearchAccess";
-        internal const string FieldPrefix = "rwUmbracoField_";
 
         /// <summary>
         /// The searchable default-segment culture codes, normalized to lowercase; an empty value denotes

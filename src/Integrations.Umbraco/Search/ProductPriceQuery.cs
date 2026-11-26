@@ -157,6 +157,11 @@ internal sealed class ProductPriceQuery
     {
         DecimalRangeFacetRange[] ranges = [.. facet.Ranges.OrderBy(range => range.MinValue ?? decimal.MinValue)];
 
+        if (ranges.Length == 0)
+        {
+            throw new NotSupportedException("Price facets require explicit nonempty buckets.");
+        }
+
         for (var i = 0; i < ranges.Length; i++)
         {
             DecimalRangeFacetRange range = ranges[i];

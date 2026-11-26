@@ -65,7 +65,9 @@ public class BooleanProductSearchTests
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
         {
             options.MapProduct("product");
-            options.SearchProviders.AddProduct("products", provider => provider.MapBooleanData("sale", "onSale_EUR"));
+            options.SearchProviders.AddProduct(
+                "products",
+                provider => provider.MapData<bool>("sale", field => field.DataKey = "onSale_EUR"));
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();
@@ -119,7 +121,9 @@ public class BooleanProductSearchTests
     {
         Client.Requests.Filters.Filter filter = CoreSearchTranslation.MapFilter(
             new KeywordFilter("sale", [value], negate),
-            booleanDataFields: new Dictionary<string, string> { ["sale"] = "onSale_EUR" });
+            new SearchFieldDefinition(SearchFieldKind.Data, "onSale_EUR", typeof(bool)),
+            false,
+            null);
         string json = JsonConvert.SerializeObject(filter);
 
         Assert.Contains("onSale_EUR", json);
@@ -137,18 +141,22 @@ public class BooleanProductSearchTests
     {
         var options = new ProductSearchProviderOptions();
 
-        Assert.Throws<ArgumentException>(() => options.MapBooleanData(" "));
-        Assert.Throws<ArgumentException>(() => options.MapBooleanData("sale", " "));
-        options.MapBooleanData("sale");
-        Assert.Throws<InvalidOperationException>(() => options.MapBooleanData("sale"));
+        Assert.Throws<ArgumentException>(() => options.MapData<bool>(" "));
+        Assert.Throws<ArgumentException>(() => options.MapData<bool>("sale", field => field.DataKey = " "));
+        options.MapData<bool>("sale");
+        Assert.Throws<InvalidOperationException>(() => options.MapData<bool>("sale"));
         Assert.Throws<ArgumentException>(() =>
             CoreSearchTranslation.MapFilter(
                 new KeywordFilter("sale", ["yes"], false),
-                booleanDataFields: options.BooleanDataFields));
+                options.Fields["sale"],
+                false,
+                null));
         Assert.Throws<NotSupportedException>(() =>
             CoreSearchTranslation.MapFilter(
                 new DecimalRangeFilter("sale", [], false),
-                booleanDataFields: options.BooleanDataFields));
+                options.Fields["sale"],
+                false,
+                null));
     }
 
     private sealed class Visitor : IRelewiseUserLocator

@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Client.DataTypes;
-using Relewise.Client.DataTypes.Search.Facets.Enums;
 using Relewise.Client.DataTypes.Search.Facets.Queries;
 using Relewise.Client.DataTypes.Search.Facets.Result;
 using Relewise.Client.DataTypes.Search.Sorting.Content;
-using Relewise.Client.DataTypes.Search.Sorting.Product;
 using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
@@ -21,10 +19,10 @@ using Relewise.Client.Responses.Search;
 using Relewise.Client.Search;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search.Querying;
-using Umbraco.Cms.Core.Search.Querying.Faceting;
 using Umbraco.Cms.Core.Search.Querying.Sorting;
 using Umbraco.Cms.Core.Services;
 using static Relewise.Integrations.Umbraco.Search.CoreSearchTranslation;
+using Content = Relewise.Client.DataTypes.Content;
 using Language = Relewise.Client.DataTypes.Language;
 using RFilter = Relewise.Client.Requests.Filters.Filter;
 using UFacet = Umbraco.Cms.Core.Search.Querying.Faceting.Facet;
@@ -99,28 +97,28 @@ internal sealed class MappedEntitySearcher(
         UFacet[] selectedFacets = facets?.ToArray() ?? [];
         Sorter[] selectedSorters = sorters?.ToArray() ?? [];
 
-        IReadOnlyDictionary<string, string> booleanDataFields =
-            provider.Options is ProductSearchProviderOptions productOptions
-                ? productOptions.BooleanDataFields
-                : new Dictionary<string, string>();
-
-        foreach (UFacet facet in selectedFacets)
+        SearchFieldDefinition ResolveField(string name)
         {
-            if (booleanDataFields.ContainsKey(facet.FieldName) && facet is not KeywordFacet)
-            {
-                throw new NotSupportedException($"Boolean Data binding '{facet.FieldName}' requires a KeywordFacet.");
-            }
+            return SearchFieldCatalog.Resolve(name, configuration, provider, services);
         }
 
-        foreach (Sorter sorter in selectedSorters)
+        string[] queryFields =
+        [
+            .. supplied.Select(value => value.FieldName)
+                .Concat(selectedFacets.Select(value => value.FieldName))
+                .Concat(
+                    selectedSorters.Where(value => value is not ScoreSorter)
+                        .Select(value => value.FieldName))
+                .Distinct()
+        ];
+        string[] priceFields = [.. queryFields.Where(name => ResolveField(name).Kind == SearchFieldKind.SalesPrice)];
+
+        if (priceFields.Length > 1)
         {
-            if (sorter.FieldName != null && booleanDataFields.ContainsKey(sorter.FieldName))
-            {
-                throw new NotSupportedException($"Sorting Boolean Data binding '{sorter.FieldName}' is not supported.");
-            }
+            throw new NotSupportedException("Use one query field for SalesPrice within a search request.");
         }
 
-        string? priceField = (provider.Options as ProductSearchProviderOptions)?.SalesPriceFieldName;
+        string? priceField = priceFields.SingleOrDefault();
         ProductPriceQuery? prices = priceField == null
             ? null
             : new ProductPriceQuery(priceField, supplied, selectedFacets, selectedSorters);
@@ -182,10 +180,9 @@ internal sealed class MappedEntitySearcher(
                 {
                     allowed.AddRange(
                         (accessContext.GroupIds ?? []).Append(accessContext.PrincipalId)
-                        .Select(
-                            id => new ContentDataFilter(
-                                RelewiseDataKeys.Search.Access,
-                                new ContainsCondition(id.ToString("D")))));
+                        .Select(id => new ContentDataFilter(
+                            RelewiseDataKeys.Search.Access,
+                            new ContainsCondition(id.ToString("D")))));
                 }
 
                 request.Filters!.Add(new OrFilter([.. allowed]));
@@ -193,7 +190,12 @@ internal sealed class MappedEntitySearcher(
 
             foreach (UFilter filter in selected)
             {
-                request.Filters!.Add(MapFilter(filter, culture, booleanDataFields));
+                request.Filters!.Add(
+                    MapFilter(
+                        filter,
+                        ResolveField(filter.FieldName),
+                        provider.EntityType == typeof(Product),
+                        culture));
             }
 
             return request;
@@ -277,15 +279,13 @@ internal sealed class MappedEntitySearcher(
                 }
             };
 
-            if (source.Sorting?.Value != null)
-            {
-                target.Sorting!.Value = ProductSort(source.Sorting.Value, priceField, culture);
-            }
+            ApplySorting(target, selectedSorters, ResolveField);
 
             options.Configure?.Invoke(target, context);
             target.Facets ??= new ProductFacetQuery();
             target.Facets.Items = CoreSearchFacets.Merge(
-                source.Facets!.Items.Select(CoreSearchFacets.ForProduct), target.Facets.Items);
+                source.Facets!.Items.Select(CoreSearchFacets.ForProduct),
+                target.Facets.Items);
             target.Filters =
                 new FilterCollection([.. target.Filters?.Items ?? [], .. mandatory.Select(ProductFilter)]);
             prices?.Apply(target);
@@ -306,10 +306,11 @@ internal sealed class MappedEntitySearcher(
             target.Settings.VariantRequestSettings.MaxVariantsPerProduct ??= 0;
             target.Settings.SelectedProductProperties ??= new SelectedProductPropertiesSettings();
             target.Settings.SelectedProductProperties.DataKeys =
-                [
-                    .. (target.Settings.SelectedProductProperties.DataKeys ?? []).Append(
-                        RelewiseDataKeys.NodeKey).Distinct()
-                ];
+            [
+                .. (target.Settings.SelectedProductProperties.DataKeys ?? []).Append(
+                    RelewiseDataKeys.NodeKey)
+                .Distinct()
+            ];
 
             if (string.IsNullOrWhiteSpace(target.DisplayedAtLocation))
             {
@@ -339,22 +340,46 @@ internal sealed class MappedEntitySearcher(
 
         var facetQuery = new ContentFacetQuery();
         UFilter[] remainingFilters = CoreSearchFacets.Configure(
-            facetQuery, dataFacets, dataFilters, culture, booleanDataFields);
+            facetQuery,
+            dataFacets,
+            dataFilters,
+            ResolveField);
         ContentSearchRequest request = Create(remainingFilters, skip, take);
         request.Facets = facetQuery;
 
-        ApplySorting(request, selectedSorters, culture);
+        if (provider.EntityType == typeof(Content))
+        {
+            ApplySorting(request, selectedSorters, ResolveField);
+        }
 
         ContentSearchResponse result = await Execute(request);
-        var dataResults = new Queue<UFacetResult>(CoreSearchFacets.Read(
-            result.Facets, dataFacets, culture, booleanDataFields));
-        UFacetResult[] facetResults = [.. selectedFacets.Select(facet =>
-            prices?.Matches(facet.FieldName) == true ? prices.Read(result.Facets) : dataResults.Dequeue())];
+        var dataResults = new Queue<UFacetResult>(
+            CoreSearchFacets.Read(
+                result.Facets,
+                dataFacets,
+                ResolveField));
+        UFacetResult[] facetResults =
+        [
+            .. selectedFacets.Select(facet =>
+                prices?.Matches(facet.FieldName) == true ? prices.Read(result.Facets) : dataResults.Dequeue())
+        ];
 
         string[] suggestions = [];
 
         if (maxSuggestions > 0 && query != null && predictionSource != null)
         {
+            RFilter PredictionFilter(UFilter filter)
+            {
+                if (prices?.Matches(filter.FieldName) == true)
+                {
+                    return prices.MapFilter(filter, predictionSource.Currency);
+                }
+
+                bool product = provider.EntityType == typeof(Product);
+                RFilter mapped = MapFilter(filter, ResolveField(filter.FieldName), product, culture);
+                return product ? ProductFilter(mapped) : mapped;
+            }
+
             var prediction = new SearchTermPredictionRequest(
                 predictionSource.Language,
                 predictionSource.Currency,
@@ -367,12 +392,7 @@ internal sealed class MappedEntitySearcher(
                 Filters = new FilterCollection(
                 [
                     .. predictionSource.Filters?.Items ?? [], .. predictionSource.PostFilters?.Items ?? [],
-                    .. supplied.Select(filter =>
-                        prices?.Matches(filter.FieldName) == true
-                            ? prices.MapFilter(filter, predictionSource.Currency)
-                            : provider.EntityType == typeof(Product)
-                                ? ProductFilter(MapFilter(filter, culture, booleanDataFields))
-                                : MapFilter(filter, culture, booleanDataFields))
+                    .. supplied.Select(PredictionFilter)
                 ]),
                 RelevanceModifiers = predictionSource.RelevanceModifiers,
                 ContextValues = predictionSource.ContextValues,
@@ -421,33 +441,9 @@ internal sealed class MappedEntitySearcher(
                 f.Currency),
             AndFilter f => new AndFilter([.. f.Filters.Select(ProductFilter)], f.Negated),
             OrFilter f => new OrFilter([.. f.Filters.Select(ProductFilter)], f.Negated),
+            ProductIdFilter or BrandIdFilter or ProductCategoryIdFilter => filter,
             _ => throw new NotSupportedException(
                 $"Cannot translate core predicate '{filter.GetType().Name}' to Product search.")
         };
     }
-
-    private static ProductSorting ProductSort(
-        ContentSorting sorting,
-        string? priceField,
-        string? culture)
-    {
-        ProductSorting target = sorting switch
-        {
-            ContentDataSorting s when priceField != null &&
-                                      (s.Key == Field(priceField, "decimalMin", culture) ||
-                                       s.Key == Field(priceField, "decimalMax", culture)) =>
-                new ProductAttributeSorting(ProductAttributeSorting.SortableAttribute.SalesPrice, s.Order),
-            ContentDataSorting s => new ProductDataSorting(s.Key, DataSelectionStrategy.Product, s.Order, s.Mode),
-            ContentRelevanceSorting s => new ProductRelevanceSorting(s.Order),
-            _ => throw new NotSupportedException($"Unsupported core sorting '{sorting.GetType().Name}'.")
-        };
-
-        if (sorting.ThenBy != null)
-        {
-            target.ThenBy = ProductSort(sorting.ThenBy, priceField, culture);
-        }
-
-        return target;
-    }
-
 }

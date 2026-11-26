@@ -1,17 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using Relewise.Client.DataTypes;
+using Relewise.Client.DataTypes.Search.Facets.Enums;
 using Relewise.Client.DataTypes.Search.Sorting.Content;
 using Relewise.Client.DataTypes.Search.Sorting.Enums;
+using Relewise.Client.DataTypes.Search.Sorting.Product;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
-using Relewise.Client.Requests.Filters.DataObjects;
-using Relewise.Client.Requests.Filters.DataObjects.Conditions;
 using Relewise.Client.Requests.Search;
 using Umbraco.Cms.Core;
-using Umbraco.Cms.Core.Search.Indexing;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
 using Umbraco.Cms.Core.Search.Querying.Sorting;
 using RFilter = Relewise.Client.Requests.Filters.Filter;
@@ -21,129 +19,158 @@ namespace Relewise.Integrations.Umbraco.Search;
 
 internal static class CoreSearchTranslation
 {
-    internal static RFilter MapFilter(
-        UFilter filter,
-        string? culture = null,
-        IReadOnlyDictionary<string, string>? booleanDataFields = null)
+    internal static RFilter MapFilter(UFilter filter, SearchFieldDefinition field, bool product, string? culture)
     {
-        if (booleanDataFields != null && booleanDataFields.TryGetValue(filter.FieldName, out string? key))
+        RFilter result;
+
+        if (filter is KeywordFilter keyword)
         {
-            if (filter is not KeywordFilter keyword)
-            {
-                throw new NotSupportedException($"Boolean Data binding '{filter.FieldName}' requires a KeywordFilter.");
-            }
-
-            RFilter boolean = Any(
-                keyword.Values.Select(value =>
-                    bool.TryParse(value, out bool parsed)
-                        ? new ContentDataFilter(key, new EqualsCondition(parsed))
-                        : throw new ArgumentException(
-                            $"Boolean query field '{filter.FieldName}' requires true or false values.")));
-
-            return filter.Negate ? Negate(boolean) : boolean;
+            result = Keyword(field, keyword.Values, product, culture);
+        }
+        else if (filter is IntegerExactFilter integer && field.Numeric && field.Kind == SearchFieldKind.Data)
+        {
+            result = Any(
+                integer.Values.Select(value => Data(
+                    field,
+                    field.Collection ? new ContainsCondition((double)value) : new EqualsCondition((double)value),
+                    culture)));
+        }
+        else if (filter is DecimalExactFilter number && field.Numeric && field.Kind == SearchFieldKind.Data)
+        {
+            result = Any(
+                number.Values.Select(value => Data(
+                    field,
+                    field.Collection ? new ContainsCondition((double)value) : new EqualsCondition((double)value),
+                    culture)));
+        }
+        else if (filter is IntegerRangeFilter integers && field.Numeric && !field.Collection &&
+                 field.Kind == SearchFieldKind.Data)
+        {
+            result = Any(integers.Ranges.Select(range => NumberRange(field, range.MinValue, range.MaxValue, culture)));
+        }
+        else if (filter is DecimalRangeFilter numbers && field.Numeric && !field.Collection &&
+                 field.Kind == SearchFieldKind.Data)
+        {
+            result = Any(
+                numbers.Ranges.Select(range =>
+                    NumberRange(field, (double?)range.MinValue, (double?)range.MaxValue, culture)));
+        }
+        else
+        {
+            throw Unsupported(filter.FieldName, filter.GetType().Name);
         }
 
-        RFilter result = filter switch
-        {
-            KeywordFilter f => Any(f.Values.Select(v => Contains(Field(f.FieldName, "keyword"), v))),
-            TextFilter f => Any(f.Values.Select(v => Contains(Field(f.FieldName, "text"), v))),
-            IntegerExactFilter f => NumericExact(f.FieldName, "integer", f.Values.Select(v => (double)v), culture),
-            DecimalExactFilter f => NumericExact(f.FieldName, "decimal", f.Values.Select(v => (double)v), culture),
-            DateTimeOffsetExactFilter f => NumericExact(f.FieldName, "date", f.Values.Select(DateNumber), culture),
-            IntegerRangeFilter f => Any(
-                f.Ranges.Select(r =>
-                    NumberRange(f.FieldName, "integer", r.MinValue, r.MaxValue, culture))),
-            DecimalRangeFilter f => Any(
-                f.Ranges.Select(r =>
-                    NumberRange(f.FieldName, "decimal", (double?)r.MinValue, (double?)r.MaxValue, culture))),
-            DateTimeOffsetRangeFilter f => Any(
-                f.Ranges.Select(r => NumberRange(
-                    f.FieldName,
-                    "date",
-                    r.MinValue.HasValue ? DateNumber(r.MinValue.Value) : null,
-                    r.MaxValue.HasValue ? DateNumber(r.MaxValue.Value) : null,
-                    culture))),
-            _ => throw new NotSupportedException(
-                $"The Relewise provider does not support filter '{filter.GetType().Name}'.")
-        };
-
-        return filter.Negate ? Negate(result) : result;
+        // Group negation preserves the distinction between a missing value and an explicit false value.
+        return filter.Negate ? new AndFilter([result], true) : result;
     }
 
-    private static RFilter NumericExact(
-        string field,
-        string kind,
-        IEnumerable<double> values,
-        string? culture = null)
+    private static RFilter Keyword(SearchFieldDefinition field, string[] values, bool product, string? culture)
     {
-        return Any(values.Select(v => Contains(Field(field, kind + "Exact", culture), NumberString(v))));
-    }
-
-    internal static RFilter NumberRange(
-        string field,
-        string kind,
-        double? min,
-        double? max,
-        string? culture = null)
-    {
-        if (!min.HasValue && !max.HasValue)
-        {
-            return new ContentDataFilter(Field(field, kind + "Values", culture), new HasValueCondition());
-        }
-
-        // Relewise ranges are inclusive. The previous representable double makes the upper
-        // endpoint exclusive without arbitrary epsilons, for integers, decimals and dates alike.
-        double lower = min ?? double.MinValue;
-        double upper = max.HasValue ? Math.BitDecrement(max.Value) : double.MaxValue;
-
-        if (lower > upper)
+        if (values.Length == 0)
         {
             return Any([]);
         }
 
+        return field.Kind switch
+        {
+            SearchFieldKind.Id => product ? new ProductIdFilter(values) : new ContentIdFilter(values),
+            SearchFieldKind.Brand when product => new BrandIdFilter(values),
+            SearchFieldKind.Categories => product
+                ? new ProductCategoryIdFilter(values, CategoryScope.Ancestor)
+                : new ContentCategoryIdFilter(values, CategoryScope.Ancestor),
+            SearchFieldKind.Data when field.ValueType == typeof(bool) => Any(
+                values.Select(value =>
+                    bool.TryParse(value, out bool parsed)
+                        ? Data(field, new EqualsCondition(parsed), culture)
+                        : throw new ArgumentException("Boolean query fields require true or false values."))),
+            SearchFieldKind.Data when field.ValueType == typeof(string) => Any(
+                values.Select(value =>
+                    Data(
+                        field,
+                        field.Collection ? new ContainsCondition(value) : new EqualsCondition(value),
+                        culture))),
+            _ => throw Unsupported(field.DataKey ?? field.Kind.ToString(), nameof(KeywordFilter))
+        };
+    }
+
+    private static RFilter NumberRange(SearchFieldDefinition field, double? min, double? max, string? culture)
+    {
+        if (min.HasValue && !double.IsFinite(min.Value) || max.HasValue && !double.IsFinite(max.Value))
+        {
+            throw new ArgumentException("Numeric ranges require finite bounds.");
+        }
+
+        if (min.HasValue && max.HasValue && min >= max)
+        {
+            return Any([]);
+        }
+
+        var bounds = new List<RFilter>();
+
+        if (min.HasValue)
+        {
+            bounds.Add(Data(field, new LessThanCondition(min.Value, true), culture));
+        }
+
+        if (max.HasValue)
+        {
+            bounds.Add(Data(field, new LessThanCondition(max.Value), culture));
+        }
+
+        // An unbounded range still requires a stored value; missing Data must not match.
+        return bounds.Count == 0 ? Data(field, new HasValueCondition(), culture) : new AndFilter([.. bounds]);
+    }
+
+    private static ContentDataFilter Data(SearchFieldDefinition field, ValueCondition condition, string? culture)
+    {
         return new ContentDataFilter(
-            Field(field, kind + "Values", culture),
-            new ContainsCondition(
-                new DataObjectFilter(
-                    new ObjectValueCondition[]
-                    {
-                        new ObjectValueInRangeCondition("value", new Range<double>(lower, upper))
-                    })));
+            field.DataKey!,
+            condition,
+            language: culture == null ? null : new Language(culture));
     }
 
     private static RFilter Any(IEnumerable<RFilter> filters)
     {
         RFilter[] items = [.. filters];
+        ContentDataFilter empty = Equal(RelewiseDataKeys.NodeKey, "");
 
-        // Explicit false predicate for empty ORs; do not rely on backend empty-group behavior.
-        return items.Length == 0
-            ? new AndFilter([Equal(RelewiseDataKeys.NodeKey, ""), Negate(Equal(RelewiseDataKeys.NodeKey, ""))])
-            : new OrFilter(items);
+        return items.Length == 0 ? new AndFilter([empty, new AndFilter([empty], true)]) : new OrFilter(items);
     }
 
     internal static void ApplySorting(
         ContentSearchRequest request,
         IEnumerable<Sorter> sorters,
-        string? culture = null)
+        Func<string, SearchFieldDefinition> resolve)
     {
         ContentSorting? previous = null;
 
         foreach (Sorter sorter in sorters)
         {
-            SortOrder order = sorter.Direction == Direction.Ascending ? SortOrder.Ascending : SortOrder.Descending;
-            ContentSorting current = sorter switch
-            {
-                ScoreSorter => new ContentRelevanceSorting(order),
-                KeywordSorter => new ContentDataSorting(Field(sorter.FieldName, "keywordSort"), order),
-                TextSorter => new ContentDataSorting(Field(sorter.FieldName, "textSort"), order),
-                IntegerSorter => NumericSort("integer"),
-                DecimalSorter => NumericSort("decimal"),
-                DateTimeOffsetSorter => NumericSort("date"),
-                _ => throw new NotSupportedException(
-                    $"The Relewise provider does not support sorter '{sorter.GetType().Name}'.")
-            };
+            SortOrder order = sorter.Direction == Direction.Descending ? SortOrder.Descending : SortOrder.Ascending;
+            ContentSorting current;
 
-            if (previous is null)
+            if (sorter is ScoreSorter)
+            {
+                current = new ContentRelevanceSorting(order);
+            }
+            else
+            {
+                SearchFieldDefinition field = SortField(sorter, resolve);
+                current = field.Kind switch
+                {
+                    SearchFieldKind.Id =>
+                        new ContentAttributeSorting(ContentAttributeSorting.SortableAttribute.Id, order),
+                    SearchFieldKind.DisplayName =>
+                        new ContentAttributeSorting(ContentAttributeSorting.SortableAttribute.DisplayName, order),
+                    SearchFieldKind.Data => new ContentDataSorting(
+                        field.DataKey!,
+                        order,
+                        field.Numeric ? SortMode.Numerical : SortMode.Alphabetical),
+                    _ => throw Unsupported(sorter.FieldName, sorter.GetType().Name)
+                };
+            }
+
+            if (previous == null)
             {
                 request.Sorting!.SortBy(current);
             }
@@ -153,97 +180,73 @@ internal static class CoreSearchTranslation
             }
 
             previous = current;
+        }
+    }
 
-            ContentSorting NumericSort(string kind)
+    internal static void ApplySorting(
+        ProductSearchRequest request,
+        IEnumerable<Sorter> sorters,
+        Func<string, SearchFieldDefinition> resolve)
+    {
+        ProductSorting? previous = null;
+
+        foreach (Sorter sorter in sorters)
+        {
+            SortOrder order = sorter.Direction == Direction.Descending ? SortOrder.Descending : SortOrder.Ascending;
+            ProductSorting current;
+
+            if (sorter is ScoreSorter)
             {
-                return new ContentDataSorting(
-                    Field(
-                        sorter.FieldName,
-                        kind + (sorter.Direction == Direction.Ascending ? "Min" : "Max"),
-                        culture),
-                    order);
+                current = new ProductRelevanceSorting(order);
             }
+            else
+            {
+                SearchFieldDefinition field = SortField(sorter, resolve);
+                current = field.Kind switch
+                {
+                    SearchFieldKind.Id =>
+                        new ProductAttributeSorting(ProductAttributeSorting.SortableAttribute.Id, order),
+                    SearchFieldKind.DisplayName =>
+                        new ProductAttributeSorting(ProductAttributeSorting.SortableAttribute.DisplayName, order),
+                    SearchFieldKind.Brand =>
+                        new ProductAttributeSorting(ProductAttributeSorting.SortableAttribute.BrandId, order),
+                    SearchFieldKind.SalesPrice =>
+                        new ProductAttributeSorting(ProductAttributeSorting.SortableAttribute.SalesPrice, order),
+                    SearchFieldKind.Data => new ProductDataSorting(
+                        field.DataKey!,
+                        DataSelectionStrategy.Product,
+                        order,
+                        field.Numeric ? SortMode.Numerical : SortMode.Alphabetical),
+                    _ => throw Unsupported(sorter.FieldName, sorter.GetType().Name)
+                };
+            }
+
+            if (previous == null)
+            {
+                request.Sorting!.SortBy(current);
+            }
+            else
+            {
+                previous.ThenBy = current;
+            }
+
+            previous = current;
         }
     }
 
-    internal static IEnumerable<string> Texts(IndexValue value)
+    private static SearchFieldDefinition SortField(Sorter sorter, Func<string, SearchFieldDefinition> resolve)
     {
-        return (value.TextsR1 ?? []).Concat(value.TextsR2 ?? []).Concat(value.TextsR3 ?? []).Concat(value.Texts ?? []);
-    }
+        SearchFieldDefinition field = resolve(sorter.FieldName);
+        bool numeric = sorter is IntegerSorter or DecimalSorter;
+        bool text = sorter is KeywordSorter or TextSorter;
 
-    internal static void StoreStrings(
-        Dictionary<string, DataValue?> data,
-        string field,
-        string kind,
-        IEnumerable<string> source)
-    {
-        string[] values = source.Distinct().ToArray();
-
-        if (values.Length == 0)
+        if (field.Collection || field.ValueType == typeof(bool) ||
+            !(numeric && field.Numeric || text && field.ValueType == typeof(string)))
         {
-            data[Field(field, kind)] = null;
-            data[Field(field, kind + "Sort")] = null;
-
-            return;
+            throw Unsupported(sorter.FieldName, sorter.GetType().Name);
         }
 
-        data[Field(field, kind)] = kind == "text" ? new DataValue(string.Join(" ", values)) : new DataValue(values);
-        data[Field(field, kind + "Sort")] = values.Order(StringComparer.Ordinal).First();
-    }
-
-    internal static void StoreNumbers(
-        Dictionary<string, DataValue?> data,
-        string field,
-        string kind,
-        IEnumerable<double> source)
-    {
-        double[] values = source.Distinct().ToArray();
-
-        if (values.Length == 0)
-        {
-            data[Field(field, kind + "Exact")] = null;
-            data[Field(field, kind + "Values")] = null;
-            data[Field(field, kind + "Min")] = null;
-            data[Field(field, kind + "Max")] = null;
-
-            return;
-        }
-
-        // Exact facets use string buckets; object values preserve same-value range matching.
-        // Min/Max provide the scalar values required for ascending/descending collection sorting.
-        data[Field(field, kind + "Exact")] = new DataValue(values.Select(NumberString));
-        data[Field(field, kind + "Values")] =
-            new DataValue(values.Select(v => new DataObject(new Dictionary<string, DataValue?> { ["value"] = v })));
-        data[Field(field, kind + "Min")] = values.Min();
-        data[Field(field, kind + "Max")] = values.Max();
-    }
-
-    internal static string Field(
-        string name,
-        string kind,
-        string? culture = null)
-    {
-        return RelewiseDataKeys.Search.FieldPrefix + $"{Uri.EscapeDataString(name)}_{kind}" +
-               (culture != null && (kind.StartsWith("integer", StringComparison.Ordinal) ||
-                                    kind.StartsWith("decimal", StringComparison.Ordinal) ||
-                                    kind.StartsWith("date", StringComparison.Ordinal))
-                   ? "_" + Uri.EscapeDataString(culture.ToLowerInvariant())
-                   : string.Empty);
-    }
-
-    private static string NumberString(double value)
-    {
-        return value.ToString("R", CultureInfo.InvariantCulture);
-    }
-
-    internal static double ParseNumber(string value)
-    {
-        return double.Parse(value, CultureInfo.InvariantCulture);
-    }
-
-    internal static double DateNumber(DateTimeOffset value)
-    {
-        return value.ToUnixTimeMilliseconds();
+        return field;
     }
 
     internal static ContentDataFilter Equal(string key, DataValue value)
@@ -251,15 +254,10 @@ internal static class CoreSearchTranslation
         return new ContentDataFilter(key, new EqualsCondition(value));
     }
 
-    private static ContentDataFilter Contains(string key, DataValue value)
+    internal static NotSupportedException Unsupported(string field, string operation)
     {
-        return new ContentDataFilter(key, new ContainsCondition(value));
-    }
-
-    // ContentDataFilter's inherited Negated flag is not applied by the backend.
-    // Boolean group negation is supported and also preserves missing-field semantics.
-    private static RFilter Negate(RFilter filter)
-    {
-        return new AndFilter([filter], true);
+        return new NotSupportedException(
+            $"Query operation '{operation}' is not supported for mapped field '{field}'. " +
+            "Use scalar stored values and a compatible provider binding.");
     }
 }

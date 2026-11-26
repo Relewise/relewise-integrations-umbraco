@@ -125,7 +125,9 @@ Search and facets use Umbraco's search abstraction with three named Relewise pro
 sale flags, price ranges, sorting and facets. The `shopPrice` query field binds to
 the Product's built-in SalesPrice in the active market currency; it does not
 require a duplicate indexed price field. Results and all displayed facet counts
-use one Relewise search request. See [supported search capabilities](../../docs/search.md#product-prices).
+use one Relewise search request. Brand and Category queries use their canonical
+relationship IDs; stock and sale flags use the existing numeric/Boolean Data.
+See [supported search capabilities](../../docs/search.md#direct-field-bindings).
 
 To search text extracted from editorial blocks, include the Content Data key
 `searchText` in the Dataset's search configuration. Exporting custom Data does not

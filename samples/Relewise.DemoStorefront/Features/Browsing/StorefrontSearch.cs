@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.Extensions.Primitives;
+using Relewise.DemoStorefront.Integration;
 using Relewise.DemoStorefront.Site;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
@@ -7,6 +8,7 @@ using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
 using Umbraco.Cms.Core.Search.Querying.Sorting;
+using Umbraco.Cms.Core.Web;
 using static Relewise.DemoStorefront.DemoConstants;
 
 namespace Relewise.DemoStorefront.Features.Browsing;
@@ -18,9 +20,24 @@ internal sealed class StorefrontSearch(
     IPublishedContent? collection = null,
     string? listingPath = null)
 {
+    private string[] ResolveIds(IEnumerable<string> keys)
+    {
+        IServiceProvider services = request.HttpContext.RequestServices;
+        var content = services.GetRequiredService<IUmbracoContextAccessor>().GetRequiredUmbracoContext().Content;
+
+        return
+        [
+            .. keys.Select(key => Guid.TryParse(key, out Guid id) && content.GetById(id) is { } node
+                ? DemoConfiguration.EntityId(node, services)
+                : key)
+        ];
+    }
+
     private string ListingPath => request.PathBase + (listingPath ?? request.Path.Value);
+
     private bool FixedCategory => collection?.ContentType.Alias is DocumentTypeAliases.ProductCategory
         or DocumentTypeAliases.Folder;
+
     private bool FixedBrand => collection?.ContentType.Alias == DocumentTypeAliases.Brand;
     private const string PriceField = SearchFields.Price;
     private string SaleField => DataKeys.OnSale(DemoMarket.Current(request.HttpContext).Currency);
@@ -50,7 +67,11 @@ internal sealed class StorefrontSearch(
         {
             if (collection.ContentType.Alias == DocumentTypeAliases.Brand)
             {
-                filters.Add(new KeywordFilter(SearchFields.Brand, [collection.Key.ToString("D")], false));
+                filters.Add(
+                    new KeywordFilter(
+                        SearchFields.Brand,
+                        [DemoConfiguration.EntityId(collection, request.HttpContext.RequestServices)],
+                        false));
             }
             else
             {
@@ -60,7 +81,7 @@ internal sealed class StorefrontSearch(
                     .DefaultIfEmpty(collection.Key.ToString("D"))
                     .ToArray();
 
-                filters.Add(new KeywordFilter(SearchFields.Category, scopeCategories, false));
+                filters.Add(new KeywordFilter(SearchFields.Category, ResolveIds(scopeCategories), false));
             }
         }
 
@@ -80,7 +101,7 @@ internal sealed class StorefrontSearch(
 
         if (categories.Length > 0)
         {
-            filters.Add(new KeywordFilter(SearchFields.Category, categories, false));
+            filters.Add(new KeywordFilter(SearchFields.Category, ResolveIds(categories), false));
         }
 
         string[] brands = request.Query["brand"]
@@ -93,7 +114,7 @@ internal sealed class StorefrontSearch(
 
         if (brands.Length > 0)
         {
-            filters.Add(new KeywordFilter(SearchFields.Brand, brands, false));
+            filters.Add(new KeywordFilter(SearchFields.Brand, ResolveIds(brands), false));
         }
 
         if (request.Query["available"] == "true")
@@ -192,8 +213,8 @@ internal sealed class StorefrontSearch(
 
         if (!FixedCategory)
         {
-            Dictionary<string, long> counts = (result.Facets.FirstOrDefault(
-                facet => facet.FieldName == SearchFields.Category)
+            Dictionary<string, long> counts = (result.Facets
+                    .FirstOrDefault(facet => facet.FieldName == SearchFields.Category)
                     ?.Values
                     .OfType<KeywordFacetValue>() ?? [])
                 .ToDictionary(value => value.Key, value => value.Count);
@@ -208,7 +229,8 @@ internal sealed class StorefrontSearch(
                             .Select(node => new ListingChoice(
                                 node.Key.ToString("D"),
                                 node.Name,
-                                counts.GetValueOrDefault(node.Key.ToString("D")),
+                                counts.GetValueOrDefault(
+                                    DemoConfiguration.EntityId(node, request.HttpContext.RequestServices)),
                                 Selected("category", node.Key.ToString("D"))
                             ))
                     ]));
@@ -216,11 +238,12 @@ internal sealed class StorefrontSearch(
 
         if (!FixedBrand)
         {
-            Dictionary<string, long> counts = (result.Facets.FirstOrDefault(
-                facet => facet.FieldName == SearchFields.Brand)
+            // Native Brand facet IDs are normalized independently of the CMS property's casing.
+            Dictionary<string, long> counts = (result.Facets
+                    .FirstOrDefault(facet => facet.FieldName == SearchFields.Brand)
                     ?.Values
                     .OfType<KeywordFacetValue>() ?? [])
-                .ToDictionary(value => value.Key, value => value.Count);
+                .ToDictionary(value => value.Key, value => value.Count, StringComparer.OrdinalIgnoreCase);
 
             groups.Add(
                 new ListingFacet(
@@ -231,7 +254,8 @@ internal sealed class StorefrontSearch(
                             .Select(node => new ListingChoice(
                                 node.Key.ToString("D"),
                                 SiteContent.Title(node),
-                                counts.GetValueOrDefault(node.Key.ToString("D")),
+                                counts.GetValueOrDefault(
+                                    DemoConfiguration.EntityId(node, request.HttpContext.RequestServices)),
                                 Selected("brand", node.Key.ToString("D"))
                             ))
                     ]));
