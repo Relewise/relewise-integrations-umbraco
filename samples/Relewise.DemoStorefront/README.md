@@ -6,21 +6,23 @@ or fulfilling purchases.
 
 ## Run locally
 
-Clone the repository and open the solution:
+Install Git, the .NET 11 SDK, Node 24.13+ and npm 11+. No IDE is required.
+Clone the repository, enter the DemoStorefront directory and start the site:
 
-```powershell
-git clone https://github.com/Relewise/relewise-integrations-umbraco.git
-cd relewise-integrations-umbraco
+```text
+git clone --branch feature/umbraco-19-search-provider https://github.com/Relewise/relewise-integrations-umbraco.git
+cd relewise-integrations-umbraco/samples/Relewise.DemoStorefront
+dotnet run
 ```
 
-Install .NET 11, Node 24.13+ and npm 11+. Open the solution, select
-**Relewise.DemoStorefront** as the startup project and press **F5**.
-The build installs frontend dependencies and builds the Vue components; no separate
-frontend server is needed. JavaScript is required.
+These commands work in PowerShell, Command Prompt, Bash and Zsh. The single launch
+profile is selected automatically. The build installs frontend dependencies and
+builds the Vue components; no separate frontend server is needed. JavaScript is required.
 
 First startup creates a local Umbraco SQLite database and seeds English/Danish pages,
 Products, Variants, Brands, Categories, prices, editorial blocks and bundled images.
-Open [the homepage](http://localhost:5521/en/). The market selector switches language
+Once startup finishes, open [the homepage](http://localhost:5521/en/) in your browser.
+Press **Ctrl+C** in the terminal to stop the site. The market selector switches language
 and currency together: Europe (English/EUR), Denmark (Danish/DKK) and US (English/USD).
 Prices are authored per currency rather than converted.
 
@@ -29,13 +31,18 @@ published pages and inspect the mapping and converter examples below. The sample
 code also demonstrates Relewise search, facets, predictions, recommendations and
 behavioral tracking, with shopping flows implemented in Razor and Vue.
 
+Alternatively, open `Relewise.Integrations.Umbraco.slnx` in Visual Studio, select
+**Relewise.DemoStorefront** as the startup project and press **F5**. In VS Code,
+open the DemoStorefront folder and run `dotnet run` in its integrated terminal.
+
 ### Connect to Relewise
 
 1. Use a dedicated test Dataset. The sample exports fictional catalog data and sends
    behavioral events. In My Relewise, obtain its **Dataset ID**, **API Key** and
    **Server URL**. The key must permit entity updates and administrative actions,
    entity reads, search and predictions, recommendations and behavioral tracking.
-2. Create an ignored `local.settings.json` in `samples/Relewise.DemoStorefront`:
+2. Create an ignored `local.settings.json` in the current DemoStorefront directory
+   (`samples/Relewise.DemoStorefront`):
 
    ```json
    {
@@ -49,10 +56,11 @@ behavioral tracking, with shopping flows implemented in Razor and Vue.
 
    Replace all placeholders with the Dataset's values. Use the complete Server URL
    from My Relewise. Keep the file out of source control.
-3. Start or restart the project with **F5**, or run from the repository root:
+3. Stop the site with **Ctrl+C** if it is running, then restart it from the
+   DemoStorefront directory:
 
-   ```powershell
-   dotnet run --project samples/Relewise.DemoStorefront --launch-profile Relewise.DemoStorefront
+   ```text
+   dotnet run
    ```
 
    Startup installs and seeds Umbraco, then queues an export of published data.
