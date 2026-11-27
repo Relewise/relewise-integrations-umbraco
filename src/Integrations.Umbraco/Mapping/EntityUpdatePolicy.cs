@@ -22,7 +22,7 @@ public sealed class EntityUpdatePolicy
     /// </summary>
     public static EntityUpdatePolicy ReplaceProvidedProperties()
     {
-        return new EntityUpdatePolicy(false, false);
+        return new EntityUpdatePolicy(deltaUpdates: false, fullRebuilds: false);
     }
 
     /// <summary>

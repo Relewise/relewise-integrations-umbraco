@@ -14,9 +14,9 @@ internal sealed class MappedEntityChangeStrategy(IExportSystem indexing) : ICont
     public Task HandleAsync(
         IEnumerable<ContentIndexInfo> indexInfos,
         IEnumerable<ContentChange> changes,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
 
         HashSet<UmbracoObjectTypes>
             objectTypes = [.. indexInfos.SelectMany(index => index.ContainedObjectTypes)];
@@ -31,8 +31,8 @@ internal sealed class MappedEntityChangeStrategy(IExportSystem indexing) : ICont
         return Task.CompletedTask;
     }
 
-    public Task RebuildAsync(ContentIndexInfo indexInfo, CancellationToken cancellationToken)
+    public Task RebuildAsync(ContentIndexInfo indexInfo, CancellationToken token)
     {
-        return indexing.RebuildAsync(false, cancellationToken);
+        return indexing.RebuildAsync(permanentlyDelete: false, token);
     }
 }

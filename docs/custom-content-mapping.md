@@ -162,7 +162,7 @@ var data = (await converter.ConvertAsync(ordinaryProperties, context.CulturesToP
 
 This property-only overload preserves the selected fields but has no owning-page or
 source-element context. Converters that need that context should use the contextual
-`ConvertAsync(publishedContent, sourceElement, cultures, services, cancellationToken)`
+`ConvertAsync(publishedContent, sourceElement, cultures, services, token)`
 overload, which converts all properties of the supplied source element, or the new
 explicit field mappings.
 

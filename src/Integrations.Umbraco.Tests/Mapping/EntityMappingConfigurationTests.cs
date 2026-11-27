@@ -200,7 +200,7 @@ public class EntityMappingConfigurationTests
 
     public sealed class CustomMapper : IEntityMapper<Content>
     {
-        public Task MapAsync(EntityMappingContext<Content> context, CancellationToken cancellationToken)
+        public Task MapAsync(EntityMappingContext<Content> context, CancellationToken token)
         {
             return Task.CompletedTask;
         }

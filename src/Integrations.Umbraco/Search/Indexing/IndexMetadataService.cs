@@ -71,7 +71,7 @@ internal sealed class IndexMetadataService(
             configuration.GetSearchOptions().Providers.TryGetValue(indexAlias, out SearchProviderDefinition? provider);
             MappingDefinition[] mappings =
             [
-                .. configuration.Mappings.Values.Where(mapping =>
+                .. configuration.Mappings.Where(mapping =>
                     mapping.Export && mapping.EntityType != typeof(ProductVariant) &&
                     (provider == null || mapping.EntityType == provider.EntityType) &&
                     (provider?.ContentOptions?.DocumentTypeAliases == null ||
@@ -127,7 +127,7 @@ internal sealed class IndexMetadataService(
         if (entityType == typeof(Product))
         {
             // The supported Product query constructor requires a positive page size.
-            var query = new ProductQuery(filters, false, 1)
+            var query = new ProductQuery(filters, excludeProductsWithNoVariants: false, pageSize: 1)
             {
                 ReturnTotalNumberOfResults = true,
                 IncludeDisabledProducts = true,

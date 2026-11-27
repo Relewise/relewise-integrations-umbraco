@@ -10,19 +10,19 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
 {
     private bool _disposed;
 
-    public ValueTask<MultiCurrency?> ConvertAsync(PropertyMappingContext context, CancellationToken cancellationToken)
+    public ValueTask<MultiCurrency?> ConvertAsync(PropertyMappingContext context, CancellationToken token)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
 
-        return ValueTask.FromResult(Read(context.Property.GetValue(), cancellationToken));
+        return ValueTask.FromResult(Read(context.Property.GetValue(), token));
     }
 
     internal static MultiCurrency? Read(
         object? source,
-        CancellationToken cancellationToken = default)
+        CancellationToken token = default)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
 
         if (source == null)
         {
@@ -39,10 +39,14 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
 
         foreach (BlockListItem entry in entries)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            token.ThrowIfCancellationRequested();
 
             string? code = entry.Content.GetProperty(
-                PropertyAliases.Currency)?.GetValue()?.ToString()?.Trim().ToUpperInvariant();
+                    PropertyAliases.Currency)
+                ?.GetValue()
+                ?.ToString()
+                ?.Trim()
+                .ToUpperInvariant();
             object? amount = entry.Content.GetProperty(PropertyAliases.Amount)?.GetValue();
 
             if (code is not { Length: 3 } || !code.All(char.IsAsciiLetterUpper) || amount == null)

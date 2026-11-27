@@ -495,7 +495,7 @@ public class EntityIndexingQueueTests
         internal List<ExportChange[]> Batches { get; } = [];
         internal EntityIndexingQueue Writer { get; }
 
-        internal Fixture(CancellationToken stopping = default)
+        internal Fixture(CancellationToken token = default)
         {
             Mock<IBackgroundTaskQueue> queue = Queue;
 
@@ -526,7 +526,7 @@ public class EntityIndexingQueueTests
 
             var lifetime = new Mock<IHostApplicationLifetime>();
 
-            lifetime.SetupGet(value => value.ApplicationStopping).Returns(stopping);
+            lifetime.SetupGet(value => value.ApplicationStopping).Returns(token);
             Writer = new EntityIndexingQueue(Operations.Object, queue.Object, lifetime.Object, Logger.Object);
         }
 

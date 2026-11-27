@@ -30,10 +30,10 @@ internal sealed class UmbracoSearchExportSystem : IExportSystem
         IEnumerable<Guid> keys,
         ContentUpdate.UpdateKind? updateKind,
         long? version,
-        CancellationToken cancellationToken) => _queue.ExportAsync(keys, updateKind, version, cancellationToken);
+        CancellationToken token) => _queue.ExportAsync(keys, updateKind, version, token);
 
-    public Task RebuildAsync(bool permanentlyDelete, CancellationToken cancellationToken) =>
-        _queue.RebuildAsync(permanentlyDelete, cancellationToken);
+    public Task RebuildAsync(bool permanentlyDelete, CancellationToken token) =>
+        _queue.RebuildAsync(permanentlyDelete, token);
 
     public void EnqueueChanges(IEnumerable<ExportChange> changes) => _queue.EnqueueChanges(changes);
 

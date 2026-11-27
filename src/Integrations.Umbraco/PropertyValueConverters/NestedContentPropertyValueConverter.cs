@@ -30,7 +30,7 @@ internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvi
 
     public async ValueTask ConvertAsync(
         RelewisePropertyConverterContext context,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
         IPublishedElement[]? elementItems =
             context.Property.GetValue<IEnumerable<IPublishedElement>?>(context.Culture)?.ToArray();
@@ -53,18 +53,18 @@ internal class NestedContentPropertyValueConverter(IServiceProvider serviceProvi
                             prop,
                             [context.Culture],
                             context.Services,
-                            cancellationToken)
+                            token)
                         : context.PublishedContent != null && context.Services != null
                             ? await propertyConverter.ConvertAsync(
                                 context.PublishedContent,
                                 prop,
                                 [context.Culture],
                                 context.Services,
-                                cancellationToken)
+                                token)
                             : await propertyConverter.ConvertAsync(
                                 prop.Properties,
                                 [context.Culture],
-                                cancellationToken);
+                                token);
 
                 properties.AddRange(converted.Values);
             }

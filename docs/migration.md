@@ -59,7 +59,7 @@ builder.Services.AddLegacyValueConverter<ExistingConverter>();
 Both the legacy interface and `AddLegacyValueConverter<T>()` are obsolete and
 will be removed in the next major version. To migrate fully, implement
 `IAsyncRelewisePropertyValueConverter`, replace `void Convert(context)` with
-`ValueTask ConvertAsync(context, CancellationToken cancellationToken)`, and register
+`ValueTask ConvertAsync(context, CancellationToken token)`, and register
 with `AddValueConverter<T>()`. Synchronous work can return `ValueTask.CompletedTask`;
 await asynchronous work and propagate cancellation when applicable. Keep
 `CanHandle(context)` on the new implementation. Replace the legacy registration;

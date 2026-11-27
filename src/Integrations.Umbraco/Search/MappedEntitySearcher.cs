@@ -127,7 +127,7 @@ internal sealed class MappedEntitySearcher(
 
         string[] sourceAliases = provider.ContentOptions?.DocumentTypeAliases ??
         [
-            .. configuration.Mappings.Values
+            .. configuration.Mappings
                 .Where(mapping => mapping.Export && mapping.EntityType == provider.EntityType)
                 .Select(mapping => mapping.DocumentTypeAlias)
         ];

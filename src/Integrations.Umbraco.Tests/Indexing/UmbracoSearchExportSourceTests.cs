@@ -20,14 +20,18 @@ public class UmbracoSearchExportSourceTests
         var key = Guid.NewGuid();
         var native = ContentChange.Document(key, impact, state);
         using var cancellation = new CancellationTokenSource();
-        CancellationToken cancellationToken = cancellation.Token;
+        CancellationToken expectedToken = cancellation.Token;
         var strategy = new Mock<IPublishedContentChangeStrategy>(MockBehavior.Strict);
         strategy.Setup(value => value.HandleAsync(
                 It.IsAny<IEnumerable<ContentIndexInfo>>(),
                 It.IsAny<IEnumerable<ContentChange>>(),
-                cancellationToken))
-            .Returns((IEnumerable<ContentIndexInfo> indexes, IEnumerable<ContentChange> changes, CancellationToken _) =>
+                expectedToken))
+            .Returns((
+                IEnumerable<ContentIndexInfo> indexes,
+                IEnumerable<ContentChange> changes,
+                CancellationToken token) =>
             {
+                Assert.Equal(expectedToken, token);
                 ContentIndexInfo index = Assert.Single(indexes);
                 Assert.Equal(SearchExportOperations.IndexAlias, index.IndexAlias);
                 Assert.Equal(new[] { UmbracoObjectTypes.Document }, index.ContainedObjectTypes);
@@ -36,13 +40,13 @@ public class UmbracoSearchExportSourceTests
                 Assert.Equal(native.ObjectType, actual.ObjectType);
                 Assert.Equal(native.ChangeImpact, actual.ChangeImpact);
                 Assert.Equal(native.ContentState, actual.ContentState);
-                return Task.CompletedTask;
+                return Task.Delay(0, token);
             });
 
         var source = new UmbracoSearchExportSource(strategy.Object);
         ExportSourceBatch batch = await source.CollectAsync(
             [UmbracoSearchExportSource.FromChange(native)],
-            cancellationToken);
+            expectedToken);
 
         // Even an ignored draft removal must reach lifecycle reconciliation.
         Assert.Equal(impact == ChangeImpact.Remove, batch.Keys.Contains(key));
@@ -80,7 +84,11 @@ public class UmbracoSearchExportSourceTests
         if (rebuild)
         {
             strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
-                .Returns((ContentIndexInfo index, CancellationToken _) => Collect(index));
+                .Returns((ContentIndexInfo index, CancellationToken token) =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    return Collect(index);
+                });
         }
         else
         {
@@ -88,8 +96,14 @@ public class UmbracoSearchExportSourceTests
                     It.IsAny<IEnumerable<ContentIndexInfo>>(),
                     It.IsAny<IEnumerable<ContentChange>>(),
                     It.IsAny<CancellationToken>()))
-                .Returns((IEnumerable<ContentIndexInfo> indexes, IEnumerable<ContentChange> _, CancellationToken _) =>
-                    Collect(Assert.Single(indexes)));
+                .Returns((
+                    IEnumerable<ContentIndexInfo> indexes,
+                    IEnumerable<ContentChange> _,
+                    CancellationToken token) =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    return Collect(Assert.Single(indexes));
+                });
         }
 
         var source = new UmbracoSearchExportSource(strategy.Object);
@@ -130,8 +144,9 @@ public class UmbracoSearchExportSourceTests
         int attempt = 0;
         var strategy = new Mock<IPublishedContentChangeStrategy>();
         strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
-            .Returns(async (ContentIndexInfo index, CancellationToken _) =>
+            .Returns(async (ContentIndexInfo index, CancellationToken token) =>
             {
+                token.ThrowIfCancellationRequested();
                 if (attempt++ == 0)
                 {
                     await index.Indexer.DeleteAsync(index.IndexAlias, [key]);

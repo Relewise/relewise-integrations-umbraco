@@ -15,9 +15,9 @@ internal class CheckboxPropertyValueConverter : IDefaultPropertyValueConverter, 
         return context.Property.PropertyType.EditorAlias.Equals("Umbraco.TrueFalse");
     }
 
-    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
+    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken token)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
         Convert(context);
 
         return default;

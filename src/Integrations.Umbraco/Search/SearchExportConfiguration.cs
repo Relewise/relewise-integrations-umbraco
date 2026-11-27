@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.Mapping;
@@ -12,5 +11,5 @@ internal sealed class SearchExportConfiguration : IExportSystemConfiguration
 
     public IExportSystem Resolve(IServiceProvider services) => services.GetRequiredService<UmbracoSearchExportSystem>();
 
-    public void Validate(IReadOnlyDictionary<string, MappingDefinition> mappings) => Options.Validate(mappings);
+    public void Validate(MappingCollection mappings) => Options.Validate(mappings);
 }

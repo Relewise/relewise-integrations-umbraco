@@ -38,7 +38,7 @@ internal static class SearchFieldCatalog
     {
         var found = new List<SearchFieldDefinition>();
 
-        foreach (MappingDefinition mapping in configuration.Mappings.Values.Where(mapping =>
+        foreach (MappingDefinition mapping in configuration.Mappings.Where(mapping =>
                      mapping.Export && mapping.EntityType == provider.EntityType &&
                      (provider.ContentOptions?.DocumentTypeAliases == null ||
                       provider.ContentOptions.DocumentTypeAliases.Contains(

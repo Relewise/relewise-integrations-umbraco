@@ -27,7 +27,9 @@ public class ExportServiceCompatibilityTests
 
         if (all)
         {
-            ExportAllContentResult result = await service.ExportAllAsync(rebuild, cancellation.Token);
+            ExportAllContentResult result = await service.ExportAllAsync(
+                rebuild,
+                cancellationToken: cancellation.Token);
 
             Assert.Same(implementation.AllResult, result);
             Assert.Same(rebuild, implementation.AllRequest);
@@ -35,7 +37,7 @@ public class ExportServiceCompatibilityTests
         }
         else
         {
-            ExportContentResult result = await service.ExportAsync(content, cancellation.Token);
+            ExportContentResult result = await service.ExportAsync(content, cancellationToken: cancellation.Token);
 
             Assert.Same(implementation.Result, result);
             Assert.Same(content, implementation.Request);
@@ -98,10 +100,10 @@ public class ExportServiceCompatibilityTests
         Task pending = all
             ? legacy
                 ? service.ExportAll(rebuild, cancellation.Token)
-                : service.ExportAllAsync(rebuild, cancellation.Token)
+                : service.ExportAllAsync(rebuild, cancellationToken: cancellation.Token)
             : legacy
                 ? service.Export(content, cancellation.Token)
-                : service.ExportAsync(content, cancellation.Token);
+                : service.ExportAsync(content, cancellationToken: cancellation.Token);
 
         Assert.False(pending.IsCompleted);
         Assert.Single(operations.Invocations);
@@ -129,7 +131,7 @@ public class ExportServiceCompatibilityTests
         {
             ExportAllContentResult result = legacy
                 ? await service.ExportAll(rebuild, cancellation.Token)
-                : await service.ExportAllAsync(rebuild, cancellation.Token);
+                : await service.ExportAllAsync(rebuild, cancellationToken: cancellation.Token);
 
             Assert.Same(implementation.AllResult, result);
             Assert.Same(rebuild, implementation.AllRequest);
@@ -139,7 +141,7 @@ public class ExportServiceCompatibilityTests
         {
             ExportContentResult result = legacy
                 ? await service.Export(content, cancellation.Token)
-                : await service.ExportAsync(content, cancellation.Token);
+                : await service.ExportAsync(content, cancellationToken: cancellation.Token);
 
             Assert.Same(implementation.Result, result);
             Assert.Same(content, implementation.Request);
@@ -201,8 +203,10 @@ public class ExportServiceCompatibilityTests
         var content = new ExportContent([], ContentUpdate.UpdateKind.ReplaceProvidedProperties);
         var rebuild = new ExportAllContent(true);
 
-        Assert.Same(implementation.Result, await service.ExportAsync(content, cancellation.Token));
-        Assert.Same(implementation.AllResult, await service.ExportAllAsync(rebuild, cancellation.Token));
+        Assert.Same(implementation.Result, await service.ExportAsync(content, cancellationToken: cancellation.Token));
+        Assert.Same(
+                implementation.AllResult,
+                await service.ExportAllAsync(rebuild, cancellationToken: cancellation.Token));
         Assert.Same(content, implementation.Request);
         Assert.Same(rebuild, implementation.AllRequest);
         Assert.Equal(cancellation.Token, implementation.Token);
@@ -257,9 +261,9 @@ public class ExportServiceCompatibilityTests
         Task pending = (all, asyncOnly) switch
         {
             (true, true) => service.ExportAll(rebuild, cancellation.Token),
-            (true, false) => service.ExportAllAsync(rebuild, cancellation.Token),
+            (true, false) => service.ExportAllAsync(rebuild, cancellationToken: cancellation.Token),
             (false, true) => service.Export(content, cancellation.Token),
-            (false, false) => service.ExportAsync(content, cancellation.Token)
+            (false, false) => service.ExportAsync(content, cancellationToken: cancellation.Token)
         };
 
         if (cancelled)
@@ -319,10 +323,10 @@ public class ExportServiceCompatibilityTests
         internal CancellationToken Token { get; private set; }
         internal int Calls { get; private set; }
 
-        public Task<ExportContentResult> ExportAsync(ExportContent exportContent, CancellationToken cancellationToken)
+        public Task<ExportContentResult> ExportAsync(ExportContent exportContent, CancellationToken token)
         {
             Request = exportContent;
-            Token = cancellationToken;
+            Token = token;
             Calls++;
 
             return Task.FromResult(Result);
@@ -330,10 +334,10 @@ public class ExportServiceCompatibilityTests
 
         public Task<ExportAllContentResult> ExportAllAsync(
             ExportAllContent exportAllContent,
-            CancellationToken cancellationToken)
+            CancellationToken token)
         {
             AllRequest = exportAllContent;
-            Token = cancellationToken;
+            Token = token;
             Calls++;
 
             return Task.FromResult(AllResult);
@@ -355,7 +359,7 @@ public class ExportServiceCompatibilityTests
 
     private sealed class SingleExportService : IExportContentService
     {
-        public Task<ExportContentResult> ExportAsync(ExportContent exportContent, CancellationToken cancellationToken)
+        public Task<ExportContentResult> ExportAsync(ExportContent exportContent, CancellationToken token)
         {
             return Task.FromResult(new ExportContentResult());
         }
@@ -426,19 +430,19 @@ public class ExportServiceCompatibilityTests
 
     private sealed class FailingAsyncExportService(Exception failure, bool cancelled) : IExportContentService
     {
-        public Task<ExportContentResult> ExportAsync(ExportContent content, CancellationToken cancellationToken)
+        public Task<ExportContentResult> ExportAsync(ExportContent content, CancellationToken token)
         {
             return cancelled
-                ? Task.FromCanceled<ExportContentResult>(cancellationToken)
+                ? Task.FromCanceled<ExportContentResult>(token)
                 : Task.FromException<ExportContentResult>(failure);
         }
 
         public Task<ExportAllContentResult> ExportAllAsync(
             ExportAllContent content,
-            CancellationToken cancellationToken)
+            CancellationToken token)
         {
             return cancelled
-                ? Task.FromCanceled<ExportAllContentResult>(cancellationToken)
+                ? Task.FromCanceled<ExportAllContentResult>(token)
                 : Task.FromException<ExportAllContentResult>(failure);
         }
 

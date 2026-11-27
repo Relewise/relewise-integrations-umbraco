@@ -15,9 +15,9 @@ internal class DecimalPropertyValueConverter : IDefaultPropertyValueConverter, I
         return context.Property.PropertyType.EditorAlias.Equals("Umbraco.Decimal");
     }
 
-    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
+    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken token)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
         Convert(context);
 
         return default;

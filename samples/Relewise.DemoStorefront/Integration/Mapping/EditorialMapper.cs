@@ -13,9 +13,9 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
 {
     private static readonly string[] BlockFields = [PropertyAliases.ContentRows, PropertyAliases.PageGrid];
 
-    public Task MapAsync(EntityMappingContext<Content> context, CancellationToken cancellationToken)
+    public Task MapAsync(EntityMappingContext<Content> context, CancellationToken token)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
         context.Entity.Data ??= new Dictionary<string, DataValue?>();
 
         string ConvertedText(string key, string culture)
@@ -53,7 +53,7 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
                     property,
                     culture,
                     variations,
-                    cancellationToken
+                    token
                 );
             }
 
@@ -62,7 +62,7 @@ internal sealed class EditorialMapper(IVariationContextAccessor variations) : IE
 
         string TextFor(string culture)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            token.ThrowIfCancellationRequested();
 
             return string.Join(
                 "\n",

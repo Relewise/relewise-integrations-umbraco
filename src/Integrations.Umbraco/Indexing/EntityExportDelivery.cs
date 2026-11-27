@@ -20,31 +20,33 @@ internal static class EntityExportDelivery
     internal static async Task ReconcileAsync(
         IRelewiseClientFactory clients,
         IEnumerable<EntityReconciliationRequest> requests,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
         var tracker = clients.GetClient<ITracker>(Constants.ClientNames.Integration);
         var actions = new List<Trackable>();
         foreach (EntityReconciliationRequest request in requests)
         {
-            if (request.EntityType == typeof(Content) || request.EntityType == typeof(Product))
+            // A permanent deletion removes the entity itself; no page-availability update is needed first.
+            if (!(request.Synchronize && request.Delete) &&
+                (request.EntityType == typeof(Content) || request.EntityType == typeof(Product)))
             {
                 await MarkUnavailableAsync(
                     clients.GetClient<IDataAccessor>(Constants.ClientNames.Integration),
                     tracker,
                     request.EntityType,
                     request.Filters,
-                    cancellationToken);
+                    token);
             }
 
             if (request.Synchronize)
             {
-                actions.Add(Administrative(request.EntityType, request.Filters, request.Delete, false));
+                actions.Add(Administrative(request.EntityType, request.Filters, delete: request.Delete, enable: false));
             }
         }
 
         if (actions.Count > 0)
         {
-            await tracker.TrackAsync(actions, cancellationToken);
+            await tracker.TrackAsync(actions, token);
         }
     }
 
@@ -55,12 +57,13 @@ internal static class EntityExportDelivery
         FilterCollection filters,
         CancellationToken token)
     {
-        // Only lifecycle/rebuild reconciliation reads remote entities; ordinary publication sends no lookup requests.
+        // Availability Data must be patched by entity ID; administrative actions cannot patch Data by filter.
+        // Only lifecycle/rebuild reconciliation needs this lookup; ordinary publication already knows the IDs.
         var updates = new List<Trackable>();
 
         if (type == typeof(Product))
         {
-            var query = new ProductQuery(filters, false, 500)
+            var query = new ProductQuery(filters, excludeProductsWithNoVariants: false, pageSize: 500)
             {
                 IncludeDisabledProducts = true,
                 ResultSettings = new ProductQuery.SelectedPropertiesSettings

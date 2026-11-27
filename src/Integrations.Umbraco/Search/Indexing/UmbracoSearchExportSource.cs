@@ -10,9 +10,9 @@ namespace Relewise.Integrations.Umbraco.Search.Indexing;
 
 internal sealed class UmbracoSearchExportSource(IPublishedContentChangeStrategy strategy)
 {
-    public async Task<ExportSourceBatch> CollectAsync(ExportChange[] changes, CancellationToken cancellationToken)
+    public async Task<ExportSourceBatch> CollectAsync(ExportChange[] changes, CancellationToken token)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
 
         var batch = new ExportSourceBatch();
         var collector = new IndexingKeyCollector(batch);
@@ -20,7 +20,7 @@ internal sealed class UmbracoSearchExportSource(IPublishedContentChangeStrategy 
         await strategy.HandleAsync(
             [new ContentIndexInfo(SearchExportOperations.IndexAlias, [UmbracoObjectTypes.Document], collector)],
             changes.Select(ToChange),
-            cancellationToken);
+            token);
 
         // Permanent deletions can arrive through the draft flow and be ignored by the published strategy.
         batch.Keys.UnionWith(
@@ -30,16 +30,16 @@ internal sealed class UmbracoSearchExportSource(IPublishedContentChangeStrategy 
         return batch;
     }
 
-    public async Task<ExportSourceBatch> CollectAllAsync(CancellationToken cancellationToken)
+    public async Task<ExportSourceBatch> CollectAllAsync(CancellationToken token)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
 
         var batch = new ExportSourceBatch();
         var collector = new IndexingKeyCollector(batch);
 
         await strategy.RebuildAsync(
             new ContentIndexInfo(SearchExportOperations.IndexAlias, [UmbracoObjectTypes.Document], collector),
-            cancellationToken);
+            token);
 
         return batch;
     }

@@ -20,7 +20,7 @@ namespace Relewise.Integrations.Umbraco;
 /// </summary>
 public class RelewiseUmbracoConfiguration
 {
-    internal IReadOnlyDictionary<string, MappingDefinition> Mappings { get; }
+    internal MappingCollection Mappings { get; }
     internal IExportSystemConfiguration? ExportSystemConfiguration { get; }
     private readonly HashSet<string> _trackableDocTypes;
     private readonly Dictionary<string, IContentTypeMapping?> _customMappers;
@@ -86,7 +86,7 @@ public class RelewiseUmbracoConfiguration
             }
         }
 
-        Mappings = mappings;
+        Mappings = new MappingCollection(mappings.Values);
         ExportSystemConfiguration = options.ExportSystemConfiguration;
         ExportSystemConfiguration?.Validate(Mappings);
 
@@ -113,7 +113,7 @@ public class RelewiseUmbracoConfiguration
     {
         ArgumentNullException.ThrowIfNull(content);
 
-        if (Mappings.TryGetValue(content.ContentType.Alias, out MappingDefinition? mapping) &&
+        if (Mappings.TryGetMapping(content.ContentType.Alias, out MappingDefinition? mapping) &&
             mapping.IdPropertyAlias is { } alias)
         {
             IPublishedProperty property = content.GetProperty(alias) ??
@@ -138,7 +138,7 @@ public class RelewiseUmbracoConfiguration
     {
         ArgumentNullException.ThrowIfNull(content);
 
-        if (Mappings.TryGetValue(content.ContentType.Alias, out MappingDefinition? mapping) &&
+        if (Mappings.TryGetMapping(content.ContentType.Alias, out MappingDefinition? mapping) &&
             mapping.IdPropertyAlias is { } alias)
         {
             return ResolvePropertyId(content.GetValue(alias), alias, content.Key);
@@ -185,7 +185,7 @@ public class RelewiseUmbracoConfiguration
     /// Contains all contentType aliases that are being exported
     /// </summary>
     public IReadOnlyCollection<string> ExportedContentTypes =>
-        Mappings.Where(x => x.Value.Export).Select(x => x.Key).ToArray();
+        Mappings.Exported.Select(mapping => mapping.DocumentTypeAlias).ToArray();
 
     /// <summary>
     /// If the contents type is registered, this will tell that it can be mapped by the automapping or by a mapper
@@ -216,7 +216,7 @@ public class RelewiseUmbracoConfiguration
             throw new ArgumentException("Value cannot be null or whitespace", nameof(contentType));
         }
 
-        return Mappings.TryGetValue(contentType, out MappingDefinition? mapping) && mapping.Export;
+        return Mappings.TryGetMapping(contentType, out MappingDefinition? mapping) && mapping.Export;
     }
 
     /// <summary>

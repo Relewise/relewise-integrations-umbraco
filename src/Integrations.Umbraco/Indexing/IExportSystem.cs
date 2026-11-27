@@ -16,9 +16,9 @@ internal interface IExportSystem
         IEnumerable<Guid> keys,
         ContentUpdate.UpdateKind? updateKind,
         long? version,
-        CancellationToken cancellationToken);
+        CancellationToken token);
 
-    Task RebuildAsync(bool permanentlyDelete, CancellationToken cancellationToken);
+    Task RebuildAsync(bool permanentlyDelete, CancellationToken token);
     void EnqueueChanges(IEnumerable<ExportChange> changes);
     void EnqueueDeletion(DeletedEntity[] entities, Guid[] parents);
 }

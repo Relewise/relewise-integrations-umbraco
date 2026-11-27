@@ -367,9 +367,9 @@ public class MappedEntitySearchTests
                 });
 
         using var cancellation = new CancellationTokenSource();
-        CancellationToken cancellationToken = cancellation.Token;
+        CancellationToken token = cancellation.Token;
 
-        sdk.Setup(client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), cancellationToken))
+        sdk.Setup(client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), token))
             .Callback<SearchTermPredictionRequest, CancellationToken>((request, _) => prediction = request)
             .ReturnsAsync(
                 new SearchTermPredictionResponse
@@ -450,7 +450,7 @@ public class MappedEntitySearchTests
         var accessor = root.GetRequiredService<IHttpContextAccessor>();
 
         accessor.HttpContext = new DefaultHttpContext
-        { RequestServices = scope.ServiceProvider, RequestAborted = cancellationToken };
+        { RequestServices = scope.ServiceProvider, RequestAborted = token };
 
         var principal = Guid.NewGuid();
         SearchResult result = await root.GetRequiredService<MappedEntitySearcher>()
@@ -497,7 +497,7 @@ public class MappedEntitySearchTests
         }
 
         sdk.Verify(
-            client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), cancellationToken),
+            client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), token),
             Times.Once);
     }
 

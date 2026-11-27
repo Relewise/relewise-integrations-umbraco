@@ -64,10 +64,10 @@ internal static class ValueConverterTestSupport
 
         public async ValueTask ConvertAsync(
             RelewisePropertyConverterContext context,
-            CancellationToken cancellationToken)
+            CancellationToken token)
         {
             await Task.Yield();
-            cancellationToken.ThrowIfCancellationRequested();
+            token.ThrowIfCancellationRequested();
             Add(context);
         }
     }
@@ -83,9 +83,9 @@ internal static class ValueConverterTestSupport
 
         public async ValueTask ConvertAsync(
             RelewisePropertyConverterContext context,
-            CancellationToken cancellationToken)
+            CancellationToken token)
         {
-            await Task.Delay(1, cancellationToken);
+            await Task.Delay(1, token);
             Assert.NotNull(context.Services);
             Assert.False(Disposed);
             context.Add(context.Property.Alias, "override");
@@ -104,9 +104,9 @@ internal static class ValueConverterTestSupport
             return true;
         }
 
-        public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
+        public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken token)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            token.ThrowIfCancellationRequested();
             context.Add(context.Property.Alias, "async");
 
             return ValueTask.CompletedTask;

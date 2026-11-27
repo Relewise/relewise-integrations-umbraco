@@ -15,24 +15,24 @@ internal class ExportContentService(
 {
     public async Task<ExportContentResult> ExportAsync(
         ExportContent exportContent,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(exportContent);
         await exports.ExportAsync(
             exportContent.Contents.Select(content => content.Key),
             exportContent.UpdateKind,
             exportContent.Version,
-            cancellationToken);
+            token);
 
         return new ExportContentResult();
     }
 
     public async Task<ExportAllContentResult> ExportAllAsync(
         ExportAllContent exportAllContent,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(exportAllContent);
-        await exports.RebuildAsync(exportAllContent.PermanentlyDelete, cancellationToken);
+        await exports.RebuildAsync(exportAllContent.PermanentlyDelete, token);
 
         return new ExportAllContentResult();
     }

@@ -10,11 +10,11 @@ namespace Relewise.Integrations.Umbraco.Mapping;
 
 internal sealed class MappingOperation(
     IServiceProvider services,
-    CancellationToken cancellationToken) : IAsyncDisposable
+    CancellationToken token) : IAsyncDisposable
 {
     private readonly Dictionary<Type, object> _instances = new();
     internal IServiceProvider Services { get; } = services;
-    internal CancellationToken CancellationToken { get; } = cancellationToken;
+    internal CancellationToken CancellationToken { get; } = token;
     internal bool FullRebuild { get; init; }
 
     internal object Resolve(Type type)

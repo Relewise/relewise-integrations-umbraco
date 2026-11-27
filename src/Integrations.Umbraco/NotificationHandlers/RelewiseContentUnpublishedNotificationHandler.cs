@@ -23,7 +23,7 @@ internal class RelewiseContentUnpublishedNotificationHandler : INotificationAsyn
         _configuration = configuration;
     }
 
-    public async Task HandleAsync(ContentUnpublishedNotification notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(ContentUnpublishedNotification notification, CancellationToken token)
     {
         ITracker? tracker = _exportContentService.GetTrackerOrNull();
 
@@ -48,6 +48,6 @@ internal class RelewiseContentUnpublishedNotificationHandler : INotificationAsyn
             new FilterCollection(new ContentIdFilter(ids)),
             ContentAdministrativeAction.UpdateKind.Disable);
 
-        await tracker.TrackAsync(action, cancellationToken);
+        await tracker.TrackAsync(action, token);
     }
 }

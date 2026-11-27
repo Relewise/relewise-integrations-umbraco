@@ -51,7 +51,7 @@ public class NotificationExportOperationsTests
     {
         await using var fixture = new Fixture();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            fixture.Exports.RebuildAsync(cancellationToken: new CancellationToken(true)));
+            fixture.Exports.RebuildAsync(token: new CancellationToken(true)));
         fixture.Content.VerifyNoOtherCalls();
         Assert.Empty(fixture.Sent);
     }

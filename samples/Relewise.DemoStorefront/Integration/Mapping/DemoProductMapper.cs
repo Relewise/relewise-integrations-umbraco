@@ -8,9 +8,9 @@ namespace Relewise.DemoStorefront.Integration.Mapping;
 // Sale filters and facets bind directly to these SDK Product Data values.
 internal sealed class DemoProductMapper : IEntityMapper<Product>
 {
-    public Task MapAsync(EntityMappingContext<Product> context, CancellationToken cancellationToken)
+    public Task MapAsync(EntityMappingContext<Product> context, CancellationToken token)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
         Apply(context.Entity, context.PublishedContent.Value<int>(PropertyAliases.Stock));
 
         return Task.CompletedTask;
@@ -32,7 +32,8 @@ internal sealed class DemoProductMapper : IEntityMapper<Product>
                      .Distinct(StringComparer.OrdinalIgnoreCase))
         {
             product.Data[DataKeys.OnSale(currency)] = sales.TryGetValue(currency, out decimal amount) &&
-                                                 list.TryGetValue(currency, out decimal original) && amount < original;
+                                                      list.TryGetValue(currency, out decimal original) &&
+                                                      amount < original;
         }
     }
 

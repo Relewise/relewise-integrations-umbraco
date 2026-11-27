@@ -15,8 +15,8 @@ internal interface IEntityIndexingOperations
         IEnumerable<Guid> keys,
         ContentUpdate.UpdateKind? contentUpdateKind = null,
         long? feedVersion = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken token = default);
 
-    Task RebuildAsync(bool permanentlyDelete = false, CancellationToken cancellationToken = default);
+    Task RebuildAsync(bool permanentlyDelete = false, CancellationToken token = default);
     Task DeleteAsync(IEnumerable<DeletedEntity> deleted, CancellationToken token);
 }

@@ -208,7 +208,7 @@ public class DirectMappedSearchTests
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
-            CancellationToken cancellationToken)
+            CancellationToken token)
         {
             Count++;
             Assert.EndsWith(
@@ -217,7 +217,7 @@ public class DirectMappedSearchTests
 
             if (!binary)
             {
-                RequestBody = await request.Content!.ReadAsStringAsync(cancellationToken);
+                RequestBody = await request.Content!.ReadAsStringAsync(token);
             }
 
             var numbers = new List<AvailableFacetValue<double>> { new(20, false, 1) };

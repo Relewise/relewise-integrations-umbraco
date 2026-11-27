@@ -27,7 +27,7 @@ internal sealed class DeletedEntityIndexingHandler(
 
         foreach (IContent deleted in notification.DeletedEntities)
         {
-            if (!configuration.Mappings.TryGetValue(deleted.ContentType.Alias, out MappingDefinition? mapping) ||
+            if (!configuration.Mappings.TryGetMapping(deleted.ContentType.Alias, out MappingDefinition? mapping) ||
                 !mapping.Export)
             {
                 continue;

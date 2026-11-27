@@ -109,7 +109,7 @@ public static class UmbracoBuilderExtensions
 
                 indexes.RegisterContentIndex<MappedEntityIndexer, MappedEntitySearcher, MappedEntityChangeStrategy>(
                     SearchExportOperations.IndexAlias,
-                    true,
+                    sameOriginOnly: true,
                     UmbracoObjectTypes.Document);
 
                 foreach (string alias in configuration.GetSearchOptions().Providers.Keys)

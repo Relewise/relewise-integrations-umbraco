@@ -27,7 +27,7 @@ internal class
 
     public async Task HandleAsync(
         ContentMovedToRecycleBinNotification notification,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
         ITracker? tracker = _exportContentService.GetTrackerOrNull();
 
@@ -52,6 +52,6 @@ internal class
             new FilterCollection(new ContentIdFilter(ids)),
             ContentAdministrativeAction.UpdateKind.Disable);
 
-        await tracker.TrackAsync(action, cancellationToken);
+        await tracker.TrackAsync(action, token);
     }
 }

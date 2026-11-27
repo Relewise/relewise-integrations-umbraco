@@ -42,19 +42,19 @@ internal sealed class SearchExportOperations(
         IEnumerable<Guid> keys,
         ContentUpdate.UpdateKind? contentUpdateKind = null,
         long? feedVersion = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken token = default)
     {
-        return RunAsync(keys, false, false, contentUpdateKind, feedVersion, token: cancellationToken);
+        return RunAsync(keys, rebuild: false, permanentlyDelete: false, contentUpdateKind, feedVersion, token: token);
     }
 
-    public Task RebuildAsync(bool permanentlyDelete = false, CancellationToken cancellationToken = default)
+    public Task RebuildAsync(bool permanentlyDelete = false, CancellationToken token = default)
     {
-        return RunAsync([], true, permanentlyDelete, token: cancellationToken);
+        return RunAsync([], rebuild: true, permanentlyDelete: permanentlyDelete, token: token);
     }
 
     public Task ApplyChangesAsync(ExportChange[] changes, CancellationToken token)
     {
-        return RunAsync([], false, false, changes: changes, token: token);
+        return RunAsync([], rebuild: false, permanentlyDelete: false, changes: changes, token: token);
     }
 
     public async Task DeleteAsync(
@@ -115,7 +115,7 @@ internal sealed class SearchExportOperations(
         ExportChange[]? changes = null,
         CancellationToken token = default)
     {
-        if (!configuration.Mappings.Values.Any(mapping => mapping.Export))
+        if (!configuration.Mappings.HasExports)
         {
             return;
         }
@@ -142,7 +142,10 @@ internal sealed class SearchExportOperations(
             ExportSourceBatch collected = rebuild
                 ? await exportSource.CollectAllAsync(token)
                 : await exportSource.CollectAsync(
-                    changes ?? [.. requested.Select(key => new ExportChange(key, ExportChangeImpact.Refresh, true))],
+                    changes ??
+                    [
+                        .. requested.Select(key => new ExportChange(key, ExportChangeImpact.Refresh, Published: true))
+                    ],
                     token);
 
             requested.UnionWith(collected.Keys);
@@ -160,7 +163,7 @@ internal sealed class SearchExportOperations(
                     IContent? editable = services.GetRequiredService<IContentService>().GetById(key);
 
                     if (editable == null ||
-                        !configuration.Mappings.TryGetValue(
+                        !configuration.Mappings.TryGetMapping(
                             editable.ContentType.Alias,
                             out MappingDefinition? removedMapping) ||
                         removedMapping.EntityType != typeof(ProductVariant))
@@ -172,7 +175,7 @@ internal sealed class SearchExportOperations(
                 }
                 else
                 {
-                    if (!configuration.Mappings.TryGetValue(node.ContentType.Alias, out MappingDefinition? mapping) ||
+                    if (!configuration.Mappings.TryGetMapping(node.ContentType.Alias, out MappingDefinition? mapping) ||
                         mapping.EntityType != typeof(ProductVariant))
                     {
                         continue;
@@ -187,7 +190,7 @@ internal sealed class SearchExportOperations(
                 {
                     collected.Include(
                         await exportSource.CollectAsync(
-                            [new ExportChange(parent.Key, ExportChangeImpact.Refresh, true)],
+                            [new ExportChange(parent.Key, ExportChangeImpact.Refresh, Published: true)],
                             token));
                 }
             }

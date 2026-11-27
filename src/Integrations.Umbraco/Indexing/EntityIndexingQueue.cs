@@ -238,7 +238,7 @@ internal sealed class EntityIndexingQueue(
                     await indexing.DeleteAsync(deletion.Entities, token);
                     if (deletion.Parents.Length > 0)
                     {
-                        await indexing.ExportAsync(deletion.Parents, cancellationToken: token);
+                        await indexing.ExportAsync(deletion.Parents, token: token);
                     }
 
                     break;

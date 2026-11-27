@@ -73,7 +73,7 @@ public class SearchExportOperationsTests
 
         Task operation = delete
             ? fixture.Writer.DeleteAsync([new DeletedEntity(typeof(Product), "sku", Guid.NewGuid(), true)], token)
-            : fixture.Writer.ExportAsync([Guid.NewGuid()], cancellationToken: token);
+            : fixture.Writer.ExportAsync([Guid.NewGuid()], token: token);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => operation);
         Assert.Empty(fixture.Tracked);
@@ -308,7 +308,7 @@ public class SearchExportOperationsTests
             .Returns(Task.CompletedTask);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            fixture.Writer.RebuildAsync(cancellationToken: cancellation.Token));
+            fixture.Writer.RebuildAsync(token: cancellation.Token));
 
         Assert.Empty(fixture.Tracked);
         fixture.Reader.VerifyNoOtherCalls();
@@ -505,9 +505,9 @@ public class SearchExportOperationsTests
         public Task HandleAsync(
             IEnumerable<ContentIndexInfo> indexes,
             IEnumerable<ContentChange> changes,
-            CancellationToken cancellationToken) => RebuildAsync(Assert.Single(indexes), cancellationToken);
+            CancellationToken token) => RebuildAsync(Assert.Single(indexes), token);
 
-        public Task RebuildAsync(ContentIndexInfo index, CancellationToken cancellationToken)
+        public Task RebuildAsync(ContentIndexInfo index, CancellationToken token)
         {
             Assert.False(Disposed);
             return fail ? Task.FromException(new InvalidOperationException("Source failed")) : Task.CompletedTask;

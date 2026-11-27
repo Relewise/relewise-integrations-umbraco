@@ -327,9 +327,9 @@ public class ProductPriceSearchTests
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
-            CancellationToken cancellationToken)
+            CancellationToken token)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            token.ThrowIfCancellationRequested();
             Assert.EndsWith("/ProductSearchRequest", request.RequestUri!.AbsolutePath);
             RequestCount++;
             HttpContent content = binary

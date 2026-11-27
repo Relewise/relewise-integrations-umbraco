@@ -35,8 +35,8 @@ internal static class EntityExportRequests
                                 entity.Entity.GetType(),
                                 RelewiseDataKeys.DocumentTypeAlias,
                                 new EqualsCondition(entity.DocumentTypeAlias))),
-                        false,
-                        true));
+                        delete: false,
+                        enable: true));
             }
         }
 
@@ -49,7 +49,7 @@ internal static class EntityExportRequests
         long? version)
     {
         (Guid[] Keys, bool Delete)[] batches = [.. removals];
-        foreach (IGrouping<(Type EntityType, bool Enabled), MappingDefinition> group in configuration.Mappings.Values
+        foreach (IGrouping<(Type EntityType, bool Enabled), MappingDefinition> group in configuration.Mappings
                      .Where(mapping => mapping.Export && mapping.EntityType != typeof(ProductVariant))
                      .GroupBy(mapping => (mapping.EntityType, mapping.AdministrativeActions.Enabled)))
         {
@@ -67,7 +67,11 @@ internal static class EntityExportRequests
                     ]));
                 filters.Add(
                     version.HasValue
-                        ? DataFilter(type, RelewiseDataKeys.Version, new EqualsCondition(version.Value, true), false)
+                        ? DataFilter(
+                            type,
+                            RelewiseDataKeys.Version,
+                            new EqualsCondition(version.Value, negated: true),
+                            filterOutIfKeyIsNotFound: false)
                         : new OrFilter(
                         [
                             .. removal.Keys.Select(key => DataFilter(

@@ -40,7 +40,7 @@ internal static class EntityExportMapping
                 continue;
             }
 
-            if (!configuration.Mappings.TryGetValue(source.ContentType.Alias, out MappingDefinition? mapping) ||
+            if (!configuration.Mappings.TryGetMapping(source.ContentType.Alias, out MappingDefinition? mapping) ||
                 !mapping.Export)
             {
                 unmapped.Add(entry.Key);

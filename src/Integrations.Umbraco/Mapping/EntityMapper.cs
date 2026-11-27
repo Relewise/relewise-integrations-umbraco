@@ -188,7 +188,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                     RequireMapping(category, typeof(ProductCategory));
 
                     List<CategoryPath> pickedPath =
-                        CategoryPaths(category, typeof(ProductCategory), cultures, false, true);
+                        CategoryPaths(category, typeof(ProductCategory), cultures, legacy: false, includeSelf: true);
 
                     foreach (CategoryPath path in pickedPath)
                     {
@@ -308,14 +308,14 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
 
     private bool HasMapping(Type type)
     {
-        return configuration.Mappings.Values.Any(mapping => mapping.EntityType == type);
+        return configuration.Mappings.HasEntityType(type);
     }
 
     private void RequireMapping(
         IPublishedContent source,
         Type type)
     {
-        if (!configuration.Mappings.TryGetValue(source.ContentType.Alias, out MappingDefinition? mapping) ||
+        if (!configuration.Mappings.TryGetMapping(source.ContentType.Alias, out MappingDefinition? mapping) ||
             mapping.EntityType != type)
         {
             throw new InvalidOperationException($"Referenced document '{source.Key}' is not mapped as {type.Name}.");
@@ -333,7 +333,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
 
         foreach (IPublishedContent ancestor in source.Breadcrumbs(includeSelf))
         {
-            if (!legacy && (!configuration.Mappings.TryGetValue(
+            if (!legacy && (!configuration.Mappings.TryGetMapping(
                     ancestor.ContentType.Alias,
                     out MappingDefinition? mapping) || mapping.EntityType != categoryType))
             {

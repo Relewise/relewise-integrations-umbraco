@@ -68,15 +68,15 @@ internal static class DemoConnection
         return Unavailable(http, json);
     }
 
-    internal static bool IsConnectionFailure(Exception error, CancellationToken aborted)
+    internal static bool IsConnectionFailure(Exception error, CancellationToken token)
     {
-        if (aborted.IsCancellationRequested)
+        if (token.IsCancellationRequested)
         {
             return false;
         }
 
         return error is HttpRequestException or TimeoutException or OperationCanceledException ||
-               (error.InnerException != null && IsConnectionFailure(error.InnerException, aborted));
+               (error.InnerException != null && IsConnectionFailure(error.InnerException, token));
     }
 
     internal static async Task InvokeAsync(

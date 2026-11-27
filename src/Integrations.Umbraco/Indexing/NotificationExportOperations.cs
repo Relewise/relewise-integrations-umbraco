@@ -41,19 +41,19 @@ internal sealed class NotificationExportOperations(
         IEnumerable<Guid> keys,
         ContentUpdate.UpdateKind? contentUpdateKind = null,
         long? feedVersion = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken token = default)
     {
-        return RunAsync(keys, false, false, contentUpdateKind, feedVersion, token: cancellationToken);
+        return RunAsync(keys, rebuild: false, permanentlyDelete: false, contentUpdateKind, feedVersion, token: token);
     }
 
-    public Task RebuildAsync(bool permanentlyDelete = false, CancellationToken cancellationToken = default)
+    public Task RebuildAsync(bool permanentlyDelete = false, CancellationToken token = default)
     {
-        return RunAsync([], true, permanentlyDelete, token: cancellationToken);
+        return RunAsync([], rebuild: true, permanentlyDelete: permanentlyDelete, token: token);
     }
 
     public Task ApplyChangesAsync(ExportChange[] changes, CancellationToken token)
     {
-        return RunAsync([], false, false, changes: changes, token: token);
+        return RunAsync([], rebuild: false, permanentlyDelete: false, changes: changes, token: token);
     }
 
     public async Task DeleteAsync(
@@ -114,7 +114,7 @@ internal sealed class NotificationExportOperations(
         ExportChange[]? changes = null,
         CancellationToken token = default)
     {
-        if (!configuration.Mappings.Values.Any(mapping => mapping.Export))
+        if (!configuration.Mappings.HasExports)
         {
             return;
         }
@@ -243,7 +243,7 @@ internal sealed class NotificationExportOperations(
         foreach (Guid key in keys.ToArray())
         {
             IPublishedContent? node = context.Content?.GetById(key);
-            if (node != null && configuration.Mappings.TryGetValue(
+            if (node != null && configuration.Mappings.TryGetMapping(
                                  node.ContentType.Alias,
                                  out MappingDefinition? mapping)
                              && mapping.EntityType == typeof(ProductVariant))
@@ -256,7 +256,7 @@ internal sealed class NotificationExportOperations(
                 }
             }
             else if (node == null && services.GetRequiredService<IContentService>().GetById(key) is { } editable &&
-                     configuration.Mappings.TryGetValue(editable.ContentType.Alias, out MappingDefinition? removed) &&
+                     configuration.Mappings.TryGetMapping(editable.ContentType.Alias, out MappingDefinition? removed) &&
                      removed.EntityType == typeof(ProductVariant) && context.Content?.GetById(editable.ParentId) is
                      { } parent)
             {
@@ -313,14 +313,14 @@ internal sealed class NotificationExportOperations(
         IContentService content,
         int parentId,
         HashSet<Guid> keys,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
         const int pageSize = 1000;
         int page = 0;
         long total;
         do
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            token.ThrowIfCancellationRequested();
             keys.UnionWith(content.GetPagedDescendants(parentId, page++, pageSize, out total).Select(node => node.Key));
         } while ((long)page * pageSize < total);
     }
