@@ -88,8 +88,13 @@ internal sealed class ProductPriceQuery
 
             request.Facets ??= new ProductFacetQuery();
             request.Facets.Items.RemoveAll(facet => facet.Field == FacetingField.SalesPrice);
-            request.Facets.Items.Add(new PriceRangesFacet(
-                FacetingField.SalesPrice, PriceSelectionStrategy.Product, ranges, null, selected));
+            request.Facets.Items.Add(
+                new PriceRangesFacet(
+                    FacetingField.SalesPrice,
+                    PriceSelectionStrategy.Product,
+                    ranges,
+                    null,
+                    selected));
         }
     }
 
@@ -139,8 +144,9 @@ internal sealed class ProductPriceQuery
         foreach (DecimalRangeFacetRange range in _facet?.Ranges ?? [])
         {
             long count = result?.Available.FirstOrDefault(value =>
-                value.Value.LowerBoundInclusive == range.MinValue &&
-                value.Value.UpperBoundExclusive == range.MaxValue)?.Hits ?? 0;
+                    value.Value.LowerBoundInclusive == range.MinValue &&
+                    value.Value.UpperBoundExclusive == range.MaxValue)
+                ?.Hits ?? 0;
             values.Add(new DecimalRangeFacetValue(range.Key, range.MinValue, range.MaxValue, count));
         }
 

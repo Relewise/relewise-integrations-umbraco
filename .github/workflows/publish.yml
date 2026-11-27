@@ -47,6 +47,10 @@ jobs:
       run: >-
         dotnet pack Integrations.Umbraco.csproj
         --configuration Release /p:Version=${VERSION} --no-build --output .
+    - name: Pack Search add-on
+      run: >-
+        dotnet pack ../Integrations.Umbraco.Search/Integrations.Umbraco.Search.csproj
+        --configuration Release /p:Version=${VERSION} --no-build --output .
     - name: Log in to NuGet.org
       uses: NuGet/login@v1
       id: nuget-login
@@ -54,6 +58,8 @@ jobs:
         user: bhk.relewise
 
     - name: Push
-      run: dotnet nuget push Relewise.Integrations.Umbraco.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_TOKEN}
+      run: |
+        dotnet nuget push Relewise.Integrations.Umbraco.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_TOKEN}
+        dotnet nuget push Relewise.Integrations.Umbraco.Search.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${NUGET_TOKEN}
       env:
         NUGET_TOKEN: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}

@@ -22,6 +22,17 @@
 - Use the `Async` suffix for new Task/ValueTask operations. Preserve framework-required names and obsolete compatibility entry points; synchronous configuration and registration methods do not take the suffix.
 - Keep integration metadata in `RelewiseDataKeys` and internal runtime names in `Constants`; keep sample schema/business names in `DemoConstants`. Separate source property aliases from exported Data keys, centralize dynamic key construction, and prefer constants owned by the supplying framework when available. Keep single-owner keys near their owner and preserve literal contract expectations in relevant tests.
 
+## Package boundaries
+
+- Keep `src/Integrations.Umbraco` independent of the Search add-on and Umbraco Search APIs. It owns mapping, notification-based exports, tracking and the dashboard.
+- Keep Umbraco Search indexing, query providers and their configuration in `src/Integrations.Umbraco.Search`. Its composer registers optional services; only `ConfigureSearch()` activates ingestion. Installing the add-on alone must remain safe, including when `AddRelewise` is absent.
+- Reuse the internal export/mapping bridge through the maintained friend assembly, without expanding the package's public API for implementation plumbing. Supply Search dashboard details through the optional internal contributor.
+
+## Delivery
+
+- When requested changes are complete and validated, commit and push the task branch and create or update a pull request for GitHub review, unless the user explicitly asks to keep that work local. Use the agreed base branch and do not merge without authorization.
+- Before pushing, check local ReSharper warnings/errors as well as builds, relevant tests, namespaces, sorted/unused imports and formatting. A green build or CI run alone does not replace local inspections. Report any verification gap explicitly.
+
 ## Examples, tests and local material
 
 - Keep runnable examples and their mapping/converter implementations centralized in `samples/Relewise.DemoStorefront`. Link guides to those source files rather than adding separate example projects or duplicate implementations. Preserve culture-aware mapping, nested block extraction and legacy compatibility examples when updating the demo.

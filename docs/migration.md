@@ -91,6 +91,10 @@ implementations are checked per operation. HTTP routes are unchanged.
 
 ### Indexing and search
 
+Install `Relewise.Integrations.Umbraco.Search` to use Umbraco Search indexing or
+Content/Product query providers. Mapping, tracking and notification-based exports
+remain in `Relewise.Integrations.Umbraco`.
+
 By default, publication changes trigger exports through Umbraco notifications.
 Call `ConfigureSearch()` to use Umbraco Search's indexing flow instead, optionally
 adding named query providers with `AddContentProvider` and `AddProductProvider`

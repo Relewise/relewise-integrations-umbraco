@@ -4,7 +4,6 @@ using System.Linq;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Controllers.Messages;
 using Relewise.Integrations.Umbraco.Mapping;
-using Relewise.Integrations.Umbraco.Search;
 
 namespace Relewise.Integrations.Umbraco.Controllers;
 
@@ -13,39 +12,23 @@ internal static class DashboardConfigurationSnapshot
     public static ConfigurationViewModel Create(
         RelewiseUmbracoConfiguration configuration,
         List<NamedOptionsViewObject> clients,
-        bool middlewareEnabled)
+        bool middlewareEnabled,
+        IDashboardConfigurationContributor? contributor = null)
     {
-        return new ConfigurationViewModel(
+        var snapshot = new ConfigurationViewModel(
             configuration.TrackedContentTypes,
             configuration.ExportedContentTypes,
             clients,
             middlewareEnabled)
         {
-            SearchConfigured = configuration.UsesUmbracoSearch(),
             Mappings = configuration.Mappings.OrderBy(mapping => MappingOrder(mapping.EntityType))
                 .ThenBy(mapping => mapping.EntityType == typeof(ProductVariant) ? 1 : 0)
                 .ThenBy(mapping => mapping.DocumentTypeAlias, StringComparer.OrdinalIgnoreCase)
                 .Select(mapping => Describe(mapping, configuration))
-                .ToArray(),
-            DefaultPublishedContentProviderAlias = configuration.GetSearchOptions()
-                .Providers.Keys.FirstOrDefault(alias =>
-                    string.Equals(
-                        alias,
-                        configuration.GetSearchOptions().DefaultPublishedContentProviderAlias,
-                        StringComparison.OrdinalIgnoreCase)),
-            SearchProviders = configuration.GetSearchOptions()
-                .Providers
-                .OrderBy(pair => string.Equals(
-                    pair.Key,
-                    configuration.GetSearchOptions().DefaultPublishedContentProviderAlias,
-                    StringComparison.OrdinalIgnoreCase)
-                    ? 0
-                    : 1)
-                .ThenBy(pair => pair.Value.EntityType == typeof(Content) ? 0 : 1)
-                .ThenBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
-                .Select(pair => DescribeProvider(pair.Key, pair.Value, configuration))
                 .ToArray()
         };
+        contributor?.Apply(configuration, snapshot);
+        return snapshot;
     }
 
     private static int MappingOrder(Type entityType)
@@ -58,52 +41,6 @@ internal static class DashboardConfigurationSnapshot
             nameof(ProductCategory) => 3,
             nameof(ContentCategory) => 4,
             _ => 5
-        };
-    }
-
-    private static DashboardSearchProviderViewModel DescribeProvider(
-        string alias,
-        SearchProviderDefinition provider,
-        RelewiseUmbracoConfiguration configuration)
-    {
-        string[] restrictions = provider.ContentOptions?.DocumentTypeAliases ?? [];
-        string? configuredLocation = provider.Options switch
-        {
-            ContentSearchProviderOptions content => content.DisplayedAtLocation,
-            ProductSearchProviderOptions productLocation => productLocation.DisplayedAtLocation,
-            _ => null
-        };
-
-        return new DashboardSearchProviderViewModel
-        {
-            Alias = alias,
-            EntityType = provider.EntityType.Name,
-            DocumentTypeAliases = restrictions,
-            ResolvedDocumentTypeAliases = configuration.Mappings
-                .Where(mapping => mapping.Export && mapping.EntityType == provider.EntityType
-                                                 && (restrictions.Length == 0 ||
-                                                     restrictions.Contains(
-                                                         mapping.DocumentTypeAlias,
-                                                         StringComparer.OrdinalIgnoreCase)))
-                .Select(mapping => mapping.DocumentTypeAlias)
-                .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
-                .ToArray(),
-            DisplayedAtLocation = provider.Location(alias),
-            UsesFallbackLocation = string.IsNullOrWhiteSpace(configuredLocation),
-            RequirePublishedPage = provider.Options is not ProductSearchProviderOptions product ||
-                                   product.RequirePublishedPage,
-            CustomRequest = provider.Options switch
-            {
-                ContentSearchProviderOptions content => content.Configure != null,
-                ProductSearchProviderOptions productOptions => productOptions.Configure != null,
-                _ => false
-            },
-            IgnoreSegments = provider.Options switch
-            {
-                ContentSearchProviderOptions content => content.UnsupportedSegmentBehavior.IgnoreSegment,
-                ProductSearchProviderOptions productOptions => productOptions.UnsupportedSegmentBehavior.IgnoreSegment,
-                _ => false
-            }
         };
     }
 

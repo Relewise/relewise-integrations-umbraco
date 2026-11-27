@@ -159,15 +159,15 @@ internal static class CoreSearchFacets
                 category.Available.Select(value => new KeywordFacetValue(value.Value.Id, value.Hits)),
             ContentDataStringValueFacetResult text when facet is KeywordFacet && field.ValueType == typeof(string) =>
                 text.Available.Select(value =>
-                new KeywordFacetValue(value.Value, value.Hits)),
+                    new KeywordFacetValue(value.Value, value.Hits)),
             ContentDataBooleanValueFacetResult boolean when facet is KeywordFacet && field.ValueType == typeof(bool) =>
                 boolean.Available.Select(value =>
-                new KeywordFacetValue(value.Value ? "true" : "false", value.Hits)),
+                    new KeywordFacetValue(value.Value ? "true" : "false", value.Hits)),
             ContentDataDoubleValueFacetResult number when facet is IntegerExactFacet or DecimalExactFacet =>
                 number.Available.Select(value =>
-                facet is IntegerExactFacet
-                    ? (FacetValue)new IntegerExactFacetValue(IntegerValue(value.Value), value.Hits)
-                    : new DecimalExactFacetValue((decimal)value.Value, value.Hits)),
+                    facet is IntegerExactFacet
+                        ? (FacetValue)new IntegerExactFacetValue(IntegerValue(value.Value), value.Hits)
+                        : new DecimalExactFacetValue((decimal)value.Value, value.Hits)),
             ContentDataDoubleRangesFacetResult ranges when facet is IntegerRangeFacet or DecimalRangeFacet =>
                 RangeValues(facet, ranges),
             _ => throw new InvalidOperationException($"Unexpected response type for facet '{facet.FieldName}'.")

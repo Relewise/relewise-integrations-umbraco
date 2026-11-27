@@ -8,6 +8,7 @@
   <ItemGroup>
     <PackageReference Include="Umbraco.Cms" Version="19.0.0-rc1" />
     <PackageReference Include="HtmlAgilityPack" Version="1.13.1" />
+    <ProjectReference Include="../../src/Integrations.Umbraco.Search/Integrations.Umbraco.Search.csproj" />
     <ProjectReference Include="../../src/Integrations.Umbraco/Integrations.Umbraco.csproj" />
   </ItemGroup>
   <ItemGroup>
