@@ -3,11 +3,57 @@ using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.Search.Indexing;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search.Indexing;
+using Umbraco.Cms.Core.Services.Navigation;
 
 namespace Relewise.Integrations.Umbraco.Tests.Indexing;
 
 public class UmbracoSearchExportSourceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BranchRemovalIncludesDescendantsAndAllowsLaterReindexing(bool rebuild)
+    {
+        Guid parent = Guid.NewGuid(), child = Guid.NewGuid(), grandchild = Guid.NewGuid();
+        IEnumerable<Guid> descendants = [child, grandchild];
+        var navigation = new Mock<IDocumentNavigationQueryService>();
+        navigation.Setup(value => value.TryGetDescendantsKeys(parent, out descendants)).Returns(true);
+        var strategy = new Mock<IPublishedContentChangeStrategy>();
+
+        async Task Collect(ContentIndexInfo index)
+        {
+            await index.Indexer.AddOrUpdateAsync(
+                index.IndexAlias, child, UmbracoObjectTypes.Document, [new Variation("da-DK", null)], [], null);
+            await index.Indexer.AddOrUpdateAsync(
+                index.IndexAlias, grandchild, UmbracoObjectTypes.Document, [new Variation("da-DK", null)], [], null);
+            await index.Indexer.DeleteAsync(index.IndexAlias, [parent]);
+            await index.Indexer.AddOrUpdateAsync(
+                index.IndexAlias, child, UmbracoObjectTypes.Document, [new Variation("en-US", null)], [], null);
+        }
+
+        strategy.Setup(value => value.HandleAsync(
+                It.IsAny<IEnumerable<ContentIndexInfo>>(),
+                It.IsAny<IEnumerable<ContentChange>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns((IEnumerable<ContentIndexInfo> indexes, IEnumerable<ContentChange> _, CancellationToken _) =>
+                Collect(Assert.Single(indexes)));
+        strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
+            .Returns((ContentIndexInfo index, CancellationToken _) => Collect(index));
+        var source = new UmbracoSearchExportSource(strategy.Object, navigation.Object);
+
+        ExportSourceBatch batch = rebuild
+            ? await source.CollectAllAsync(CancellationToken.None)
+            : await source.CollectAsync(
+                [new ExportChange(parent, ExportChangeImpact.Remove, Published: true)],
+                CancellationToken.None);
+
+        Assert.Equal(new[] { parent, child, grandchild }.Order(), batch.Keys.Order());
+        KeyValuePair<Guid, ExportSourceDocument> remaining = Assert.Single(batch.Documents);
+        Assert.Equal(child, remaining.Key);
+        Assert.Equal(new[] { "en-US" }, remaining.Value.Cultures);
+        navigation.Verify(value => value.TryGetDescendantsKeys(parent, out descendants), Times.Once);
+    }
+
     [Theory]
     [InlineData(ChangeImpact.Refresh, ContentState.Draft)]
     [InlineData(ChangeImpact.Refresh, ContentState.Published)]
@@ -43,7 +89,7 @@ public class UmbracoSearchExportSourceTests
                 return Task.Delay(0, token);
             });
 
-        var source = new UmbracoSearchExportSource(strategy.Object);
+        var source = new UmbracoSearchExportSource(strategy.Object, Mock.Of<IDocumentNavigationQueryService>());
         ExportSourceBatch batch = await source.CollectAsync(
             [UmbracoSearchExportSource.FromChange(native)],
             expectedToken);
@@ -106,7 +152,7 @@ public class UmbracoSearchExportSourceTests
                 });
         }
 
-        var source = new UmbracoSearchExportSource(strategy.Object);
+        var source = new UmbracoSearchExportSource(strategy.Object, Mock.Of<IDocumentNavigationQueryService>());
         ExportSourceBatch batch = rebuild
             ? await source.CollectAllAsync(CancellationToken.None)
             : await source.CollectAsync(
@@ -128,7 +174,7 @@ public class UmbracoSearchExportSourceTests
     public async Task CancelledCollectionDoesNotInvokeTheFramework(bool rebuild)
     {
         var strategy = new Mock<IPublishedContentChangeStrategy>(MockBehavior.Strict);
-        var source = new UmbracoSearchExportSource(strategy.Object);
+        var source = new UmbracoSearchExportSource(strategy.Object, Mock.Of<IDocumentNavigationQueryService>());
         var token = new CancellationToken(true);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rebuild
@@ -153,7 +199,7 @@ public class UmbracoSearchExportSourceTests
                     throw new InvalidOperationException("Discovery failed");
                 }
             });
-        var source = new UmbracoSearchExportSource(strategy.Object);
+        var source = new UmbracoSearchExportSource(strategy.Object, Mock.Of<IDocumentNavigationQueryService>());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => source.CollectAllAsync(CancellationToken.None));
         ExportSourceBatch batch = await source.CollectAllAsync(CancellationToken.None);

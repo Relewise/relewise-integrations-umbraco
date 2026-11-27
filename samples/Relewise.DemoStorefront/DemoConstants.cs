@@ -2,6 +2,11 @@ namespace Relewise.DemoStorefront;
 
 internal static class DemoConstants
 {
+    public static class ContentKeys
+    {
+        public static readonly Guid LocalizedArticle = new("a8ef30bf-16e9-4a49-9b19-a1c0c97148e9");
+    }
+
     public static class DocumentTypeAliases
     {
         public const string Home = "home";

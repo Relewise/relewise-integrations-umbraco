@@ -18,6 +18,7 @@ using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
 using static Relewise.Integrations.Umbraco.Indexing.EntityExportDelivery;
@@ -265,6 +266,7 @@ internal sealed class NotificationExportOperations(
             }
         }
 
+        var publication = services.GetRequiredService<IDocumentPublishStatusQueryService>();
         var identities = new Dictionary<(string Type, string Value), Guid?>();
         foreach (Guid key in keys)
         {
@@ -273,7 +275,14 @@ internal sealed class NotificationExportOperations(
             IPublishedContent? node = context.Content?.GetById(key);
             if (node == null)
                 continue;
-            string?[] cultures = node.ContentType.VariesByCulture() ? [.. node.Cultures.Keys] : [null];
+
+            // Cached content includes cultures whose ancestor route is unpublished.
+            // Use Umbraco's in-memory publication cache before mapping values and search membership.
+            string?[] cultures = node.ContentType.VariesByCulture()
+                ? [
+                    .. node.Cultures.Keys.Where(culture => publication.HasPublishedAncestorPath(node.Key, culture))
+                ]
+                : [null];
             PublicAccessEntry? protection =
                 services.GetRequiredService<IPublicAccessService>().GetEntryForContent(node.Path);
             var access = new List<Guid>();

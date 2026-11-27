@@ -6,10 +6,13 @@ using Relewise.Integrations.Umbraco.Indexing;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search;
 using Umbraco.Cms.Core.Search.Indexing;
+using Umbraco.Cms.Core.Services.Navigation;
 
 namespace Relewise.Integrations.Umbraco.Search.Indexing;
 
-internal sealed class IndexingKeyCollector(ExportSourceBatch batch) : IIndexer
+internal sealed class IndexingKeyCollector(
+    ExportSourceBatch batch,
+    IDocumentNavigationQueryService navigation) : IIndexer
 {
     public Task AddOrUpdateAsync(
         string indexAlias,
@@ -39,6 +42,16 @@ internal sealed class IndexingKeyCollector(ExportSourceBatch batch) : IIndexer
         {
             batch.Keys.Add(id);
             batch.Documents.Remove(id);
+
+            // Umbraco delegates branch removal to the indexer, including descendants still published themselves.
+            if (navigation.TryGetDescendantsKeys(id, out IEnumerable<Guid> descendants))
+            {
+                foreach (Guid descendant in descendants)
+                {
+                    batch.Keys.Add(descendant);
+                    batch.Documents.Remove(descendant);
+                }
+            }
         }
 
         return Task.CompletedTask;

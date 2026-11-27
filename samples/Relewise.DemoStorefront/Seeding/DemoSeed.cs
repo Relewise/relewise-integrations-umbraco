@@ -482,18 +482,27 @@ internal static class DemoSeed
                 [PropertyAliases.BodyText] = "A practical packing checklist from the Fieldwork team."
             }
         );
+        IContent localizedRoot;
         using (IScope scope = scopes.CreateScope())
         {
             scope.EagerWriteLock(Constants.Locks.ContentTree);
 
-            IContent localized =
-                content.GetRootContent().FirstOrDefault(
-                    node => node.ContentType.Alias == DocumentTypeAliases.LocalizedArticle) ??
-                content.Create(
+            IContent localized;
+            if (DemoLocalization.FindSeededArticle(content.GetRootContent()) is { } existing)
+            {
+                localized = existing;
+            }
+            else
+            {
+                localized = content.Create(
                     "Across the seasons",
                     -1,
                     DocumentTypeAliases.LocalizedArticle
                 );
+                localized.Key = ContentKeys.LocalizedArticle;
+            }
+
+            localizedRoot = localized;
 
             localized.TemplateId = templateId;
             localized.SetCultureName("Across the seasons", "en-US");
@@ -516,8 +525,6 @@ internal static class DemoSeed
             scope.Complete();
         }
 
-        IContent localizedRoot = content.GetRootContent().Single(
-            node => node.ContentType.Alias == DocumentTypeAliases.LocalizedArticle);
         Attempt<DomainUpdateResult, DomainOperationStatus> domainResult = await domains.UpdateDomainsAsync(
             localizedRoot.Key,
             new DomainsUpdateModel
