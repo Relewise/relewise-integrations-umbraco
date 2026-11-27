@@ -6,7 +6,7 @@ end_of_line = crlf
 insert_final_newline = true
 
 # Umbraco's template service writes this bootstrap view with a BOM and no final newline.
-[samples/Relewise.DemoStorefront/Views/storefront.cshtml]
+[samples/Integrations.Umbraco.DemoStorefront/Views/storefront.cshtml]
 charset = utf-8-bom
 insert_final_newline = false
 
@@ -70,11 +70,11 @@ end_of_line = lf
 # Presentation contracts are read by Razor/JSON/Vue, not necessarily by C# callers.
 # Only non-private property-read checks are relaxed; unused types/methods, private
 # members, locals, nullability and code-style inspections remain enabled.
-[samples/Relewise.DemoStorefront/Features/**/*{Model,Card,Chip,Choice,Facet,Result}.cs]
+[samples/Integrations.Umbraco.DemoStorefront/Features/**/*{Model,Card,Chip,Choice,Facet,Result}.cs]
 resharper_unused_auto_property_accessor_global_highlighting = none
 resharper_not_accessed_positional_property_global_highlighting = none
 
-[samples/Relewise.DemoStorefront/Site/Storefront{*Model,*Link,*Option}.cs]
+[samples/Integrations.Umbraco.DemoStorefront/Site/Storefront{*Model,*Link,*Option}.cs]
 resharper_unused_auto_property_accessor_global_highlighting = none
 resharper_not_accessed_positional_property_global_highlighting = none
 

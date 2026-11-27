@@ -10,10 +10,11 @@ Upgrade repository dependencies for `Relewise.Integrations.Umbraco.slnx`, includ
 
 - NuGet packages in `src/Integrations.Umbraco/Integrations.Umbraco.csproj`.
 - NuGet packages in `src/Integrations.Umbraco.Search/Integrations.Umbraco.Search.csproj`.
-- NuGet packages in `samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj`.
-- Test dependencies in `src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj`.
+- NuGet packages in `samples/Integrations.Umbraco.DemoStorefront/Integrations.Umbraco.DemoStorefront.csproj`.
+- Test dependencies in `src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj` and
+  `src/Integrations.Umbraco.DemoStorefront.Tests/Integrations.Umbraco.DemoStorefront.Tests.csproj`.
 - Dashboard npm dependencies and lockfile in `src/Integrations.Umbraco/Client`.
-- Storefront npm dependencies and lockfile in `samples/Relewise.DemoStorefront/Client`.
+- Storefront npm dependencies and lockfile in `samples/Integrations.Umbraco.DemoStorefront/Client`.
 - Umbraco packages across the integration, storefront, tests and dashboard backoffice package.
 - Framework/compiler settings, Node/npm engines and workflow SDK versions when required by the upgrade.
 
@@ -112,9 +113,9 @@ Record skipped or preserved ranged dependencies in both the PR body and final ou
 ## Umbraco Upgrade Rules
 Upgrade Umbraco deliberately as one compatible set.
 
-- Treat all `Umbraco.Cms*` NuGet packages as a coordinated group. Align pinned versions in DemoStorefront and the test project to the same validation target; check the resolved dashboard backoffice version against that target.
+- Treat all `Umbraco.Cms*` NuGet packages as a coordinated group. Align pinned versions in DemoStorefront and both test projects to the same validation target; check the resolved dashboard backoffice version against that target.
 - In `src/Integrations.Umbraco/Integrations.Umbraco.csproj`, preserve the package project's compatibility range and do not raise the lower bound just because the sample or validation target is upgraded. For example, keep `[17.0.0,18)` as `[17.0.0,18)` unless package code needs a newer minimum; do not change it to `17.x.y`, `[17.x.y,18)`, or `[17.x.y,19)` without a concrete compatibility reason.
-- In `samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj`, keep exact Umbraco package versions exact and align all sample Umbraco packages to the same target version. The sample project is only a validation/sample host and must not drive the package project's minimum supported Umbraco version.
+- In `samples/Integrations.Umbraco.DemoStorefront/Integrations.Umbraco.DemoStorefront.csproj`, keep exact Umbraco package versions exact and align all sample Umbraco packages to the same target version. The sample project is only a validation/sample host and must not drive the package project's minimum supported Umbraco version.
 - Keep `@umbraco-cms/backoffice` in `src/Integrations.Umbraco/Client/package.json` in its existing declaration style. If it is `^*`, do not change it.
 - After an Umbraco upgrade, inspect compile errors for breaking API changes and fix compatibility issues that are direct consequences of the upgrade.
 - Keep package metadata aligned when relevant, including `PackageTags` and `umbraco-marketplace.json`, but do not change supported-major claims unless the dependency upgrade actually changes the supported Umbraco major.
@@ -150,7 +151,7 @@ Explain any remaining outdated packages as intentional range-bound skips, exclus
 Apply this workflow separately to both clients:
 
 - `src/Integrations.Umbraco/Client` (dashboard).
-- `samples/Relewise.DemoStorefront/Client` (storefront).
+- `samples/Integrations.Umbraco.DemoStorefront/Client` (storefront).
 
 Review `dependencies` and `devDependencies` in each manifest, including Vue and its
 Vite plugin in the storefront. Inspect peer dependencies and engines before choosing
@@ -170,7 +171,7 @@ For each client, check the command exit code and restore the working directory:
 ```powershell
 $clientProjects = @(
     'src/Integrations.Umbraco/Client',
-    'samples/Relewise.DemoStorefront/Client'
+    'samples/Integrations.Umbraco.DemoStorefront/Client'
 )
 foreach ($clientProject in $clientProjects) {
     Push-Location $clientProject
@@ -223,7 +224,7 @@ ReSharper checks belong in the developer's IDE; do not install JetBrains CLI too
 or add ReSharper steps to CI/CD.
 
 ### Local DemoStorefront smoke test
-Read [the storefront setup and behavior guide](../../../samples/Relewise.DemoStorefront/README.md)
+Read [the storefront setup and behavior guide](../../../samples/Integrations.Umbraco.DemoStorefront/README.md)
 before running the host. Use local Relewise API/Datasets only, with credentials in
 ignored `local.settings.json` or environment variables. Never substitute a production
 Dataset or Examine when Relewise is unavailable. Missing local API access blocks

@@ -77,7 +77,7 @@ the next major version. Awaiting and cancellation behavior are unchanged.
 For a new user locator, implement only `GetUserAsync()`. New export services
 implement `ExportAsync(...)` and `ExportAllAsync(...)`, alongside the unchanged
 `GetTrackerOrNull()`. No obsolete forwarding methods or base class are required.
-The [storefront user locator](../samples/Relewise.DemoStorefront/Integration/Tracking/StorefrontUserLocator.cs)
+The [storefront user locator](../samples/Integrations.Umbraco.DemoStorefront/Integration/Tracking/StorefrontUserLocator.cs)
 shows an async-only implementation.
 
 Existing custom implementations using the old names continue to work through the

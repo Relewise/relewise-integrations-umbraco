@@ -175,14 +175,14 @@ converters, multilingual search and behavioral tracking. The sample's Vue shoppi
 includes reactive filters, market-specific Offers, Similar Products, Popular Products
 and Categories, Recently Viewed recommendations, an asynchronous cart and a demo checkout.
 
-Set **Relewise.DemoStorefront** as the startup project and press **F5**. It runs with
+Set **Integrations.Umbraco.DemoStorefront** as the startup project and press **F5**. It runs with
 a seeded CMS content preview out of the box. Browse the published pages and inspect
 the sample code for search, facets, predictions, recommendations, export and tracking.
 To use the connected shopping features, follow the
-[Relewise connection setup](samples/Relewise.DemoStorefront/README.md#connect-to-relewise)
+[Relewise connection setup](samples/Integrations.Umbraco.DemoStorefront/README.md#connect-to-relewise)
 with a dedicated test Dataset.
 
-Follow the [DemoStorefront setup guide](samples/Relewise.DemoStorefront/README.md)
+Follow the [DemoStorefront setup guide](samples/Integrations.Umbraco.DemoStorefront/README.md)
 for prerequisites, installation, connecting Relewise and exploring the examples.
 
 ### Guides

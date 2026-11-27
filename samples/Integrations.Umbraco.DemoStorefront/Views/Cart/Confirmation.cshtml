@@ -1,0 +1,18 @@
+@using Relewise.Integrations.Umbraco.DemoStorefront.Features.Cart
+@model OrderReceipt
+<section class="hero">
+    <p class="eyebrow">@Text(Context, "DemoOrder")</p>
+    <h1>@Text(Context, "ThankYou")</h1>
+    <p>@Text(Context, "OrderConfirmed")</p>
+    <p>@Text(Context, "OrderNumber"): <strong>@Model.OrderNumber</strong></p>
+</section>
+<div class="order-summary">
+    @foreach (PurchasedCartLine line in Model.Lines)
+    {
+        <p>@line.Name × @line.Quantity<strong>@CartHttp.Money(Context, line.Total, Model.Currency)</strong></p>
+    }
+    <div class="cart-total">
+        <span>@Text(Context, "Total")</span><strong>@CartHttp.Money(Context, Model.Total, Model.Currency)</strong>
+    </div>
+</div>
+<a class="button" href="@StorefrontNavigation.ShoppingUrl(Context)">@Text(Context, "ContinueShopping")</a>

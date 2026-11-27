@@ -12,7 +12,7 @@ Use this integration to export published Umbraco content and catalogue entities 
 | Use Relewise through Umbraco's core search API | [Umbraco search](search.md) |
 | Understand automatic mapping and choose an extension point | [Custom content mapping](custom-content-mapping.md) |
 | Export readable text from Block List, Block Grid, or nested blocks | [Mapping block editors](block-editors.md) |
-| Run mapping, converters, search and tracking together | [Demo storefront and mapping examples](../samples/Relewise.DemoStorefront/README.md) |
+| Run mapping, converters, search and tracking together | [Demo storefront and mapping examples](../samples/Integrations.Umbraco.DemoStorefront/README.md) |
 | Verify exported data and diagnose missing or stale fields | [Validation and troubleshooting](validation-and-troubleshooting.md) |
 
 ## Version scope
