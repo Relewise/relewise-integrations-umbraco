@@ -38,7 +38,7 @@ The repository also includes public `TextAreaPropertyValueConverter`, `MediaPick
 using Relewise.Integrations.Umbraco;
 using Relewise.Integrations.Umbraco.PropertyValueConverters;
 
-builder.Services.AddValueConverter<TextAreaPropertyValueConverter>();
+builder.Services.AddAsyncValueConverter<TextAreaPropertyValueConverter>();
 ```
 
 The default rich-text converter supports the `Umbraco.RichText` editor alias used by Tiptap and the legacy `Umbraco.TinyMCE` alias. It exports the published `IHtmlEncodedString` as HTML under the property alias, respecting the property's culture. Embedded-block rendering is delegated to Umbraco's published-value converter; the integration does not traverse raw rich-text JSON or extract plain text. The demo's field-specific block extractor reads its chosen rich-text fields directly; it does not call this global rich-text converter.

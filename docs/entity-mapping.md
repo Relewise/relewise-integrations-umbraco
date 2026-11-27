@@ -14,8 +14,8 @@ Its equivalent in the new API is:
 
 Existing `IContentTypeMapping` instances and synchronous global converters remain
 usable through obsolete compatibility contracts. Register asynchronous converters with
-`AddValueConverter<T>()` and synchronous converters with obsolete
-`AddLegacyValueConverter<T>()`. Use
+`AddAsyncValueConverter<T>()` and synchronous converters with obsolete
+`AddValueConverter<T>()`. Use
 [custom Content mapping](custom-content-mapping.md) for the legacy API, and
 [block editors](block-editors.md) for extraction behavior and current examples.
 
@@ -113,11 +113,11 @@ conversion calls remain valid but cannot reconstruct an owner.
 Constructor injection is supported for field converters and new
 `IEntityMapper<TEntity>` implementations selected through `UseMapper<T>()`. Registered
 instances resolve from the operation scope; unregistered concrete types are activated
-and disposed within that operation. `AddValueConverter<T>()` registers asynchronous
+and disposed within that operation. `AddAsyncValueConverter<T>()` registers asynchronous
 global Data converters as scoped services, which take precedence over built-in defaults regardless of
 registration order; the last matching custom registration wins. Separately registered
 legacy custom converters still run and can collide if they write the same Data key.
-`AddLegacyValueConverter<T>()` preserves singleton lifetime and legacy execution order.
+`AddValueConverter<T>()` preserves singleton lifetime and legacy execution order.
 Both registration methods enforce their respective converter interface at compile time.
 When migrating a converter, replace its legacy registration rather than registering it twice.
 Do not capture a scoped service in an existing singleton mapper or converter.

@@ -2,12 +2,15 @@
 
 [Documentation home](README.md) · [Entity mapping](entity-mapping.md) · [Umbraco search](search.md)
 
-## Upgrading to Umbraco 19
+## Choosing the matching integration release
 
-`Relewise.Integrations.Umbraco` 19.x requires **Umbraco 19 and .NET 11**.
-The package accepts Umbraco versions in `[19.0.0-rc1,20)`; the demo and smoke tests use `19.0.0-rc1`.
-Earlier Umbraco versions require a compatible integration release and its matching
-documentation.
+Use integration 17.x with Umbraco `[17.0.0,18)`, 18.x with `[18.2.0,19)`, and 19.x with
+`[19.0.0-rc1,20)`. The 17.x and 18.x builds use .NET 10; 19.x uses .NET 11.
+Mapping, notification-based exports, tracking and the dashboard share the same configuration
+API across these releases. The Search package currently requires Umbraco 19, as does
+DemoStorefront, which is pinned to `19.0.0-rc1`.
+
+### Upgrading to Umbraco 19
 
 Back up your database before upgrading and review Umbraco's
 [version-specific upgrade notes](https://docs.umbraco.com/umbraco-cms/get-started/upgrading-and-migrating/version-specific).
@@ -19,7 +22,7 @@ integration. For a prerelease package, specify its published version explicitly.
 Existing `AddContentType(...)`, `TrackContentViews()` and `IContentTypeMapping`
 implementations remain functional. Numeric node IDs and existing `AutoMap()` output
 remain the defaults for existing configurations. Synchronous converters remain
-supported, but their registration must change as described below.
+supported through their existing registration method, as described below.
 
 The legacy mapper/converter contracts are obsolete with migration guidance.
 Projects that treat warnings as errors must migrate or explicitly suppress those
@@ -44,23 +47,20 @@ legacy mapping/converter contracts retain their existing namespaces.
 
 ### Property value converter registration
 
-`AddValueConverter<T>()` now requires `IAsyncRelewisePropertyValueConverter` and
-registers the converter in the export operation's service scope. This is a
-source-breaking change for existing synchronous converter registrations.
-
-For an existing implementation of `IRelewisePropertyValueConverter`, change only
-its registration to keep its synchronous behavior and singleton lifetime:
+Existing implementations of `IRelewisePropertyValueConverter` keep their original
+registration and singleton lifetime. New asynchronous converters use
+`AddAsyncValueConverter<T>()` and the export operation's service scope:
 
 ```csharp
-// Previously: builder.Services.AddValueConverter<ExistingConverter>();
-builder.Services.AddLegacyValueConverter<ExistingConverter>();
+builder.Services.AddValueConverter<ExistingConverter>();
+builder.Services.AddAsyncValueConverter<AsyncConverter>();
 ```
 
-Both the legacy interface and `AddLegacyValueConverter<T>()` are obsolete and
+Both the legacy interface and `AddValueConverter<T>()` are obsolete and
 will be removed in the next major version. To migrate fully, implement
 `IAsyncRelewisePropertyValueConverter`, replace `void Convert(context)` with
 `ValueTask ConvertAsync(context, CancellationToken token)`, and register
-with `AddValueConverter<T>()`. Synchronous work can return `ValueTask.CompletedTask`;
+with `AddAsyncValueConverter<T>()`. Synchronous work can return `ValueTask.CompletedTask`;
 await asynchronous work and propagate cancellation when applicable. Keep
 `CanHandle(context)` on the new implementation. Replace the legacy registration;
 do not register the same converter through both methods.

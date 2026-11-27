@@ -17,7 +17,7 @@ public static class ServiceCollectionExtensions
     /// <typeparam name="T">The contextual converter implementation.</typeparam>
     /// <param name="services">Application services.</param>
     /// <returns>The service collection.</returns>
-    public static IServiceCollection AddValueConverter<T>(this IServiceCollection services)
+    public static IServiceCollection AddAsyncValueConverter<T>(this IServiceCollection services)
         where T : class, IAsyncRelewisePropertyValueConverter
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -33,9 +33,9 @@ public static class ServiceCollectionExtensions
     /// <param name="services">Application services.</param>
     /// <returns>The service collection.</returns>
     [Obsolete(
-        "Implement IAsyncRelewisePropertyValueConverter and register with AddValueConverter instead. " +
+        "Implement IAsyncRelewisePropertyValueConverter and register with AddAsyncValueConverter instead. " +
         "Legacy converter support will be removed in the next major version.")]
-    public static IServiceCollection AddLegacyValueConverter<T>(this IServiceCollection services)
+    public static IServiceCollection AddValueConverter<T>(this IServiceCollection services)
         where T : class, IRelewisePropertyValueConverter
     {
         ArgumentNullException.ThrowIfNull(services);

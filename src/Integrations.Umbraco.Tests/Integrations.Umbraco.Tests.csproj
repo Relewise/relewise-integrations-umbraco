@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net11.0</TargetFramework>
+		<TargetFramework>$(RelewiseUmbracoFramework)</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>
@@ -14,15 +14,20 @@
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
 		<PackageReference Include="Moq" Version="4.21.0" />
 		<PackageReference Include="HtmlAgilityPack" Version="1.13.1" />
-		<PackageReference Include="Umbraco.Cms" Version="19.0.0-rc1" />
+		<PackageReference Include="Umbraco.Cms" Version="$(RelewiseUmbracoVersion)" />
 		<PackageReference Include="xunit" Version="2.9.3" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="4.0.1" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="../Integrations.Umbraco.Search/Integrations.Umbraco.Search.csproj" />
+		<ProjectReference Include="../Integrations.Umbraco.Search/Integrations.Umbraco.Search.csproj" Condition="'$(UmbracoMajorVersion)' == '19'" />
 		<ProjectReference Include="..\Integrations.Umbraco\Integrations.Umbraco.csproj" />
-		<ProjectReference Include="../../samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj" />
+		<ProjectReference Include="../../samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj" Condition="'$(UmbracoMajorVersion)' == '19'" />
+	</ItemGroup>
+
+	<!-- These tests require the v19 Search package or storefront; Core runs on every supported major. -->
+	<ItemGroup Condition="'$(UmbracoMajorVersion)' != '19'">
+		<Compile Remove="Search/**;DemoStorefront/**;Dashboard/DashboardConfigurationTests.cs;Tracking/ContentTrackingTests.cs;Indexing/ExportSystemRegistrationTests.cs;Indexing/SearchExportOperationsTests.cs;Indexing/UmbracoSearchExportSourceTests.cs;Indexing/MappedEntityChangeStrategyTests.cs;Indexing/IndexMetadataServiceTests.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

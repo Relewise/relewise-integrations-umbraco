@@ -1,7 +1,30 @@
 <Project>
   <PropertyGroup>
+    <UmbracoMajorVersion Condition="'$(UmbracoMajorVersion)' == ''">19</UmbracoMajorVersion>
+    <BaseIntermediateOutputPath Condition="'$(UmbracoMajorVersion)' != '19'">obj/umbraco$(UmbracoMajorVersion)/</BaseIntermediateOutputPath>
+    <BaseOutputPath Condition="'$(UmbracoMajorVersion)' != '19'">bin/umbraco$(UmbracoMajorVersion)/</BaseOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);obj/**;bin/**</DefaultItemExcludes>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UmbracoMajorVersion)' == '17'">
+    <RelewiseUmbracoFramework>net10.0</RelewiseUmbracoFramework>
+    <RelewiseUmbracoVersion>17.0.0</RelewiseUmbracoVersion>
+    <RelewiseUmbracoRange>[17.0.0,18)</RelewiseUmbracoRange>
+    <RelewisePackageVersion>17.1.0</RelewisePackageVersion>
+    <DefineConstants>$(DefineConstants);UMBRACO17</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UmbracoMajorVersion)' == '18'">
+    <RelewiseUmbracoFramework>net10.0</RelewiseUmbracoFramework>
+    <RelewiseUmbracoVersion>18.2.0</RelewiseUmbracoVersion>
+    <RelewiseUmbracoRange>[18.2.0,19)</RelewiseUmbracoRange>
+    <RelewisePackageVersion>18.4.0</RelewisePackageVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UmbracoMajorVersion)' == '19'">
+    <RelewiseUmbracoFramework>net11.0</RelewiseUmbracoFramework>
+    <RelewiseUmbracoVersion>19.0.0-rc1</RelewiseUmbracoVersion>
+    <RelewiseUmbracoRange>[19.0.0-rc1,20)</RelewiseUmbracoRange>
+    <RelewisePackageVersion>19.0.0-rc1</RelewisePackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <!-- IDE0130 needs these values outside the IDE as well. -->

@@ -67,7 +67,7 @@ internal static class Program
         {
             builder.Services.AddRelewise(options => options.ReadFromConfiguration(builder.Configuration));
 
-            builder.Services.AddValueConverter<ImageUrlConverter>();
+            builder.Services.AddAsyncValueConverter<ImageUrlConverter>();
 
             umbraco.AddRelewise(DemoConfiguration.Configure);
         }

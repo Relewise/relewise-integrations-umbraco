@@ -14,10 +14,10 @@ public class ValueConverterRegistrationTests
     {
         var services = new ServiceCollection();
 
-        services.AddLegacyValueConverter<LegacyConverter>();
-        services.AddLegacyValueConverter<LegacyConverter>();
-        services.AddValueConverter<ScopedConverter>();
-        services.AddValueConverter<ScopedConverter>();
+        services.AddValueConverter<LegacyConverter>();
+        services.AddValueConverter<LegacyConverter>();
+        services.AddAsyncValueConverter<ScopedConverter>();
+        services.AddAsyncValueConverter<ScopedConverter>();
 
         Assert.Equal(2, services.Count);
         Assert.Equal(ServiceLifetime.Singleton, services[0].Lifetime);
@@ -51,7 +51,7 @@ public class ValueConverterRegistrationTests
     {
         var services = new ServiceCollection();
 
-        services.AddValueConverter<DualConverter>();
+        services.AddAsyncValueConverter<DualConverter>();
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
 
         Assert.DoesNotContain(
@@ -70,8 +70,8 @@ public class ValueConverterRegistrationTests
     public void RegistrationsRejectMissingServices()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            ServiceCollectionExtensions.AddValueConverter<AsyncConverter>(null!));
+            ServiceCollectionExtensions.AddAsyncValueConverter<AsyncConverter>(null!));
         Assert.Throws<ArgumentNullException>(() =>
-            ServiceCollectionExtensions.AddLegacyValueConverter<LegacyConverter>(null!));
+            ServiceCollectionExtensions.AddValueConverter<LegacyConverter>(null!));
     }
 }

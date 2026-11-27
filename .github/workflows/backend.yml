@@ -26,3 +26,33 @@ jobs:
 
       - name: Test with dotnet
         run: dotnet test Relewise.Integrations.Umbraco.slnx --configuration Debug
+
+  core-compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - major: 17
+            baseline: "17.0.0"
+          - major: 18
+            baseline: "18.3.0"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+      - name: Test Core on Umbraco ${{ matrix.major }}
+        run: >-
+          dotnet test src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj
+          --configuration Release -p:UmbracoMajorVersion=${{ matrix.major }}
+      - name: Check published API compatibility
+        run: >-
+          dotnet pack src/Integrations.Umbraco/Integrations.Umbraco.csproj
+          --configuration Release -p:UmbracoMajorVersion=${{ matrix.major }}
+          -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=${{ matrix.baseline }}

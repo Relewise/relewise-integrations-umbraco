@@ -39,9 +39,17 @@ public class NotificationExportOperationsTests
             mapping.UseMapper<CultureMapper>();
         }));
         IPublishedContent node = fixture.PublishedArticle();
-        fixture.Publication.Setup(value => value.HasPublishedAncestorPath(node.Key, "en-US"))
-            .Returns(englishPublished);
-        fixture.Publication.Setup(value => value.HasPublishedAncestorPath(node.Key, "da-DK")).Returns(danishPublished);
+        var ancestor = new Mock<IPublishedContent>();
+        ancestor.SetupGet(value => value.ContentType.Variations).Returns(ContentVariation.Culture);
+        string[] available = [.. new[] { "en-US", "da-DK" }.Where(culture =>
+            culture == "en-US" ? englishPublished : danishPublished)];
+        ancestor.SetupGet(value => value.Cultures).Returns(available.ToDictionary(
+            culture => culture,
+            culture => new PublishedCultureInfo(culture, culture, culture, DateTime.UnixEpoch)));
+        var ancestorKey = Guid.NewGuid();
+        IEnumerable<Guid> ancestors = [ancestorKey];
+        fixture.Navigation.Setup(value => value.TryGetAncestorsKeys(node.Key, out ancestors)).Returns(true);
+        fixture.Cache.Setup(value => value.GetById(false, ancestorKey)).Returns(ancestor.Object);
 
         if (rebuild)
         {
@@ -161,7 +169,7 @@ public class NotificationExportOperationsTests
         private readonly ServiceProvider _services;
         public Mock<IContentService> Content { get; } = new();
         public Mock<IPublishedContentCache> Cache { get; } = new();
-        public Mock<IDocumentPublishStatusQueryService> Publication { get; } = new();
+        public Mock<IDocumentNavigationQueryService> Navigation { get; } = new();
         public List<Trackable> Sent { get; } = [];
         public NotificationExportOperations Exports { get; }
 
@@ -206,7 +214,7 @@ public class NotificationExportOperationsTests
             services.AddSingleton(languages.Object);
             services.AddSingleton(clients.Object);
             services.AddSingleton(contexts.Object);
-            services.AddSingleton(Publication.Object);
+            services.AddSingleton(Navigation.Object);
             services.AddSingleton(Mock.Of<IPublicAccessService>());
             services.AddSingleton<NotificationExportOperations>();
             configure?.Invoke(services);
