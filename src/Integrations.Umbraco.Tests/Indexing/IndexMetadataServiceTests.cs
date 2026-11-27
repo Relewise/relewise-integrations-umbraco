@@ -9,7 +9,12 @@ using Relewise.Client.Requests.Queries;
 using Relewise.Client.Responses;
 using Relewise.Integrations.Umbraco.Search;
 using Relewise.Integrations.Umbraco.Search.Indexing;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Indexing;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Models.Indexing;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Tests.Indexing;
 

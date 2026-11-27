@@ -12,10 +12,24 @@ using Relewise.Integrations.Umbraco.Search.Indexing;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Core.Models;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search;
 using Umbraco.Cms.Core.Search.Configuration;
 using Umbraco.Cms.Core.Search.Indexing;
-using UmbracoConstants = Umbraco.Cms.Core.Constants;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Configuration;
+using Umbraco.Cms.Search.Core.DependencyInjection;
+using Umbraco.Cms.Search.Core.Models.Configuration;
+using Umbraco.Cms.Search.Core.Services;
+using Umbraco.Cms.Search.Core.Services.ContentIndexing;
+#endif
+#if !UMBRACO_SEARCH_ADDON
+using SearchConstants = Umbraco.Cms.Core.Constants.Search;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using SearchConstants = Umbraco.Cms.Search.Core.Constants;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Search;
 
@@ -23,6 +37,14 @@ namespace Relewise.Integrations.Umbraco.Search;
 internal sealed class SearchComposer : IComposer
 {
     public void Compose(IUmbracoBuilder builder)
+    {
+#if UMBRACO_SEARCH_ADDON
+        builder.AddSearchCore();
+#endif
+        ConfigureIntegration(builder);
+    }
+
+    public static void ConfigureIntegration(IUmbracoBuilder builder)
     {
         RegisterServices(builder.Services);
         builder.Services.AddOptions<IndexOptions>()
@@ -85,12 +107,17 @@ internal sealed class SearchComposer : IComposer
 
         if (configuration.GetSearchOptions().DefaultPublishedContentProviderAlias != null)
         {
-            ContentIndexRegistration original =
+            ContentIndexRegistration? original =
                 indexes.GetContentIndexRegistration(
-                    UmbracoConstants.Search.IndexAliases
-                        .PublishedContent)
-                ?? throw new InvalidOperationException(
-                    "Umbraco's published-content search registration is required.");
+                    SearchConstants.IndexAliases
+                        .PublishedContent);
+            if (original == null)
+            {
+                // A query-only alias leaves all automatic ingestion on the mapped-entities index.
+                indexes.RegisterIndex<MappedEntityIndexer, MappedEntitySearcher>(
+                    SearchConstants.IndexAliases.PublishedContent);
+                return;
+            }
 
             // Umbraco's registration API is generic; the existing indexer/strategy types are known only at runtime.
             // Retain them and replace only query routing.

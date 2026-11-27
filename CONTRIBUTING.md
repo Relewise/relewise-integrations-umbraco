@@ -12,7 +12,7 @@ From the repository root, run the solution's backend tests:
 dotnet test Relewise.Integrations.Umbraco.slnx
 ```
 
-The default build targets Umbraco 19, including Search and DemoStorefront. Core shares
+The default build targets Umbraco 19, including Search and DemoStorefront. Core and Search each share
 one source project with separate build profiles for each supported CMS major:
 
 ```sh
@@ -21,8 +21,8 @@ dotnet test src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj -c 
 ```
 
 These profiles compile against the matching CMS APIs and isolate their outputs. Use the same
-`UmbracoMajorVersion` property when packing `src/Integrations.Umbraco/Integrations.Umbraco.csproj`.
-The Search package and DemoStorefront currently require the default v19 profile.
+`UmbracoMajorVersion` property when packing the Core and Search projects.
+DemoStorefront requires the default v19 profile.
 
 The [backend test project](src/Integrations.Umbraco.Tests) groups package tests by mapping,
 indexing, search, dashboard, tracking and compatibility. Its `DemoStorefront` folder covers

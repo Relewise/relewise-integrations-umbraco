@@ -20,14 +20,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="../Integrations.Umbraco.Search/Integrations.Umbraco.Search.csproj" Condition="'$(UmbracoMajorVersion)' == '19'" />
+		<ProjectReference Include="../Integrations.Umbraco.Search/Integrations.Umbraco.Search.csproj" />
 		<ProjectReference Include="..\Integrations.Umbraco\Integrations.Umbraco.csproj" />
 		<ProjectReference Include="../../samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj" Condition="'$(UmbracoMajorVersion)' == '19'" />
 	</ItemGroup>
 
-	<!-- These tests require the v19 Search package or storefront; Core runs on every supported major. -->
+	<!-- Only tests using the v19 storefront are excluded from older CMS profiles. -->
 	<ItemGroup Condition="'$(UmbracoMajorVersion)' != '19'">
-		<Compile Remove="Search/**;DemoStorefront/**;Dashboard/DashboardConfigurationTests.cs;Tracking/ContentTrackingTests.cs;Indexing/ExportSystemRegistrationTests.cs;Indexing/SearchExportOperationsTests.cs;Indexing/UmbracoSearchExportSourceTests.cs;Indexing/MappedEntityChangeStrategyTests.cs;Indexing/IndexMetadataServiceTests.cs" />
+		<Compile Remove="DemoStorefront/**;Dashboard/DashboardConfigurationTests.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

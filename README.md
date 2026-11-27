@@ -200,8 +200,9 @@ or go directly to:
 
 Choose the integration major matching your Umbraco major: **17.x**, **18.x** or **19.x**.
 Versions 17 and 18 use .NET 10; version 19 uses .NET 11. They share the mapping,
-export, tracking and dashboard capabilities described here. The separate Search package
-and DemoStorefront currently require Umbraco 19.
+export, tracking and dashboard capabilities described here. Install the matching major
+of the optional Search package for Umbraco Search indexing and query providers.
+DemoStorefront uses Umbraco 19.
 Review [the migration guide](docs/migration.md) before upgrading an existing site.
 
 Existing `AddContentType(...)`, `TrackContentViews()` and `IContentTypeMapping` remain

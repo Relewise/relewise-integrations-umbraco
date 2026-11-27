@@ -2,10 +2,26 @@ using Relewise.Client.DataTypes.Search.Facets.Enums;
 using Relewise.Client.DataTypes.Search.Facets.Queries;
 using Relewise.Client.DataTypes.Search.Facets.Result;
 using Relewise.Integrations.Umbraco.Search;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Querying.Faceting;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Models.Searching.Faceting;
+using Umbraco.Cms.Search.Core.Models.Searching.Filtering;
+#endif
+#if !UMBRACO_SEARCH_ADDON
 using UFacet = Umbraco.Cms.Core.Search.Querying.Faceting.Facet;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using UFacet = Umbraco.Cms.Search.Core.Models.Searching.Faceting.Facet;
+#endif
+#if !UMBRACO_SEARCH_ADDON
 using UFilter = Umbraco.Cms.Core.Search.Querying.Filtering.Filter;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using UFilter = Umbraco.Cms.Search.Core.Models.Searching.Filtering.Filter;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Tests.Search;
 

@@ -27,7 +27,7 @@ jobs:
       - name: Test with dotnet
         run: dotnet test Relewise.Integrations.Umbraco.slnx --configuration Debug
 
-  core-compatibility:
+  compatibility:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -47,7 +47,7 @@ jobs:
           dotnet-version: |
             10.0.x
             11.0.x
-      - name: Test Core on Umbraco ${{ matrix.major }}
+      - name: Test integration and Search on Umbraco ${{ matrix.major }}
         run: >-
           dotnet test src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj
           --configuration Release -p:UmbracoMajorVersion=${{ matrix.major }}
@@ -56,3 +56,8 @@ jobs:
           dotnet pack src/Integrations.Umbraco/Integrations.Umbraco.csproj
           --configuration Release -p:UmbracoMajorVersion=${{ matrix.major }}
           -p:EnablePackageValidation=true -p:PackageValidationBaselineVersion=${{ matrix.baseline }}
+
+      - name: Pack Search
+        run: >-
+          dotnet pack src/Integrations.Umbraco.Search/Integrations.Umbraco.Search.csproj
+          --configuration Release -p:UmbracoMajorVersion=${{ matrix.major }} --no-build

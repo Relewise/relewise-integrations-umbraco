@@ -12,17 +12,28 @@ using Relewise.Client.Requests.Search;
 using Relewise.Client.Responses.Search;
 using Relewise.Integrations.Umbraco.Infrastructure.Mvc.Middlewares;
 using Relewise.Integrations.Umbraco.Search;
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Routing;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
+#endif
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Web;
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Models.Searching;
+using Umbraco.Cms.Search.Core.Models.Searching.Faceting;
+#endif
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 using static Relewise.Integrations.Umbraco.Tests.Mapping.ContentIdentityTestSupport;
-using UmbracoConstants = Umbraco.Cms.Core.Constants;
+#if !UMBRACO_SEARCH_ADDON
+using SearchConstants = Umbraco.Cms.Core.Constants.Search;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using SearchConstants = Umbraco.Cms.Search.Core.Constants;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Tests.Tracking;
 
@@ -260,7 +271,7 @@ public class ContentTrackingTests
                         var query = $"article-{visitor}";
 
                         await provider.SearchAsync(
-                            UmbracoConstants.Search.IndexAliases.PublishedContent,
+                            SearchConstants.IndexAliases.PublishedContent,
                             query,
                             facets:
                             [

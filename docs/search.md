@@ -6,16 +6,20 @@ Use Relewise through Umbraco's core search abstraction with Content and Product
 providers. Select Umbraco Search indexing with `ConfigureSearch`; registering query
 providers is optional and does not change entity mapping.
 
-The Search package currently requires Umbraco 19. Core's mapping, notification-based
-exports, tracking and dashboard are also available in the matching 17.x and 18.x packages.
+Install the Search package major matching both Umbraco and the integration package: 17.x,
+18.x or 19.x. On Umbraco 17/18 it includes and registers the Umbraco Search add-on;
+on Umbraco 19 it uses the built-in abstraction. The Relewise configuration is the same.
 
 ## Registration
 
-Install `Relewise.Integrations.Umbraco.Search` alongside the integration package:
+Install `Relewise.Integrations.Umbraco.Search` alongside the integration package.
+For example, on Umbraco 17:
 
 ```sh
-dotnet add package Relewise.Integrations.Umbraco.Search
+dotnet add package Relewise.Integrations.Umbraco.Search --version 17.*
 ```
+
+Use `18.*` for Umbraco 18. For a prerelease, specify the exact published package version.
 
 `ConfigureSearch()` selects Umbraco Search indexing. Without that call, the
 integration continues exporting through publication notifications.
@@ -234,6 +238,11 @@ The adapter does not discover or coerce externally stored values. Explicit bindi
 contracts for that Data; keep converter/custom-mapper output consistent with them.
 
 ## Querying
+
+Umbraco 17/18 query models use `Umbraco.Cms.Search.Core.Models.Searching`
+and its `Filtering`, `Faceting` and `Sorting` namespaces. Their searcher services
+use `Umbraco.Cms.Search.Core.Services`. The examples below use the corresponding
+Umbraco 19 namespaces under `Umbraco.Cms.Core.Search`.
 
 Inject `Umbraco.Cms.Core.Search.ISearcherResolver`:
 

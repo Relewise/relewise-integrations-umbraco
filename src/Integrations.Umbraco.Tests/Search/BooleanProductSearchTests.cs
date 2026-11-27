@@ -10,10 +10,22 @@ using Relewise.Client.Extensions;
 using Relewise.Client.Requests.Search;
 using Relewise.Client.Responses.Search;
 using Relewise.Integrations.Umbraco.Search;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Models.Searching;
+using Umbraco.Cms.Search.Core.Models.Searching.Faceting;
+using Umbraco.Cms.Search.Core.Models.Searching.Filtering;
+#endif
+#if !UMBRACO_SEARCH_ADDON
 using UmbracoFacetResult = Umbraco.Cms.Core.Search.Querying.Faceting.FacetResult;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using UmbracoFacetResult = Umbraco.Cms.Search.Core.Models.Searching.Faceting.FacetResult;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Tests.Search;
 

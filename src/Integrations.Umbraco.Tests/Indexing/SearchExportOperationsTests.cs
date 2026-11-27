@@ -15,16 +15,22 @@ using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Relewise.Integrations.Umbraco.Search.Indexing;
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.HostedServices;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Scoping;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Indexing;
+#endif
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Models.Indexing;
+using Umbraco.Cms.Search.Core.Services.ContentIndexing;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Tests.Indexing;
 

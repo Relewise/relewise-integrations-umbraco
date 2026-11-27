@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net11.0</TargetFramework>
-    <Version>19.0.0-rc1</Version>
+    <TargetFramework>$(RelewiseUmbracoFramework)</TargetFramework>
+    <Version>$(RelewisePackageVersion)</Version>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AssemblyName>Relewise.Integrations.Umbraco.Search</AssemblyName>
@@ -18,7 +18,13 @@
     <RepositoryUrl>https://github.com/Relewise/relewise-integrations-umbraco</RepositoryUrl>
     <PackageTags>Relewise;Umbraco;Search;SearchEngine;Indexing</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Keep audit findings visible for the supported older CMS baselines. -->
+    <WarningsNotAsErrors Condition="'$(UmbracoMajorVersion)' != '19'">$(WarningsNotAsErrors);NU1902;NU1903</WarningsNotAsErrors>
   </PropertyGroup>
+  <ItemGroup Condition="'$(UmbracoMajorVersion)' != '19'">
+    <PackageReference Include="Umbraco.Cms.Search.Core" Version="$(UmbracoSearchAddonRange)" />
+    <PackageReference Include="MessagePack" Version="[3.1.12,4)" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Integrations.Umbraco/Integrations.Umbraco.csproj" />
     <InternalsVisibleTo Include="Relewise.Integrations.Umbraco.Tests" />

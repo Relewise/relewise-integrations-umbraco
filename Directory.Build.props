@@ -26,6 +26,11 @@
     <RelewiseUmbracoRange>[19.0.0-rc1,20)</RelewiseUmbracoRange>
     <RelewisePackageVersion>19.0.0-rc1</RelewisePackageVersion>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(UmbracoMajorVersion)' != '19'">
+    <DefineConstants>$(DefineConstants);UMBRACO_SEARCH_ADDON</DefineConstants>
+    <UmbracoSearchAddonRange Condition="'$(UmbracoMajorVersion)' == '17'">[17.2.0,18)</UmbracoSearchAddonRange>
+    <UmbracoSearchAddonRange Condition="'$(UmbracoMajorVersion)' == '18'">[18.2.0,19)</UmbracoSearchAddonRange>
+  </PropertyGroup>
   <ItemGroup>
     <!-- IDE0130 needs these values outside the IDE as well. -->
     <CompilerVisibleProperty Include="RootNamespace" />
