@@ -1,7 +1,6 @@
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.Mapping;
-using Umbraco.Cms.Core.Search.Indexing;
 
 namespace Relewise.Integrations.Umbraco.Tests.Search;
 
@@ -19,9 +18,7 @@ public class CoreSearchMetadataTests
 
         CoreSearchMetadata.Apply(
             mapped,
-            new CoreSearchDocument(
-                [new Variation(null, null), new Variation("da-DK", null), new Variation("en-US", "vip")],
-                new ContentProtection([group])));
+            new ExportSourceDocument([null, "da-DK", "en-US"], ["", "da-dk"], [group]));
 
         Assert.Equal(20, content.Data["stock"]!.ValueAs<double>());
         Assert.Equal(5, content.Data.Count);
@@ -38,10 +35,8 @@ public class CoreSearchMetadataTests
         var mapped = new MappedEntity(Guid.NewGuid(), "article", "article", content, true);
         CoreSearchMetadata.Apply(
             mapped,
-            new CoreSearchDocument(
-                [new Variation("en-US", null)],
-                new ContentProtection([Guid.NewGuid()])));
-        CoreSearchMetadata.Apply(mapped, new CoreSearchDocument([new Variation("en-US", "vip")], null));
+            new ExportSourceDocument(["en-US"], ["en-us"], [Guid.NewGuid()]));
+        CoreSearchMetadata.Apply(mapped, new ExportSourceDocument(["en-US"], [], null));
 
         Assert.Empty(content.Data![RelewiseDataKeys.Search.Culture]!.ValueAsListOf<string>());
         Assert.False(content.Data[RelewiseDataKeys.Search.Protected]!.ValueAs<bool>());

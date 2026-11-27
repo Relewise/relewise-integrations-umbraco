@@ -5,7 +5,6 @@ using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core.HostedServices;
-using Umbraco.Cms.Core.Search.Indexing;
 
 namespace Relewise.Integrations.Umbraco.Tests.Indexing;
 
@@ -16,7 +15,7 @@ public class EntityIndexingQueueTests
     {
         var fixture = new Fixture();
 
-        static IEnumerable<ContentChange> BrokenChanges()
+        static IEnumerable<ExportChange> BrokenChanges()
         {
             for (var i = 0; i < 101; i++)
             {
@@ -101,7 +100,7 @@ public class EntityIndexingQueueTests
         var scopeDisposed = false;
 
         fixture.Operations.SetupSequence(value =>
-                value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()))
+                value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()))
             .Returns(async () =>
             {
                 try
@@ -124,11 +123,11 @@ public class EntityIndexingQueueTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => export).WaitAsync(TimeSpan.FromSeconds(3));
         Assert.True(scopeDisposed);
         fixture.Operations.Verify(
-            value => value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()),
+            value => value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()),
             Times.Once);
         await fixture.DrainAsync();
         fixture.Operations.Verify(
-            value => value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()),
+            value => value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()),
             Times.Exactly(2));
         fixture.Operations.Verify(
             value => value.ExportAsync(It.IsAny<IEnumerable<Guid>>(), null, null, It.IsAny<CancellationToken>()),
@@ -143,7 +142,7 @@ public class EntityIndexingQueueTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         fixture.Operations.Setup(value =>
-                value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()))
+                value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()))
             .Returns(release.Task);
         fixture.Writer.EnqueueChanges([Refresh(Guid.NewGuid())]);
 
@@ -230,7 +229,7 @@ public class EntityIndexingQueueTests
     {
         var operations = new Mock<IEntityIndexingOperations>();
 
-        operations.Setup(value => value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()))
+        operations.Setup(value => value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()))
             .Returns(async () => await Task.Delay(1));
 
         var queue = new Mock<IBackgroundTaskQueue>();
@@ -249,7 +248,7 @@ public class EntityIndexingQueueTests
         await Task.Run(() => writer.EnqueueChanges([Refresh(Guid.NewGuid())]))
             .WaitAsync(TimeSpan.FromSeconds(3));
         operations.Verify(
-            value => value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()),
+            value => value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -342,7 +341,7 @@ public class EntityIndexingQueueTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         fixture.Operations.Setup(value =>
-                value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()))
+                value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()))
             .Returns(async () =>
             {
                 fixture.Calls.Add("first");
@@ -362,7 +361,7 @@ public class EntityIndexingQueueTests
         await Task.WhenAll(first, rebuild).WaitAsync(TimeSpan.FromSeconds(3));
         Assert.Equal(["first", "rebuild"], fixture.Calls);
         fixture.Operations.Setup(value =>
-                value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()))
+                value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()))
             .Callback(() => fixture.Calls.Add("later"))
             .Returns(Task.CompletedTask);
         await fixture.DrainAsync();
@@ -405,7 +404,7 @@ public class EntityIndexingQueueTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         fixture.Operations.SetupSequence(value =>
-                value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()))
+                value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()))
             .Returns(release.Task)
             .Returns(Task.CompletedTask);
         fixture.Writer.EnqueueChanges([Refresh(Guid.NewGuid())]);
@@ -421,7 +420,7 @@ public class EntityIndexingQueueTests
         await first;
         await fixture.DrainAsync().WaitAsync(TimeSpan.FromSeconds(3));
         fixture.Operations.Verify(
-            value => value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()),
+            value => value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()),
             Times.Exactly(2));
         fixture.Operations.Verify(
             value => value.ExportAsync(It.IsAny<IEnumerable<Guid>>(), null, null, It.IsAny<CancellationToken>()),
@@ -436,7 +435,7 @@ public class EntityIndexingQueueTests
         var fixture = new Fixture();
 
         fixture.Operations.Setup(value =>
-                value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()))
+                value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(
                 timeout
                     ? new OperationCanceledException("Transport timeout")
@@ -481,30 +480,30 @@ public class EntityIndexingQueueTests
         await fixture.DrainAsync();
     }
 
-    private static ContentChange Refresh(Guid key)
+    private static ExportChange Refresh(Guid key)
     {
-        return ContentChange.Document(key, ChangeImpact.Refresh, ContentState.Published);
+        return new ExportChange(key, ExportChangeImpact.Refresh, true);
     }
 
     private sealed class Fixture
     {
-        internal Mock<IEntityIndexingOperations> Operations { get; } = new();
-        internal Mock<IBackgroundTaskQueue> Queue { get; } = new();
-        internal Mock<ILogger<EntityIndexingQueue>> Logger { get; } = new();
-        internal Queue<Func<CancellationToken, Task>> Scheduled { get; } = new();
-        internal List<string> Calls { get; } = [];
-        internal List<ContentChange[]> Batches { get; } = [];
-        internal EntityIndexingQueue Writer { get; }
+        public Mock<IEntityIndexingOperations> Operations { get; } = new();
+        public Mock<IBackgroundTaskQueue> Queue { get; } = new();
+        public Mock<ILogger<EntityIndexingQueue>> Logger { get; } = new();
+        public Queue<Func<CancellationToken, Task>> Scheduled { get; } = new();
+        public List<string> Calls { get; } = [];
+        public List<ExportChange[]> Batches { get; } = [];
+        public EntityIndexingQueue Writer { get; }
 
-        internal Fixture(CancellationToken stopping = default)
+        public Fixture(CancellationToken token = default)
         {
             Mock<IBackgroundTaskQueue> queue = Queue;
 
             queue.Setup(value => value.QueueBackgroundWorkItem(It.IsAny<Func<CancellationToken, Task>>()))
                 .Callback<Func<CancellationToken, Task>>(Scheduled.Enqueue);
             Operations.Setup(value =>
-                    value.ApplyChangesAsync(It.IsAny<ContentChange[]>(), It.IsAny<CancellationToken>()))
-                .Callback<ContentChange[], CancellationToken>((changes, _) =>
+                    value.ApplyChangesAsync(It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()))
+                .Callback<ExportChange[], CancellationToken>((changes, _) =>
                 {
                     Calls.Add("changes");
                     Batches.Add(changes);
@@ -527,11 +526,11 @@ public class EntityIndexingQueueTests
 
             var lifetime = new Mock<IHostApplicationLifetime>();
 
-            lifetime.SetupGet(value => value.ApplicationStopping).Returns(stopping);
+            lifetime.SetupGet(value => value.ApplicationStopping).Returns(token);
             Writer = new EntityIndexingQueue(Operations.Object, queue.Object, lifetime.Object, Logger.Object);
         }
 
-        internal async Task DrainAsync()
+        public async Task DrainAsync()
         {
             var count = 0;
 

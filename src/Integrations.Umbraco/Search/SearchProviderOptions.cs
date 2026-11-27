@@ -25,7 +25,7 @@ public class SearchProviderOptions
     /// <summary>
     /// Register a Content search with optional Document Type selection.
     /// </summary>
-    public void AddContent(string providerAlias, Action<ContentSearchProviderOptions>? configure = null)
+    public void AddContentProvider(string providerAlias, Action<ContentSearchProviderOptions>? configure = null)
     {
         var options = new ContentSearchProviderOptions();
 
@@ -36,7 +36,7 @@ public class SearchProviderOptions
     /// <summary>
     /// Register a query over the single Product mapping.
     /// </summary>
-    public void AddProduct(string providerAlias, Action<ProductSearchProviderOptions>? configure = null)
+    public void AddProductProvider(string providerAlias, Action<ProductSearchProviderOptions>? configure = null)
     {
         var options = new ProductSearchProviderOptions();
 
@@ -54,7 +54,7 @@ public class SearchProviderOptions
         }
     }
 
-    internal void Validate(IReadOnlyDictionary<string, MappingDefinition> mappings)
+    internal void Validate(MappingCollection mappings)
     {
         if (DefaultPublishedContentProviderAlias != null &&
             !Providers.ContainsKey(DefaultPublishedContentProviderAlias))
@@ -78,17 +78,7 @@ public class SearchProviderOptions
                     $"Search provider '{registration.Key}' requires an UnsupportedSegmentBehavior policy.");
             }
 
-            var found = false;
-
-            foreach (MappingDefinition mapping in mappings.Values)
-            {
-                if (mapping.Export && mapping.EntityType == registration.Value.EntityType)
-                {
-                    found = true;
-                }
-            }
-
-            if (!found)
+            if (!mappings.Exports(registration.Value.EntityType))
             {
                 throw new InvalidOperationException(
                     $"Search provider '{registration.Key}' has no exported " +
@@ -108,7 +98,7 @@ public class SearchProviderOptions
                     string alias = aliases[i];
 
                     if (string.IsNullOrWhiteSpace(alias) ||
-                        !mappings.TryGetValue(alias, out MappingDefinition? mapping) ||
+                        !mappings.TryGetMapping(alias, out MappingDefinition? mapping) ||
                         mapping.EntityType != typeof(Content) || !mapping.Export)
                     {
                         throw new InvalidOperationException(

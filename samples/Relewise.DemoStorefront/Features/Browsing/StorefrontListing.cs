@@ -17,7 +17,7 @@ namespace Relewise.DemoStorefront.Features.Browsing;
 // Shop, category and Brand pages share one query path through Umbraco's search abstraction.
 internal static class StorefrontListing
 {
-    internal static async Task<StorefrontResponse> GetAsync(
+    public static async Task<StorefrontResponse> GetAsync(
         HttpContext http,
         IPublishedContent? collection = null,
         bool dataOnly = false,

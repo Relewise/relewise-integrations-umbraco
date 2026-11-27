@@ -14,16 +14,16 @@ internal sealed class EditorialBlocksConverter(IVariationContextAccessor variati
         return context.Property.PropertyType.EditorAlias is "Umbraco.BlockList" or "Umbraco.BlockGrid";
     }
 
-    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
+    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken token)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
         context.Add(
             context.Property.Alias,
             EditorialBlockText.ExtractProperty(
                 context.Property,
                 context.Culture,
                 variations,
-                cancellationToken
+                token
             )
         );
 

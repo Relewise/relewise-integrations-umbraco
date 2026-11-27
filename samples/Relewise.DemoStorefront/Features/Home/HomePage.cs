@@ -11,7 +11,7 @@ namespace Relewise.DemoStorefront.Features.Home;
 
 internal static class HomePage
 {
-    internal static HomePageModel Create(IPublishedContent home, HttpContext http)
+    public static HomePageModel Create(IPublishedContent home, HttpContext http)
     {
         var access = http.RequestServices.GetRequiredService<IPublicAccessService>();
         IPublishedContent[] nodes = [.. home.Descendants().Where(node => !access.IsProtected(node.Path).Success)];

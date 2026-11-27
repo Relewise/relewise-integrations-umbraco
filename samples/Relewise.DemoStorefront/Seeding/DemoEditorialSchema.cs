@@ -10,9 +10,9 @@ namespace Relewise.DemoStorefront.Seeding;
 
 internal static class DemoEditorialSchema
 {
-    internal static readonly Guid GridAreaKey = Guid.Parse("79296d5c-10c4-4053-bc78-f1ea40602050");
+    public static readonly Guid GridAreaKey = Guid.Parse("79296d5c-10c4-4053-bc78-f1ea40602050");
 
-    internal static async Task<(IDataType Blocks, IDataType Grid, IDataType Prices)> Create(
+    public static async Task<(IDataType Blocks, IDataType Grid, IDataType Prices)> Create(
         IContentTypeService types,
         IDataTypeService dataTypes,
         IShortStringHelper strings,

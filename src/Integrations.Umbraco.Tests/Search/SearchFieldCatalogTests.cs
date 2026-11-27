@@ -31,12 +31,15 @@ public class SearchFieldCatalogTests
                     mapping.Map(product => product.DisplayName, "heading");
                     mapping.MapData("stock", field => field.DataKey = "inventory");
                 });
-            options.SearchProviders.AddProduct("native");
+            options.ConfigureSearch(search =>
+            {
+                search.AddProductProvider("native");
+            });
         });
         registrations.AddSingleton<RelewiseUmbracoConfiguration>();
         using ServiceProvider services = registrations.BuildServiceProvider();
         RelewiseUmbracoConfiguration configuration = services.GetRequiredService<RelewiseUmbracoConfiguration>();
-        SearchProviderDefinition provider = configuration.SearchProviders.Providers["native"];
+        SearchProviderDefinition provider = configuration.GetSearchOptions().Providers["native"];
 
         SearchFieldDefinition Resolve(string name) =>
             SearchFieldCatalog.Resolve(name, configuration, provider, services);
@@ -70,13 +73,16 @@ public class SearchFieldCatalogTests
         registrations.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
         {
             options.MapContent("article", mapping => mapping.MapData("score"));
-            options.SearchProviders.AddContent("automatic");
-            options.SearchProviders.AddContent(
-                "explicit",
-                fields => fields.MapData<int>(
-                    "score",
-                    field =>
-                        field.DataKey = "stableScore"));
+            options.ConfigureSearch(search =>
+            {
+                search.AddContentProvider("automatic");
+                search.AddContentProvider(
+                    "explicit",
+                    fields => fields.MapData<int>(
+                        "score",
+                        field =>
+                            field.DataKey = "stableScore"));
+            });
         });
         registrations.AddSingleton<RelewiseUmbracoConfiguration>();
         using ServiceProvider services = registrations.BuildServiceProvider();
@@ -84,14 +90,14 @@ public class SearchFieldCatalogTests
         Assert.Throws<NotSupportedException>(() => SearchFieldCatalog.Resolve(
             "score",
             configuration,
-            configuration.SearchProviders.Providers["automatic"],
+            configuration.GetSearchOptions().Providers["automatic"],
             services));
         Assert.Equal(
             "stableScore",
             SearchFieldCatalog.Resolve(
                     "score",
                     configuration,
-                    configuration.SearchProviders.Providers["explicit"],
+                    configuration.GetSearchOptions().Providers["explicit"],
                     services)
                 .DataKey);
     }
@@ -112,7 +118,10 @@ public class SearchFieldCatalogTests
         {
             options.MapContent("article", mapping => mapping.MapData("stock", field => field.DataKey = "a"));
             options.MapContent("guide", mapping => mapping.MapData("stock", field => field.DataKey = "b"));
-            options.SearchProviders.AddContent("mixed");
+            options.ConfigureSearch(search =>
+            {
+                search.AddContentProvider("mixed");
+            });
         });
         registrations.AddSingleton<RelewiseUmbracoConfiguration>();
         using ServiceProvider services = registrations.BuildServiceProvider();
@@ -120,7 +129,7 @@ public class SearchFieldCatalogTests
         Assert.Throws<InvalidOperationException>(() => SearchFieldCatalog.Resolve(
             "stock",
             configuration,
-            configuration.SearchProviders.Providers["mixed"],
+            configuration.GetSearchOptions().Providers["mixed"],
             services));
     }
 }

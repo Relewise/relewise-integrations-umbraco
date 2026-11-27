@@ -29,9 +29,9 @@ public class ContentLifecycleTests
         var tracker = new Mock<ITracker>();
         ContentAdministrativeAction? captured = null;
         using var cancellation = new CancellationTokenSource();
-        CancellationToken cancellationToken = cancellation.Token;
+        CancellationToken token = cancellation.Token;
 
-        tracker.Setup(x => x.TrackAsync(It.IsAny<ContentAdministrativeAction>(), cancellationToken))
+        tracker.Setup(x => x.TrackAsync(It.IsAny<ContentAdministrativeAction>(), token))
             .Callback<ContentAdministrativeAction, CancellationToken>((action, _) => captured = action)
             .Returns(Task.CompletedTask);
 
@@ -46,7 +46,7 @@ public class ContentLifecycleTests
         {
             case "unpublish":
                 await new RelewiseContentUnpublishedNotificationHandler(exporter.Object, configuration)
-                    .HandleAsync(new ContentUnpublishedNotification(content, messages), cancellationToken);
+                    .HandleAsync(new ContentUnpublishedNotification(content, messages), token);
                 break;
             case "recycle":
                 await new RelewiseContentMovedToRecycleBinNotificationHandler(exporter.Object, configuration)
@@ -54,13 +54,13 @@ public class ContentLifecycleTests
                         new ContentMovedToRecycleBinNotification(
                             content.Select(x => new MoveToRecycleBinEventInfo<IContent>(x, "-1")),
                             messages),
-                        cancellationToken);
+                        token);
                 break;
             case "delete":
                 await new RelewiseContentDeletedNotificationNotificationHandler(exporter.Object, configuration)
-                    .HandleAsync(new ContentDeletedNotification(content[0], messages), cancellationToken);
+                    .HandleAsync(new ContentDeletedNotification(content[0], messages), token);
                 await new RelewiseContentDeletedNotificationNotificationHandler(exporter.Object, configuration)
-                    .HandleAsync(new ContentDeletedNotification(content[1], messages), cancellationToken);
+                    .HandleAsync(new ContentDeletedNotification(content[1], messages), token);
                 break;
         }
 
@@ -75,6 +75,6 @@ public class ContentLifecycleTests
                 ? ContentAdministrativeAction.UpdateKind.Delete
                 : ContentAdministrativeAction.UpdateKind.Disable,
             captured.Kind);
-        tracker.Verify(x => x.TrackAsync(It.IsAny<ContentAdministrativeAction>(), cancellationToken), Times.Once);
+        tracker.Verify(x => x.TrackAsync(It.IsAny<ContentAdministrativeAction>(), token), Times.Once);
     }
 }

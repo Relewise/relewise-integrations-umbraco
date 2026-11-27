@@ -154,29 +154,35 @@ public class DirectMappedSearchTests
             if (product)
             {
                 options.MapProduct("product");
-                options.SearchProviders.AddProduct(
-                    "native",
-                    fields =>
-                    {
-                        fields.Map(entity => entity.SalesPrice, "price");
-                        fields.MapData<int>("stock", field => field.DataKey = "inventory");
-                        fields.MapData<string[]>("tags");
-                        fields.MapData<int[]>("sizes");
-                        fields.MapData<bool>("available", field => field.DataKey = "inStock");
-                    });
+                options.ConfigureSearch(search =>
+                {
+                    search.AddProductProvider(
+                        "native",
+                        fields =>
+                        {
+                            fields.Map(entity => entity.SalesPrice, "price");
+                            fields.MapData<int>("stock", field => field.DataKey = "inventory");
+                            fields.MapData<string[]>("tags");
+                            fields.MapData<int[]>("sizes");
+                            fields.MapData<bool>("available", field => field.DataKey = "inStock");
+                        });
+                });
             }
             else
             {
                 options.MapContent("article");
-                options.SearchProviders.AddContent(
-                    "native",
-                    fields =>
-                    {
-                        fields.MapData<int>("stock", field => field.DataKey = "inventory");
-                        fields.MapData<string[]>("tags");
-                        fields.MapData<int[]>("sizes");
-                        fields.MapData<bool>("available", field => field.DataKey = "inStock");
-                    });
+                options.ConfigureSearch(search =>
+                {
+                    search.AddContentProvider(
+                        "native",
+                        fields =>
+                        {
+                            fields.MapData<int>("stock", field => field.DataKey = "inventory");
+                            fields.MapData<string[]>("tags");
+                            fields.MapData<int[]>("sizes");
+                            fields.MapData<bool>("available", field => field.DataKey = "inStock");
+                        });
+                });
             }
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
@@ -197,12 +203,12 @@ public class DirectMappedSearchTests
         Guid node,
         HttpStatusCode status = HttpStatusCode.OK) : HttpMessageHandler
     {
-        internal int Count { get; private set; }
-        internal string RequestBody { get; private set; } = string.Empty;
+        public int Count { get; private set; }
+        public string RequestBody { get; private set; } = string.Empty;
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
-            CancellationToken cancellationToken)
+            CancellationToken token)
         {
             Count++;
             Assert.EndsWith(
@@ -211,7 +217,7 @@ public class DirectMappedSearchTests
 
             if (!binary)
             {
-                RequestBody = await request.Content!.ReadAsStringAsync(cancellationToken);
+                RequestBody = await request.Content!.ReadAsStringAsync(token);
             }
 
             var numbers = new List<AvailableFacetValue<double>> { new(20, false, 1) };

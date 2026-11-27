@@ -9,7 +9,7 @@ namespace Relewise.DemoStorefront.Seeding;
 
 internal static class DemoVariantDetails
 {
-    internal static async Task EnsureAsync(IServiceProvider services)
+    public static async Task EnsureAsync(IServiceProvider services)
     {
         var types = services.GetRequiredService<IContentTypeService>();
         IDataType text =

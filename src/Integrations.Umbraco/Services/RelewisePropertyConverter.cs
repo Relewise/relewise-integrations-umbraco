@@ -30,9 +30,9 @@ internal class RelewisePropertyConverter(
         IPublishedElement sourceElement,
         string[] cultures,
         IServiceProvider services,
-        CancellationToken cancellationToken = default)
+        CancellationToken token = default)
     {
-        return ConvertAsync(publishedContent, sourceElement, cultures, services, cancellationToken)
+        return ConvertAsync(publishedContent, sourceElement, cultures, services, token)
             .GetAwaiter()
             .GetResult();
     }
@@ -40,11 +40,11 @@ internal class RelewisePropertyConverter(
     public async Task<IReadOnlyDictionary<string, DataValue?>> ConvertAsync(
         IEnumerable<IPublishedProperty> properties,
         string[] cultures,
-        CancellationToken cancellationToken = default)
+        CancellationToken token = default)
     {
         if (provider == null)
         {
-            return (await ConvertPropertiesAsync(properties, cultures, null, null, null, null, cancellationToken)).Data;
+            return (await ConvertPropertiesAsync(properties, cultures, null, null, null, null, token)).Data;
         }
 
         await using AsyncServiceScope scope = provider.CreateAsyncScope();
@@ -56,7 +56,7 @@ internal class RelewisePropertyConverter(
             null,
             scope.ServiceProvider,
             null,
-            cancellationToken)).Data;
+            token)).Data;
     }
 
     public async Task<IReadOnlyDictionary<string, DataValue?>> ConvertAsync(
@@ -64,7 +64,7 @@ internal class RelewisePropertyConverter(
         IPublishedElement sourceElement,
         string[] cultures,
         IServiceProvider services,
-        CancellationToken cancellationToken = default)
+        CancellationToken token = default)
     {
         return (await ConvertPropertiesAsync(
             sourceElement.Properties,
@@ -73,15 +73,15 @@ internal class RelewisePropertyConverter(
             sourceElement,
             services,
             null,
-            cancellationToken)).Data;
+            token)).Data;
     }
 
-    internal async Task<IReadOnlyDictionary<string, DataValue?>> ConvertElementAsync(
+    public async Task<IReadOnlyDictionary<string, DataValue?>> ConvertElementAsync(
         IPublishedContent? publishedContent,
         IPublishedElement sourceElement,
         string[] cultures,
         IServiceProvider services,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
         return (await ConvertPropertiesAsync(
             sourceElement.Properties,
@@ -90,10 +90,10 @@ internal class RelewisePropertyConverter(
             sourceElement,
             services,
             null,
-            cancellationToken)).Data;
+            token)).Data;
     }
 
-    internal Task<PropertyConversion> ConvertPropertyAsync(
+    public Task<PropertyConversion> ConvertPropertyAsync(
         IPublishedContent publishedContent,
         IPublishedElement sourceElement,
         IPublishedProperty property,
@@ -118,7 +118,7 @@ internal class RelewisePropertyConverter(
         IPublishedElement? sourceElement,
         IServiceProvider? services,
         IAsyncRelewisePropertyValueConverter? selected,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
         if (properties == null)
         {
@@ -156,7 +156,7 @@ internal class RelewisePropertyConverter(
                         sourceElement,
                         services,
                         selected,
-                        cancellationToken);
+                        token);
                     localizedProperties.Add(culture, localizedDataKeys);
                 }
 
@@ -216,7 +216,7 @@ internal class RelewisePropertyConverter(
                     sourceElement,
                     services,
                     selected,
-                    cancellationToken);
+                    token);
             }
         }
 
@@ -231,9 +231,9 @@ internal class RelewisePropertyConverter(
         IPublishedElement? sourceElement,
         IServiceProvider? services,
         IAsyncRelewisePropertyValueConverter? selected,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
 
         var context = new RelewisePropertyConverterContext(
             property,
@@ -242,7 +242,7 @@ internal class RelewisePropertyConverter(
             publishedContent,
             sourceElement,
             services,
-            cancellationToken);
+            token);
 
         if (selected != null)
         {
@@ -253,7 +253,7 @@ internal class RelewisePropertyConverter(
                     $"' for culture '{culture}'.");
             }
 
-            await selected.ConvertAsync(context, cancellationToken);
+            await selected.ConvertAsync(context, token);
 
             return true;
         }
@@ -279,14 +279,14 @@ internal class RelewisePropertyConverter(
             {
                 if (!customApplied)
                 {
-                    await custom.ConvertAsync(context, cancellationToken);
+                    await custom.ConvertAsync(context, token);
                 }
 
                 customApplied = true;
             }
             else if (converter is IAsyncRelewisePropertyValueConverter asynchronous)
             {
-                await asynchronous.ConvertAsync(context, cancellationToken);
+                await asynchronous.ConvertAsync(context, token);
             }
             else
             {
@@ -296,11 +296,11 @@ internal class RelewisePropertyConverter(
 
         if (custom != null && !customApplied)
         {
-            await custom.ConvertAsync(context, cancellationToken);
+            await custom.ConvertAsync(context, token);
             handled = true;
         }
 
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
 
         return handled;
     }

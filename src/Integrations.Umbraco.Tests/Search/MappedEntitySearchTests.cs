@@ -81,12 +81,18 @@ public class MappedEntitySearchTests
             if (product)
             {
                 options.MapProduct("product");
-                options.SearchProviders.AddProduct("profile");
+                options.ConfigureSearch(search =>
+                {
+                    search.AddProductProvider("profile");
+                });
             }
             else
             {
                 options.MapContent("article");
-                options.SearchProviders.AddContent("profile", provider => provider.DocumentTypeAliases = ["ARTICLE"]);
+                options.ConfigureSearch(search =>
+                {
+                    search.AddContentProvider("profile", provider => provider.DocumentTypeAliases = ["ARTICLE"]);
+                });
             }
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
@@ -200,30 +206,36 @@ public class MappedEntitySearchTests
             if (product)
             {
                 options.MapProduct("product");
-                options.SearchProviders.AddProduct(
-                    "catalogue",
-                    provider =>
-                    {
-                        if (requirePublishedPage.HasValue)
+                options.ConfigureSearch(search =>
+                {
+                    search.AddProductProvider(
+                        "catalogue",
+                        provider =>
                         {
-                            provider.RequirePublishedPage = requirePublishedPage.Value;
-                        }
+                            if (requirePublishedPage.HasValue)
+                            {
+                                provider.RequirePublishedPage = requirePublishedPage.Value;
+                            }
 
-                        provider.MapData<int>("number");
-                        provider.ConfigureRequest((request, _) => Customize(request));
-                    });
+                            provider.MapData<int>("number");
+                            provider.ConfigureRequest((request, _) => Customize(request));
+                        });
+                });
             }
             else
             {
                 options.MapContent("article");
-                options.SearchProviders.AddContent(
-                    "articles",
-                    provider =>
-                    {
-                        provider.MapData<int>("number");
-                        provider.ConfigureRequest((request, _) => Customize(request));
-                    });
-                options.SearchProviders.DefaultPublishedContentProviderAlias = "articles";
+                options.ConfigureSearch(search =>
+                {
+                    search.AddContentProvider(
+                        "articles",
+                        provider =>
+                        {
+                            provider.MapData<int>("number");
+                            provider.ConfigureRequest((request, _) => Customize(request));
+                        });
+                    search.DefaultPublishedContentProviderAlias = "articles";
+                });
             }
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
@@ -355,9 +367,9 @@ public class MappedEntitySearchTests
                 });
 
         using var cancellation = new CancellationTokenSource();
-        CancellationToken cancellationToken = cancellation.Token;
+        CancellationToken token = cancellation.Token;
 
-        sdk.Setup(client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), cancellationToken))
+        sdk.Setup(client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), token))
             .Callback<SearchTermPredictionRequest, CancellationToken>((request, _) => prediction = request)
             .ReturnsAsync(
                 new SearchTermPredictionResponse
@@ -388,38 +400,44 @@ public class MappedEntitySearchTests
             if (product)
             {
                 options.MapProduct("product");
-                options.SearchProviders.AddProduct(
-                    "profile",
-                    provider => provider.ConfigureRequest((
-                        request,
-                        _) =>
-                    {
-                        request.Currency = new Currency("DKK");
-                        request.Filters!.Add(
-                            new ProductDataFilter(
-                                "offer",
-                                new Client.Requests.Conditions.EqualsCondition(true)));
-                        request.PostFilters = new FilterCollection(
-                            new ProductDataFilter(
-                                "stock",
-                                new Client.Requests.Conditions.EqualsCondition(true)));
-                    }));
+                options.ConfigureSearch(search =>
+                {
+                    search.AddProductProvider(
+                        "profile",
+                        provider => provider.ConfigureRequest((
+                            request,
+                            _) =>
+                        {
+                            request.Currency = new Currency("DKK");
+                            request.Filters!.Add(
+                                new ProductDataFilter(
+                                    "offer",
+                                    new Client.Requests.Conditions.EqualsCondition(true)));
+                            request.PostFilters = new FilterCollection(
+                                new ProductDataFilter(
+                                    "stock",
+                                    new Client.Requests.Conditions.EqualsCondition(true)));
+                        }));
+                });
             }
             else
             {
                 options.MapContent("article");
-                options.SearchProviders.AddContent(
-                    "profile",
-                    provider => provider.ConfigureRequest((
-                        request,
-                        _) =>
-                    {
-                        request.Currency = new Currency("DKK");
-                        request.Filters!.Add(
-                            new ContentDataFilter(
-                                "offer",
-                                new Client.Requests.Conditions.EqualsCondition(true)));
-                    }));
+                options.ConfigureSearch(search =>
+                {
+                    search.AddContentProvider(
+                        "profile",
+                        provider => provider.ConfigureRequest((
+                            request,
+                            _) =>
+                        {
+                            request.Currency = new Currency("DKK");
+                            request.Filters!.Add(
+                                new ContentDataFilter(
+                                    "offer",
+                                    new Client.Requests.Conditions.EqualsCondition(true)));
+                        }));
+                });
             }
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
@@ -432,7 +450,7 @@ public class MappedEntitySearchTests
         var accessor = root.GetRequiredService<IHttpContextAccessor>();
 
         accessor.HttpContext = new DefaultHttpContext
-        { RequestServices = scope.ServiceProvider, RequestAborted = cancellationToken };
+        { RequestServices = scope.ServiceProvider, RequestAborted = token };
 
         var principal = Guid.NewGuid();
         SearchResult result = await root.GetRequiredService<MappedEntitySearcher>()
@@ -479,7 +497,7 @@ public class MappedEntitySearchTests
         }
 
         sdk.Verify(
-            client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), cancellationToken),
+            client => client.PredictAsync(It.IsAny<SearchTermPredictionRequest>(), token),
             Times.Once);
     }
 

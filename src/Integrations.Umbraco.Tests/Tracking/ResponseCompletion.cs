@@ -11,7 +11,7 @@ internal sealed class ResponseCompletion : HttpResponseFeature
         _callbacks.Push((callback, state));
     }
 
-    internal async Task CompleteAsync()
+    public async Task CompleteAsync()
     {
         while (_callbacks.TryPop(out (Func<object, Task> Callback, object State) item))
         {

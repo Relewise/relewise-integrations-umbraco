@@ -3,7 +3,8 @@
 [Documentation home](README.md) · [Entity mapping](entity-mapping.md) · [Migration](migration.md)
 
 Use Relewise through Umbraco's core search abstraction with Content and Product
-providers. Configure search independently of entity mapping and indexing.
+providers. Select Umbraco Search indexing with `ConfigureSearch`; registering query
+providers is optional and does not change entity mapping.
 
 ## Registration
 
@@ -24,19 +25,22 @@ builder.CreateUmbracoBuilder()
         options.MapContent("article", mapping => mapping.AutoMap());
         options.MapProduct("product", mapping => mapping.IdFromProperty("sku"));
 
-        options.SearchProviders.AddContent("articles", provider =>
+        options.ConfigureSearch(search =>
         {
-            provider.DocumentTypeAliases = ["article"]; // Optional Content-only selection.
-            provider.DisplayedAtLocation = "Site search"; // Stable analytics/merchandising label.
-        });
-        options.SearchProviders.AddProduct("catalogue", provider =>
-        {
-            provider.ConfigureRequest((request, context) =>
+            search.AddContentProvider("articles", provider =>
             {
-                request.Currency = new Currency("DKK"); // Site-specific request currency.
+                provider.DocumentTypeAliases = ["article"]; // Optional Content-only selection.
+                provider.DisplayedAtLocation = "Site search"; // Stable analytics/merchandising label.
             });
+            search.AddProductProvider("catalogue", provider =>
+            {
+                provider.ConfigureRequest((request, context) =>
+                {
+                    request.Currency = new Currency("DKK"); // Site-specific request currency.
+                });
+            });
+            search.DefaultPublishedContentProviderAlias = "articles";
         });
-        options.SearchProviders.DefaultPublishedContentProviderAlias = "articles";
     })
     .Build();
 ```
@@ -54,9 +58,12 @@ Product providers default to `RequirePublishedPage = true`. An advanced search c
 opt out when its caller handles results without a published Umbraco page:
 
 ```csharp
-options.SearchProviders.AddProduct("commerceCatalogue", provider =>
+options.ConfigureSearch(search =>
 {
-    provider.RequirePublishedPage = false; // Include mapped Products whose Umbraco page is unavailable.
+    search.AddProductProvider("commerceCatalogue", provider =>
+    {
+        provider.RequirePublishedPage = false; // Include mapped Products whose Umbraco page is unavailable.
+    });
 });
 ```
 
@@ -96,12 +103,15 @@ value, regardless of the number of site languages. Legacy AutoMap output is unch
 Full exports stamp one numeric `UmbracoVersionId` on their entities and reconcile matching
 source entities with a different version only after successful ingestion. The comparison
 is inequality, not chronological ordering. Automatically generated versions increase within
-the shared writer even when the clock does not advance; explicit delta-export versions
+the running application even when the clock does not advance; explicit delta-export versions
 remain caller-supplied. Coordinate writers across processes sharing the same mapping scope.
 
-`AddRelewise` registers **one indexing pipeline**, using Umbraco's published-content
-change and rebuild flow. It exports the configured entities whether or not query
-providers are registered. Notification handlers do not run a second export.
+`AddRelewise` exports publication changes through Umbraco notifications by default.
+Calling `options.ConfigureSearch()` uses Umbraco Search's indexing flow instead,
+even when no named query providers are configured. These two mechanisms do not
+export the same change twice. Explicit exports and dashboard rebuild actions use
+the configured indexing flow too. Call `ConfigureSearch` only once across all
+registration callbacks; repeated calls are rejected.
 Named query providers do not add indexing pipelines or create additional Relewise
 indexes. Every provider uses the Dataset's default Relewise index.
 
@@ -115,12 +125,15 @@ members, and elements retain their existing search providers.
 Bind a decimal query field to the Product's built-in `SalesPrice`:
 
 ```csharp
-options.SearchProviders.AddProduct("catalogue", provider =>
+options.ConfigureSearch(search =>
 {
-    provider.Map(product => product.SalesPrice, "price"); // Query field for native Product prices, not a Data key.
-    provider.ConfigureRequest((request, context) =>
+    search.AddProductProvider("catalogue", provider =>
     {
-        request.Currency = new Currency("EUR"); // Use the active site's or shopper's currency.
+        provider.Map(product => product.SalesPrice, "price"); // Query field for native Product prices, not a Data key.
+        provider.ConfigureRequest((request, context) =>
+        {
+            request.Currency = new Currency("EUR"); // Use the active site's or shopper's currency.
+        });
     });
 });
 ```
@@ -151,15 +164,18 @@ Use explicit provider bindings for values produced by custom mappers/converters,
 mappers, or a different query-field name:
 
 ```csharp
-options.SearchProviders.AddProduct("catalogue", provider =>
+options.ConfigureSearch(search =>
 {
-    provider.Map(product => product.DisplayName, "name"); // Native name sorting.
-    provider.Map(product => product.CategoryPaths, "category"); // Canonical Category IDs anywhere in the paths.
-    provider.Map(product => product.Brand, "brand"); // Canonical Brand IDs.
-    provider.MapData<bool>("onSale_EUR"); // Boolean Data already exported by the mapper.
-    provider.MapData<bool>("available", field => field.DataKey = "inStock"); // Query alias and stored key differ.
-    provider.MapData<int>("quantity", field => field.DataKey = "stock"); // Existing numeric Data.
-    provider.MapData<string[]>("tags"); // List membership and keyword facets, without list sorting.
+    search.AddProductProvider("catalogue", provider =>
+    {
+        provider.Map(product => product.DisplayName, "name"); // Native name sorting.
+        provider.Map(product => product.CategoryPaths, "category"); // Canonical Category IDs anywhere in the paths.
+        provider.Map(product => product.Brand, "brand"); // Canonical Brand IDs.
+        provider.MapData<bool>("onSale_EUR"); // Boolean Data already exported by the mapper.
+        provider.MapData<bool>("available", field => field.DataKey = "inStock"); // Query alias and stored key differ.
+        provider.MapData<int>("quantity", field => field.DataKey = "stock"); // Existing numeric Data.
+        provider.MapData<string[]>("tags"); // List membership and keyword facets, without list sorting.
+    });
 });
 ```
 

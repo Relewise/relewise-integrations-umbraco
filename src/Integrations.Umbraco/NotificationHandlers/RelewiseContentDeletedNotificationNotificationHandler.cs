@@ -24,7 +24,7 @@ internal class
         _configuration = configuration;
     }
 
-    public async Task HandleAsync(ContentDeletedNotification notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(ContentDeletedNotification notification, CancellationToken token)
     {
         ITracker? tracker = _exportContentService.GetTrackerOrNull();
 
@@ -49,6 +49,6 @@ internal class
             new FilterCollection(new ContentIdFilter(ids)),
             ContentAdministrativeAction.UpdateKind.Delete);
 
-        await tracker.TrackAsync(action, cancellationToken);
+        await tracker.TrackAsync(action, token);
     }
 }

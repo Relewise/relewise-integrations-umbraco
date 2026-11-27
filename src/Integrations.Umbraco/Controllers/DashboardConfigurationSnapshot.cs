@@ -10,7 +10,7 @@ namespace Relewise.Integrations.Umbraco.Controllers;
 
 internal static class DashboardConfigurationSnapshot
 {
-    internal static ConfigurationViewModel Create(
+    public static ConfigurationViewModel Create(
         RelewiseUmbracoConfiguration configuration,
         List<NamedOptionsViewObject> clients,
         bool middlewareEnabled)
@@ -21,20 +21,23 @@ internal static class DashboardConfigurationSnapshot
             clients,
             middlewareEnabled)
         {
-            Mappings = configuration.Mappings.Values.OrderBy(mapping => MappingOrder(mapping.EntityType))
+            SearchConfigured = configuration.UsesUmbracoSearch(),
+            Mappings = configuration.Mappings.OrderBy(mapping => MappingOrder(mapping.EntityType))
                 .ThenBy(mapping => mapping.EntityType == typeof(ProductVariant) ? 1 : 0)
                 .ThenBy(mapping => mapping.DocumentTypeAlias, StringComparer.OrdinalIgnoreCase)
                 .Select(mapping => Describe(mapping, configuration))
                 .ToArray(),
-            DefaultPublishedContentProviderAlias = configuration.SearchProviders.Providers.Keys.FirstOrDefault(alias =>
-                string.Equals(
-                    alias,
-                    configuration.SearchProviders.DefaultPublishedContentProviderAlias,
-                    StringComparison.OrdinalIgnoreCase)),
-            SearchProviders = configuration.SearchProviders.Providers
+            DefaultPublishedContentProviderAlias = configuration.GetSearchOptions()
+                .Providers.Keys.FirstOrDefault(alias =>
+                    string.Equals(
+                        alias,
+                        configuration.GetSearchOptions().DefaultPublishedContentProviderAlias,
+                        StringComparison.OrdinalIgnoreCase)),
+            SearchProviders = configuration.GetSearchOptions()
+                .Providers
                 .OrderBy(pair => string.Equals(
                     pair.Key,
-                    configuration.SearchProviders.DefaultPublishedContentProviderAlias,
+                    configuration.GetSearchOptions().DefaultPublishedContentProviderAlias,
                     StringComparison.OrdinalIgnoreCase)
                     ? 0
                     : 1)
@@ -76,7 +79,7 @@ internal static class DashboardConfigurationSnapshot
             Alias = alias,
             EntityType = provider.EntityType.Name,
             DocumentTypeAliases = restrictions,
-            ResolvedDocumentTypeAliases = configuration.Mappings.Values
+            ResolvedDocumentTypeAliases = configuration.Mappings
                 .Where(mapping => mapping.Export && mapping.EntityType == provider.EntityType
                                                  && (restrictions.Length == 0 ||
                                                      restrictions.Contains(
@@ -128,7 +131,7 @@ internal static class DashboardConfigurationSnapshot
             }));
 
         MappingDefinition? parent =
-            configuration.Mappings.Values.FirstOrDefault(parent => ReferenceEquals(parent.Variant, mapping));
+            configuration.Mappings.FirstOrDefault(parent => ReferenceEquals(parent.Variant, mapping));
         var relationships = new List<string>();
 
         if (mapping.AdministrativeActions.Enabled && (mapping.EntityType == typeof(Content) ||
@@ -175,8 +178,8 @@ internal static class DashboardConfigurationSnapshot
             TrackViews = mapping.TrackViews,
             SynchronizeLifecycle = mapping.AdministrativeActions.Enabled &&
                                    (parent?.AdministrativeActions.Enabled ?? true),
-            ClearOnDeltaUpdates = mapping.UpdatePolicy.Clears(false),
-            ClearOnFullRebuilds = mapping.UpdatePolicy.Clears(true),
+            ClearOnDeltaUpdates = mapping.UpdatePolicy.Clears(fullRebuild: false),
+            ClearOnFullRebuilds = mapping.UpdatePolicy.Clears(fullRebuild: true),
             AutoMap = mapping.AutomaticData,
             CustomMapper = mapping.Mapper != null || mapping.LegacyMapper != null,
             CustomMapperTypeName = (mapping.MapperType ?? mapping.LegacyMapper?.GetType())?.Name,

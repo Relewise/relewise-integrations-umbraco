@@ -31,7 +31,7 @@ internal class RelewiseViewTrackingMiddleware
         IsEnabled = true;
     }
 
-    internal static bool IsEnabled { get; private set; }
+    public static bool IsEnabled { get; private set; }
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -105,7 +105,7 @@ internal class RelewiseViewTrackingMiddleware
     {
         string id = _configuration.GetContentId(content);
 
-        if (!_configuration.Mappings.TryGetValue(content.ContentType.Alias, out MappingDefinition? mapping))
+        if (!_configuration.Mappings.TryGetMapping(content.ContentType.Alias, out MappingDefinition? mapping))
         {
             return new ContentView(user, id);
         }
@@ -116,7 +116,7 @@ internal class RelewiseViewTrackingMiddleware
                                        throw new InvalidOperationException(
                                            "A Variant view requires its mapped Product parent.");
 
-            if (!_configuration.Mappings.TryGetValue(parent.ContentType.Alias, out MappingDefinition? parentMapping)
+            if (!_configuration.Mappings.TryGetMapping(parent.ContentType.Alias, out MappingDefinition? parentMapping)
                 || parentMapping.EntityType != typeof(Product) || parentMapping.Variant != mapping)
             {
                 throw new InvalidOperationException("A Variant view requires its configured direct Product parent.");
@@ -156,7 +156,7 @@ internal class RelewiseViewTrackingMiddleware
         [
             .. content.Breadcrumbs()
                 .Where(node =>
-                    _configuration.Mappings.TryGetValue(node.ContentType.Alias, out MappingDefinition? mapping) &&
+                    _configuration.Mappings.TryGetMapping(node.ContentType.Alias, out MappingDefinition? mapping) &&
                     mapping.EntityType == entityType)
                 .Select(_configuration.GetContentId)
         ];

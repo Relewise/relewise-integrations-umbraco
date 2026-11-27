@@ -42,16 +42,19 @@ public class DashboardConfigurationTests
                     mapping.BrandFrom("brandPicker");
                     mapping.VariantsFromChildren("variant", variant => variant.IdFromProperty("variantSku"));
                 });
-            options.SearchProviders.AddContent(
-                "editorial",
-                provider =>
-                {
-                    provider.DocumentTypeAliases = ["article"];
-                    provider.ConfigureRequest((_, _) =>
-                        throw new InvalidOperationException("Must not run during inspection"));
-                });
-            options.SearchProviders.AddProduct("commerce", provider => provider.RequirePublishedPage = false);
-            options.SearchProviders.DefaultPublishedContentProviderAlias = "editorial";
+            options.ConfigureSearch(search =>
+            {
+                search.AddContentProvider(
+                    "editorial",
+                    provider =>
+                    {
+                        provider.DocumentTypeAliases = ["article"];
+                        provider.ConfigureRequest((_, _) =>
+                            throw new InvalidOperationException("Must not run during inspection"));
+                    });
+                search.AddProductProvider("commerce", provider => provider.RequirePublishedPage = false);
+                search.DefaultPublishedContentProviderAlias = "editorial";
+            });
         });
         ConfigurationViewModel snapshot =
             DashboardConfigurationSnapshot.Create(
@@ -131,11 +134,13 @@ public class DashboardConfigurationTests
                 : EntityUpdatePolicy.ReplaceProvidedProperties();
         }
 
-        using ServiceProvider services = Services(options => options.MapProduct("product", mapping =>
-        {
-            mapping.UpdatePolicy = Policy(delta, full);
-            mapping.VariantsFromChildren("variant", variant => variant.UpdatePolicy = Policy(!delta, !full));
-        }));
+        using ServiceProvider services = Services(options => options.MapProduct(
+            "product",
+            mapping =>
+            {
+                mapping.UpdatePolicy = Policy(delta, full);
+                mapping.VariantsFromChildren("variant", variant => variant.UpdatePolicy = Policy(!delta, !full));
+            }));
         ConfigurationViewModel snapshot = DashboardConfigurationSnapshot.Create(
             services.GetRequiredService<RelewiseUmbracoConfiguration>(),
             [],
@@ -159,15 +164,19 @@ public class DashboardConfigurationTests
     [InlineData(true, true)]
     public void VariantSnapshotReflectsBothMappingsLifecyclePolicies(bool parent, bool child)
     {
-        using ServiceProvider services = Services(options => options.MapProduct("product", mapping =>
-        {
-            mapping.AdministrativeActions = parent
-                ? AdministrativeActionPolicy.Synchronize()
-                : AdministrativeActionPolicy.None();
-            mapping.VariantsFromChildren("variant", variant => variant.AdministrativeActions = child
-                ? AdministrativeActionPolicy.Synchronize()
-                : AdministrativeActionPolicy.None());
-        }));
+        using ServiceProvider services = Services(options => options.MapProduct(
+            "product",
+            mapping =>
+            {
+                mapping.AdministrativeActions = parent
+                    ? AdministrativeActionPolicy.Synchronize()
+                    : AdministrativeActionPolicy.None();
+                mapping.VariantsFromChildren(
+                    "variant",
+                    variant => variant.AdministrativeActions = child
+                        ? AdministrativeActionPolicy.Synchronize()
+                        : AdministrativeActionPolicy.None());
+            }));
         ConfigurationViewModel snapshot = DashboardConfigurationSnapshot.Create(
             services.GetRequiredService<RelewiseUmbracoConfiguration>(),
             [],
@@ -176,6 +185,25 @@ public class DashboardConfigurationTests
             Assert.Single(snapshot.Mappings, mapping => mapping.EntityType == "ProductVariant");
 
         Assert.Equal(parent && child, variant.SynchronizeLifecycle);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SearchSectionIsAvailableOnlyWhenSearchExportIsConfigured(bool search)
+    {
+        using ServiceProvider services = Services(options =>
+        {
+            options.MapContent("article");
+            if (search)
+                options.ConfigureSearch();
+        });
+        ConfigurationViewModel snapshot = DashboardConfigurationSnapshot.Create(
+            services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            [],
+            false);
+        Assert.Equal(search, snapshot.SearchConfigured);
+        Assert.Empty(snapshot.SearchProviders);
     }
 
     [Fact]
@@ -205,10 +233,13 @@ public class DashboardConfigurationTests
             options.MapBrand("brand");
             options.MapProduct("product", mapping => mapping.VariantsFromChildren("aaaVariant"));
             options.MapContent("aArticle");
-            options.SearchProviders.AddContent("zAll");
-            options.SearchProviders.AddProduct("catalogue");
-            options.SearchProviders.AddContent("articles", provider => provider.DocumentTypeAliases = ["aArticle"]);
-            options.SearchProviders.DefaultPublishedContentProviderAlias = "CATALOGUE";
+            options.ConfigureSearch(search =>
+            {
+                search.AddContentProvider("zAll");
+                search.AddProductProvider("catalogue");
+                search.AddContentProvider("articles", provider => provider.DocumentTypeAliases = ["aArticle"]);
+                search.DefaultPublishedContentProviderAlias = "CATALOGUE";
+            });
         });
         ConfigurationViewModel snapshot =
             DashboardConfigurationSnapshot.Create(
@@ -301,24 +332,27 @@ public class DashboardConfigurationTests
             options.MapContent("guide");
             options.MapContent("viewOnly", mapping => mapping.Export = false);
             options.MapProduct("cataloguePage");
-            options.SearchProviders.AddContent(
-                "allContent",
-                provider =>
-                {
-                    provider.DisplayedAtLocation = "  ";
-                    provider.UnsupportedSegmentBehavior = UnsupportedSegmentBehavior.Ignore();
-                    provider.ConfigureRequest((_, _) =>
-                        throw new InvalidOperationException("Must not run while inspecting settings"));
-                });
-            options.SearchProviders.AddContent("articles", provider => provider.DocumentTypeAliases = ["article"]);
-            options.SearchProviders.AddProduct(
-                "catalogue",
-                provider =>
-                {
-                    provider.RequirePublishedPage = false;
-                    provider.DisplayedAtLocation = "Store catalogue";
-                });
-            options.SearchProviders.DefaultPublishedContentProviderAlias = "CATALOGUE";
+            options.ConfigureSearch(search =>
+            {
+                search.AddContentProvider(
+                    "allContent",
+                    provider =>
+                    {
+                        provider.DisplayedAtLocation = "  ";
+                        provider.UnsupportedSegmentBehavior = UnsupportedSegmentBehavior.Ignore();
+                        provider.ConfigureRequest((_, _) =>
+                            throw new InvalidOperationException("Must not run while inspecting settings"));
+                    });
+                search.AddContentProvider("articles", provider => provider.DocumentTypeAliases = ["article"]);
+                search.AddProductProvider(
+                    "catalogue",
+                    provider =>
+                    {
+                        provider.RequirePublishedPage = false;
+                        provider.DisplayedAtLocation = "Store catalogue";
+                    });
+                search.DefaultPublishedContentProviderAlias = "CATALOGUE";
+            });
         });
         ConfigurationViewModel snapshot =
             DashboardConfigurationSnapshot.Create(
@@ -369,11 +403,13 @@ public class DashboardConfigurationTests
                 mapping => mapping.MapData("blocks", data => data.UseConverter<EditorialBlocksConverter>()));
             options.MapBrand("brand");
 #pragma warning disable CS0618 // Verify the retained legacy mapper is described accurately.
-            options.AddContentType("legacy", mapping =>
-            {
-                mapping.UpdatePolicy = EntityUpdatePolicy.ClearAndReplace();
-                mapping.UseMapper(legacyMapper.Object);
-            });
+            options.AddContentType(
+                "legacy",
+                mapping =>
+                {
+                    mapping.UpdatePolicy = EntityUpdatePolicy.ClearAndReplace();
+                    mapping.UseMapper(legacyMapper.Object);
+                });
 #pragma warning restore CS0618
         });
         ConfigurationViewModel snapshot =

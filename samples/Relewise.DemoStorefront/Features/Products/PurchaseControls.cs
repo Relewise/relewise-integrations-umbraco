@@ -9,7 +9,7 @@ namespace Relewise.DemoStorefront.Features.Products;
 
 internal static class PurchaseControls
 {
-    internal static PurchaseModel Create(IPublishedContent page, IPublishedContent product, HttpContext http)
+    public static PurchaseModel Create(IPublishedContent page, IPublishedContent product, HttpContext http)
     {
         var stock = product.Value<int>(PropertyAliases.Stock);
         bool priced = ProductPrices.Read(

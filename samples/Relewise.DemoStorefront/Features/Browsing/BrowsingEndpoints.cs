@@ -6,7 +6,7 @@ namespace Relewise.DemoStorefront.Features.Browsing;
 
 internal static class BrowsingEndpoints
 {
-    internal static void MapBrowsing(this WebApplication app)
+    public static void MapBrowsing(this WebApplication app)
     {
         app.MapGet(
             "/store",

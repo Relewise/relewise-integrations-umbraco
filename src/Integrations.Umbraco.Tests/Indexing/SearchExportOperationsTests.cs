@@ -14,6 +14,7 @@ using Relewise.Client.Responses;
 using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
+using Relewise.Integrations.Umbraco.Search.Indexing;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.HostedServices;
@@ -26,8 +27,42 @@ using Umbraco.Cms.Core.Web;
 
 namespace Relewise.Integrations.Umbraco.Tests.Indexing;
 
-public class EntityIndexingServiceTests
+public class SearchExportOperationsTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SourceIsResolvedAndAsynchronouslyDisposedPerExport(bool fail)
+    {
+        var sources = new List<ScopedPublishedStrategy>();
+        await using var fixture = new Fixture(
+            configureServices: services =>
+                services.AddScoped<IPublishedContentChangeStrategy>(_ =>
+                {
+                    var source = new ScopedPublishedStrategy(fail);
+                    sources.Add(source);
+                    return source;
+                }));
+
+        for (var i = 0; i < 2; i++)
+        {
+            if (fail)
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Writer.ExportAsync([]));
+            }
+            else
+            {
+                await fixture.Writer.ExportAsync([]);
+            }
+
+            Assert.Equal(i + 1, sources.Count);
+            Assert.All(sources, source => Assert.True(source.Disposed));
+        }
+
+        fixture.Strategy.VerifyNoOtherCalls();
+        Assert.Empty(fixture.Tracked);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -38,7 +73,7 @@ public class EntityIndexingServiceTests
 
         Task operation = delete
             ? fixture.Writer.DeleteAsync([new DeletedEntity(typeof(Product), "sku", Guid.NewGuid(), true)], token)
-            : fixture.Writer.ExportAsync([Guid.NewGuid()], cancellationToken: token);
+            : fixture.Writer.ExportAsync([Guid.NewGuid()], token: token);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => operation);
         Assert.Empty(fixture.Tracked);
@@ -54,8 +89,8 @@ public class EntityIndexingServiceTests
 
         await fixture.Writer.ApplyChangesAsync(
             [
-                ContentChange.Document(removed, ChangeImpact.Remove, ContentState.Draft),
-                ContentChange.Document(draft, ChangeImpact.Refresh, ContentState.Draft)
+                new ExportChange(removed, ExportChangeImpact.Remove, false),
+                new ExportChange(draft, ExportChangeImpact.Refresh, false)
             ],
             CancellationToken.None);
 
@@ -132,15 +167,19 @@ public class EntityIndexingServiceTests
         node.SetupGet(value => value.Id).Returns(42);
         node.SetupGet(value => value.Key).Returns(Guid.NewGuid());
 
+        var writer = new EntityIndexingQueue(
+            fixture.Writer,
+            queue.Object,
+            Mock.Of<IHostApplicationLifetime>(),
+            NullLogger<EntityIndexingQueue>.Instance);
+        var exports = new Mock<IExportSystem>();
+        exports.Setup(value => value.EnqueueDeletion(It.IsAny<DeletedEntity[]>(), It.IsAny<Guid[]>()))
+            .Callback<DeletedEntity[], Guid[]>(writer.EnqueueDeletion);
         var handler = new DeletedEntityIndexingHandler(
             fixture.Services.GetRequiredService<RelewiseUmbracoConfiguration>(),
             Mock.Of<IContentService>(),
             scopes.Object,
-            new EntityIndexingQueue(
-                fixture.Writer,
-                queue.Object,
-                Mock.Of<IHostApplicationLifetime>(),
-                NullLogger<EntityIndexingQueue>.Instance),
+            exports.Object,
             NullLogger<DeletedEntityIndexingHandler>.Instance);
 
         handler.Handle(new ContentDeletedNotification(node.Object, new EventMessages()));
@@ -269,7 +308,7 @@ public class EntityIndexingServiceTests
             .Returns(Task.CompletedTask);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            fixture.Writer.RebuildAsync(cancellationToken: cancellation.Token));
+            fixture.Writer.RebuildAsync(token: cancellation.Token));
 
         Assert.Empty(fixture.Tracked);
         fixture.Reader.VerifyNoOtherCalls();
@@ -378,58 +417,18 @@ public class EntityIndexingServiceTests
         Assert.Contains(key.ToString("D"), JsonConvert.SerializeObject(action.Filters));
     }
 
-    private sealed class TestScopeContext : IScopeContext
-    {
-        public Guid InstanceId { get; } = Guid.NewGuid();
-        public int CreatedThreadId { get; } = Environment.CurrentManagedThreadId;
-        private readonly Dictionary<string, object?> _items = new();
-        private readonly Dictionary<string, Action<bool>> _actions = new();
-
-        public void Enlist(string key, Action<bool> action, int priority = 100)
-        {
-            _actions.TryAdd(key, action);
-        }
-
-        public T? Enlist<T>(string key, Func<T> creator, Action<bool, T?>? action = null, int priority = 100)
-        {
-            if (!_items.ContainsKey(key))
-            {
-                T value = creator();
-
-                _items.Add(key, value);
-
-                if (action != null)
-                {
-                    _actions.Add(key, completed => action(completed, value));
-                }
-            }
-
-            return (T?)_items[key];
-        }
-
-        public T? GetEnlisted<T>(string key)
-        {
-            return _items.TryGetValue(key, out object? value) ? (T?)value : default;
-        }
-
-        public void ScopeExit(bool completed)
-        {
-            foreach (Action<bool> action in _actions.Values)
-            {
-                action(completed);
-            }
-        }
-    }
-
     private sealed class Fixture : IAsyncDisposable
     {
         public ServiceProvider Services { get; }
-        public EntityIndexingService Writer { get; }
+        public SearchExportOperations Writer { get; }
         public Mock<IPublishedContentChangeStrategy> Strategy { get; } = new();
         public Mock<IDataAccessor> Reader { get; } = new();
         public List<Trackable[]> Tracked { get; } = [];
 
-        public Fixture(Action<RelewiseUmbracoOptionsBuilder>? configure = null, TimeProvider? clock = null)
+        public Fixture(
+            Action<RelewiseUmbracoOptionsBuilder>? configure = null,
+            TimeProvider? clock = null,
+            Action<IServiceCollection>? configureServices = null)
         {
             var tracker = new Mock<ITracker>();
 
@@ -475,12 +474,14 @@ public class EntityIndexingServiceTests
             services.AddSingleton(contexts.Object);
             services.AddSingleton(languages.Object);
             services.AddSingleton(Strategy.Object);
+            services.AddScoped<UmbracoSearchExportSource>();
             services.AddSingleton(Mock.Of<IContentService>());
-            services.AddSingleton<EntityIndexingService>();
+            services.AddSingleton<SearchExportOperations>();
+            configureServices?.Invoke(services);
             Services = services.BuildServiceProvider(
                 new ServiceProviderOptions
                 { ValidateScopes = true, ValidateOnBuild = true });
-            Writer = Services.GetRequiredService<EntityIndexingService>();
+            Writer = Services.GetRequiredService<SearchExportOperations>();
         }
 
         public ValueTask DisposeAsync()
@@ -494,6 +495,28 @@ public class EntityIndexingServiceTests
         public override DateTimeOffset GetUtcNow()
         {
             return time;
+        }
+    }
+
+    private sealed class ScopedPublishedStrategy(bool fail) : IPublishedContentChangeStrategy, IAsyncDisposable
+    {
+        public bool Disposed { get; private set; }
+
+        public Task HandleAsync(
+            IEnumerable<ContentIndexInfo> indexes,
+            IEnumerable<ContentChange> changes,
+            CancellationToken token) => RebuildAsync(Assert.Single(indexes), token);
+
+        public Task RebuildAsync(ContentIndexInfo index, CancellationToken token)
+        {
+            Assert.False(Disposed);
+            return fail ? Task.FromException(new InvalidOperationException("Source failed")) : Task.CompletedTask;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await Task.Yield();
+            Disposed = true;
         }
     }
 }

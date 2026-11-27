@@ -21,7 +21,7 @@ namespace Relewise.DemoStorefront.Features.Recommendations;
 
 internal static class StorefrontRecommendations
 {
-    internal static async Task<IResult> GetAsync(
+    public static async Task<IResult> GetAsync(
         HttpContext http,
         Guid key)
     {

@@ -19,7 +19,7 @@ namespace Relewise.Integrations.Umbraco.Search;
 
 internal static class CoreSearchTranslation
 {
-    internal static RFilter MapFilter(UFilter filter, SearchFieldDefinition field, bool product, string? culture)
+    public static RFilter MapFilter(UFilter filter, SearchFieldDefinition field, bool product, string? culture)
     {
         RFilter result;
 
@@ -61,7 +61,7 @@ internal static class CoreSearchTranslation
         }
 
         // Group negation preserves the distinction between a missing value and an explicit false value.
-        return filter.Negate ? new AndFilter([result], true) : result;
+        return filter.Negate ? new AndFilter([result], negated: true) : result;
     }
 
     private static RFilter Keyword(SearchFieldDefinition field, string[] values, bool product, string? culture)
@@ -109,7 +109,7 @@ internal static class CoreSearchTranslation
 
         if (min.HasValue)
         {
-            bounds.Add(Data(field, new LessThanCondition(min.Value, true), culture));
+            bounds.Add(Data(field, new LessThanCondition(min.Value, negated: true), culture));
         }
 
         if (max.HasValue)
@@ -134,10 +134,10 @@ internal static class CoreSearchTranslation
         RFilter[] items = [.. filters];
         ContentDataFilter empty = Equal(RelewiseDataKeys.NodeKey, "");
 
-        return items.Length == 0 ? new AndFilter([empty, new AndFilter([empty], true)]) : new OrFilter(items);
+        return items.Length == 0 ? new AndFilter([empty, new AndFilter([empty], negated: true)]) : new OrFilter(items);
     }
 
-    internal static void ApplySorting(
+    public static void ApplySorting(
         ContentSearchRequest request,
         IEnumerable<Sorter> sorters,
         Func<string, SearchFieldDefinition> resolve)
@@ -183,7 +183,7 @@ internal static class CoreSearchTranslation
         }
     }
 
-    internal static void ApplySorting(
+    public static void ApplySorting(
         ProductSearchRequest request,
         IEnumerable<Sorter> sorters,
         Func<string, SearchFieldDefinition> resolve)
@@ -249,12 +249,12 @@ internal static class CoreSearchTranslation
         return field;
     }
 
-    internal static ContentDataFilter Equal(string key, DataValue value)
+    public static ContentDataFilter Equal(string key, DataValue value)
     {
         return new ContentDataFilter(key, new EqualsCondition(value));
     }
 
-    internal static NotSupportedException Unsupported(string field, string operation)
+    public static NotSupportedException Unsupported(string field, string operation)
     {
         return new NotSupportedException(
             $"Query operation '{operation}' is not supported for mapped field '{field}'. " +

@@ -16,9 +16,9 @@ internal class TagsPropertyValueConverter : IDefaultPropertyValueConverter, IRel
         return context.Property.PropertyType.EditorAlias.Equals("Umbraco.Tags");
     }
 
-    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken cancellationToken)
+    public ValueTask ConvertAsync(RelewisePropertyConverterContext context, CancellationToken token)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
         Convert(context);
 
         return default;

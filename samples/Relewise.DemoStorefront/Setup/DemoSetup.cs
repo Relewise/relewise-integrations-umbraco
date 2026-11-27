@@ -6,7 +6,7 @@ namespace Relewise.DemoStorefront.Setup;
 
 internal static class DemoSetup
 {
-    internal static bool HasRelewiseConfiguration(IConfiguration configuration)
+    public static bool HasRelewiseConfiguration(IConfiguration configuration)
     {
         string? id = configuration[ConfigurationKeys.DatasetId];
         string? key = configuration["Relewise:ApiKey"];
@@ -31,7 +31,7 @@ internal static class DemoSetup
         return true;
     }
 
-    internal static void ConfigureLocalInstallation(WebApplicationBuilder builder)
+    public static void ConfigureLocalInstallation(WebApplicationBuilder builder)
     {
         // The location separates independently cloned demo databases without adding integration-owned records.
         string root = builder.Environment.ContentRootPath;

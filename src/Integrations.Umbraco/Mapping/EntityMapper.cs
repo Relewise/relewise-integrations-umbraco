@@ -19,7 +19,7 @@ namespace Relewise.Integrations.Umbraco.Mapping;
 
 internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
 {
-    internal async Task<MappedEntity> MapAsync(
+    public async Task<MappedEntity> MapAsync(
         IPublishedContent source,
         MappingDefinition definition,
         MappingOperation operation,
@@ -188,7 +188,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                     RequireMapping(category, typeof(ProductCategory));
 
                     List<CategoryPath> pickedPath =
-                        CategoryPaths(category, typeof(ProductCategory), cultures, false, true);
+                        CategoryPaths(category, typeof(ProductCategory), cultures, legacy: false, includeSelf: true);
 
                     foreach (CategoryPath path in pickedPath)
                     {
@@ -298,7 +298,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         return result;
     }
 
-    internal static IPublishedProperty RequiredProperty(
+    public static IPublishedProperty RequiredProperty(
         IPublishedElement source,
         string alias)
     {
@@ -308,14 +308,14 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
 
     private bool HasMapping(Type type)
     {
-        return configuration.Mappings.Values.Any(mapping => mapping.EntityType == type);
+        return configuration.Mappings.HasEntityType(type);
     }
 
     private void RequireMapping(
         IPublishedContent source,
         Type type)
     {
-        if (!configuration.Mappings.TryGetValue(source.ContentType.Alias, out MappingDefinition? mapping) ||
+        if (!configuration.Mappings.TryGetMapping(source.ContentType.Alias, out MappingDefinition? mapping) ||
             mapping.EntityType != type)
         {
             throw new InvalidOperationException($"Referenced document '{source.Key}' is not mapped as {type.Name}.");
@@ -333,7 +333,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
 
         foreach (IPublishedContent ancestor in source.Breadcrumbs(includeSelf))
         {
-            if (!legacy && (!configuration.Mappings.TryGetValue(
+            if (!legacy && (!configuration.Mappings.TryGetMapping(
                     ancestor.ContentType.Alias,
                     out MappingDefinition? mapping) || mapping.EntityType != categoryType))
             {
@@ -409,7 +409,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         throw new InvalidOperationException($"Reference property '{alias}' must return published document(s).");
     }
 
-    internal static string[] Cultures(
+    public static string[] Cultures(
         IPublishedContent source,
         MappingOperation operation)
     {
@@ -437,7 +437,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                 .ToList());
     }
 
-    internal static object Create(
+    public static object Create(
         Type type,
         string id)
     {
@@ -462,12 +462,12 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         return entity;
     }
 
-    internal static string Identity(object entity)
+    public static string Identity(object entity)
     {
         return (string)entity.GetType().GetProperty("Id")!.GetValue(entity)!;
     }
 
-    internal static Dictionary<string, DataValue?> Data(object entity)
+    public static Dictionary<string, DataValue?> Data(object entity)
     {
         PropertyInfo property = entity.GetType().GetProperty("Data")!;
 

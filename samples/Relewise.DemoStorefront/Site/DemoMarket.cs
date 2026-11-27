@@ -8,14 +8,14 @@ internal sealed record DemoMarket(
     string Culture,
     string Currency)
 {
-    internal static readonly DemoMarket[] All =
+    public static readonly DemoMarket[] All =
     [
         new("eu", "Europe", "en-US", "EUR"),
         new("dk", "Denmark", "da-DK", "DKK"),
         new("us", "UnitedStates", "en-US", "USD")
     ];
 
-    internal static DemoMarket Current(HttpContext? context)
+    public static DemoMarket Current(HttpContext? context)
     {
         if (context?.Items[typeof(DemoMarket)] is DemoMarket selected)
         {
@@ -35,11 +35,11 @@ internal sealed record DemoMarket(
         };
     }
 
-    internal string LanguagePath => Culture == "da-DK" ? "/da" : "/en";
-    internal string HomeUrl => LanguagePath + "/";
-    internal string StoreUrl => LanguagePath + "/store";
+    public string LanguagePath => Culture == "da-DK" ? "/da" : "/en";
+    public string HomeUrl => LanguagePath + "/";
+    public string StoreUrl => LanguagePath + "/store";
 
-    internal string ReturnUrl(string? value)
+    public string ReturnUrl(string? value)
     {
         // Keep redirects on this site, including when the form is submitted by hand.
         if (string.IsNullOrWhiteSpace(value) || !value.StartsWith('/') || value.StartsWith("//")

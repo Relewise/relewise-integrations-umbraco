@@ -7,7 +7,7 @@ namespace Relewise.DemoStorefront.Site;
 
 internal static class IntegrationDetails
 {
-    internal static IntegrationField[] Fields(
+    public static IntegrationField[] Fields(
         IPublishedContent page,
         HttpContext http)
     {

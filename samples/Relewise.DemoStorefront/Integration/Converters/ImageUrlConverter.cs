@@ -15,9 +15,9 @@ internal sealed class ImageUrlConverter(IConfiguration configuration) : IAsyncRe
 
     public ValueTask ConvertAsync(
         RelewisePropertyConverterContext context,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        token.ThrowIfCancellationRequested();
 
         var path = context.Property
             .GetValue(context.Property.PropertyType.VariesByCulture() ? context.Culture : null)

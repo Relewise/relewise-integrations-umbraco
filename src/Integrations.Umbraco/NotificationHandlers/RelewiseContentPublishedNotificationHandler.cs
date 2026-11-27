@@ -16,12 +16,12 @@ internal class RelewiseContentPublishedNotificationHandler : INotificationAsyncH
         _exportContentService = exportContentService;
     }
 
-    public async Task HandleAsync(ContentPublishedNotification notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(ContentPublishedNotification notification, CancellationToken token)
     {
         await _exportContentService.ExportAsync(
             new ExportContent(
                 [.. notification.PublishedEntities],
                 ContentUpdate.UpdateKind.ReplaceProvidedProperties),
-            cancellationToken);
+            token);
     }
 }

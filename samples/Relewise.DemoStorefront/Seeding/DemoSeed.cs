@@ -14,7 +14,7 @@ namespace Relewise.DemoStorefront.Seeding;
 
 internal static class DemoSeed
 {
-    internal static async Task InitializeAsync(IServiceProvider root)
+    public static async Task InitializeAsync(IServiceProvider root)
     {
         await using AsyncServiceScope scope = root.CreateAsyncScope();
         IServiceProvider services = scope.ServiceProvider;

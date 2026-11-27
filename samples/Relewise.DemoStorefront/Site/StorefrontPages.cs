@@ -9,7 +9,7 @@ namespace Relewise.DemoStorefront.Site;
 
 internal static class StorefrontPages
 {
-    internal static async Task<StorefrontPage?> CreateAsync(IPublishedContent page, HttpContext http)
+    public static async Task<StorefrontPage?> CreateAsync(IPublishedContent page, HttpContext http)
     {
         string section = page.ContentType.Alias is DocumentTypeAliases.Article or DocumentTypeAliases.LocalizedArticle
             or DocumentTypeAliases.Guide ? "journal" :

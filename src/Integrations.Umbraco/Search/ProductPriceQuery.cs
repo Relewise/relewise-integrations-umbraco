@@ -25,7 +25,7 @@ internal sealed class ProductPriceQuery
     private readonly DecimalRangeFacet? _facet;
     private readonly bool _hasSorting;
 
-    internal ProductPriceQuery(string fieldName, UFilter[] filters, UFacet[] facets, Sorter[] sorters)
+    public ProductPriceQuery(string fieldName, UFilter[] filters, UFacet[] facets, Sorter[] sorters)
     {
         _fieldName = fieldName;
         UFilter[] selectedFilters = [.. filters.Where(filter => Matches(filter.FieldName))];
@@ -50,12 +50,12 @@ internal sealed class ProductPriceQuery
         }
     }
 
-    internal bool Matches(string? fieldName)
+    public bool Matches(string? fieldName)
     {
         return fieldName == _fieldName;
     }
 
-    internal void Apply(ProductSearchRequest request)
+    public void Apply(ProductSearchRequest request)
     {
         if (_filters.Length == 0 && _facet == null && !_hasSorting)
         {
@@ -93,7 +93,7 @@ internal sealed class ProductPriceQuery
         }
     }
 
-    internal RFilter MapFilter(UFilter filter, Currency? currency)
+    public RFilter MapFilter(UFilter filter, Currency? currency)
     {
         var price = (DecimalRangeFilter)filter;
         RFilter[] ranges = [.. price.Ranges.Select(range => MapRange(range, RequireCurrency(currency)))];
@@ -124,7 +124,7 @@ internal sealed class ProductPriceQuery
         return new AndFilter([lower, upper]);
     }
 
-    internal UFacetResult Read(ContentFacetResult? response)
+    public UFacetResult Read(ContentFacetResult? response)
     {
         PriceRangesFacetResult? result = response?.Items.OfType<PriceRangesFacetResult>()
             .FirstOrDefault(facet => facet.Field == FacetingField.SalesPrice &&

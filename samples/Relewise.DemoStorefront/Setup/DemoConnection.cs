@@ -9,16 +9,16 @@ namespace Relewise.DemoStorefront.Setup;
 // Configuration visibility and upstream error presentation belong to the demo, not the package.
 internal static class DemoConnection
 {
-    internal const string SetupUrl =
+    public const string SetupUrl =
         "https://github.com/Relewise/relewise-integrations-umbraco/tree/main/" +
         "samples/Relewise.DemoStorefront#connect-to-relewise";
 
-    internal static bool IsConfigured(HttpContext http)
+    public static bool IsConfigured(HttpContext http)
     {
         return http.RequestServices.GetService<RelewiseUmbracoConfiguration>() != null;
     }
 
-    internal static bool SearchConfigured(HttpContext http)
+    public static bool SearchConfigured(HttpContext http)
     {
         return IsConfigured(http) &&
                http.RequestServices
@@ -27,7 +27,7 @@ internal static class DemoConnection
                    .GetSearcher(SearchProviders.Catalogue) != null;
     }
 
-    internal static StorefrontResponse Unavailable(HttpContext http, bool json)
+    public static StorefrontResponse Unavailable(HttpContext http, bool json)
     {
         http.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
         http.Response.Headers.CacheControl = "no-store";
@@ -56,7 +56,7 @@ internal static class DemoConnection
             new StorefrontMessage(UnavailableMessage(http), Help: IsConfigured(http)));
     }
 
-    internal static IResult? RequireConnection(HttpContext http, bool json = false)
+    public static IResult? RequireConnection(HttpContext http, bool json = false)
     {
         if (IsConfigured(http))
         {
@@ -68,18 +68,18 @@ internal static class DemoConnection
         return Unavailable(http, json);
     }
 
-    internal static bool IsConnectionFailure(Exception error, CancellationToken aborted)
+    public static bool IsConnectionFailure(Exception error, CancellationToken token)
     {
-        if (aborted.IsCancellationRequested)
+        if (token.IsCancellationRequested)
         {
             return false;
         }
 
         return error is HttpRequestException or TimeoutException or OperationCanceledException ||
-               (error.InnerException != null && IsConnectionFailure(error.InnerException, aborted));
+               (error.InnerException != null && IsConnectionFailure(error.InnerException, token));
     }
 
-    internal static async Task InvokeAsync(
+    public static async Task InvokeAsync(
         HttpContext http,
         RequestDelegate next)
     {

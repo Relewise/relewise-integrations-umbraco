@@ -6,20 +6,20 @@ namespace Relewise.Integrations.Umbraco.Search;
 
 internal sealed class SearchProviderDefinition
 {
-    internal ConcurrentDictionary<string, SearchFieldDefinition> ResolvedFields { get; } = new(StringComparer.Ordinal);
+    public ConcurrentDictionary<string, SearchFieldDefinition> ResolvedFields { get; } = new(StringComparer.Ordinal);
 
-    internal object Options { get; }
-    internal Type EntityType { get; }
-    internal ContentSearchProviderOptions? ContentOptions { get; }
+    public object Options { get; }
+    public Type EntityType { get; }
+    public ContentSearchProviderOptions? ContentOptions { get; }
 
-    internal SearchProviderDefinition(object options, ContentSearchProviderOptions? contentOptions)
+    public SearchProviderDefinition(object options, ContentSearchProviderOptions? contentOptions)
     {
         Options = options;
         ContentOptions = contentOptions;
         EntityType = contentOptions == null ? typeof(Product) : typeof(Content);
     }
 
-    internal string Location(string providerAlias)
+    public string Location(string providerAlias)
     {
         return Options switch
         {

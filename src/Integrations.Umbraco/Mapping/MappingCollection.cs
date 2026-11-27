@@ -1,0 +1,34 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+
+namespace Relewise.Integrations.Umbraco.Mapping;
+
+// Runtime mappings own alias lookup and entity/export membership; builders retain mutable registration state.
+internal sealed class MappingCollection : IReadOnlyCollection<MappingDefinition>
+{
+    private readonly Dictionary<string, MappingDefinition> _byAlias;
+
+    public MappingCollection(IEnumerable<MappingDefinition> mappings)
+    {
+        _byAlias = mappings.ToDictionary(mapping => mapping.DocumentTypeAlias, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public int Count => _byAlias.Count;
+    public MappingDefinition this[string documentTypeAlias] => _byAlias[documentTypeAlias];
+    public IEnumerable<MappingDefinition> Exported => _byAlias.Values.Where(mapping => mapping.Export);
+    public bool HasExports => Exported.Any();
+
+    public bool TryGetMapping(string documentTypeAlias, [NotNullWhen(true)] out MappingDefinition? mapping)
+    {
+        return _byAlias.TryGetValue(documentTypeAlias, out mapping);
+    }
+
+    public bool HasEntityType(Type entityType) => _byAlias.Values.Any(mapping => mapping.EntityType == entityType);
+    public bool Exports(Type entityType) => Exported.Any(mapping => mapping.EntityType == entityType);
+
+    public IEnumerator<MappingDefinition> GetEnumerator() => _byAlias.Values.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+}

@@ -84,19 +84,22 @@ public class ProductPriceSearchTests
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
         {
             options.MapProduct("product");
-            options.SearchProviders.AddProduct(
-                "products",
-                provider =>
-                {
-                    provider.Map(product => product.SalesPrice, "price");
-                    provider.MapData<string[]>("category");
-                    provider.ConfigureRequest((request, _) =>
+            options.ConfigureSearch(search =>
+            {
+                search.AddProductProvider(
+                    "products",
+                    provider =>
                     {
-                        request.Currency = new Currency(currency);
-                        request.Filters = null;
-                        request.Facets = null;
+                        provider.Map(product => product.SalesPrice, "price");
+                        provider.MapData<string[]>("category");
+                        provider.ConfigureRequest((request, _) =>
+                        {
+                            request.Currency = new Currency(currency);
+                            request.Filters = null;
+                            request.Facets = null;
+                        });
                     });
-                });
+            });
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();
@@ -320,13 +323,13 @@ public class ProductPriceSearchTests
         bool binary,
         HttpStatusCode status = HttpStatusCode.OK) : HttpMessageHandler
     {
-        internal int RequestCount { get; private set; }
+        public int RequestCount { get; private set; }
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
-            CancellationToken cancellationToken)
+            CancellationToken token)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            token.ThrowIfCancellationRequested();
             Assert.EndsWith("/ProductSearchRequest", request.RequestUri!.AbsolutePath);
             RequestCount++;
             HttpContent content = binary

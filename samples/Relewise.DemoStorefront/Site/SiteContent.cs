@@ -8,7 +8,7 @@ namespace Relewise.DemoStorefront.Site;
 
 internal static class SiteContent
 {
-    internal static IPublishedContent Home(IServiceProvider services)
+    public static IPublishedContent Home(IServiceProvider services)
     {
         var navigation = services.GetRequiredService<IDocumentNavigationQueryService>();
         IPublishedContentCache content = services.GetRequiredService<IUmbracoContextAccessor>()
@@ -24,7 +24,7 @@ internal static class SiteContent
         return keys.Select(key => content.GetById(key)).OfType<IPublishedContent>().Single();
     }
 
-    internal static IEnumerable<IPublishedContent> ShoppingCategories(IPublishedContent home)
+    public static IEnumerable<IPublishedContent> ShoppingCategories(IPublishedContent home)
     {
         IPublishedContent? equipment = home.Descendants()
             .FirstOrDefault(node =>
@@ -34,14 +34,14 @@ internal static class SiteContent
         return equipment?.Children().Where(node => node.ContentType.Alias == DocumentTypeAliases.ProductCategory) ?? [];
     }
 
-    internal static IEnumerable<IPublishedContent> ShoppingBrands(IPublishedContent home)
+    public static IEnumerable<IPublishedContent> ShoppingBrands(IPublishedContent home)
     {
         return home.Descendants()
             .Where(node => node.ContentType.Alias == DocumentTypeAliases.Brand)
             .OrderBy(Title, StringComparer.CurrentCultureIgnoreCase);
     }
 
-    internal static string Title(IPublishedContent page)
+    public static string Title(IPublishedContent page)
     {
         return page.Value<string>(PropertyAliases.Heading) ?? page.Name;
     }

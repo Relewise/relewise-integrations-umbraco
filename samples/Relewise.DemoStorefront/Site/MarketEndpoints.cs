@@ -8,7 +8,7 @@ namespace Relewise.DemoStorefront.Site;
 
 internal static class MarketEndpoints
 {
-    internal static void MapMarket(this WebApplication app)
+    public static void MapMarket(this WebApplication app)
     {
         app.MapGet("/store/market", ChangeAsync);
     }

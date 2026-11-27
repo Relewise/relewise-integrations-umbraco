@@ -10,7 +10,7 @@ namespace Relewise.DemoStorefront.Seeding;
 // Explicit catalogue classification: a chair is an alternative to another chair, not a camping table.
 internal static class DemoProductTypes
 {
-    internal static async Task EnsureAsync(IServiceProvider services)
+    public static async Task EnsureAsync(IServiceProvider services)
     {
         var types = services.GetRequiredService<IContentTypeService>();
         IContentType productType = types.Get(DocumentTypeAliases.Product)!;

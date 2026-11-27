@@ -1,18 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Relewise.Integrations.Umbraco.Indexing;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search;
 using Umbraco.Cms.Core.Search.Indexing;
 
-namespace Relewise.Integrations.Umbraco.Indexing;
+namespace Relewise.Integrations.Umbraco.Search.Indexing;
 
-internal sealed class IndexingKeyCollector : IIndexer
+internal sealed class IndexingKeyCollector(ExportSourceBatch batch) : IIndexer
 {
-    internal HashSet<Guid> Keys { get; } = [];
-
-    internal Dictionary<Guid, CoreSearchDocument> Documents { get; } = new();
-
     public Task AddOrUpdateAsync(
         string indexAlias,
         Guid id,
@@ -21,9 +19,16 @@ internal sealed class IndexingKeyCollector : IIndexer
         IEnumerable<IndexField> fields,
         ContentProtection? protection)
     {
-        Keys.Add(id);
-
-        Documents[id] = new CoreSearchDocument([.. variations], protection);
+        Variation[] snapshot = [.. variations];
+        batch.Keys.Add(id);
+        batch.Documents[id] = new ExportSourceDocument(
+            [.. snapshot.Select(variation => variation.Culture)],
+            [
+                .. snapshot.Where(variation => variation.Segment == null)
+                    .Select(variation => variation.Culture?.ToLowerInvariant() ?? string.Empty)
+                    .Distinct()
+            ],
+            protection == null ? null : [.. protection.AccessIds]);
 
         return Task.CompletedTask;
     }
@@ -32,8 +37,8 @@ internal sealed class IndexingKeyCollector : IIndexer
     {
         foreach (Guid id in ids)
         {
-            Keys.Add(id);
-            Documents.Remove(id);
+            batch.Keys.Add(id);
+            batch.Documents.Remove(id);
         }
 
         return Task.CompletedTask;

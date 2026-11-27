@@ -10,7 +10,7 @@ namespace Relewise.DemoStorefront.Features.Cart;
 
 internal static class CartPricing
 {
-    internal static PricedCartLine[]? Price(
+    public static PricedCartLine[]? Price(
         List<CartLine> lines,
         IPublishedContentCache cache,
         HttpContext http,
@@ -51,7 +51,7 @@ internal static class CartPricing
         return [.. result];
     }
 
-    internal static bool InStock(PricedCartLine[] lines)
+    public static bool InStock(PricedCartLine[] lines)
     {
         return lines.GroupBy(line => line.Product.Key)
             .All(
@@ -59,7 +59,7 @@ internal static class CartPricing
                     line => line.Line.Quantity) <= group.First().Product.Value<int>(PropertyAliases.Stock));
     }
 
-    internal static string ReviewKey(
+    public static string ReviewKey(
         PricedCartLine[] lines,
         HttpContext http)
     {

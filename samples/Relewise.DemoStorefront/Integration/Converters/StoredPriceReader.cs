@@ -6,7 +6,7 @@ namespace Relewise.DemoStorefront.Integration.Converters;
 // Indexing and seeding read stored Block List payloads; published values use PriceConverter.
 internal static class StoredPriceReader
 {
-    internal static Dictionary<string, decimal> Read(string? json)
+    public static Dictionary<string, decimal> Read(string? json)
     {
         var prices = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
 

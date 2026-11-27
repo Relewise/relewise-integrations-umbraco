@@ -8,9 +8,9 @@ namespace Relewise.Integrations.Umbraco.Tests.Mapping;
 
 internal static class ContentIdentityTestSupport
 {
-    internal static readonly Guid SharedKey = Guid.Parse("1a234567-89ab-4cde-8f01-23456789abcd");
+    public static readonly Guid SharedKey = Guid.Parse("1a234567-89ab-4cde-8f01-23456789abcd");
 
-    internal static RelewiseUmbracoConfiguration Configuration(string? value)
+    public static RelewiseUmbracoConfiguration Configuration(string? value)
     {
         var services = new ServiceCollection();
 
@@ -26,7 +26,7 @@ internal static class ContentIdentityTestSupport
         return new RelewiseUmbracoConfiguration(provider);
     }
 
-    internal static IPublishedContent PublishedContent(int id, Guid key)
+    public static IPublishedContent PublishedContent(int id, Guid key)
     {
         var content = new Mock<IPublishedContent>();
         content.SetupGet(x => x.ContentType.Alias).Returns("article");
@@ -37,7 +37,7 @@ internal static class ContentIdentityTestSupport
         return content.Object;
     }
 
-    internal static IContent EditableContent(int id, Guid key, string alias = "article")
+    public static IContent EditableContent(int id, Guid key, string alias = "article")
     {
         var contentType = new Mock<ISimpleContentType>();
 

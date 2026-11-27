@@ -11,9 +11,9 @@ namespace Relewise.DemoStorefront.Site;
 
 internal static class StorefrontChrome
 {
-    internal static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+    public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    internal static StorefrontShellModel Create(HttpContext http, string section)
+    public static StorefrontShellModel Create(HttpContext http, string section)
     {
         http.Response.Headers.CacheControl = "no-store";
 

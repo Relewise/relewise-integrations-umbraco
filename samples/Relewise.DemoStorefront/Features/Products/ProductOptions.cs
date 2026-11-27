@@ -6,7 +6,7 @@ namespace Relewise.DemoStorefront.Features.Products;
 
 internal static class ProductOptions
 {
-    internal static string Label(IPublishedContent page)
+    public static string Label(IPublishedContent page)
     {
         foreach (string alias in new[] { PropertyAliases.OptionLabel, PropertyAliases.Color, PropertyAliases.Size })
         {

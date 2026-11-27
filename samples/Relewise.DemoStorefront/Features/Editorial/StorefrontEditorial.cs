@@ -7,7 +7,7 @@ namespace Relewise.DemoStorefront.Features.Editorial;
 
 internal static class StorefrontEditorial
 {
-    internal static EditorialSection[] Sections(
+    public static EditorialSection[] Sections(
         object? value,
         string culture)
     {

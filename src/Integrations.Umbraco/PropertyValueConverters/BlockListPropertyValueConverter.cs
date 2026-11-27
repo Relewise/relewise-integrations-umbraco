@@ -30,7 +30,7 @@ internal class BlockListPropertyValueConverter(IServiceProvider serviceProvider)
 
     public async ValueTask ConvertAsync(
         RelewisePropertyConverterContext context,
-        CancellationToken cancellationToken)
+        CancellationToken token)
     {
         var blockList = context.Property.GetValue<BlockListModel>(context.Culture);
 
@@ -52,18 +52,18 @@ internal class BlockListPropertyValueConverter(IServiceProvider serviceProvider)
                             blockItem.Content,
                             [context.Culture],
                             context.Services,
-                            cancellationToken)
+                            token)
                         : context.PublishedContent != null && context.Services != null
                             ? await propertyConverter.ConvertAsync(
                                 context.PublishedContent,
                                 blockItem.Content,
                                 [context.Culture],
                                 context.Services,
-                                cancellationToken)
+                                token)
                             : await propertyConverter.ConvertAsync(
                                 blockItem.Content.Properties,
                                 [context.Culture],
-                                cancellationToken);
+                                token);
 
                 properties.AddRange(converted.Values);
             }

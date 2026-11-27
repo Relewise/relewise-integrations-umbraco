@@ -10,7 +10,7 @@ namespace Relewise.DemoStorefront.Features.Cart;
 
 internal static class CartEndpoints
 {
-    internal static void MapCart(this WebApplication app)
+    public static void MapCart(this WebApplication app)
     {
         app.MapGet(
             "/{language:regex(^(en|da)$)}/cart/state",

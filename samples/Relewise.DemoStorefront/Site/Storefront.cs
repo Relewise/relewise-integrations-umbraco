@@ -10,7 +10,7 @@ namespace Relewise.DemoStorefront.Site;
 
 internal static class Storefront
 {
-    internal static string Text(
+    public static string Text(
         HttpContext http,
         string key,
         params object[] values)
@@ -23,7 +23,7 @@ internal static class Storefront
         return values.Length == 0 ? text : string.Format(culture, text, values);
     }
 
-    internal static string Image(IPublishedContent content)
+    public static string Image(IPublishedContent content)
     {
         var image = content.Value<string>(PropertyAliases.HeroImage);
 
@@ -50,7 +50,7 @@ internal static class Storefront
         return Markup(tag);
     }
 
-    internal static string Icon()
+    public static string Icon()
     {
         var svg = new TagBuilder("svg");
         svg.Attributes["viewBox"] = "0 0 200 180";
@@ -75,7 +75,7 @@ internal static class Storefront
     }
 
     // Existing Vue payloads carry image fragments. TagBuilder encodes attributes; page markup lives in Razor.
-    internal static string Markup(IHtmlContent content)
+    public static string Markup(IHtmlContent content)
     {
         using var writer = new StringWriter(CultureInfo.InvariantCulture);
         content.WriteTo(writer, HtmlEncoder.Default);

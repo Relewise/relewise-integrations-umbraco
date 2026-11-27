@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Relewise.Integrations.Umbraco.Search;
 using Relewise.Integrations.Umbraco.Tests.Mapping;
 
 namespace Relewise.Integrations.Umbraco.Tests.Search;
@@ -17,16 +18,22 @@ public class SearchProviderConfigurationTests
                 if (product)
                 {
                     options.MapProduct("product");
-                    options.SearchProviders.AddProduct(
-                        "search",
-                        provider => provider.UnsupportedSegmentBehavior = null!);
+                    options.ConfigureSearch(search =>
+                    {
+                        search.AddProductProvider(
+                            "search",
+                            provider => provider.UnsupportedSegmentBehavior = null!);
+                    });
                 }
                 else
                 {
                     options.MapContent("article");
-                    options.SearchProviders.AddContent(
-                        "search",
-                        provider => provider.UnsupportedSegmentBehavior = null!);
+                    options.ConfigureSearch(search =>
+                    {
+                        search.AddContentProvider(
+                            "search",
+                            provider => provider.UnsupportedSegmentBehavior = null!);
+                    });
                 }
             });
         });
@@ -40,7 +47,10 @@ public class SearchProviderConfigurationTests
             using ServiceProvider _ = MappingTestServices.Create(options =>
             {
                 options.MapContent("article");
-                options.SearchProviders.AddProduct("products");
+                options.ConfigureSearch(search =>
+                {
+                    search.AddProductProvider("products");
+                });
             });
         });
         Assert.Throws<InvalidOperationException>(() =>
@@ -48,19 +58,25 @@ public class SearchProviderConfigurationTests
             using ServiceProvider _ = MappingTestServices.Create(options =>
             {
                 options.MapContent("article");
-                options.SearchProviders.AddContent("articles", provider => provider.DocumentTypeAliases = ["missing"]);
+                options.ConfigureSearch(search =>
+                {
+                    search.AddContentProvider("articles", provider => provider.DocumentTypeAliases = ["missing"]);
+                });
             });
         });
 
         using ServiceProvider services = MappingTestServices.Create(options =>
         {
             options.MapContent("article");
-            options.SearchProviders.AddContent("articles");
+            options.ConfigureSearch(search =>
+            {
+                search.AddContentProvider("articles");
+            });
         });
 
         Assert.Null(
             services.GetRequiredService<RelewiseUmbracoConfiguration>()
-                .SearchProviders
+                .GetSearchOptions()
                 .DefaultPublishedContentProviderAlias);
     }
 }

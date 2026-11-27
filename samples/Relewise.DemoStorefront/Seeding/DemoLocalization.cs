@@ -10,7 +10,7 @@ namespace Relewise.DemoStorefront.Seeding;
 
 internal static class DemoLocalization
 {
-    internal static async Task EnsureAsync(IServiceProvider services)
+    public static async Task EnsureAsync(IServiceProvider services)
     {
         var content = services.GetRequiredService<IContentService>();
         var types = services.GetRequiredService<IContentTypeService>();

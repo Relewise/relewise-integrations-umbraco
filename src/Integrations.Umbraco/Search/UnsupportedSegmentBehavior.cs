@@ -17,7 +17,7 @@ public sealed class UnsupportedSegmentBehavior
     /// </summary>
     public static UnsupportedSegmentBehavior Throw()
     {
-        return new UnsupportedSegmentBehavior(false);
+        return new UnsupportedSegmentBehavior(ignoreSegment: false);
     }
 
     /// <summary>
@@ -25,6 +25,6 @@ public sealed class UnsupportedSegmentBehavior
     /// </summary>
     public static UnsupportedSegmentBehavior Ignore()
     {
-        return new UnsupportedSegmentBehavior(true);
+        return new UnsupportedSegmentBehavior(ignoreSegment: true);
     }
 }

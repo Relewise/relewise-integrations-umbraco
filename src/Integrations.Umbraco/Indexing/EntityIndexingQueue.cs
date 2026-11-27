@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using Relewise.Client.DataTypes;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Umbraco.Cms.Core.HostedServices;
-using Umbraco.Cms.Core.Search.Indexing;
 
 namespace Relewise.Integrations.Umbraco.Indexing;
 
@@ -26,13 +25,13 @@ internal sealed class EntityIndexingQueue(
     private readonly AsyncLocal<Execution?> _execution = new();
     private bool _flushQueued;
 
-    internal void EnqueueChanges(IEnumerable<ContentChange> changes)
+    public void EnqueueChanges(IEnumerable<ExportChange> changes)
     {
-        ContentChange[][] batches = [.. changes.Chunk(BatchSize)];
+        ExportChange[][] batches = [.. changes.Chunk(BatchSize)];
 
         lock (_sync)
         {
-            foreach (ContentChange[] batch in batches)
+            foreach (ExportChange[] batch in batches)
             {
                 _pending.Enqueue(new Changes(batch));
             }
@@ -41,7 +40,7 @@ internal sealed class EntityIndexingQueue(
         ScheduleFlush();
     }
 
-    internal void EnqueueDeletion(DeletedEntity[] entities, Guid[] parents)
+    public void EnqueueDeletion(DeletedEntity[] entities, Guid[] parents)
     {
         var snapshot = new Deletion([.. entities], [.. parents]);
 
@@ -53,7 +52,7 @@ internal sealed class EntityIndexingQueue(
         ScheduleFlush();
     }
 
-    internal Task ExportAsync(
+    public Task ExportAsync(
         IEnumerable<Guid> keys,
         ContentUpdate.UpdateKind? updateKind = null,
         long? version = null,
@@ -64,7 +63,7 @@ internal sealed class EntityIndexingQueue(
         return ExecuteAsync(cancellation => indexing.ExportAsync(identities, updateKind, version, cancellation), token);
     }
 
-    internal Task RebuildAsync(bool permanentlyDelete = false, CancellationToken token = default)
+    public Task RebuildAsync(bool permanentlyDelete = false, CancellationToken token = default)
     {
         return ExecuteAsync(cancellation => indexing.RebuildAsync(permanentlyDelete, cancellation), token);
     }
@@ -204,7 +203,7 @@ internal sealed class EntityIndexingQueue(
                 return work;
             }
 
-            var combined = new List<ContentChange>(first.Items);
+            var combined = new List<ExportChange>(first.Items);
 
             while (_pending.TryPeek(out Work? next) && next is Changes changes &&
                    combined.Count + changes.Items.Length <= BatchSize)
@@ -239,7 +238,7 @@ internal sealed class EntityIndexingQueue(
                     await indexing.DeleteAsync(deletion.Entities, token);
                     if (deletion.Parents.Length > 0)
                     {
-                        await indexing.ExportAsync(deletion.Parents, cancellationToken: token);
+                        await indexing.ExportAsync(deletion.Parents, token: token);
                     }
 
                     break;
@@ -296,17 +295,17 @@ internal sealed class EntityIndexingQueue(
 
     private sealed class Execution
     {
-        internal volatile bool Active = true;
+        public volatile bool Active = true;
     }
 
     private abstract record Work;
 
-    private sealed record Changes(ContentChange[] Items) : Work;
+    private sealed record Changes(ExportChange[] Items) : Work;
 
     private sealed record Deletion(DeletedEntity[] Entities, Guid[] Parents) : Work;
 
     private sealed record Boundary(Func<CancellationToken, Task> Action, CancellationToken Token) : Work
     {
-        internal TaskCompletionSource Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 }

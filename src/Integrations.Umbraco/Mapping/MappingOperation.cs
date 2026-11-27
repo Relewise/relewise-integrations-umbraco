@@ -10,14 +10,14 @@ namespace Relewise.Integrations.Umbraco.Mapping;
 
 internal sealed class MappingOperation(
     IServiceProvider services,
-    CancellationToken cancellationToken) : IAsyncDisposable
+    CancellationToken token) : IAsyncDisposable
 {
     private readonly Dictionary<Type, object> _instances = new();
-    internal IServiceProvider Services { get; } = services;
-    internal CancellationToken CancellationToken { get; } = cancellationToken;
-    internal bool FullRebuild { get; init; }
+    public IServiceProvider Services { get; } = services;
+    public CancellationToken CancellationToken { get; } = token;
+    public bool FullRebuild { get; init; }
 
-    internal object Resolve(Type type)
+    public object Resolve(Type type)
     {
         // DI owns registered services; this operation disposes only instances it creates itself.
         object? registered = Services.GetService(type);
@@ -38,14 +38,14 @@ internal sealed class MappingOperation(
         return instance;
     }
 
-    internal T Resolve<T>() where T : class
+    public T Resolve<T>() where T : class
     {
         return (T)Resolve(typeof(T));
     }
 
     private Task<string>? _defaultCulture;
 
-    internal async Task<string> DefaultCultureAsync(string[] publishedCultures)
+    public async Task<string> DefaultCultureAsync(string[] publishedCultures)
     {
         string culture = await (_defaultCulture ??= Services
             .GetRequiredService<ILanguageService>()

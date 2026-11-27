@@ -11,7 +11,7 @@ namespace Relewise.DemoStorefront.Features.Cart;
 
 internal static class CartModelBuilder
 {
-    internal static CartLineModel LineModel(
+    public static CartLineModel LineModel(
         CartLine line,
         PricedCartLine? priced,
         HttpContext http,
@@ -39,7 +39,7 @@ internal static class CartModelBuilder
         };
     }
 
-    internal static CartModel Model(
+    public static CartModel Model(
         HttpContext http,
         List<CartLine> lines,
         PricedCartLine[] priced)

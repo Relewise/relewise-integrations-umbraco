@@ -9,7 +9,7 @@ namespace Relewise.DemoStorefront.Seeding;
 // Build the native editor values so the published models exercise the actual Umbraco converters.
 internal static class DemoBlockValues
 {
-    internal static string Story(IContentTypeService types, string body)
+    public static string Story(IContentTypeService types, string body)
     {
         var key = Guid.NewGuid();
         string markup = string.Concat(
@@ -30,7 +30,7 @@ internal static class DemoBlockValues
         );
     }
 
-    internal static string Prices(
+    public static string Prices(
         Guid priceType,
         params (string Currency, decimal Amount)[] prices)
     {
@@ -57,7 +57,7 @@ internal static class DemoBlockValues
             ]);
     }
 
-    internal static string EditorialList(IContentTypeService types, bool localized)
+    public static string EditorialList(IContentTypeService types, bool localized)
     {
         Guid textType = types.Get(DocumentTypeAliases.EditorialText)!.Key;
         Guid nestedType = types.Get(
@@ -167,7 +167,7 @@ internal static class DemoBlockValues
         );
     }
 
-    internal static string Grid(IContentTypeService types)
+    public static string Grid(IContentTypeService types)
     {
         Guid groupType = types.Get(DocumentTypeAliases.EditorialGroup)!.Key;
         Guid textType = types.Get(DocumentTypeAliases.EditorialText)!.Key;
@@ -222,7 +222,7 @@ internal static class DemoBlockValues
     }
 
     // Only seed copy is translated here; the stored Block List/Grid values remain editable native Umbraco content.
-    internal static string InDanish(string json)
+    public static string InDanish(string json)
     {
         var translations = new Dictionary<string, string>
         {

@@ -13,11 +13,11 @@ using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
 using Relewise.Client.Requests.Queries;
 using Relewise.Client.Requests.Shared;
+using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.Mapping;
-using Relewise.Integrations.Umbraco.Search;
 using Umbraco.Cms.Core.Search.Indexing;
 
-namespace Relewise.Integrations.Umbraco.Indexing;
+namespace Relewise.Integrations.Umbraco.Search.Indexing;
 
 internal sealed class IndexMetadataService(
     IServiceScopeFactory scopes,
@@ -32,10 +32,10 @@ internal sealed class IndexMetadataService(
     private readonly Lock _sync = new();
     private readonly Dictionary<string, CachedMetadata> _cache = new(StringComparer.OrdinalIgnoreCase);
 
-    internal Task<IndexMetadata> GetMetadataAsync(string indexAlias)
+    public Task<IndexMetadata> GetMetadataAsync(string indexAlias)
     {
-        if (!string.Equals(indexAlias, EntityIndexingService.IndexAlias, StringComparison.OrdinalIgnoreCase) &&
-            !configuration.SearchProviders.Providers.ContainsKey(indexAlias))
+        if (!string.Equals(indexAlias, SearchExportOperations.IndexAlias, StringComparison.OrdinalIgnoreCase) &&
+            !configuration.GetSearchOptions().Providers.ContainsKey(indexAlias))
         {
             return Task.FromResult(Unavailable());
         }
@@ -68,15 +68,16 @@ internal sealed class IndexMetadataService(
             var clients = services.GetRequiredService<IRelewiseClientFactory>();
             var reader = clients.GetClient<IDataAccessor>(Constants.ClientNames.Integration);
 
-            configuration.SearchProviders.Providers.TryGetValue(indexAlias, out SearchProviderDefinition? provider);
+            configuration.GetSearchOptions().Providers.TryGetValue(indexAlias, out SearchProviderDefinition? provider);
             MappingDefinition[] mappings =
             [
-                .. configuration.Mappings.Values.Where(mapping =>
+                .. configuration.Mappings.Where(mapping =>
                     mapping.Export && mapping.EntityType != typeof(ProductVariant) &&
                     (provider == null || mapping.EntityType == provider.EntityType) &&
                     (provider?.ContentOptions?.DocumentTypeAliases == null ||
                      provider.ContentOptions.DocumentTypeAliases.Contains(
-                         mapping.DocumentTypeAlias, StringComparer.OrdinalIgnoreCase)))
+                         mapping.DocumentTypeAlias,
+                         StringComparer.OrdinalIgnoreCase)))
             ];
 
             if (mappings.Length == 0)
@@ -91,7 +92,7 @@ internal sealed class IndexMetadataService(
                 var filters = new FilterCollection(
                     new OrFilter(
                     [
-                        .. group.Select(mapping => EntityIndexingService.DataFilter(
+                        .. group.Select(mapping => EntityExportDelivery.DataFilter(
                             group.Key,
                             RelewiseDataKeys.DocumentTypeAlias,
                             new EqualsCondition(mapping.DocumentTypeAlias)))
@@ -99,7 +100,7 @@ internal sealed class IndexMetadataService(
 
                 cancellation.Token.ThrowIfCancellationRequested();
                 count += await CountAsync(reader, group.Key, filters, cancellation.Token)
-                    ?? throw new InvalidOperationException("Relewise did not return the requested entity total.");
+                         ?? throw new InvalidOperationException("Relewise did not return the requested entity total.");
             }
 
             // A successful read establishes accessibility, not search readiness or export freshness.
@@ -126,7 +127,7 @@ internal sealed class IndexMetadataService(
         if (entityType == typeof(Product))
         {
             // The supported Product query constructor requires a positive page size.
-            var query = new ProductQuery(filters, false, 1)
+            var query = new ProductQuery(filters, excludeProductsWithNoVariants: false, pageSize: 1)
             {
                 ReturnTotalNumberOfResults = true,
                 IncludeDisabledProducts = true,

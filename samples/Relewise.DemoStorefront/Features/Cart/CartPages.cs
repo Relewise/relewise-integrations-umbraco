@@ -12,7 +12,7 @@ namespace Relewise.DemoStorefront.Features.Cart;
 
 internal static class CartPages
 {
-    internal static async Task<IResult> Page(
+    public static async Task<IResult> Page(
         HttpContext http,
         bool checkout)
     {
@@ -97,7 +97,7 @@ internal static class CartPages
         }
     }
 
-    internal static IResult Confirmation(HttpContext http)
+    public static IResult Confirmation(HttpContext http)
     {
         if (DemoConnection.RequireConnection(http) is { } blocked)
         {

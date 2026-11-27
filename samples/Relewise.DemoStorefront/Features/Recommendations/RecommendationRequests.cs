@@ -11,9 +11,9 @@ namespace Relewise.DemoStorefront.Features.Recommendations;
 
 internal static class RecommendationRequests
 {
-    internal const int VisibleCount = 4;
+    public const int VisibleCount = 4;
 
-    internal static ProductRecommendationRequestCollection CreateRequests(
+    public static ProductRecommendationRequestCollection CreateRequests(
         User user,
         DemoMarket market,
         string productId,
@@ -68,7 +68,7 @@ internal static class RecommendationRequests
         );
     }
 
-    internal static RecentlyViewedProductsRequest CreateRecentlyViewed(
+    public static RecentlyViewedProductsRequest CreateRecentlyViewed(
         User user,
         DemoMarket market,
         string? excludedProductId = null,
@@ -88,7 +88,7 @@ internal static class RecommendationRequests
         return request;
     }
 
-    internal static PopularProductsRequest CreatePopularProducts(
+    public static PopularProductsRequest CreatePopularProducts(
         User user,
         DemoMarket market,
         bool emptyCart = false)
@@ -108,7 +108,7 @@ internal static class RecommendationRequests
         return request;
     }
 
-    internal static PopularProductCategoriesRecommendationRequest CreatePopularCategories(
+    public static PopularProductCategoriesRecommendationRequest CreatePopularCategories(
         User user,
         DemoMarket market,
         IEnumerable<string> categoryIds)

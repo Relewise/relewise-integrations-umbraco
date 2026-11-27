@@ -65,9 +65,12 @@ public class BooleanProductSearchTests
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
         {
             options.MapProduct("product");
-            options.SearchProviders.AddProduct(
-                "products",
-                provider => provider.MapData<bool>("sale", field => field.DataKey = "onSale_EUR"));
+            options.ConfigureSearch(search =>
+            {
+                search.AddProductProvider(
+                    "products",
+                    provider => provider.MapData<bool>("sale", field => field.DataKey = "onSale_EUR"));
+            });
         });
         services.AddSingleton<RelewiseUmbracoConfiguration>();
         services.AddTransient<MappedEntitySearcher>();

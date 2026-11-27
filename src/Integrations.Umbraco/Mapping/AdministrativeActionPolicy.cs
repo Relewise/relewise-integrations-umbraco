@@ -17,7 +17,7 @@ public class AdministrativeActionPolicy
     /// </summary>
     public static AdministrativeActionPolicy Synchronize()
     {
-        return new AdministrativeActionPolicy(true);
+        return new AdministrativeActionPolicy(enabled: true);
     }
 
     /// <summary>
@@ -25,6 +25,6 @@ public class AdministrativeActionPolicy
     /// </summary>
     public static AdministrativeActionPolicy None()
     {
-        return new AdministrativeActionPolicy(false);
+        return new AdministrativeActionPolicy(enabled: false);
     }
 }
