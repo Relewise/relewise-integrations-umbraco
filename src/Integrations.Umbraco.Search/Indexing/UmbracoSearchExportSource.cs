@@ -5,17 +5,20 @@ using System.Threading.Tasks;
 using Relewise.Integrations.Umbraco.Indexing;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Search.Indexing;
+using Umbraco.Cms.Core.Services.Navigation;
 
 namespace Relewise.Integrations.Umbraco.Search.Indexing;
 
-internal sealed class UmbracoSearchExportSource(IPublishedContentChangeStrategy strategy)
+internal sealed class UmbracoSearchExportSource(
+    IPublishedContentChangeStrategy strategy,
+    IDocumentNavigationQueryService navigation)
 {
     public async Task<ExportSourceBatch> CollectAsync(ExportChange[] changes, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
 
         var batch = new ExportSourceBatch();
-        var collector = new IndexingKeyCollector(batch);
+        var collector = new IndexingKeyCollector(batch, navigation);
 
         await strategy.HandleAsync(
             [new ContentIndexInfo(SearchExportOperations.IndexAlias, [UmbracoObjectTypes.Document], collector)],
@@ -35,7 +38,7 @@ internal sealed class UmbracoSearchExportSource(IPublishedContentChangeStrategy 
         token.ThrowIfCancellationRequested();
 
         var batch = new ExportSourceBatch();
-        var collector = new IndexingKeyCollector(batch);
+        var collector = new IndexingKeyCollector(batch, navigation);
 
         await strategy.RebuildAsync(
             new ContentIndexInfo(SearchExportOperations.IndexAlias, [UmbracoObjectTypes.Document], collector),

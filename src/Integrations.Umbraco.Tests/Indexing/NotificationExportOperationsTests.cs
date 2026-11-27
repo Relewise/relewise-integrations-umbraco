@@ -7,15 +7,67 @@ using Relewise.Client.Requests;
 using Relewise.Client.Requests.Queries;
 using Relewise.Client.Responses;
 using Relewise.Integrations.Umbraco.Indexing;
+using Relewise.Integrations.Umbraco.Mapping;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.Persistence.Querying;
+using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
 
 namespace Relewise.Integrations.Umbraco.Tests.Indexing;
 
 public class NotificationExportOperationsTests
 {
+    [Theory]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, true)]
+    public async Task OnlyCulturesWithAPublishedAncestorPathAreExported(
+        bool rebuild,
+        bool englishPublished,
+        bool danishPublished)
+    {
+        await using var fixture = new Fixture(configureMapping: options => options.MapBrand("article", mapping =>
+        {
+            mapping.AdministrativeActions = AdministrativeActionPolicy.None();
+            mapping.UseMapper<CultureMapper>();
+        }));
+        IPublishedContent node = fixture.PublishedArticle();
+        fixture.Publication.Setup(value => value.HasPublishedAncestorPath(node.Key, "en-US"))
+            .Returns(englishPublished);
+        fixture.Publication.Setup(value => value.HasPublishedAncestorPath(node.Key, "da-DK")).Returns(danishPublished);
+
+        if (rebuild)
+        {
+            await fixture.Exports.RebuildAsync();
+        }
+        else
+        {
+            await fixture.Exports.ApplyChangesAsync(
+                [new ExportChange(node.Key, ExportChangeImpact.Remove, true)],
+                CancellationToken.None);
+        }
+
+        BrandUpdate[] updates = [.. fixture.Sent.OfType<BrandUpdate>()];
+        if (englishPublished)
+        {
+            BrandUpdate update = Assert.Single(updates);
+            string[] expected = danishPublished ? ["en-US", "da-DK"] : ["en-US"];
+            Assert.NotNull(update.Brand.Data);
+            Assert.Equal(expected, update.Brand.Data["mappedCultures"]!.ValueAs<List<string>>());
+        }
+        else
+        {
+            Assert.Empty(updates);
+        }
+    }
+
     [Fact]
     public async Task FullExportWorksWithoutUmbracoSearchAndReconcilesMappedEntities()
     {
@@ -108,10 +160,14 @@ public class NotificationExportOperationsTests
     {
         private readonly ServiceProvider _services;
         public Mock<IContentService> Content { get; } = new();
+        public Mock<IPublishedContentCache> Cache { get; } = new();
+        public Mock<IDocumentPublishStatusQueryService> Publication { get; } = new();
         public List<Trackable> Sent { get; } = [];
         public NotificationExportOperations Exports { get; }
 
-        public Fixture(Action<IServiceCollection>? configure = null)
+        public Fixture(
+            Action<IServiceCollection>? configure = null,
+            Action<RelewiseUmbracoOptionsBuilder>? configureMapping = null)
         {
             Content.Setup(value => value.GetRootContent()).Returns([]);
             var languages = new Mock<ILanguageService>();
@@ -127,18 +183,31 @@ public class NotificationExportOperationsTests
             clients.Setup(value => value.GetClient<ITracker>(It.IsAny<string>())).Returns(tracker.Object);
             clients.Setup(value => value.GetClient<IDataAccessor>(It.IsAny<string>())).Returns(reader.Object);
             var contexts = new Mock<IUmbracoContextFactory>();
+            var context = new Mock<IUmbracoContext>();
+            context.SetupGet(value => value.Content).Returns(Cache.Object);
             contexts.Setup(value => value.EnsureUmbracoContext())
                 .Returns(() =>
-                    new UmbracoContextReference(Mock.Of<IUmbracoContext>(), false, Mock.Of<IUmbracoContextAccessor>()));
+                    new UmbracoContextReference(context.Object, false, Mock.Of<IUmbracoContextAccessor>()));
             var services = new ServiceCollection();
             services.AddLogging();
             services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
-                options.MapContent("article"));
+            {
+                if (configureMapping == null)
+                {
+                    options.MapContent("article");
+                }
+                else
+                {
+                    configureMapping(options);
+                }
+            });
             services.AddSingleton<RelewiseUmbracoConfiguration>();
             services.AddSingleton(Content.Object);
             services.AddSingleton(languages.Object);
             services.AddSingleton(clients.Object);
             services.AddSingleton(contexts.Object);
+            services.AddSingleton(Publication.Object);
+            services.AddSingleton(Mock.Of<IPublicAccessService>());
             services.AddSingleton<NotificationExportOperations>();
             configure?.Invoke(services);
             _services = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
@@ -146,5 +215,40 @@ public class NotificationExportOperationsTests
         }
 
         public ValueTask DisposeAsync() => _services.DisposeAsync();
+
+        public IPublishedContent PublishedArticle()
+        {
+            var type = new Mock<IPublishedContentType>();
+            type.SetupGet(value => value.Alias).Returns("article");
+            type.SetupGet(value => value.Variations).Returns(ContentVariation.Culture);
+            var node = new Mock<IPublishedContent>();
+            node.SetupGet(value => value.Id).Returns(42);
+            node.SetupGet(value => value.Key).Returns(Guid.NewGuid());
+            node.SetupGet(value => value.Path).Returns("-1,42");
+            node.SetupGet(value => value.ContentType).Returns(type.Object);
+            node.SetupGet(value => value.Cultures).Returns(new Dictionary<string, PublishedCultureInfo>
+            {
+                ["en-US"] = new("en-US", "English", "english", DateTime.UnixEpoch),
+                ["da-DK"] = new("da-DK", "Danish", "danish", DateTime.UnixEpoch)
+            });
+            Cache.Setup(value => value.GetById(node.Object.Key)).Returns(node.Object);
+
+            IContent editable = Mock.Of<IContent>(value => value.Key == node.Object.Key && value.Id == 42);
+            Content.Setup(value => value.GetById(node.Object.Key)).Returns(editable);
+            Content.Setup(value => value.GetRootContent()).Returns([editable]);
+            Content.Setup(value => value.GetPagedDescendants(
+                    42, 0, 1000, out It.Ref<long>.IsAny, It.IsAny<IQuery<IContent>?>(), It.IsAny<Ordering?>()))
+                .Returns([]);
+            return node.Object;
+        }
+    }
+
+    private sealed class CultureMapper : IEntityMapper<Brand>
+    {
+        public Task MapAsync(EntityMappingContext<Brand> context, CancellationToken token)
+        {
+            context.Entity.Data!["mappedCultures"] = context.CulturesToPublish.ToArray();
+            return Task.CompletedTask;
+        }
     }
 }

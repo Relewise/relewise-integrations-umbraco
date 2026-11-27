@@ -18,6 +18,7 @@ using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Search.Configuration;
 using Umbraco.Cms.Core.Search.Indexing;
+using Umbraco.Cms.Core.Services.Navigation;
 
 namespace Relewise.Integrations.Umbraco.Tests.Indexing;
 
@@ -107,6 +108,7 @@ public class ExportSystemRegistrationTests
         services.AddSingleton(Mock.Of<IHostApplicationLifetime>());
         services.AddSingleton(Mock.Of<IBackgroundTaskQueue>());
         services.AddScoped(_ => Mock.Of<IPublishedContentChangeStrategy>());
+        services.AddSingleton(Mock.Of<IDocumentNavigationQueryService>());
         new SearchComposer().Compose(new TestBuilder(services));
         using ServiceProvider provider = services.BuildServiceProvider(
             new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });

@@ -23,6 +23,7 @@ using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Search.Indexing;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
 
 namespace Relewise.Integrations.Umbraco.Tests.Indexing;
@@ -474,6 +475,7 @@ public class SearchExportOperationsTests
             services.AddSingleton(contexts.Object);
             services.AddSingleton(languages.Object);
             services.AddSingleton(Strategy.Object);
+            services.AddSingleton(Mock.Of<IDocumentNavigationQueryService>());
             services.AddScoped<UmbracoSearchExportSource>();
             services.AddSingleton(Mock.Of<IContentService>());
             services.AddSingleton<SearchExportOperations>();

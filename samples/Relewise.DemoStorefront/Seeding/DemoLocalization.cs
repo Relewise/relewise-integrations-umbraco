@@ -126,10 +126,10 @@ internal static class DemoLocalization
 
         var domains = services.GetRequiredService<IDomainService>();
         IContent home = content.GetById(nodes.Single(node => node.ContentType.Alias == DocumentTypeAliases.Home).Key)!;
-        IContent story = nodes.Single(node => node.ContentType.Alias == DocumentTypeAliases.LocalizedArticle);
+        IContent? story = FindSeededArticle(nodes);
 
         // One site root gives every entity the same native culture-aware URL hierarchy.
-        if (story.ParentId == -1)
+        if (story is { ParentId: -1 })
         {
             Attempt<DomainUpdateResult, DomainOperationStatus> removed = await domains.UpdateDomainsAsync(
                 story.Key,
@@ -254,6 +254,15 @@ internal static class DemoLocalization
         }
 
         await DemoDictionary.EnsureAsync(services);
+    }
+
+    public static IContent? FindSeededArticle(IEnumerable<IContent> nodes)
+    {
+        IContent[] articles = [.. nodes.Where(node => node.ContentType.Alias == DocumentTypeAliases.LocalizedArticle)];
+
+        // Earlier installations generated a random key for this seed.
+        return articles.FirstOrDefault(node => node.Key == ContentKeys.LocalizedArticle)
+               ?? articles.FirstOrDefault(node => node.GetCultureName("en-US") == "Across the seasons");
     }
 
     private static (string Name, string Body)? Translate(
