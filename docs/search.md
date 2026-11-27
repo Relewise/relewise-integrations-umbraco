@@ -103,16 +103,15 @@ value, regardless of the number of site languages. Legacy AutoMap output is unch
 Full exports stamp one numeric `UmbracoVersionId` on their entities and reconcile matching
 source entities with a different version only after successful ingestion. The comparison
 is inequality, not chronological ordering. Automatically generated versions increase within
-the selected export system even when the clock does not advance; explicit delta-export versions
+the running application even when the clock does not advance; explicit delta-export versions
 remain caller-supplied. Coordinate writers across processes sharing the same mapping scope.
 
-`AddRelewise` uses notification-based export by default. Calling
-`options.ConfigureSearch()` replaces that export system with Umbraco Search's
-change and rebuild flow, even when no named query providers are configured.
-Only one export system is active; Core's content notification handler does not
-export when Umbraco Search indexing is selected. The Export API and dashboard
-actions delegate to the selected system. Call `ConfigureSearch` only once across
-all registration callbacks; repeated calls are rejected.
+`AddRelewise` exports publication changes through Umbraco notifications by default.
+Calling `options.ConfigureSearch()` uses Umbraco Search's indexing flow instead,
+even when no named query providers are configured. These two mechanisms do not
+export the same change twice. Explicit exports and dashboard rebuild actions use
+the configured indexing flow too. Call `ConfigureSearch` only once across all
+registration callbacks; repeated calls are rejected.
 Named query providers do not add indexing pipelines or create additional Relewise
 indexes. Every provider uses the Dataset's default Relewise index.
 

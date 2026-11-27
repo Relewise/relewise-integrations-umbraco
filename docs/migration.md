@@ -91,10 +91,10 @@ implementations are checked per operation. HTTP routes are unchanged.
 
 ### Indexing and search
 
-The integration uses one selected export system for publication changes,
-rebuilds and explicit exports. Core uses notifications. Call `ConfigureSearch()`
-to select Umbraco Search indexing, optionally adding named query providers with
-`AddContentProvider` and `AddProductProvider` inside its callback.
+By default, publication changes trigger exports through Umbraco notifications.
+Call `ConfigureSearch()` to use Umbraco Search's indexing flow instead, optionally
+adding named query providers with `AddContentProvider` and `AddProductProvider`
+inside its callback. Rebuilds and explicit exports use the configured indexing flow too.
 Queries through Umbraco's default published-content provider retain their existing
 search implementation unless `DefaultPublishedContentProviderAlias` is configured. See the
 [search guide](search.md) for provider registration and query behavior.
