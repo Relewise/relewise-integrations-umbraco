@@ -37,6 +37,7 @@
 
 ## Examples, tests and local material
 
+- Use [CONTRIBUTING.md](CONTRIBUTING.md) for repository build profiles, test commands and regression coverage. Keep these contributor instructions out of package-user guides.
 - Keep runnable examples and their mapping/converter implementations centralized in `samples/Relewise.DemoStorefront`. Link guides to those source files rather than adding separate example projects or duplicate implementations. Preserve culture-aware mapping, nested block extraction and legacy compatibility examples when updating the demo.
 - Organize the DemoStorefront by feature, with package examples in `Integration`, shared site presentation/context in `Site`, installation in `Setup` and seeded schema/content in `Seeding`. Match namespaces to folders; keep HTTP adapters separate from shopping operations and rendering. Keep Vue components grouped by feature under `Client/src`.
 - Render storefront pages and shared presentation in strongly typed Razor views/partials. C# prepares view models and handles application behavior; do not build page markup with HTML strings. Preserve Vue payload contracts and use encoded framework helpers for any small HTML fragments those contracts require.
