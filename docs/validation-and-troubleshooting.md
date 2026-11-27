@@ -28,6 +28,18 @@ dotnet test Relewise.Integrations.Umbraco.slnx
 ```
 
 These isolated and in-process tests require no running Umbraco site or Relewise API.
+
+Core is compiled separately for each supported Umbraco major from the same source.
+The default solution build targets Umbraco 19, including Search and DemoStorefront.
+To run Core's compatibility tests for the older versions, use:
+
+```sh
+dotnet test src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj -c Release -p:UmbracoMajorVersion=17
+dotnet test src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj -c Release -p:UmbracoMajorVersion=18
+```
+
+Use the same `UmbracoMajorVersion` property when packing the integration project.
+These profiles produce the matching package major; they do not add runtime version detection.
 They do not replace verification of installation, live ingestion, search and tracking
 in your application's test environment with a test Dataset.
 

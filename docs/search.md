@@ -6,6 +6,9 @@ Use Relewise through Umbraco's core search abstraction with Content and Product
 providers. Select Umbraco Search indexing with `ConfigureSearch`; registering query
 providers is optional and does not change entity mapping.
 
+The Search package currently requires Umbraco 19. Core's mapping, notification-based
+exports, tracking and dashboard are also available in the matching 17.x and 18.x packages.
+
 ## Registration
 
 Install `Relewise.Integrations.Umbraco.Search` alongside the integration package:

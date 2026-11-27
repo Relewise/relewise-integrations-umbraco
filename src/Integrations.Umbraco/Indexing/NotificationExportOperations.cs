@@ -266,7 +266,9 @@ internal sealed class NotificationExportOperations(
             }
         }
 
-        var publication = services.GetRequiredService<IDocumentPublishStatusQueryService>();
+        var publication = new PublishedCultureResolver(
+            services.GetRequiredService<IDocumentNavigationQueryService>(),
+            context.Content);
         var identities = new Dictionary<(string Type, string Value), Guid?>();
         foreach (Guid key in keys)
         {
@@ -276,13 +278,7 @@ internal sealed class NotificationExportOperations(
             if (node == null)
                 continue;
 
-            // Cached content includes cultures whose ancestor route is unpublished.
-            // Use Umbraco's in-memory publication cache before mapping values and search membership.
-            string?[] cultures = node.ContentType.VariesByCulture()
-                ? [
-                    .. node.Cultures.Keys.Where(culture => publication.HasPublishedAncestorPath(node.Key, culture))
-                ]
-                : [null];
+            string?[] cultures = publication.Resolve(node);
             PublicAccessEntry? protection =
                 services.GetRequiredService<IPublicAccessService>().GetEntryForContent(node.Path);
             var access = new List<Guid>();

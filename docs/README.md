@@ -17,7 +17,7 @@ Use this integration to export published Umbraco content and catalogue entities 
 
 ## Version scope
 
-These guides describe the public APIs and implementation in this repository. The package targets .NET 11 and accepts Umbraco versions in `[19.0.0-rc1,20)`. The demo is pinned to `19.0.0-rc1`, which is the version used for the implementation's smoke tests. For older Umbraco versions, use a compatible earlier release of `Relewise.Integrations.Umbraco` and the documentation on its corresponding branch or tag. See [migration](migration.md) for upgrade requirements and [Umbraco search](search.md) for provider configuration.
+These guides describe the shared integration capabilities on Umbraco 17, 18 and 19. Install the integration major matching your CMS: 17.x uses Umbraco `[17.0.0,18)` and .NET 10; 18.x uses `[18.2.0,19)` and .NET 10; 19.x uses `[19.0.0-rc1,20)` and .NET 11. The separate Search package and DemoStorefront currently require Umbraco 19; the demo is pinned to `19.0.0-rc1`. See [migration](migration.md) for upgrade requirements and [Umbraco search](search.md) for provider configuration.
 
 “Grid” in these guides means **Block Grid**, unless explicitly described as the legacy Grid Layout editor. They have different data models.
 

@@ -17,6 +17,7 @@ export const onInit: UmbEntryPointOnInit = (_host) => {
 
 		client.setConfig({
 			baseUrl: config.base,
+			auth: config.token,
 			credentials: 'include',
 		});
 	});

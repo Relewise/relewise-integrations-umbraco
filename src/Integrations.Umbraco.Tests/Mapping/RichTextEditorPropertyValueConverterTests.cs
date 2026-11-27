@@ -88,7 +88,7 @@ public class RichTextEditorPropertyValueConverterTests
 
         if (registerExplicitly && registerBeforeDefaults)
         {
-            services.AddValueConverter<RichTextEditorPropertyValueConverter>();
+            services.AddAsyncValueConverter<RichTextEditorPropertyValueConverter>();
         }
 
         var builder = new TestUmbracoBuilder(services);
@@ -97,7 +97,7 @@ public class RichTextEditorPropertyValueConverterTests
 
         if (registerExplicitly && !registerBeforeDefaults)
         {
-            services.AddValueConverter<RichTextEditorPropertyValueConverter>();
+            services.AddAsyncValueConverter<RichTextEditorPropertyValueConverter>();
         }
 
         return services.BuildServiceProvider();

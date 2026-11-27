@@ -24,6 +24,8 @@
 
 ## Package boundaries
 
+- Maintain one Core source project with `UmbracoMajorVersion` build profiles (17, 18, 19). Each package major must compile against its matching CMS APIs and preserve its dependency range. Keep profile outputs isolated; do not add runtime version detection or custom assembly loading.
+- Preserve the published synchronous `AddValueConverter<T>()` registration as an obsolete compatibility method. Register asynchronous converters with `AddAsyncValueConverter<T>()` on every supported major.
 - Keep `src/Integrations.Umbraco` independent of the Search package and Umbraco Search APIs. It owns mapping, notification-based exports, tracking and the dashboard.
 - Keep Umbraco Search indexing, query providers and their configuration in `src/Integrations.Umbraco.Search`. Its composer registers optional services; only `ConfigureSearch()` activates ingestion. Installing the Search package alone must remain safe, including when `AddRelewise` is absent.
 - Reuse the internal export/mapping bridge through the maintained friend assembly, without expanding the package's public API for implementation plumbing. Supply Search dashboard details through the optional internal contributors in registration order.

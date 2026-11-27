@@ -29,11 +29,11 @@ public class AsyncConversionTests
 
         if (asynchronous)
         {
-            services.AddValueConverter<AsyncConverter>();
+            services.AddAsyncValueConverter<AsyncConverter>();
         }
         else
         {
-            services.AddLegacyValueConverter<LegacyConverter>();
+            services.AddValueConverter<LegacyConverter>();
         }
 
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
@@ -73,7 +73,7 @@ public class AsyncConversionTests
             IPublishedProperty property = Property("price", "Umbraco.Decimal", _ => 1234.56m);
             var services = new ServiceCollection();
 
-            services.AddValueConverter<DecimalPropertyValueConverter>();
+            services.AddAsyncValueConverter<DecimalPropertyValueConverter>();
             services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
 
             await using ServiceProvider provider = services.BuildServiceProvider();
@@ -99,14 +99,14 @@ public class AsyncConversionTests
 
         if (!beforeDefaults)
         {
-            services.AddValueConverter<TextFieldPropertyValueConverter>();
+            services.AddAsyncValueConverter<TextFieldPropertyValueConverter>();
         }
 
         services.AddScoped<IAsyncRelewisePropertyValueConverter>(_ => observed = new ScopedConverter());
 
         if (beforeDefaults)
         {
-            services.AddValueConverter<TextFieldPropertyValueConverter>();
+            services.AddAsyncValueConverter<TextFieldPropertyValueConverter>();
         }
 
         services.AddSingleton<IRelewisePropertyConverter, RelewisePropertyConverter>();
