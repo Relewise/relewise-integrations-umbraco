@@ -199,7 +199,11 @@ public class DashboardApiController : RelewiseApiControllerBase
         }
 
         ConfigurationViewModel result =
-            DashboardConfigurationSnapshot.Create(configuration, clients, RelewiseViewTrackingMiddleware.IsEnabled);
+            DashboardConfigurationSnapshot.Create(
+                configuration,
+                clients,
+                RelewiseViewTrackingMiddleware.IsEnabled,
+                _provider.GetServices<IDashboardConfigurationContributor>());
 
         result.IntegrationClients = integrationClients;
         result.Connection = integrationClients[0].Options;

@@ -82,7 +82,7 @@ Review the mapped entity types, Document Types and administrative-action policie
 permanent deletion, especially in a shared Dataset.
 Use a test Dataset for schema experiments. See the [export service](../src/Integrations.Umbraco/Services/ExportContentService.cs)
 and [notification export](../src/Integrations.Umbraco/Indexing/NotificationExportOperations.cs)
-and [Umbraco Search export](../src/Integrations.Umbraco/Search/Indexing/SearchExportOperations.cs).
+and [Umbraco Search export](../src/Integrations.Umbraco.Search/Indexing/SearchExportOperations.cs).
 
 ## Diagnose common symptoms
 

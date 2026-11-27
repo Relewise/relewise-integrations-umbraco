@@ -18,12 +18,12 @@ internal sealed class MappedEntityIndexer(IExportSystem indexing, IndexMetadataS
         IEnumerable<IndexField> fields,
         ContentProtection? protection)
     {
-        return indexing.ExportAsync([id], null, null, default);
+        return indexing.ExportAsync([id], updateKind: null, version: null, token: default);
     }
 
     public Task DeleteAsync(string indexAlias, IEnumerable<Guid> ids)
     {
-        return indexing.ExportAsync(ids, null, null, default);
+        return indexing.ExportAsync(ids, updateKind: null, version: null, token: default);
     }
 
     // Rebuild reconciliation belongs to the strategy, not a destructive reset of the remote Dataset.

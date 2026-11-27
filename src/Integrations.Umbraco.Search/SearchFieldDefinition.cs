@@ -10,6 +10,6 @@ internal sealed record SearchFieldDefinition(
     bool Localized = false)
 {
     public bool Numeric => ValueType == typeof(int) || ValueType == typeof(long) ||
-                             ValueType == typeof(double) || ValueType == typeof(decimal) ||
-                             ValueType == typeof(float);
+                           ValueType == typeof(double) || ValueType == typeof(decimal) ||
+                           ValueType == typeof(float);
 }

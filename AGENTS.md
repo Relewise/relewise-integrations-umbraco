@@ -6,7 +6,7 @@
 - Put each top-level class, interface, record, struct and enum in its own file, named after the type. Private nested implementation types may stay at the bottom of their containing type.
 - Use four-space indentation, UTF-8, CRLF line endings and a final newline. The DemoStorefront bootstrap view `Views/storefront.cshtml` follows Umbraco's generated format (UTF-8 BOM, no final newline), as scoped in `.editorconfig`. Remove trailing whitespace and unused imports.
 - Put control-flow bodies on separate, indented lines. Never put `return`, `continue` or `break` on the same line as its condition. Use braces for multiline bodies and all branches of an `if` with `else`/`else if`.
-- Use named arguments for boolean literals and other arguments whose meaning is unclear at the call site, especially consecutive flags.
+- Use named arguments for boolean and null literals, and other arguments whose meaning is unclear at the call site, especially consecutive flags or omitted optional values.
 - Prefer small internal domain collections for shared mapping state when they can own lookup and membership rules; avoid exposing raw dictionaries across architectural boundaries or introducing wrappers without useful behavior.
 - Simple method/constructor argument guards may remain on one line; prefer `ArgumentNullException.ThrowIfNull` and similar helpers.
 - Group scope ownership, service resolution, input preparation and working state into distinct paragraphs. Declare locals near their first use; avoid consecutive setup blocks that mix these responsibilities. Prefer imports or descriptive type aliases over fully qualified type names in method bodies.
@@ -21,6 +21,17 @@
 - Do not rename existing public members as part of formatting or file organization.
 - Use the `Async` suffix for new Task/ValueTask operations. Preserve framework-required names and obsolete compatibility entry points; synchronous configuration and registration methods do not take the suffix.
 - Keep integration metadata in `RelewiseDataKeys` and internal runtime names in `Constants`; keep sample schema/business names in `DemoConstants`. Separate source property aliases from exported Data keys, centralize dynamic key construction, and prefer constants owned by the supplying framework when available. Keep single-owner keys near their owner and preserve literal contract expectations in relevant tests.
+
+## Package boundaries
+
+- Keep `src/Integrations.Umbraco` independent of the Search package and Umbraco Search APIs. It owns mapping, notification-based exports, tracking and the dashboard.
+- Keep Umbraco Search indexing, query providers and their configuration in `src/Integrations.Umbraco.Search`. Its composer registers optional services; only `ConfigureSearch()` activates ingestion. Installing the Search package alone must remain safe, including when `AddRelewise` is absent.
+- Reuse the internal export/mapping bridge through the maintained friend assembly, without expanding the package's public API for implementation plumbing. Supply Search dashboard details through the optional internal contributors in registration order.
+
+## Delivery
+
+- When requested changes are complete and validated, commit and push the task branch and create or update a pull request for GitHub review, unless the user explicitly asks to keep that work local. Use the agreed base branch and do not merge without authorization.
+- Before pushing, check local ReSharper warnings/errors as well as builds, relevant tests, namespaces, sorted/unused imports and formatting. A green build or CI run alone does not replace local inspections. Report any verification gap explicitly.
 
 ## Examples, tests and local material
 

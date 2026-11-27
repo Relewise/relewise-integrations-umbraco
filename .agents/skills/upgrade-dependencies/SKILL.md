@@ -9,6 +9,7 @@ description: Upgrade NuGet, npm, and Umbraco dependencies across the integration
 Upgrade repository dependencies for `Relewise.Integrations.Umbraco.slnx`, including:
 
 - NuGet packages in `src/Integrations.Umbraco/Integrations.Umbraco.csproj`.
+- NuGet packages in `src/Integrations.Umbraco.Search/Integrations.Umbraco.Search.csproj`.
 - NuGet packages in `samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj`.
 - Test dependencies in `src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj`.
 - Dashboard npm dependencies and lockfile in `src/Integrations.Umbraco/Client`.

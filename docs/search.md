@@ -8,6 +8,15 @@ providers is optional and does not change entity mapping.
 
 ## Registration
 
+Install `Relewise.Integrations.Umbraco.Search` alongside the integration package:
+
+```sh
+dotnet add package Relewise.Integrations.Umbraco.Search
+```
+
+`ConfigureSearch()` selects Umbraco Search indexing. Without that call, the
+integration continues exporting through publication notifications.
+
 Configure the SDK connection as shown in the [README](../README.md), then configure
 mapping and query providers independently:
 

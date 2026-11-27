@@ -4,6 +4,9 @@ Fieldwork is a synthetic outdoor shop demonstrating the Relewise Umbraco integra
 Products and brands are fictional; checkout records a demo Order without taking payment
 or fulfilling purchases.
 
+The project references both the integration package and the Search package, using
+`ConfigureSearch()` for indexing and named Content/Product query providers.
+
 ## Run locally
 
 Install Git, the .NET 11 SDK, Node 24.13+ and npm 11+. No IDE is required.

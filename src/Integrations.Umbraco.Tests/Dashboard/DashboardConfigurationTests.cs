@@ -57,7 +57,7 @@ public class DashboardConfigurationTests
             });
         });
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(
+            Snapshot(
                 services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 false);
@@ -141,7 +141,7 @@ public class DashboardConfigurationTests
                 mapping.UpdatePolicy = Policy(delta, full);
                 mapping.VariantsFromChildren("variant", variant => variant.UpdatePolicy = Policy(!delta, !full));
             }));
-        ConfigurationViewModel snapshot = DashboardConfigurationSnapshot.Create(
+        ConfigurationViewModel snapshot = Snapshot(
             services.GetRequiredService<RelewiseUmbracoConfiguration>(),
             [],
             true);
@@ -177,7 +177,7 @@ public class DashboardConfigurationTests
                         ? AdministrativeActionPolicy.Synchronize()
                         : AdministrativeActionPolicy.None());
             }));
-        ConfigurationViewModel snapshot = DashboardConfigurationSnapshot.Create(
+        ConfigurationViewModel snapshot = Snapshot(
             services.GetRequiredService<RelewiseUmbracoConfiguration>(),
             [],
             true);
@@ -198,7 +198,7 @@ public class DashboardConfigurationTests
             if (search)
                 options.ConfigureSearch();
         });
-        ConfigurationViewModel snapshot = DashboardConfigurationSnapshot.Create(
+        ConfigurationViewModel snapshot = Snapshot(
             services.GetRequiredService<RelewiseUmbracoConfiguration>(),
             [],
             false);
@@ -211,7 +211,7 @@ public class DashboardConfigurationTests
     {
         using ServiceProvider services = Services(_ => { });
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(
+            Snapshot(
                 services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 false);
@@ -242,7 +242,7 @@ public class DashboardConfigurationTests
             });
         });
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(
+            Snapshot(
                 services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 true);
@@ -355,7 +355,7 @@ public class DashboardConfigurationTests
             });
         });
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(
+            Snapshot(
                 services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 true);
@@ -413,7 +413,7 @@ public class DashboardConfigurationTests
 #pragma warning restore CS0618
         });
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(
+            Snapshot(
                 services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 true);
@@ -459,7 +459,7 @@ public class DashboardConfigurationTests
                 mapping.VariantsFromChildren("variant");
             }));
         ConfigurationViewModel snapshot =
-            DashboardConfigurationSnapshot.Create(
+            Snapshot(
                 services.GetRequiredService<RelewiseUmbracoConfiguration>(),
                 [],
                 true);
@@ -523,6 +523,66 @@ public class DashboardConfigurationTests
         var response = Assert.IsType<ObjectResult>(await controller.ContentExport(false, default));
 
         Assert.Equal(409, response.StatusCode);
+    }
+
+    [Fact]
+    public void CoreSnapshotDoesNotNeedASearchContributor()
+    {
+        using ServiceProvider services = Services(options => options.MapContent("article"));
+        ConfigurationViewModel snapshot = DashboardConfigurationSnapshot.Create(
+            services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            [],
+            middlewareEnabled: false);
+        Assert.False(snapshot.SearchConfigured);
+        Assert.Empty(snapshot.SearchProviders);
+        Assert.Single(snapshot.Mappings);
+    }
+
+    [Fact]
+    public void SnapshotAppliesAllContributorsInRegistrationOrder()
+    {
+        using ServiceProvider services = Services(options => options.MapContent("article"));
+        var calls = new List<string>();
+        var first = new Mock<IDashboardConfigurationContributor>();
+        first.Setup(value => value.Apply(It.IsAny<RelewiseUmbracoConfiguration>(), It.IsAny<ConfigurationViewModel>()))
+            .Callback<RelewiseUmbracoConfiguration, ConfigurationViewModel>((_, snapshot) =>
+            {
+                calls.Add("first");
+                snapshot.SearchConfigured = true;
+            });
+        var second = new Mock<IDashboardConfigurationContributor>();
+        second.Setup(value => value.Apply(It.IsAny<RelewiseUmbracoConfiguration>(), It.IsAny<ConfigurationViewModel>()))
+            .Callback<RelewiseUmbracoConfiguration, ConfigurationViewModel>((_, snapshot) =>
+            {
+                Assert.True(snapshot.SearchConfigured);
+                snapshot.SearchConfigured = false;
+                calls.Add("second");
+            });
+        using ServiceProvider contributions = new ServiceCollection()
+            .AddSingleton(first.Object)
+            .AddSingleton(second.Object)
+            .BuildServiceProvider();
+
+        ConfigurationViewModel result = DashboardConfigurationSnapshot.Create(
+            services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            [],
+            middlewareEnabled: false,
+            contributions.GetServices<IDashboardConfigurationContributor>());
+
+        Assert.Equal(["first", "second"], calls);
+        Assert.False(result.SearchConfigured);
+    }
+
+    private static ConfigurationViewModel Snapshot(
+        RelewiseUmbracoConfiguration configuration,
+        List<NamedOptionsViewObject> clients,
+        bool middlewareEnabled)
+    {
+        return DashboardConfigurationSnapshot.Create(
+            configuration,
+            clients,
+            middlewareEnabled,
+            [new SearchDashboardContributor()]);
     }
 
     private static ServiceProvider ConnectionServices(Action<RelewiseOptionsBuilder> configure)

@@ -88,5 +88,5 @@ resharper_not_accessed_positional_property_global_highlighting = none
 [src/Integrations.Umbraco/Mapping/*MappingContext.cs]
 resharper_unused_auto_property_accessor_global_highlighting = none
 
-[src/Integrations.Umbraco/Search/*RequestContext.cs]
+[src/Integrations.Umbraco.Search/*RequestContext.cs]
 resharper_unused_auto_property_accessor_global_highlighting = none

@@ -10,7 +10,7 @@ entity and visitor identifiers throughout your integration.
 - Map Umbraco Document Types to Content, Products, Variants, Brands and Categories.
 - Use automatic property conversion or customize fields with converters and entity mappers, including multilingual and block-based content.
 - Track views automatically for mapped entities, with your site's visitor identity.
-- Use Relewise through Umbraco's search abstraction, or consume the exported data directly with a Relewise SDK from your application or a separate frontend.
+- Add the optional Search package to use Relewise through Umbraco's search abstraction, or consume exported data directly with a Relewise SDK.
 
 ## Installation
 
@@ -25,6 +25,16 @@ Or use the NuGet Package Manager Console:
 ```powershell
 Install-Package Relewise.Integrations.Umbraco
 ```
+
+For Umbraco Search indexing and query providers, also install the Search package:
+
+```sh
+dotnet add package Relewise.Integrations.Umbraco.Search
+```
+
+The integration package provides entity mapping, publication exports, view tracking and the
+dashboard. The Search package uses the same mappings and replaces notification-based
+exports when `ConfigureSearch()` is called. Installing it alone does not change indexing.
 
 If you are starting a new site, create it using the
 [Umbraco templates](https://docs.umbraco.com/umbraco-cms/get-started/installation#install-the-template).

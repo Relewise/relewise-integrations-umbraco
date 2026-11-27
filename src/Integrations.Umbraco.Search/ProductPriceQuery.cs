@@ -88,8 +88,13 @@ internal sealed class ProductPriceQuery
 
             request.Facets ??= new ProductFacetQuery();
             request.Facets.Items.RemoveAll(facet => facet.Field == FacetingField.SalesPrice);
-            request.Facets.Items.Add(new PriceRangesFacet(
-                FacetingField.SalesPrice, PriceSelectionStrategy.Product, ranges, null, selected));
+            request.Facets.Items.Add(
+                new PriceRangesFacet(
+                    FacetingField.SalesPrice,
+                    PriceSelectionStrategy.Product,
+                    predefinedRanges: ranges,
+                    expandedRangeSize: null,
+                    selected: selected));
         }
     }
 
@@ -100,7 +105,9 @@ internal sealed class ProductPriceQuery
 
         if (ranges.Length == 0)
         {
-            var exists = new ProductSalesPriceFilter(new Range<decimal?>(null, null), RequireCurrency(currency));
+            var exists = new ProductSalesPriceFilter(
+                new Range<decimal?>(lowerBoundInclusive: null, upperBoundInclusive: null),
+                RequireCurrency(currency));
 
             return new AndFilter([exists, new AndFilter([exists], true)], price.Negate);
         }
@@ -110,7 +117,9 @@ internal sealed class ProductPriceQuery
 
     private static RFilter MapRange(DecimalRangeFilterRange range, Currency currency)
     {
-        var lower = new ProductSalesPriceFilter(new Range<decimal?>(range.MinValue, null), currency);
+        var lower = new ProductSalesPriceFilter(
+            new Range<decimal?>(lowerBoundInclusive: range.MinValue, upperBoundInclusive: null),
+            currency);
 
         if (!range.MaxValue.HasValue)
         {
@@ -119,7 +128,10 @@ internal sealed class ProductPriceQuery
 
         // SDK price filters have inclusive endpoints. Negating [max, infinity) preserves
         // Umbraco's exclusive upper bound without assuming cent precision or rounding.
-        var upper = new ProductSalesPriceFilter(new Range<decimal?>(range.MaxValue, null), currency, true);
+        var upper = new ProductSalesPriceFilter(
+            new Range<decimal?>(lowerBoundInclusive: range.MaxValue, upperBoundInclusive: null),
+            currency,
+            negated: true);
 
         return new AndFilter([lower, upper]);
     }
@@ -139,8 +151,9 @@ internal sealed class ProductPriceQuery
         foreach (DecimalRangeFacetRange range in _facet?.Ranges ?? [])
         {
             long count = result?.Available.FirstOrDefault(value =>
-                value.Value.LowerBoundInclusive == range.MinValue &&
-                value.Value.UpperBoundExclusive == range.MaxValue)?.Hits ?? 0;
+                    value.Value.LowerBoundInclusive == range.MinValue &&
+                    value.Value.UpperBoundExclusive == range.MaxValue)
+                ?.Hits ?? 0;
             values.Add(new DecimalRangeFacetValue(range.Key, range.MinValue, range.MaxValue, count));
         }
 

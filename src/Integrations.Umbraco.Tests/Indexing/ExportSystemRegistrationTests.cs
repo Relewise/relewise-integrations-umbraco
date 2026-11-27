@@ -17,15 +17,18 @@ using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Search.Configuration;
+using Umbraco.Cms.Core.Search.Indexing;
 
 namespace Relewise.Integrations.Umbraco.Tests.Indexing;
 
 public class ExportSystemRegistrationTests
 {
     [Theory]
+    [InlineData(-1)]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(2)]
+    [InlineData(3)]
     public void BootstrapSelectsOneSystemAndOnlyRegistersSearchWhenEnabled(int mode)
     {
         var services = new ServiceCollection();
@@ -35,18 +38,30 @@ public class ExportSystemRegistrationTests
         services.AddSingleton(Mock.Of<IBackgroundTaskQueue>());
         services.AddSingleton(Mock.Of<ICoreScopeProvider>());
         var builder = new TestBuilder(services);
+        if (mode >= 0)
+            new SearchComposer().Compose(builder);
         int calls = 0;
         builder.AddRelewise(options =>
         {
             calls++;
             if (mode == 1)
                 options.ConfigureSearch();
-            if (mode == 2)
-                options.ConfigureSearch(search => search.AddContentProvider("articles"));
+            if (mode >= 2)
+            {
+                options.ConfigureSearch(search =>
+                {
+                    search.AddContentProvider("articles");
+                    if (mode == 3)
+                        search.AddProductProvider("catalogue");
+                });
+            }
+
+            if (mode == 3)
+                options.MapProduct("product");
             options.MapContent("article"); // Selection may precede mappings; validation runs after all callbacks.
         });
 
-        if (mode == 0)
+        if (mode <= 0)
         {
             services.AddSingleton<UmbracoSearchExportSystem>(_ => throw new InvalidOperationException("Wrong system"));
         }
@@ -59,11 +74,79 @@ public class ExportSystemRegistrationTests
             services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         IExportSystem selected = Assert.Single(provider.GetServices<IExportSystem>());
         Assert.Same(selected, provider.GetRequiredService<IExportSystem>());
-        Assert.Equal(mode == 0, selected.UsesContentNotifications);
+        Assert.Equal(mode <= 0, selected.UsesContentNotifications);
         IndexOptions indexes = provider.GetRequiredService<IOptions<IndexOptions>>().Value;
-        Assert.Equal(mode != 0, indexes.GetIndexRegistration(SearchExportOperations.IndexAlias) != null);
-        Assert.Equal(mode == 2, indexes.GetIndexRegistration("articles") != null);
+        Assert.Equal(mode > 0, indexes.GetIndexRegistration(SearchExportOperations.IndexAlias) != null);
+        Assert.Equal(mode >= 2, indexes.GetIndexRegistration("articles") != null);
+        Assert.Equal(mode == 3, indexes.GetIndexRegistration("catalogue") != null);
         Assert.Equal(1, calls);
+    }
+
+    [Fact]
+    public void SearchActivationWithoutComposersExplainsHowToRegisterThePackage()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        new TestBuilder(services).AddRelewise(options =>
+        {
+            options.MapContent("article");
+            options.ConfigureSearch();
+        });
+        using ServiceProvider provider = services.BuildServiceProvider();
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+            provider.GetRequiredService<IExportSystem>());
+        Assert.Contains("AddComposers()", error.Message);
+    }
+
+    [Fact]
+    public void SearchPackageDoesNotRequireCoreToBeConfigured()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(Mock.Of<IHostApplicationLifetime>());
+        services.AddSingleton(Mock.Of<IBackgroundTaskQueue>());
+        services.AddScoped(_ => Mock.Of<IPublishedContentChangeStrategy>());
+        new SearchComposer().Compose(new TestBuilder(services));
+        using ServiceProvider provider = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+        IndexOptions indexes = provider.GetRequiredService<IOptions<IndexOptions>>().Value;
+        Assert.Null(indexes.GetIndexRegistration(SearchExportOperations.IndexAlias));
+        Assert.Null(provider.GetService<IExportSystem>());
+    }
+
+    [Fact]
+    public void ConfigurationCallbacksRunOnceAfterTheContainerIsBuilt()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        int calls = 0;
+        new TestBuilder(services).AddRelewise((options, provider) =>
+        {
+            calls++;
+            Assert.Same(TimeProvider.System, provider.GetRequiredService<TimeProvider>());
+            options.MapContent("article");
+            options.ConfigureSearch();
+        });
+        services.AddSingleton(TimeProvider.System);
+        Assert.Equal(0, calls);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Equal(0, calls);
+
+        provider.GetRequiredService<RelewiseUmbracoConfiguration>();
+        provider.GetRequiredService<RelewiseUmbracoConfiguration>();
+        Assert.Equal(1, calls);
+    }
+
+    [Fact]
+    public void SearchImplementationLivesInADependentAssembly()
+    {
+        var core = typeof(RelewiseUmbracoConfiguration).Assembly;
+        var search = typeof(SearchConfigurationExtensions).Assembly;
+        Assert.NotEqual(core, search);
+        Assert.DoesNotContain(core.GetReferencedAssemblies(), name => name.Name == search.GetName().Name);
+        Assert.Contains(search.GetReferencedAssemblies(), name => name.Name == core.GetName().Name);
     }
 
     [Fact]
@@ -76,6 +159,7 @@ public class ExportSystemRegistrationTests
         services.AddSingleton(Mock.Of<IBackgroundTaskQueue>());
         services.AddSingleton(Mock.Of<ICoreScopeProvider>());
         var builder = new TestBuilder(services);
+        new SearchComposer().Compose(builder);
         builder.AddRelewise(options => options.MapContent("article"));
         builder.AddRelewise(options => options.ConfigureSearch());
         using ServiceProvider provider =

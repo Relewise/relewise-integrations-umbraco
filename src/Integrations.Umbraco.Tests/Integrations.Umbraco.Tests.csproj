@@ -20,6 +20,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="../Integrations.Umbraco.Search/Integrations.Umbraco.Search.csproj" />
 		<ProjectReference Include="..\Integrations.Umbraco\Integrations.Umbraco.csproj" />
 		<ProjectReference Include="../../samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj" />
 	</ItemGroup>

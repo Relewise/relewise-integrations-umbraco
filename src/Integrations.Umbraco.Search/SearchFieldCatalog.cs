@@ -54,11 +54,11 @@ internal static class SearchFieldCatalog
             }
             else if (mapping.IdPropertyAlias == fieldName)
             {
-                field = new SearchFieldDefinition(SearchFieldKind.Id, null, typeof(string));
+                field = new SearchFieldDefinition(SearchFieldKind.Id, DataKey: null, typeof(string));
             }
             else if (mapping.BrandPropertyAlias == fieldName)
             {
-                field = new SearchFieldDefinition(SearchFieldKind.Brand, null, typeof(string));
+                field = new SearchFieldDefinition(SearchFieldKind.Brand, DataKey: null, typeof(string));
             }
             else
             {
