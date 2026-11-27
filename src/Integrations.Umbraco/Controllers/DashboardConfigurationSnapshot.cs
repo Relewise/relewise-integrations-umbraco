@@ -13,7 +13,7 @@ internal static class DashboardConfigurationSnapshot
         RelewiseUmbracoConfiguration configuration,
         List<NamedOptionsViewObject> clients,
         bool middlewareEnabled,
-        IDashboardConfigurationContributor? contributor = null)
+        IEnumerable<IDashboardConfigurationContributor>? contributors = null)
     {
         var snapshot = new ConfigurationViewModel(
             configuration.TrackedContentTypes,
@@ -27,7 +27,11 @@ internal static class DashboardConfigurationSnapshot
                 .Select(mapping => Describe(mapping, configuration))
                 .ToArray()
         };
-        contributor?.Apply(configuration, snapshot);
+        foreach (IDashboardConfigurationContributor contributor in contributors ?? [])
+        {
+            contributor.Apply(configuration, snapshot);
+        }
+
         return snapshot;
     }
 

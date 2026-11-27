@@ -203,7 +203,7 @@ public class DashboardApiController : RelewiseApiControllerBase
                 configuration,
                 clients,
                 RelewiseViewTrackingMiddleware.IsEnabled,
-                _provider.GetService<IDashboardConfigurationContributor>());
+                _provider.GetServices<IDashboardConfigurationContributor>());
 
         result.IntegrationClients = integrationClients;
         result.Connection = integrationClients[0].Options;

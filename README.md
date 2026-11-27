@@ -26,14 +26,14 @@ Or use the NuGet Package Manager Console:
 Install-Package Relewise.Integrations.Umbraco
 ```
 
-For Umbraco Search indexing and query providers, also install the add-on:
+For Umbraco Search indexing and query providers, also install the Search package:
 
 ```sh
 dotnet add package Relewise.Integrations.Umbraco.Search
 ```
 
-The base package provides entity mapping, publication exports, view tracking and the
-dashboard. The Search add-on uses the same mappings and replaces notification-based
+The integration package provides entity mapping, publication exports, view tracking and the
+dashboard. The Search package uses the same mappings and replaces notification-based
 exports when `ConfigureSearch()` is called. Installing it alone does not change indexing.
 
 If you are starting a new site, create it using the

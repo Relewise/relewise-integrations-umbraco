@@ -17,6 +17,7 @@ using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Scoping;
 using Umbraco.Cms.Core.Search.Configuration;
+using Umbraco.Cms.Core.Search.Indexing;
 
 namespace Relewise.Integrations.Umbraco.Tests.Indexing;
 
@@ -103,12 +104,39 @@ public class ExportSystemRegistrationTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
+        services.AddSingleton(Mock.Of<IHostApplicationLifetime>());
+        services.AddSingleton(Mock.Of<IBackgroundTaskQueue>());
+        services.AddScoped(_ => Mock.Of<IPublishedContentChangeStrategy>());
         new SearchComposer().Compose(new TestBuilder(services));
         using ServiceProvider provider = services.BuildServiceProvider(
             new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
         IndexOptions indexes = provider.GetRequiredService<IOptions<IndexOptions>>().Value;
         Assert.Null(indexes.GetIndexRegistration(SearchExportOperations.IndexAlias));
         Assert.Null(provider.GetService<IExportSystem>());
+    }
+
+    [Fact]
+    public void ConfigurationCallbacksRunOnceAfterTheContainerIsBuilt()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
+        int calls = 0;
+        new TestBuilder(services).AddRelewise((options, provider) =>
+        {
+            calls++;
+            Assert.Same(TimeProvider.System, provider.GetRequiredService<TimeProvider>());
+            options.MapContent("article");
+            options.ConfigureSearch();
+        });
+        services.AddSingleton(TimeProvider.System);
+        Assert.Equal(0, calls);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        Assert.Equal(0, calls);
+
+        provider.GetRequiredService<RelewiseUmbracoConfiguration>();
+        provider.GetRequiredService<RelewiseUmbracoConfiguration>();
+        Assert.Equal(1, calls);
     }
 
     [Fact]

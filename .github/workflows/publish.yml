@@ -47,7 +47,7 @@ jobs:
       run: >-
         dotnet pack Integrations.Umbraco.csproj
         --configuration Release /p:Version=${VERSION} --no-build --output .
-    - name: Pack Search add-on
+    - name: Pack Search
       run: >-
         dotnet pack ../Integrations.Umbraco.Search/Integrations.Umbraco.Search.csproj
         --configuration Release /p:Version=${VERSION} --no-build --output .

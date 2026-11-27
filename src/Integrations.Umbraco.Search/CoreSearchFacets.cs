@@ -128,7 +128,11 @@ internal static class CoreSearchFacets
                 }
 
                 selected = values != null;
-                return new ContentDataDoubleRangesFacet(field.DataKey!, ranges, null, values);
+                return new ContentDataDoubleRangesFacet(
+                    field.DataKey!,
+                    predefinedRanges: ranges,
+                    expandedRangeSize: null,
+                    selected: values);
             }
         }
 

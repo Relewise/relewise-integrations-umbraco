@@ -9,7 +9,7 @@
 		<AssemblyName>Relewise.Integrations.Umbraco</AssemblyName>
 		<RootNamespace>Relewise.Integrations.Umbraco</RootNamespace>
 		<Title>Relewise integration for Umbraco</Title>
-		<Description>Export Umbraco Content and catalogue entities to Relewise with automatic behavioral tracking.</Description>
+		<Description>Export Umbraco Content and catalogue entities to Relewise with automatic behavioral tracking. Combine with Relewise.Integrations.Umbraco.Search for Umbraco Search indexing and query providers.</Description>
 		<PackageIcon>logo.png</PackageIcon>
 		<PackageTags>Relewise;Umbraco;Umbraco-v19;Recommendations;Search;SearchEngine;Personalization;Recommender;umbraco-marketplace;Shoppertainment;retail-media;display-ads</PackageTags>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>

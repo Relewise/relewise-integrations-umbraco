@@ -92,9 +92,9 @@ internal sealed class ProductPriceQuery
                 new PriceRangesFacet(
                     FacetingField.SalesPrice,
                     PriceSelectionStrategy.Product,
-                    ranges,
-                    null,
-                    selected));
+                    predefinedRanges: ranges,
+                    expandedRangeSize: null,
+                    selected: selected));
         }
     }
 
@@ -105,7 +105,9 @@ internal sealed class ProductPriceQuery
 
         if (ranges.Length == 0)
         {
-            var exists = new ProductSalesPriceFilter(new Range<decimal?>(null, null), RequireCurrency(currency));
+            var exists = new ProductSalesPriceFilter(
+                new Range<decimal?>(lowerBoundInclusive: null, upperBoundInclusive: null),
+                RequireCurrency(currency));
 
             return new AndFilter([exists, new AndFilter([exists], true)], price.Negate);
         }
@@ -115,7 +117,9 @@ internal sealed class ProductPriceQuery
 
     private static RFilter MapRange(DecimalRangeFilterRange range, Currency currency)
     {
-        var lower = new ProductSalesPriceFilter(new Range<decimal?>(range.MinValue, null), currency);
+        var lower = new ProductSalesPriceFilter(
+            new Range<decimal?>(lowerBoundInclusive: range.MinValue, upperBoundInclusive: null),
+            currency);
 
         if (!range.MaxValue.HasValue)
         {
@@ -124,7 +128,10 @@ internal sealed class ProductPriceQuery
 
         // SDK price filters have inclusive endpoints. Negating [max, infinity) preserves
         // Umbraco's exclusive upper bound without assuming cent precision or rounding.
-        var upper = new ProductSalesPriceFilter(new Range<decimal?>(range.MaxValue, null), currency, true);
+        var upper = new ProductSalesPriceFilter(
+            new Range<decimal?>(lowerBoundInclusive: range.MaxValue, upperBoundInclusive: null),
+            currency,
+            negated: true);
 
         return new AndFilter([lower, upper]);
     }

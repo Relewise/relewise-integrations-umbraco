@@ -538,6 +538,41 @@ public class DashboardConfigurationTests
         Assert.Single(snapshot.Mappings);
     }
 
+    [Fact]
+    public void SnapshotAppliesAllContributorsInRegistrationOrder()
+    {
+        using ServiceProvider services = Services(options => options.MapContent("article"));
+        var calls = new List<string>();
+        var first = new Mock<IDashboardConfigurationContributor>();
+        first.Setup(value => value.Apply(It.IsAny<RelewiseUmbracoConfiguration>(), It.IsAny<ConfigurationViewModel>()))
+            .Callback<RelewiseUmbracoConfiguration, ConfigurationViewModel>((_, snapshot) =>
+            {
+                calls.Add("first");
+                snapshot.SearchConfigured = true;
+            });
+        var second = new Mock<IDashboardConfigurationContributor>();
+        second.Setup(value => value.Apply(It.IsAny<RelewiseUmbracoConfiguration>(), It.IsAny<ConfigurationViewModel>()))
+            .Callback<RelewiseUmbracoConfiguration, ConfigurationViewModel>((_, snapshot) =>
+            {
+                Assert.True(snapshot.SearchConfigured);
+                snapshot.SearchConfigured = false;
+                calls.Add("second");
+            });
+        using ServiceProvider contributions = new ServiceCollection()
+            .AddSingleton(first.Object)
+            .AddSingleton(second.Object)
+            .BuildServiceProvider();
+
+        ConfigurationViewModel result = DashboardConfigurationSnapshot.Create(
+            services.GetRequiredService<RelewiseUmbracoConfiguration>(),
+            [],
+            middlewareEnabled: false,
+            contributions.GetServices<IDashboardConfigurationContributor>());
+
+        Assert.Equal(["first", "second"], calls);
+        Assert.False(result.SearchConfigured);
+    }
+
     private static ConfigurationViewModel Snapshot(
         RelewiseUmbracoConfiguration configuration,
         List<NamedOptionsViewObject> clients,
@@ -547,7 +582,7 @@ public class DashboardConfigurationTests
             configuration,
             clients,
             middlewareEnabled,
-            new SearchDashboardContributor());
+            [new SearchDashboardContributor()]);
     }
 
     private static ServiceProvider ConnectionServices(Action<RelewiseOptionsBuilder> configure)

@@ -40,7 +40,7 @@ internal static class SearchFieldRegistration
 
         return new SearchFieldDefinition(
             kind,
-            null,
+            DataKey: null,
             kind == SearchFieldKind.SalesPrice ? typeof(decimal) : typeof(string),
             kind == SearchFieldKind.Categories);
     }
