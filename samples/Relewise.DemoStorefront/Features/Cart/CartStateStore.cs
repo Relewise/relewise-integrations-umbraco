@@ -9,7 +9,7 @@ internal static class CartStateStore
     // A session identifies the basket, but its per-request snapshot cannot serialize concurrent writes.
     private static readonly object StateCreation = new();
 
-    internal static CartState Get(HttpContext http)
+    public static CartState Get(HttpContext http)
     {
         // Establish the session for both page renders and clients starting at the JSON endpoint.
         if (http.Session.GetString(SessionMarkerKey) == null)
@@ -33,7 +33,7 @@ internal static class CartStateStore
         }
     }
 
-    internal static int Count(HttpContext http)
+    public static int Count(HttpContext http)
     {
         return Get(http).Lines.Sum(line => line.Quantity);
     }

@@ -6,13 +6,13 @@ namespace Relewise.DemoStorefront.Features.Cart;
 
 internal static class CartHttp
 {
-    internal static void SetCulture(HttpContext http)
+    public static void SetCulture(HttpContext http)
     {
         http.RequestServices.GetRequiredService<IVariationContextAccessor>().VariationContext =
             new VariationContext(DemoMarket.Current(http).Culture);
     }
 
-    internal static string Money(HttpContext http, decimal amount, string? currency = null)
+    public static string Money(HttpContext http, decimal amount, string? currency = null)
     {
         DemoMarket market = DemoMarket.Current(http);
         var value = amount.ToString("N2", CultureInfo.GetCultureInfo(market.Culture));
@@ -20,7 +20,7 @@ internal static class CartHttp
         return (currency ?? market.Currency) + " " + value;
     }
 
-    internal static IResult Error(
+    public static IResult Error(
         HttpContext http,
         string key,
         params string[] values)
@@ -44,7 +44,7 @@ internal static class CartHttp
         return Results.LocalRedirect(DemoMarket.Current(http).LanguagePath + "/cart");
     }
 
-    internal static bool WantsJson(HttpContext http)
+    public static bool WantsJson(HttpContext http)
     {
         return http.Request.Headers.Accept.Any(value =>
             value?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true);

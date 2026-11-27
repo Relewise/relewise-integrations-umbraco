@@ -89,13 +89,13 @@ public class ViewDeliveryTests
     private sealed class Scenario : IDisposable
     {
         private readonly ServiceProvider _services;
-        internal Mock<ITracker> Tracker { get; } = new();
-        internal Mock<ILogger<RelewiseViewTrackingMiddleware>> Logger { get; } = new();
-        internal DefaultHttpContext Http { get; }
-        internal ResponseCompletion Completion { get; } = new();
-        internal RelewiseViewTrackingMiddleware Middleware { get; }
+        public Mock<ITracker> Tracker { get; } = new();
+        public Mock<ILogger<RelewiseViewTrackingMiddleware>> Logger { get; } = new();
+        public DefaultHttpContext Http { get; }
+        public ResponseCompletion Completion { get; } = new();
+        public RelewiseViewTrackingMiddleware Middleware { get; }
 
-        internal Scenario(string method, int status, Func<CancellationToken, Task> track)
+        public Scenario(string method, int status, Func<CancellationToken, Task> track)
         {
             var content = new Mock<IPublishedContent>();
             content.SetupGet(value => value.Id).Returns(1234);

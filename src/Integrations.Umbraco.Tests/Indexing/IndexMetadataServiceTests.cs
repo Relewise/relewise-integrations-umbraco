@@ -272,13 +272,13 @@ public class IndexMetadataServiceTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly ServiceProvider _services;
-        internal Mock<IDataAccessor> Reader { get; } = new();
-        internal TestClock Clock { get; } = new();
-        internal CancellationTokenSource Stopping { get; } = new();
-        internal IndexMetadataService Metadata { get; }
-        internal int DisposedScopes { get; private set; }
+        public Mock<IDataAccessor> Reader { get; } = new();
+        public TestClock Clock { get; } = new();
+        public CancellationTokenSource Stopping { get; } = new();
+        public IndexMetadataService Metadata { get; }
+        public int DisposedScopes { get; private set; }
 
-        internal Fixture(Action<RelewiseUmbracoOptionsBuilder>? configure = null)
+        public Fixture(Action<RelewiseUmbracoOptionsBuilder>? configure = null)
         {
             Reader.Setup(value => value.QueryAsync(It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ContentDetailsCollectionResponse([], 0));
@@ -330,7 +330,7 @@ public class IndexMetadataServiceTests
             return _now;
         }
 
-        internal void Advance()
+        public void Advance()
         {
             _now += TimeSpan.FromMinutes(1);
         }

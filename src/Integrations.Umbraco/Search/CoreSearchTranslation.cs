@@ -19,7 +19,7 @@ namespace Relewise.Integrations.Umbraco.Search;
 
 internal static class CoreSearchTranslation
 {
-    internal static RFilter MapFilter(UFilter filter, SearchFieldDefinition field, bool product, string? culture)
+    public static RFilter MapFilter(UFilter filter, SearchFieldDefinition field, bool product, string? culture)
     {
         RFilter result;
 
@@ -137,7 +137,7 @@ internal static class CoreSearchTranslation
         return items.Length == 0 ? new AndFilter([empty, new AndFilter([empty], negated: true)]) : new OrFilter(items);
     }
 
-    internal static void ApplySorting(
+    public static void ApplySorting(
         ContentSearchRequest request,
         IEnumerable<Sorter> sorters,
         Func<string, SearchFieldDefinition> resolve)
@@ -183,7 +183,7 @@ internal static class CoreSearchTranslation
         }
     }
 
-    internal static void ApplySorting(
+    public static void ApplySorting(
         ProductSearchRequest request,
         IEnumerable<Sorter> sorters,
         Func<string, SearchFieldDefinition> resolve)
@@ -249,12 +249,12 @@ internal static class CoreSearchTranslation
         return field;
     }
 
-    internal static ContentDataFilter Equal(string key, DataValue value)
+    public static ContentDataFilter Equal(string key, DataValue value)
     {
         return new ContentDataFilter(key, new EqualsCondition(value));
     }
 
-    internal static NotSupportedException Unsupported(string field, string operation)
+    public static NotSupportedException Unsupported(string field, string operation)
     {
         return new NotSupportedException(
             $"Query operation '{operation}' is not supported for mapped field '{field}'. " +

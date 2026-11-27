@@ -6,7 +6,7 @@ namespace Relewise.DemoStorefront.Features.Recommendations;
 
 internal static class RecommendationPlacement
 {
-    internal static RecommendationModel? Configuration(
+    public static RecommendationModel? Configuration(
         IPublishedContent page,
         HttpContext http,
         bool emptyCart = false)

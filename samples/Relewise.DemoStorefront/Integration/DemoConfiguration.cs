@@ -14,7 +14,7 @@ namespace Relewise.DemoStorefront.Integration;
 
 internal static class DemoConfiguration
 {
-    internal static string EntityId(
+    public static string EntityId(
         IPublishedContent content,
         IServiceProvider services)
     {
@@ -30,7 +30,7 @@ internal static class DemoConfiguration
             } ?? content.Key.ToString("D");
     }
 
-    internal static void Configure(RelewiseUmbracoOptionsBuilder options)
+    public static void Configure(RelewiseUmbracoOptionsBuilder options)
     {
         options.UseContentKeysAsIds = true;
 

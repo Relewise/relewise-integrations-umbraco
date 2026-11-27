@@ -16,7 +16,7 @@ internal sealed class DemoProductMapper : IEntityMapper<Product>
         return Task.CompletedTask;
     }
 
-    internal static void Apply(
+    public static void Apply(
         Product product,
         int stock)
     {

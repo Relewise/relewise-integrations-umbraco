@@ -283,12 +283,12 @@ public class ExportServiceCompatibilityTests
 
     private class LegacyExportService : IExportContentService
     {
-        internal ExportContentResult Result { get; } = new();
-        internal ExportAllContentResult AllResult { get; } = new();
-        internal ExportContent? Request { get; private set; }
-        internal ExportAllContent? AllRequest { get; private set; }
-        internal CancellationToken Token { get; private set; }
-        internal int Calls { get; private set; }
+        public ExportContentResult Result { get; } = new();
+        public ExportAllContentResult AllResult { get; } = new();
+        public ExportContent? Request { get; private set; }
+        public ExportAllContent? AllRequest { get; private set; }
+        public CancellationToken Token { get; private set; }
+        public int Calls { get; private set; }
 
         public Task<ExportContentResult> Export(ExportContent exportContent, CancellationToken token)
         {
@@ -316,12 +316,12 @@ public class ExportServiceCompatibilityTests
 
     private class AsyncOnlyExportService : IExportContentService
     {
-        internal ExportContentResult Result { get; } = new();
-        internal ExportAllContentResult AllResult { get; } = new();
-        internal ExportContent? Request { get; private set; }
-        internal ExportAllContent? AllRequest { get; private set; }
-        internal CancellationToken Token { get; private set; }
-        internal int Calls { get; private set; }
+        public ExportContentResult Result { get; } = new();
+        public ExportAllContentResult AllResult { get; } = new();
+        public ExportContent? Request { get; private set; }
+        public ExportAllContent? AllRequest { get; private set; }
+        public CancellationToken Token { get; private set; }
+        public int Calls { get; private set; }
 
         public Task<ExportContentResult> ExportAsync(ExportContent exportContent, CancellationToken token)
         {

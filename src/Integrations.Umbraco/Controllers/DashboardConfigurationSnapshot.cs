@@ -10,7 +10,7 @@ namespace Relewise.Integrations.Umbraco.Controllers;
 
 internal static class DashboardConfigurationSnapshot
 {
-    internal static ConfigurationViewModel Create(
+    public static ConfigurationViewModel Create(
         RelewiseUmbracoConfiguration configuration,
         List<NamedOptionsViewObject> clients,
         bool middlewareEnabled)

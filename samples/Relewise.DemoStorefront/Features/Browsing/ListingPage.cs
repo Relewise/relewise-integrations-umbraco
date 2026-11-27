@@ -10,7 +10,7 @@ namespace Relewise.DemoStorefront.Features.Browsing;
 
 internal static class ListingPage
 {
-    internal static StorefrontPage Create(
+    public static StorefrontPage Create(
         HttpContext http,
         IPublishedContent? collection,
         ListingModel model,
@@ -42,7 +42,7 @@ internal static class ListingPage
         return new StorefrontPage(heading, section, "/Views/Browsing/Listing.cshtml", page);
     }
 
-    internal static StorefrontPage Preview(
+    public static StorefrontPage Preview(
         HttpContext http,
         IPublishedContent? collection)
     {

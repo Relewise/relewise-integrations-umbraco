@@ -16,7 +16,7 @@ internal static class StorefrontNavigation
     private const string ListingCollectionKey = "fieldwork-listing-collection";
     private const string ListingQueryKey = "fieldwork-listing-query";
 
-    internal static void Notify(
+    public static void Notify(
         HttpContext http,
         string key,
         bool error = false,
@@ -30,7 +30,7 @@ internal static class StorefrontNavigation
         data.Save();
     }
 
-    internal static StorefrontNotice? Feedback(HttpContext http)
+    public static StorefrontNotice? Feedback(HttpContext http)
     {
         ITempDataDictionary data = http.RequestServices.GetRequiredService<ITempDataDictionaryFactory>()
             .GetTempData(http);
@@ -50,7 +50,7 @@ internal static class StorefrontNavigation
             notice.Key == "CartAdded");
     }
 
-    internal static async Task RememberListingAsync(
+    public static async Task RememberListingAsync(
         HttpContext http,
         Guid? collection,
         string view = "store",
@@ -65,7 +65,7 @@ internal static class StorefrontNavigation
             .Value ?? "");
     }
 
-    internal static string ShoppingUrl(HttpContext http)
+    public static string ShoppingUrl(HttpContext http)
     {
         DemoMarket market = DemoMarket.Current(http);
         string view = http.Session.GetString(ListingViewKey) ?? "store";
@@ -89,7 +89,7 @@ internal static class StorefrontNavigation
 
     private sealed record Notice(string Key, bool Error, string[] Values);
 
-    internal static StorefrontLink[] Links(IEnumerable<IPublishedContent> pages)
+    public static StorefrontLink[] Links(IEnumerable<IPublishedContent> pages)
     {
         return
         [
@@ -98,7 +98,7 @@ internal static class StorefrontNavigation
         ];
     }
 
-    internal static BreadcrumbItem[] Breadcrumb(
+    public static BreadcrumbItem[] Breadcrumb(
         IPublishedContent? page,
         HttpContext http,
         string section,

@@ -13,7 +13,7 @@ namespace Relewise.Integrations.Umbraco.Indexing;
 // Builds SDK payloads only. Export systems decide what to discover, when to send and when to reconcile.
 internal static class EntityExportRequests
 {
-    internal static List<Trackable> Updates(IEnumerable<MappedEntity> desired)
+    public static List<Trackable> Updates(IEnumerable<MappedEntity> desired)
     {
         var updates = new List<Trackable>();
 
@@ -43,7 +43,7 @@ internal static class EntityExportRequests
         return updates;
     }
 
-    internal static IEnumerable<EntityReconciliationRequest> Reconcile(
+    public static IEnumerable<EntityReconciliationRequest> Reconcile(
         RelewiseUmbracoConfiguration configuration,
         IEnumerable<(Guid[] Keys, bool Delete)> removals,
         long? version)

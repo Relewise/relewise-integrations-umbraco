@@ -7,7 +7,7 @@ namespace Relewise.DemoStorefront.Features.Products;
 
 internal static class ProductPage
 {
-    internal static ProductPageModel Create(
+    public static ProductPageModel Create(
         IPublishedContent page,
         HttpContext http)
     {

@@ -11,7 +11,7 @@ namespace Relewise.DemoStorefront.Seeding;
 
 internal static class DemoEditorial
 {
-    internal static void Ensure(IServiceProvider services)
+    public static void Ensure(IServiceProvider services)
     {
         var content = services.GetRequiredService<IContentService>();
         var types = services.GetRequiredService<IContentTypeService>();

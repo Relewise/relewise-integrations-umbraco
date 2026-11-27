@@ -102,7 +102,7 @@ internal sealed class DeletedEntityIndexingHandler(
 
     private sealed class RemovalWork
     {
-        internal List<DeletedEntity> Entities { get; } = new();
-        internal HashSet<Guid> Parents { get; } = new();
+        public List<DeletedEntity> Entities { get; } = new();
+        public HashSet<Guid> Parents { get; } = new();
     }
 }

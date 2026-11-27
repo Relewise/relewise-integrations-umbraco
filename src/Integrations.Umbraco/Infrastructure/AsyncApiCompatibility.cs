@@ -8,7 +8,7 @@ namespace Relewise.Integrations.Umbraco.Infrastructure;
 // uses reflection; method invocation still uses normal interface dispatch.
 internal static class AsyncApiCompatibility
 {
-    internal static void RequireLegacyImplementation<TContract>(
+    public static void RequireLegacyImplementation<TContract>(
         TContract implementation,
         string legacyMember,
         string asyncMember)

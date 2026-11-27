@@ -113,7 +113,7 @@ public class UserLocatorCompatibilityTests
 
     private class LegacyUserLocator(Task<User> result) : IRelewiseUserLocator
     {
-        internal int Calls { get; private set; }
+        public int Calls { get; private set; }
 
         public Task<User> GetUser()
         {
@@ -125,7 +125,7 @@ public class UserLocatorCompatibilityTests
 
     private sealed class AsyncOnlyUserLocator(Task<User> result) : IRelewiseUserLocator
     {
-        internal int Calls { get; private set; }
+        public int Calls { get; private set; }
 
         public Task<User> GetUserAsync()
         {

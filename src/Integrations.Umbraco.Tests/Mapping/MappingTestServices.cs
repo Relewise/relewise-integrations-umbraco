@@ -4,7 +4,7 @@ namespace Relewise.Integrations.Umbraco.Tests.Mapping;
 
 internal static class MappingTestServices
 {
-    internal static ServiceProvider Create(Action<RelewiseUmbracoOptionsBuilder> configure)
+    public static ServiceProvider Create(Action<RelewiseUmbracoOptionsBuilder> configure)
     {
         var services = new ServiceCollection();
 

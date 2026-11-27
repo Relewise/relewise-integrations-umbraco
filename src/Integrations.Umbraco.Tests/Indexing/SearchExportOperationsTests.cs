@@ -500,7 +500,7 @@ public class SearchExportOperationsTests
 
     private sealed class ScopedPublishedStrategy(bool fail) : IPublishedContentChangeStrategy, IAsyncDisposable
     {
-        internal bool Disposed { get; private set; }
+        public bool Disposed { get; private set; }
 
         public Task HandleAsync(
             IEnumerable<ContentIndexInfo> indexes,

@@ -8,7 +8,7 @@ namespace Relewise.Integrations.Umbraco.Search;
 
 internal static class SearchFieldRegistration
 {
-    internal static void Map<TEntity, TValue>(
+    public static void Map<TEntity, TValue>(
         Dictionary<string, SearchFieldDefinition> fields,
         Expression<Func<TEntity, TValue>> destinationProperty,
         string fieldName)
@@ -26,7 +26,7 @@ internal static class SearchFieldRegistration
         Add(fields, fieldName, BuiltIn(typeof(TEntity), property.Name));
     }
 
-    internal static SearchFieldDefinition BuiltIn(Type entityType, string property)
+    public static SearchFieldDefinition BuiltIn(Type entityType, string property)
     {
         SearchFieldKind kind = property switch
         {
@@ -45,7 +45,7 @@ internal static class SearchFieldRegistration
             kind == SearchFieldKind.Categories);
     }
 
-    internal static void MapData<TValue>(
+    public static void MapData<TValue>(
         Dictionary<string, SearchFieldDefinition> fields,
         string fieldName,
         Action<SearchDataMappingOptions>? configure)

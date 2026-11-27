@@ -25,7 +25,7 @@ internal sealed class EntityIndexingQueue(
     private readonly AsyncLocal<Execution?> _execution = new();
     private bool _flushQueued;
 
-    internal void EnqueueChanges(IEnumerable<ExportChange> changes)
+    public void EnqueueChanges(IEnumerable<ExportChange> changes)
     {
         ExportChange[][] batches = [.. changes.Chunk(BatchSize)];
 
@@ -40,7 +40,7 @@ internal sealed class EntityIndexingQueue(
         ScheduleFlush();
     }
 
-    internal void EnqueueDeletion(DeletedEntity[] entities, Guid[] parents)
+    public void EnqueueDeletion(DeletedEntity[] entities, Guid[] parents)
     {
         var snapshot = new Deletion([.. entities], [.. parents]);
 
@@ -52,7 +52,7 @@ internal sealed class EntityIndexingQueue(
         ScheduleFlush();
     }
 
-    internal Task ExportAsync(
+    public Task ExportAsync(
         IEnumerable<Guid> keys,
         ContentUpdate.UpdateKind? updateKind = null,
         long? version = null,
@@ -63,7 +63,7 @@ internal sealed class EntityIndexingQueue(
         return ExecuteAsync(cancellation => indexing.ExportAsync(identities, updateKind, version, cancellation), token);
     }
 
-    internal Task RebuildAsync(bool permanentlyDelete = false, CancellationToken token = default)
+    public Task RebuildAsync(bool permanentlyDelete = false, CancellationToken token = default)
     {
         return ExecuteAsync(cancellation => indexing.RebuildAsync(permanentlyDelete, cancellation), token);
     }
@@ -295,7 +295,7 @@ internal sealed class EntityIndexingQueue(
 
     private sealed class Execution
     {
-        internal volatile bool Active = true;
+        public volatile bool Active = true;
     }
 
     private abstract record Work;
@@ -306,6 +306,6 @@ internal sealed class EntityIndexingQueue(
 
     private sealed record Boundary(Func<CancellationToken, Task> Action, CancellationToken Token) : Work
     {
-        internal TaskCompletionSource Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     }
 }

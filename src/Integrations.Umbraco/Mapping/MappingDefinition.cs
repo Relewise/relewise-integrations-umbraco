@@ -10,25 +10,25 @@ namespace Relewise.Integrations.Umbraco.Mapping;
 
 internal sealed class MappingDefinition(Type entityType)
 {
-    internal Type EntityType { get; } = entityType;
-    internal string DocumentTypeAlias { get; set; } = string.Empty;
-    internal bool Export { get; set; } = true;
-    internal bool TrackViews { get; set; } = true;
-    internal bool AutomaticData { get; set; }
-    internal IContentTypeMapping? LegacyMapper { get; set; }
-    internal Func<object, IPublishedContent, string[], MappingOperation, Task>? Mapper { get; set; }
-    internal Type? MapperType { get; set; }
-    internal string? IdPropertyAlias { get; set; }
-    internal string? BrandPropertyAlias { get; set; }
-    internal string? CategoryPropertyAlias { get; set; }
-    internal MappingDefinition? Variant { get; set; }
-    internal bool ReplaceExistingVariants => Variant is { Export: true, AdministrativeActions.Enabled: true };
-    internal AdministrativeActionPolicy AdministrativeActions { get; set; } = AdministrativeActionPolicy.Synchronize();
-    internal EntityUpdatePolicy UpdatePolicy { get; set; } = EntityUpdatePolicy.ReplaceProvidedProperties();
-    internal List<IPropertyMapping> Properties { get; } = new();
-    internal List<DataMapping> DataMappings { get; } = new();
+    public Type EntityType { get; } = entityType;
+    public string DocumentTypeAlias { get; set; } = string.Empty;
+    public bool Export { get; set; } = true;
+    public bool TrackViews { get; set; } = true;
+    public bool AutomaticData { get; set; }
+    public IContentTypeMapping? LegacyMapper { get; set; }
+    public Func<object, IPublishedContent, string[], MappingOperation, Task>? Mapper { get; set; }
+    public Type? MapperType { get; set; }
+    public string? IdPropertyAlias { get; set; }
+    public string? BrandPropertyAlias { get; set; }
+    public string? CategoryPropertyAlias { get; set; }
+    public MappingDefinition? Variant { get; set; }
+    public bool ReplaceExistingVariants => Variant is { Export: true, AdministrativeActions.Enabled: true };
+    public AdministrativeActionPolicy AdministrativeActions { get; set; } = AdministrativeActionPolicy.Synchronize();
+    public EntityUpdatePolicy UpdatePolicy { get; set; } = EntityUpdatePolicy.ReplaceProvidedProperties();
+    public List<IPropertyMapping> Properties { get; } = new();
+    public List<DataMapping> DataMappings { get; } = new();
 
-    internal void AddProperty(string destinationProperty, IPropertyMapping mapping)
+    public void AddProperty(string destinationProperty, IPropertyMapping mapping)
     {
         if (Properties.Any(property => property.DestinationProperty == destinationProperty))
         {
@@ -38,7 +38,7 @@ internal sealed class MappingDefinition(Type entityType)
         Properties.Add(mapping);
     }
 
-    internal void Validate(bool parentAdministrativeActions = true)
+    public void Validate(bool parentAdministrativeActions = true)
     {
         bool synchronize = parentAdministrativeActions && AdministrativeActions.Enabled;
 

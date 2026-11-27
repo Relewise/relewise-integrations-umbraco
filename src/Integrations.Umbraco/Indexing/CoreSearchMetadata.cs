@@ -7,7 +7,7 @@ namespace Relewise.Integrations.Umbraco.Indexing;
 
 internal static class CoreSearchMetadata
 {
-    internal static void Apply(MappedEntity entity, ExportSourceDocument document)
+    public static void Apply(MappedEntity entity, ExportSourceDocument document)
     {
         // These fields establish membership before paging and facets; application values remain in their mapped fields.
         Dictionary<string, DataValue?> data = EntityMapper.Data(entity.Entity);

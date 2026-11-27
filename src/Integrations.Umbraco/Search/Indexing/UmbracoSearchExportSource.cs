@@ -44,7 +44,7 @@ internal sealed class UmbracoSearchExportSource(IPublishedContentChangeStrategy 
         return batch;
     }
 
-    internal static ExportChange FromChange(ContentChange change)
+    public static ExportChange FromChange(ContentChange change)
     {
         ExportChangeImpact impact = change.ChangeImpact switch
         {

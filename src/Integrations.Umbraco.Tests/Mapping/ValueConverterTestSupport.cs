@@ -10,7 +10,7 @@ namespace Relewise.Integrations.Umbraco.Tests.Mapping;
 
 internal static class ValueConverterTestSupport
 {
-    internal static IPublishedProperty Property(
+    public static IPublishedProperty Property(
         string alias,
         string editor,
         Func<string?, object> value)
@@ -42,7 +42,7 @@ internal static class ValueConverterTestSupport
                 : new DataValue(Convert.ToDouble(value, CultureInfo.InvariantCulture)));
     }
 
-    internal sealed class LegacyConverter : IRelewisePropertyValueConverter
+    public sealed class LegacyConverter : IRelewisePropertyValueConverter
     {
         public bool CanHandle(RelewisePropertyConverterContext context)
         {
@@ -55,7 +55,7 @@ internal static class ValueConverterTestSupport
         }
     }
 
-    internal sealed class AsyncConverter : IAsyncRelewisePropertyValueConverter
+    public sealed class AsyncConverter : IAsyncRelewisePropertyValueConverter
     {
         public bool CanHandle(RelewisePropertyConverterContext context)
         {
@@ -72,7 +72,7 @@ internal static class ValueConverterTestSupport
         }
     }
 
-    internal sealed class ScopedConverter : IAsyncRelewisePropertyValueConverter, IDisposable
+    public sealed class ScopedConverter : IAsyncRelewisePropertyValueConverter, IDisposable
     {
         public bool Disposed { get; private set; }
 
@@ -97,7 +97,7 @@ internal static class ValueConverterTestSupport
         }
     }
 
-    internal sealed class DualConverter : IAsyncRelewisePropertyValueConverter, IRelewisePropertyValueConverter
+    public sealed class DualConverter : IAsyncRelewisePropertyValueConverter, IRelewisePropertyValueConverter
     {
         public bool CanHandle(RelewisePropertyConverterContext context)
         {

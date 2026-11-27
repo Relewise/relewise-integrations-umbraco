@@ -14,7 +14,7 @@ namespace Relewise.Integrations.Umbraco.Indexing;
 
 internal static class EntityExportMapping
 {
-    internal static async Task<MappedExportBatch> MapAsync(
+    public static async Task<MappedExportBatch> MapAsync(
         RelewiseUmbracoConfiguration configuration,
         IUmbracoContext context,
         MappingOperation operation,

@@ -203,8 +203,8 @@ public class DirectMappedSearchTests
         Guid node,
         HttpStatusCode status = HttpStatusCode.OK) : HttpMessageHandler
     {
-        internal int Count { get; private set; }
-        internal string RequestBody { get; private set; } = string.Empty;
+        public int Count { get; private set; }
+        public string RequestBody { get; private set; } = string.Empty;
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,

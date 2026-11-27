@@ -11,7 +11,7 @@ namespace Relewise.DemoStorefront.Features.Cart;
 
 internal static class CartTracking
 {
-    internal static async Task TrackCart(PricedCartLine[] lines, HttpContext http)
+    public static async Task TrackCart(PricedCartLine[] lines, HttpContext http)
     {
         ITracker tracker = RequiredTracker(http);
         User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUserAsync();
@@ -46,7 +46,7 @@ internal static class CartTracking
         ];
     }
 
-    internal static async Task TrackOrderAsync(PricedCartLine[] lines, string orderNumber, HttpContext http)
+    public static async Task TrackOrderAsync(PricedCartLine[] lines, string orderNumber, HttpContext http)
     {
         ITracker tracker = RequiredTracker(http);
         User user = await http.RequestServices.GetRequiredService<IRelewiseUserLocator>().GetUserAsync();

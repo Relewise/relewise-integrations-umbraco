@@ -76,7 +76,7 @@ internal class RelewisePropertyConverter(
             token)).Data;
     }
 
-    internal async Task<IReadOnlyDictionary<string, DataValue?>> ConvertElementAsync(
+    public async Task<IReadOnlyDictionary<string, DataValue?>> ConvertElementAsync(
         IPublishedContent? publishedContent,
         IPublishedElement sourceElement,
         string[] cultures,
@@ -93,7 +93,7 @@ internal class RelewisePropertyConverter(
             token)).Data;
     }
 
-    internal Task<PropertyConversion> ConvertPropertyAsync(
+    public Task<PropertyConversion> ConvertPropertyAsync(
         IPublishedContent publishedContent,
         IPublishedElement sourceElement,
         IPublishedProperty property,

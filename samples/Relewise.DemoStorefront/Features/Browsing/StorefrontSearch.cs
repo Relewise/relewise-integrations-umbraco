@@ -54,7 +54,7 @@ internal sealed class StorefrontSearch(
             new DecimalRangeFacetRange("high", 150m, null)
         ];
 
-    internal Filter[] Filters()
+    public Filter[] Filters()
     {
         var filters = new List<Filter>();
 
@@ -151,7 +151,7 @@ internal sealed class StorefrontSearch(
         return [.. filters];
     }
 
-    internal Facet[] Facets()
+    public Facet[] Facets()
     {
         if (editorial)
         {
@@ -181,7 +181,7 @@ internal sealed class StorefrontSearch(
         return [.. facets];
     }
 
-    internal Sorter[] Sorters()
+    public Sorter[] Sorters()
     {
         return request.Query["sort"].ToString() switch
         {
@@ -200,7 +200,7 @@ internal sealed class StorefrontSearch(
         return new KeywordSorter(Constants.Search.FieldNames.Name, Direction.Ascending);
     }
 
-    internal ListingFacet[] Groups(
+    public ListingFacet[] Groups(
         SearchResult result,
         IPublishedContent home)
     {
@@ -316,11 +316,11 @@ internal sealed class StorefrontSearch(
         return [.. groups];
     }
 
-    internal bool HasFilters => request.Query.Any(pair =>
+    public bool HasFilters => request.Query.Any(pair =>
         pair.Key is "category" or "brand" or "price" or "available" or "onSale" or "minPrice" or "maxPrice" &&
         pair.Value.Any(value => !string.IsNullOrWhiteSpace(value)));
 
-    internal ListingChip[] Chips(IPublishedContent home)
+    public ListingChip[] Chips(IPublishedContent home)
     {
         var chips = new List<ListingChip>();
 
@@ -427,7 +427,7 @@ internal sealed class StorefrontSearch(
         return ListingPath + QueryString.Create(query);
     }
 
-    internal string ClearQueryUrl()
+    public string ClearQueryUrl()
     {
         return ListingPath +
                QueryString.Create(
@@ -445,7 +445,7 @@ internal sealed class StorefrontSearch(
             ));
     }
 
-    internal bool IsValid(IPublishedContent home)
+    public bool IsValid(IPublishedContent home)
     {
         string[] sorts = editorial ? ["", "name", "name-desc"] : ["", "name", "name-desc", "price-asc", "price-desc"];
 
@@ -502,7 +502,7 @@ internal sealed class StorefrontSearch(
         return true;
     }
 
-    internal string ResetUrl()
+    public string ResetUrl()
     {
         IEnumerable<KeyValuePair<string, StringValues>> query = request.Query.Where(value =>
             value.Key is not ("category" or "brand" or "price" or "available" or "onSale" or "minPrice" or "maxPrice"

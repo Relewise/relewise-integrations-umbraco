@@ -6,7 +6,7 @@ namespace Relewise.DemoStorefront.Site;
 
 internal static class DemoIllustrations
 {
-    internal static string? Render(
+    public static string? Render(
         IPublishedContent content,
         string image)
     {

@@ -17,7 +17,7 @@ namespace Relewise.Integrations.Umbraco.Indexing;
 
 internal static class EntityExportDelivery
 {
-    internal static async Task ReconcileAsync(
+    public static async Task ReconcileAsync(
         IRelewiseClientFactory clients,
         IEnumerable<EntityReconciliationRequest> requests,
         CancellationToken token)
@@ -50,7 +50,7 @@ internal static class EntityExportDelivery
         }
     }
 
-    internal static async Task MarkUnavailableAsync(
+    public static async Task MarkUnavailableAsync(
         IDataAccessor reader,
         ITracker tracker,
         Type type,
@@ -126,7 +126,7 @@ internal static class EntityExportDelivery
         }
     }
 
-    internal static Filter DataFilter(
+    public static Filter DataFilter(
         Type type,
         string key,
         ValueCondition condition,
@@ -139,7 +139,7 @@ internal static class EntityExportDelivery
             : new ContentCategoryDataFilter(key, condition, filterOutIfKeyIsNotFound);
     }
 
-    internal static Trackable DeleteIdentity(
+    public static Trackable DeleteIdentity(
         Type type,
         string id)
     {
@@ -170,7 +170,7 @@ internal static class EntityExportDelivery
                             CategoryAdministrativeAction.UpdateKind.Delete);
     }
 
-    internal static Trackable Administrative(
+    public static Trackable Administrative(
         Type type,
         FilterCollection filters,
         bool delete,

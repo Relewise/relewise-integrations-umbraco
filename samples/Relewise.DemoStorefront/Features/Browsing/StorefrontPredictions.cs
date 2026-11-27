@@ -16,7 +16,7 @@ namespace Relewise.DemoStorefront.Features.Browsing;
 // The site-wide search box needs predictions, not a results/count search first.
 internal static class StorefrontPredictions
 {
-    internal static async Task<IResult> GetAsync(HttpContext http)
+    public static async Task<IResult> GetAsync(HttpContext http)
     {
         http.Response.Headers.CacheControl = "no-store";
 

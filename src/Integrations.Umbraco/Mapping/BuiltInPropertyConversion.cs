@@ -9,7 +9,7 @@ namespace Relewise.Integrations.Umbraco.Mapping;
 
 internal static class BuiltInPropertyConversion
 {
-    internal static async ValueTask<TValue> ConvertAsync<TValue>(PropertyMappingContext context)
+    public static async ValueTask<TValue> ConvertAsync<TValue>(PropertyMappingContext context)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
 

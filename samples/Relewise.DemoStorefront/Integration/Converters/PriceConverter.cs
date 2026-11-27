@@ -18,7 +18,7 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
         return ValueTask.FromResult(Read(context.Property.GetValue(), token));
     }
 
-    internal static MultiCurrency? Read(
+    public static MultiCurrency? Read(
         object? source,
         CancellationToken token = default)
     {
@@ -74,7 +74,7 @@ internal sealed class PriceConverter : IPropertyMappingConverter<MultiCurrency?>
         _disposed = true;
     }
 
-    internal static void ValidateAmount(decimal amount)
+    public static void ValidateAmount(decimal amount)
     {
         if (amount < 0 || decimal.Round(amount, 2) != amount)
         {

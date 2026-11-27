@@ -107,11 +107,11 @@ public class NotificationExportOperationsTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly ServiceProvider _services;
-        internal Mock<IContentService> Content { get; } = new();
-        internal List<Trackable> Sent { get; } = [];
-        internal NotificationExportOperations Exports { get; }
+        public Mock<IContentService> Content { get; } = new();
+        public List<Trackable> Sent { get; } = [];
+        public NotificationExportOperations Exports { get; }
 
-        internal Fixture(Action<IServiceCollection>? configure = null)
+        public Fixture(Action<IServiceCollection>? configure = null)
         {
             Content.Setup(value => value.GetRootContent()).Returns([]);
             var languages = new Mock<ILanguageService>();

@@ -31,7 +31,7 @@ internal class RelewiseViewTrackingMiddleware
         IsEnabled = true;
     }
 
-    internal static bool IsEnabled { get; private set; }
+    public static bool IsEnabled { get; private set; }
 
     public async Task InvokeAsync(HttpContext context)
     {

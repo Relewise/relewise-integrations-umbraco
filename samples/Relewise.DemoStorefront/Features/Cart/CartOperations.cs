@@ -14,7 +14,7 @@ namespace Relewise.DemoStorefront.Features.Cart;
 
 internal static class CartOperations
 {
-    internal static async Task ChangeMarketAsync(HttpContext http)
+    public static async Task ChangeMarketAsync(HttpContext http)
     {
         if (!DemoConnection.IsConfigured(http))
         {
@@ -58,7 +58,7 @@ internal static class CartOperations
         }
     }
 
-    internal static async Task<IResult> ExecuteAsync(
+    public static async Task<IResult> ExecuteAsync(
         HttpContext http,
         string action,
         IFormCollection form)

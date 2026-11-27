@@ -2,94 +2,94 @@ namespace Relewise.DemoStorefront;
 
 internal static class DemoConstants
 {
-    internal static class DocumentTypeAliases
+    public static class DocumentTypeAliases
     {
-        internal const string Home = "home";
-        internal const string Article = "article";
-        internal const string LocalizedArticle = "localizedArticle";
-        internal const string Guide = "guide";
-        internal const string Folder = "folder";
-        internal const string Brand = "brand";
-        internal const string ProductCategory = "productCategory";
-        internal const string Product = "product";
-        internal const string ProductVariant = "productVariant";
-        internal const string EditorialText = "editorialText";
-        internal const string LocalizedEditorialText = "localizedEditorialText";
-        internal const string EditorialGroup = "editorialGroup";
-        internal const string LocalizedEditorialGroup = "localizedEditorialGroup";
-        internal const string EditorialVisibility = "editorialVisibility";
+        public const string Home = "home";
+        public const string Article = "article";
+        public const string LocalizedArticle = "localizedArticle";
+        public const string Guide = "guide";
+        public const string Folder = "folder";
+        public const string Brand = "brand";
+        public const string ProductCategory = "productCategory";
+        public const string Product = "product";
+        public const string ProductVariant = "productVariant";
+        public const string EditorialText = "editorialText";
+        public const string LocalizedEditorialText = "localizedEditorialText";
+        public const string EditorialGroup = "editorialGroup";
+        public const string LocalizedEditorialGroup = "localizedEditorialGroup";
+        public const string EditorialVisibility = "editorialVisibility";
     }
 
-    internal static class PropertyAliases
+    public static class PropertyAliases
     {
-        internal const string Sku = "sku";
-        internal const string BrandId = "brandId";
-        internal const string CategoryId = "categoryId";
-        internal const string Heading = "heading";
-        internal const string BodyText = "bodyText";
-        internal const string HeroImage = "heroImage";
-        internal const string Stock = "stock";
-        internal const string ListPrice = "listPrice";
-        internal const string SalesPrice = "salesPrice";
-        internal const string ContentRows = "contentRows";
-        internal const string PageGrid = "pageGrid";
-        internal const string Items = "items";
-        internal const string Text = "text";
-        internal const string Hide = "hide";
-        internal const string Caption = "caption";
-        internal const string Color = "color";
-        internal const string Size = "size";
-        internal const string OptionLabel = "optionLabel";
-        internal const string Capacity = "capacity";
-        internal const string WeightGrams = "weightGrams";
-        internal const string SizeGuide = "sizeGuide";
-        internal const string ProductType = "productType";
-        internal const string ExtraCategories = "extraCategories";
-        internal const string Brand = "brand";
-        internal const string Currency = "currency";
-        internal const string Amount = "amount";
-        internal const string Score = "score";
+        public const string Sku = "sku";
+        public const string BrandId = "brandId";
+        public const string CategoryId = "categoryId";
+        public const string Heading = "heading";
+        public const string BodyText = "bodyText";
+        public const string HeroImage = "heroImage";
+        public const string Stock = "stock";
+        public const string ListPrice = "listPrice";
+        public const string SalesPrice = "salesPrice";
+        public const string ContentRows = "contentRows";
+        public const string PageGrid = "pageGrid";
+        public const string Items = "items";
+        public const string Text = "text";
+        public const string Hide = "hide";
+        public const string Caption = "caption";
+        public const string Color = "color";
+        public const string Size = "size";
+        public const string OptionLabel = "optionLabel";
+        public const string Capacity = "capacity";
+        public const string WeightGrams = "weightGrams";
+        public const string SizeGuide = "sizeGuide";
+        public const string ProductType = "productType";
+        public const string ExtraCategories = "extraCategories";
+        public const string Brand = "brand";
+        public const string Currency = "currency";
+        public const string Amount = "amount";
+        public const string Score = "score";
     }
 
-    internal static class DataKeys
+    public static class DataKeys
     {
-        internal const string InStock = "inStock";
-        internal const string ProductType = PropertyAliases.ProductType;
-        internal const string BodyText = PropertyAliases.BodyText;
-        internal const string SearchText = "searchText";
-        internal const string EditorialSource = "editorialSource";
+        public const string InStock = "inStock";
+        public const string ProductType = PropertyAliases.ProductType;
+        public const string BodyText = PropertyAliases.BodyText;
+        public const string SearchText = "searchText";
+        public const string EditorialSource = "editorialSource";
 
-        internal static string OnSale(string currency) => "onSale_" + currency;
+        public static string OnSale(string currency) => "onSale_" + currency;
     }
 
-    internal static class SearchFields
+    public static class SearchFields
     {
-        internal const string Category = "shopCategory";
-        internal const string Brand = "shopBrand";
+        public const string Category = "shopCategory";
+        public const string Brand = "shopBrand";
 
-        internal const string Price = "shopPrice";
+        public const string Price = "shopPrice";
     }
 
-    internal static class SearchProviders
+    public static class SearchProviders
     {
-        internal const string Articles = "articles";
-        internal const string Catalogue = "catalogue";
-        internal const string Offers = "offers";
+        public const string Articles = "articles";
+        public const string Catalogue = "catalogue";
+        public const string Offers = "offers";
     }
 
-    internal static class Cookies
+    public static class Cookies
     {
-        internal const string Visitor = "storefront-visitor";
-        internal const string Market = "storefront-market";
+        public const string Visitor = "storefront-visitor";
+        public const string Market = "storefront-market";
     }
 
-    internal static class RequestItems
+    public static class RequestItems
     {
-        internal const string Checkout = "Fieldwork:Checkout";
+        public const string Checkout = "Fieldwork:Checkout";
     }
 
-    internal static class ConfigurationKeys
+    public static class ConfigurationKeys
     {
-        internal const string DatasetId = "Relewise:DatasetId";
+        public const string DatasetId = "Relewise:DatasetId";
     }
 }

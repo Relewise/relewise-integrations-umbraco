@@ -7,7 +7,7 @@ namespace Relewise.Integrations.Umbraco.Search;
 
 internal sealed class SearchExportConfiguration : IExportSystemConfiguration
 {
-    internal SearchProviderOptions Options { get; } = new();
+    public SearchProviderOptions Options { get; } = new();
 
     public IExportSystem Resolve(IServiceProvider services) => services.GetRequiredService<UmbracoSearchExportSystem>();
 

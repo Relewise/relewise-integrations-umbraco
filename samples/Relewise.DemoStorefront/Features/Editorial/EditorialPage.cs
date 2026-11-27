@@ -6,7 +6,7 @@ namespace Relewise.DemoStorefront.Features.Editorial;
 
 internal static class EditorialPage
 {
-    internal static EditorialPageModel Create(IPublishedContent page, HttpContext http)
+    public static EditorialPageModel Create(IPublishedContent page, HttpContext http)
     {
         string culture = DemoMarket.Current(http).Culture;
 

@@ -32,7 +32,7 @@ internal sealed class IndexMetadataService(
     private readonly Lock _sync = new();
     private readonly Dictionary<string, CachedMetadata> _cache = new(StringComparer.OrdinalIgnoreCase);
 
-    internal Task<IndexMetadata> GetMetadataAsync(string indexAlias)
+    public Task<IndexMetadata> GetMetadataAsync(string indexAlias)
     {
         if (!string.Equals(indexAlias, SearchExportOperations.IndexAlias, StringComparison.OrdinalIgnoreCase) &&
             !configuration.GetSearchOptions().Providers.ContainsKey(indexAlias))

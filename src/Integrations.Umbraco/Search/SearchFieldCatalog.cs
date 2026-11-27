@@ -12,7 +12,7 @@ namespace Relewise.Integrations.Umbraco.Search;
 
 internal static class SearchFieldCatalog
 {
-    internal static SearchFieldDefinition Resolve(
+    public static SearchFieldDefinition Resolve(
         string fieldName,
         RelewiseUmbracoConfiguration configuration,
         SearchProviderDefinition provider,

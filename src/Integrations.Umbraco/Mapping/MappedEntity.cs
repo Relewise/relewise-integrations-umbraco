@@ -15,15 +15,15 @@ internal sealed class MappedEntity(
     object entity,
     bool synchronize)
 {
-    internal Guid NodeKey { get; } = nodeKey;
-    internal string DocumentTypeAlias { get; } = documentTypeAlias;
-    internal string Id { get; } = id;
-    internal object Entity { get; } = entity;
-    internal bool Synchronize { get; set; } = synchronize;
-    internal List<MappedEntity> Variants { get; } = new();
-    internal bool ClearAndReplace { get; init; }
+    public Guid NodeKey { get; } = nodeKey;
+    public string DocumentTypeAlias { get; } = documentTypeAlias;
+    public string Id { get; } = id;
+    public object Entity { get; } = entity;
+    public bool Synchronize { get; set; } = synchronize;
+    public List<MappedEntity> Variants { get; } = new();
+    public bool ClearAndReplace { get; init; }
 
-    internal Trackable Update(ContentUpdate.UpdateKind? contentUpdateKind = null)
+    public Trackable Update(ContentUpdate.UpdateKind? contentUpdateKind = null)
     {
         contentUpdateKind ??= ContentUpdateKind;
 
@@ -71,6 +71,6 @@ internal sealed class MappedEntity(
         };
     }
 
-    internal ContentUpdate.UpdateKind? ContentUpdateKind { get; set; }
-    internal bool ReplaceExistingVariants { get; init; }
+    public ContentUpdate.UpdateKind? ContentUpdateKind { get; set; }
+    public bool ReplaceExistingVariants { get; init; }
 }

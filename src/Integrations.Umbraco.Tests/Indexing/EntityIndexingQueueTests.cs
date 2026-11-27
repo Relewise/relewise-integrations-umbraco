@@ -487,15 +487,15 @@ public class EntityIndexingQueueTests
 
     private sealed class Fixture
     {
-        internal Mock<IEntityIndexingOperations> Operations { get; } = new();
-        internal Mock<IBackgroundTaskQueue> Queue { get; } = new();
-        internal Mock<ILogger<EntityIndexingQueue>> Logger { get; } = new();
-        internal Queue<Func<CancellationToken, Task>> Scheduled { get; } = new();
-        internal List<string> Calls { get; } = [];
-        internal List<ExportChange[]> Batches { get; } = [];
-        internal EntityIndexingQueue Writer { get; }
+        public Mock<IEntityIndexingOperations> Operations { get; } = new();
+        public Mock<IBackgroundTaskQueue> Queue { get; } = new();
+        public Mock<ILogger<EntityIndexingQueue>> Logger { get; } = new();
+        public Queue<Func<CancellationToken, Task>> Scheduled { get; } = new();
+        public List<string> Calls { get; } = [];
+        public List<ExportChange[]> Batches { get; } = [];
+        public EntityIndexingQueue Writer { get; }
 
-        internal Fixture(CancellationToken token = default)
+        public Fixture(CancellationToken token = default)
         {
             Mock<IBackgroundTaskQueue> queue = Queue;
 
@@ -530,7 +530,7 @@ public class EntityIndexingQueueTests
             Writer = new EntityIndexingQueue(Operations.Object, queue.Object, lifetime.Object, Logger.Object);
         }
 
-        internal async Task DrainAsync()
+        public async Task DrainAsync()
         {
             var count = 0;
 

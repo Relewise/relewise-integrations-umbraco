@@ -7,7 +7,7 @@ namespace Relewise.DemoStorefront.Seeding;
 
 internal static class DemoDictionary
 {
-    internal static async Task EnsureAsync(IServiceProvider services)
+    public static async Task EnsureAsync(IServiceProvider services)
     {
         var dictionaries = services.GetRequiredService<IDictionaryItemService>();
         ILanguage[] languages = [.. (await services.GetRequiredService<ILanguageService>().GetAllAsync())];

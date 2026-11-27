@@ -323,7 +323,7 @@ public class ProductPriceSearchTests
         bool binary,
         HttpStatusCode status = HttpStatusCode.OK) : HttpMessageHandler
     {
-        internal int RequestCount { get; private set; }
+        public int RequestCount { get; private set; }
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,

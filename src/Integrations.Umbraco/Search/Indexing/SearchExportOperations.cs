@@ -34,7 +34,7 @@ internal sealed class SearchExportOperations(
     ILogger<SearchExportOperations> logger,
     TimeProvider? clock = null) : IEntityIndexingOperations
 {
-    internal const string IndexAlias = "Relewise_MappedEntities";
+    public const string IndexAlias = "Relewise_MappedEntities";
     private long _lastAutomaticVersion;
     private long _lastExportVersion;
 

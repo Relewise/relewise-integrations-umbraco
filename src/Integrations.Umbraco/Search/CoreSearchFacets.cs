@@ -18,7 +18,7 @@ namespace Relewise.Integrations.Umbraco.Search;
 // Native facet selections return results and disjunctive counts in the same search request.
 internal static class CoreSearchFacets
 {
-    internal static UFilter[] Configure(
+    public static UFilter[] Configure(
         ContentFacetQuery query,
         UFacet[] facets,
         UFilter[] filters,
@@ -135,7 +135,7 @@ internal static class CoreSearchFacets
         throw CoreSearchTranslation.Unsupported(facet.FieldName, facet.GetType().Name);
     }
 
-    internal static UFacetResult[] Read(
+    public static UFacetResult[] Read(
         ContentFacetResult? response,
         UFacet[] facets,
         Func<string, SearchFieldDefinition> resolve)
@@ -236,7 +236,7 @@ internal static class CoreSearchFacets
         }
     }
 
-    internal static List<RFacet> Merge(IEnumerable<RFacet> required, IEnumerable<RFacet> configured)
+    public static List<RFacet> Merge(IEnumerable<RFacet> required, IEnumerable<RFacet> configured)
     {
         RFacet[] core = [.. required];
         HashSet<string> keys = [.. core.Select(Key)];
@@ -269,7 +269,7 @@ internal static class CoreSearchFacets
         };
     }
 
-    internal static RFacet ForProduct(RFacet facet)
+    public static RFacet ForProduct(RFacet facet)
     {
         return facet switch
         {
@@ -303,7 +303,7 @@ internal static class CoreSearchFacets
         };
     }
 
-    internal static RFacetResult ForContent(RFacetResult facet)
+    public static RFacetResult ForContent(RFacetResult facet)
     {
         return facet switch
         {

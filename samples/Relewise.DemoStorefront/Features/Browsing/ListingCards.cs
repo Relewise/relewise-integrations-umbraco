@@ -9,7 +9,7 @@ namespace Relewise.DemoStorefront.Features.Browsing;
 
 internal static class ListingCards
 {
-    internal static ListingCard CardData(
+    public static ListingCard CardData(
         IPublishedContent page,
         HttpContext http)
     {

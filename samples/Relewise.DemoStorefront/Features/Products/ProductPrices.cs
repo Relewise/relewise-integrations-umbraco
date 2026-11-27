@@ -8,7 +8,7 @@ namespace Relewise.DemoStorefront.Features.Products;
 
 internal static class ProductPrices
 {
-    internal static (string Sale, string? List, string? Savings) Display(
+    public static (string Sale, string? List, string? Savings) Display(
         IPublishedContent product,
         HttpContext http)
     {
@@ -45,7 +45,7 @@ internal static class ProductPrices
             : null;
     }
 
-    internal static decimal? Read(IPublishedContent product, string propertyAlias, string currency)
+    public static decimal? Read(IPublishedContent product, string propertyAlias, string currency)
     {
         return PriceConverter.Read(product.GetProperty(propertyAlias)?.GetValue())
             ?.Values?
