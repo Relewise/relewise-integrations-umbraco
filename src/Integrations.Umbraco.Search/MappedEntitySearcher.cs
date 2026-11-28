@@ -18,18 +18,49 @@ using Relewise.Client.Requests.Shared;
 using Relewise.Client.Responses.Search;
 using Relewise.Client.Search;
 using Umbraco.Cms.Core.Models;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Sorting;
+#endif
 using Umbraco.Cms.Core.Services;
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Models.Searching;
+using Umbraco.Cms.Search.Core.Models.Searching.Sorting;
+#endif
 using static Relewise.Integrations.Umbraco.Search.CoreSearchTranslation;
 using Content = Relewise.Client.DataTypes.Content;
 using Language = Relewise.Client.DataTypes.Language;
 using RFilter = Relewise.Client.Requests.Filters.Filter;
+#if !UMBRACO_SEARCH_ADDON
+using SearchConstants = Umbraco.Cms.Core.Constants.Search;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using SearchConstants = Umbraco.Cms.Search.Core.Constants;
+#endif
+#if !UMBRACO_SEARCH_ADDON
 using UFacet = Umbraco.Cms.Core.Search.Querying.Faceting.Facet;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using UFacet = Umbraco.Cms.Search.Core.Models.Searching.Faceting.Facet;
+#endif
+#if !UMBRACO_SEARCH_ADDON
 using UFacetResult = Umbraco.Cms.Core.Search.Querying.Faceting.FacetResult;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using UFacetResult = Umbraco.Cms.Search.Core.Models.Searching.Faceting.FacetResult;
+#endif
+#if !UMBRACO_SEARCH_ADDON
 using UFilter = Umbraco.Cms.Core.Search.Querying.Filtering.Filter;
-using UmbracoConstants = Umbraco.Cms.Core.Constants;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using UFilter = Umbraco.Cms.Search.Core.Models.Searching.Filtering.Filter;
+#endif
+#if !UMBRACO_SEARCH_ADDON
 using UmbracoSearcher = Umbraco.Cms.Core.Search.ISearcher;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using UmbracoSearcher = Umbraco.Cms.Search.Core.Services.ISearcher;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Search;
 
@@ -58,7 +89,7 @@ internal sealed class MappedEntitySearcher(
         ArgumentOutOfRangeException.ThrowIfNegative(take);
         ArgumentOutOfRangeException.ThrowIfNegative(maxSuggestions);
 
-        string alias = indexAlias == UmbracoConstants.Search.IndexAliases.PublishedContent
+        string alias = indexAlias == SearchConstants.IndexAliases.PublishedContent
             ? configuration.GetSearchOptions().DefaultPublishedContentProviderAlias ?? indexAlias
             : indexAlias;
 

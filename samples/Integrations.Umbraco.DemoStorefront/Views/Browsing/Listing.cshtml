@@ -1,0 +1,23 @@
+@using Relewise.Integrations.Umbraco.DemoStorefront.Features.Browsing
+@model ListingPageModel
+@await Html.PartialAsync("/Views/Shared/_Breadcrumb.cshtml", Model.Breadcrumb)
+@if (Model.Listing != null)
+{
+    <section class="listing-heading"><h1>@Model.Heading</h1></section>
+    @await Html.PartialAsync("/Views/Shared/_CategoryLinks.cshtml", Model.Categories)
+    <div id="storefront-listing"><p role="status">@Text(Context, "UpdatingResults")</p></div>
+    <script id="listing-data" type="application/json">
+        @Html.Raw(JsonSerializer.Serialize(Model.Listing, StorefrontChrome.Json))
+    </script>
+}
+else
+{
+    <h1>@Model.Heading</h1>
+    <p>@Text(Context, "ContentPreview")</p>
+    <div class="grid">
+        @foreach (ListingCard card in Model.Preview)
+        {
+            @await Html.PartialAsync("/Views/Browsing/_Card.cshtml", card)
+        }
+    </div>
+}

@@ -12,9 +12,20 @@ using Relewise.Client.Requests.Search;
 using Relewise.Client.Requests.Search.Settings;
 using Relewise.Client.Responses.Search;
 using Relewise.Integrations.Umbraco.Search;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
-using UmbracoConstants = Umbraco.Cms.Core.Constants;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Models.Searching;
+using Umbraco.Cms.Search.Core.Models.Searching.Faceting;
+#endif
+#if !UMBRACO_SEARCH_ADDON
+using SearchConstants = Umbraco.Cms.Core.Constants.Search;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using SearchConstants = Umbraco.Cms.Search.Core.Constants;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Tests.Search;
 
@@ -124,13 +135,18 @@ public class MappedEntitySearchTests
     }
 
     [Theory]
-    [InlineData(false, null)]
-    [InlineData(true, null)]
-    [InlineData(true, true)]
-    [InlineData(true, false)]
+    [InlineData(false, null, null)]
+    [InlineData(false, null, "Configured location")]
+    [InlineData(true, null, null)]
+    [InlineData(true, null, "Configured location")]
+    [InlineData(true, true, null)]
+    [InlineData(true, true, "Configured location")]
+    [InlineData(true, false, null)]
+    [InlineData(true, false, "Configured location")]
     public async Task RequestCustomizationRetainsIdentityMembershipAndPaging(
         bool product,
-        bool? requirePublishedPage)
+        bool? requirePublishedPage,
+        string? displayedAtLocation)
     {
         var sent = new ConcurrentBag<PaginatedSearchRequest>();
         var searcher = new Mock<Relewise.Client.Search.ISearcher>();
@@ -217,6 +233,7 @@ public class MappedEntitySearchTests
                                 provider.RequirePublishedPage = requirePublishedPage.Value;
                             }
 
+                            provider.DisplayedAtLocation = displayedAtLocation;
                             provider.MapData<int>("number");
                             provider.ConfigureRequest((request, _) => Customize(request));
                         });
@@ -231,6 +248,7 @@ public class MappedEntitySearchTests
                         "articles",
                         provider =>
                         {
+                            provider.DisplayedAtLocation = displayedAtLocation;
                             provider.MapData<int>("number");
                             provider.ConfigureRequest((request, _) => Customize(request));
                         });
@@ -250,7 +268,7 @@ public class MappedEntitySearchTests
         accessor.HttpContext = new DefaultHttpContext { RequestServices = scope.ServiceProvider };
 
         User expected = await scope.ServiceProvider.GetRequiredService<IRelewiseUserLocator>().GetUserAsync();
-        string alias = product ? "catalogue" : UmbracoConstants.Search.IndexAliases.PublishedContent;
+        string alias = product ? "catalogue" : SearchConstants.IndexAliases.PublishedContent;
 
         try
         {
@@ -316,7 +334,7 @@ public class MappedEntitySearchTests
         Assert.All(
             sent,
             request => Assert.Equal(
-                product ? "Umbraco search: catalogue" : "Umbraco search: articles",
+                displayedAtLocation ?? (product ? "Umbraco search: catalogue" : "Umbraco search: articles"),
                 request.DisplayedAtLocation));
     }
 

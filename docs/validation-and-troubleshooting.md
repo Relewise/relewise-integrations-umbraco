@@ -15,9 +15,9 @@ Include multiple published cultures, empty values, removed fields and publish/un
 in your checks. If you use custom block extraction, verify nested content and your visibility
 rules using the [block-editor guide](block-editors.md).
 
-The [DemoStorefront](../samples/Relewise.DemoStorefront/README.md) provides a seeded CMS preview
+The [DemoStorefront](../samples/Integrations.Umbraco.DemoStorefront/README.md) provides a seeded CMS preview
 and mapping, converter, search and tracking examples. Follow its
-[connection setup](../samples/Relewise.DemoStorefront/README.md#connect-to-relewise) to exercise
+[connection setup](../samples/Integrations.Umbraco.DemoStorefront/README.md#connect-to-relewise) to exercise
 Relewise features with a dedicated test Dataset.
 
 ## Connection settings

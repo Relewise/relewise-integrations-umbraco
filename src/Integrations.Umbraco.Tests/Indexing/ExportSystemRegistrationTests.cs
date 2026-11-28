@@ -16,14 +16,78 @@ using Umbraco.Cms.Core.Logging;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Core.Scoping;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Configuration;
 using Umbraco.Cms.Core.Search.Indexing;
+#endif
 using Umbraco.Cms.Core.Services.Navigation;
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Configuration;
+using Umbraco.Cms.Search.Core.Models.Configuration;
+using Umbraco.Cms.Search.Core.Services.ContentIndexing;
+#endif
+#if !UMBRACO_SEARCH_ADDON
+using SearchConstants = Umbraco.Cms.Core.Constants.Search;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using SearchConstants = Umbraco.Cms.Search.Core.Constants;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Tests.Indexing;
 
 public class ExportSystemRegistrationTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DefaultQueryRoutingPreservesExistingIngestionOrAddsOnlyAQueryAlias(bool existingIndex)
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) =>
+        {
+            options.MapContent("article");
+            options.ConfigureSearch(search =>
+            {
+                search.AddContentProvider("articles");
+                search.DefaultPublishedContentProviderAlias = "articles";
+            });
+        });
+        services.AddSingleton<RelewiseUmbracoConfiguration>();
+        if (existingIndex)
+        {
+            services.Configure<IndexOptions>(indexes =>
+                indexes.RegisterContentIndex<
+                    IndexingKeyCollector,
+                    MappedEntitySearcher,
+                    IPublishedContentChangeStrategy>(
+                    SearchConstants.IndexAliases.PublishedContent,
+                    sameOriginOnly: false,
+                    UmbracoObjectTypes.Document));
+        }
+
+        SearchComposer.ConfigureIntegration(new TestBuilder(services));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IndexOptions result = provider.GetRequiredService<IOptions<IndexOptions>>().Value;
+        IndexRegistration published = Assert.IsAssignableFrom<IndexRegistration>(
+            result.GetIndexRegistration(SearchConstants.IndexAliases.PublishedContent));
+
+        Assert.Equal(typeof(MappedEntitySearcher), published.Searcher);
+        Assert.Single(result.GetContentIndexRegistrations(),
+            index => index.IndexAlias == SearchExportOperations.IndexAlias);
+        if (existingIndex)
+        {
+            ContentIndexRegistration content = Assert.IsType<ContentIndexRegistration>(published);
+            Assert.Equal(typeof(IndexingKeyCollector), content.Indexer);
+            Assert.Equal(typeof(IPublishedContentChangeStrategy), content.ContentChangeStrategy);
+            Assert.False(content.SameOriginOnly);
+        }
+        else
+        {
+            Assert.Null(result.GetContentIndexRegistration(SearchConstants.IndexAliases.PublishedContent));
+            Assert.Single(result.GetContentIndexRegistrations());
+        }
+    }
+
     [Theory]
     [InlineData(-1)]
     [InlineData(0)]
@@ -40,7 +104,7 @@ public class ExportSystemRegistrationTests
         services.AddSingleton(Mock.Of<ICoreScopeProvider>());
         var builder = new TestBuilder(services);
         if (mode >= 0)
-            new SearchComposer().Compose(builder);
+            SearchComposer.ConfigureIntegration(builder);
         int calls = 0;
         builder.AddRelewise(options =>
         {
@@ -109,7 +173,7 @@ public class ExportSystemRegistrationTests
         services.AddSingleton(Mock.Of<IBackgroundTaskQueue>());
         services.AddScoped(_ => Mock.Of<IPublishedContentChangeStrategy>());
         services.AddSingleton(Mock.Of<IDocumentNavigationQueryService>());
-        new SearchComposer().Compose(new TestBuilder(services));
+        SearchComposer.ConfigureIntegration(new TestBuilder(services));
         using ServiceProvider provider = services.BuildServiceProvider(
             new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
         IndexOptions indexes = provider.GetRequiredService<IOptions<IndexOptions>>().Value;
@@ -161,7 +225,7 @@ public class ExportSystemRegistrationTests
         services.AddSingleton(Mock.Of<IBackgroundTaskQueue>());
         services.AddSingleton(Mock.Of<ICoreScopeProvider>());
         var builder = new TestBuilder(services);
-        new SearchComposer().Compose(builder);
+        SearchComposer.ConfigureIntegration(builder);
         builder.AddRelewise(options => options.MapContent("article"));
         builder.AddRelewise(options => options.ConfigureSearch());
         using ServiceProvider provider =

@@ -2,7 +2,12 @@ using Newtonsoft.Json;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
 using Relewise.Integrations.Umbraco.Search;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Querying.Filtering;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Models.Searching.Filtering;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Tests.Search;
 

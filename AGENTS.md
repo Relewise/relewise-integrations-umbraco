@@ -24,10 +24,10 @@
 
 ## Package boundaries
 
-- Maintain one Core source project with `UmbracoMajorVersion` build profiles (17, 18, 19). Each package major must compile against its matching CMS APIs and preserve its dependency range. Keep profile outputs isolated; do not add runtime version detection or custom assembly loading.
+- Maintain one source project per package with `UmbracoMajorVersion` build profiles (17, 18, 19). Each package major must compile against its matching CMS APIs and preserve its dependency range. Keep profile outputs isolated; do not add runtime version detection or custom assembly loading.
 - Preserve the published synchronous `AddValueConverter<T>()` registration as an obsolete compatibility method. Register asynchronous converters with `AddAsyncValueConverter<T>()` on every supported major.
 - Keep `src/Integrations.Umbraco` independent of the Search package and Umbraco Search APIs. It owns mapping, notification-based exports, tracking and the dashboard.
-- Keep Umbraco Search indexing, query providers and their configuration in `src/Integrations.Umbraco.Search`. Its composer registers optional services; only `ConfigureSearch()` activates ingestion. Installing the Search package alone must remain safe, including when `AddRelewise` is absent.
+- Keep Umbraco Search indexing, query providers and their configuration in `src/Integrations.Umbraco.Search`. On Umbraco 17/18 its composer registers the official Search add-on; v19 uses the built-in services. Its composer registers optional services; only `ConfigureSearch()` activates ingestion. Installing the Search package alone must remain safe, including when `AddRelewise` is absent.
 - Reuse the internal export/mapping bridge through the maintained friend assembly, without expanding the package's public API for implementation plumbing. Supply Search dashboard details through the optional internal contributors in registration order.
 
 ## Delivery
@@ -38,10 +38,10 @@
 ## Examples, tests and local material
 
 - Use [CONTRIBUTING.md](CONTRIBUTING.md) for repository build profiles, test commands and regression coverage. Keep these contributor instructions out of package-user guides.
-- Keep runnable examples and their mapping/converter implementations centralized in `samples/Relewise.DemoStorefront`. Link guides to those source files rather than adding separate example projects or duplicate implementations. Preserve culture-aware mapping, nested block extraction and legacy compatibility examples when updating the demo.
+- Keep runnable examples and their mapping/converter implementations centralized in `samples/Integrations.Umbraco.DemoStorefront`. Link guides to those source files rather than adding separate example projects or duplicate implementations. Preserve culture-aware mapping, nested block extraction and legacy compatibility examples when updating the demo.
 - Organize the DemoStorefront by feature, with package examples in `Integration`, shared site presentation/context in `Site`, installation in `Setup` and seeded schema/content in `Seeding`. Match namespaces to folders; keep HTTP adapters separate from shopping operations and rendering. Keep Vue components grouped by feature under `Client/src`.
 - Render storefront pages and shared presentation in strongly typed Razor views/partials. C# prepares view models and handles application behavior; do not build page markup with HTML strings. Preserve Vue payload contracts and use encoded framework helpers for any small HTML fragments those contracts require.
 - Keep credentials, generated Umbraco databases, ad hoc smoke-test tooling and raw execution reports in ignored local files. Do not publish them with the package.
-- Keep one backend test project. Group package tests under `Mapping`, `Indexing`, `Search`, `Dashboard`, `Tracking` and `Compatibility`; keep sample tests under `DemoStorefront`. Match namespaces to folders, keep each test class focused on one responsibility, and extract shared setup only when multiple test classes need it.
+- Keep Core and Search tests in `src/Integrations.Umbraco.Tests`, grouped under `Mapping`, `Indexing`, `Search`, `Dashboard`, `Tracking` and `Compatibility`. Keep sample-only tests in `src/Integrations.Umbraco.DemoStorefront.Tests`. Package tests must not reference the sample project. Match namespaces to folders, keep each test class focused on one responsibility, and extract shared setup only when multiple test classes need it.
 - Keep permanent backend tests focused on observable behavior, regressions and compatibility. The DemoStorefront deliberately has no frontend test suite; verify its UI in a browser. Build affected projects and run relevant backend tests after code changes.
 - Build the dashboard with `npm run build` in `src/Integrations.Umbraco/Client` when changing frontend code.

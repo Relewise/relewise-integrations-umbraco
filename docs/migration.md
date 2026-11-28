@@ -7,8 +7,8 @@
 Use integration 17.x with Umbraco `[17.0.0,18)`, 18.x with `[18.2.0,19)`, and 19.x with
 `[19.0.0-rc1,20)`. The 17.x and 18.x builds use .NET 10; 19.x uses .NET 11.
 Mapping, notification-based exports, tracking and the dashboard share the same configuration
-API across these releases. The Search package currently requires Umbraco 19, as does
-DemoStorefront, which is pinned to `19.0.0-rc1`.
+API across these releases. Install the same major of the optional Search package.
+DemoStorefront uses Umbraco `19.0.0-rc1`.
 
 ### Upgrading to Umbraco 19
 
@@ -77,7 +77,7 @@ the next major version. Awaiting and cancellation behavior are unchanged.
 For a new user locator, implement only `GetUserAsync()`. New export services
 implement `ExportAsync(...)` and `ExportAllAsync(...)`, alongside the unchanged
 `GetTrackerOrNull()`. No obsolete forwarding methods or base class are required.
-The [storefront user locator](../samples/Relewise.DemoStorefront/Integration/Tracking/StorefrontUserLocator.cs)
+The [storefront user locator](../samples/Integrations.Umbraco.DemoStorefront/Integration/Tracking/StorefrontUserLocator.cs)
 shows an async-only implementation.
 
 Existing custom implementations using the old names continue to work through the

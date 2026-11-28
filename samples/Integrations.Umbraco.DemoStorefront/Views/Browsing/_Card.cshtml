@@ -1,0 +1,31 @@
+@using Relewise.Integrations.Umbraco.DemoStorefront.Features.Browsing
+@model ListingCard
+<article class="card" data-node="@Model.Key" data-entity="@Model.EntityId">
+    <a href="@Model.Url">
+        <div class="illustration">@Html.Raw(Model.ImageHtml)</div>
+        <div class="card-body">
+            <small>@(Model.Brand ?? Text(Context, Model.Product ? "Equipment" : "FieldNotes"))</small>
+            <h3>@Model.Title</h3>
+            @if (Model.Product)
+            {
+                <span class="card-price">
+                    <strong>@Model.Price</strong>
+                    @if (Model.ListPrice != null)
+                    {
+                        <del>@Model.ListPrice</del><span class="offer-label">@Model.Savings</span>
+                    }
+                </span>
+                <span class="card-availability">@Model.Availability</span>
+                @if (Model.Options != null)
+                {
+                    <span class="card-options">@Model.Options</span>
+                }
+            }
+            else
+            {
+                <strong>@Text(Context, "ReadStory")</strong>
+            }
+            <p>@Model.Summary</p>
+        </div>
+    </a>
+</article>

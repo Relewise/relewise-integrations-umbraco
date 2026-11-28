@@ -9,11 +9,22 @@ using Relewise.Client.DataTypes.Search.Sorting.Product;
 using Relewise.Client.Requests.Conditions;
 using Relewise.Client.Requests.Filters;
 using Relewise.Client.Requests.Search;
-using Umbraco.Cms.Core;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Querying.Filtering;
 using Umbraco.Cms.Core.Search.Querying.Sorting;
+#endif
+using Umbraco.Cms.Core;
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Models.Searching.Filtering;
+using Umbraco.Cms.Search.Core.Models.Searching.Sorting;
+#endif
 using RFilter = Relewise.Client.Requests.Filters.Filter;
+#if !UMBRACO_SEARCH_ADDON
 using UFilter = Umbraco.Cms.Core.Search.Querying.Filtering.Filter;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using UFilter = Umbraco.Cms.Search.Core.Models.Searching.Filtering.Filter;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Search;
 

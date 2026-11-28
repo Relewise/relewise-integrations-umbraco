@@ -7,9 +7,10 @@
     <File Path="umbraco-marketplace.json" />
   </Folder>
   <Folder Name="/Samples/">
-    <Project Path="samples/Relewise.DemoStorefront/Relewise.DemoStorefront.csproj" />
+    <Project Path="samples/Integrations.Umbraco.DemoStorefront/Integrations.Umbraco.DemoStorefront.csproj" />
   </Folder>
   <Folder Name="/Tests/">
+    <Project Path="src/Integrations.Umbraco.DemoStorefront.Tests/Integrations.Umbraco.DemoStorefront.Tests.csproj" />
     <Project Path="src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj" />
   </Folder>
   <Project Path="src/Integrations.Umbraco/Integrations.Umbraco.csproj" />

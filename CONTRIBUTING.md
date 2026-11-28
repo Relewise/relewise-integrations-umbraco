@@ -12,7 +12,7 @@ From the repository root, run the solution's backend tests:
 dotnet test Relewise.Integrations.Umbraco.slnx
 ```
 
-The default build targets Umbraco 19, including Search and DemoStorefront. Core shares
+The default build targets Umbraco 19, including Search and DemoStorefront. Core and Search each share
 one source project with separate build profiles for each supported CMS major:
 
 ```sh
@@ -21,12 +21,19 @@ dotnet test src/Integrations.Umbraco.Tests/Integrations.Umbraco.Tests.csproj -c 
 ```
 
 These profiles compile against the matching CMS APIs and isolate their outputs. Use the same
-`UmbracoMajorVersion` property when packing `src/Integrations.Umbraco/Integrations.Umbraco.csproj`.
-The Search package and DemoStorefront currently require the default v19 profile.
+`UmbracoMajorVersion` property when packing the Core and Search projects.
+DemoStorefront requires the default v19 profile.
 
-The [backend test project](src/Integrations.Umbraco.Tests) groups package tests by mapping,
-indexing, search, dashboard, tracking and compatibility. Its `DemoStorefront` folder covers
-sample mapping, shopping/search rules and Razor encoding. These tests need no running
+The [package test project](src/Integrations.Umbraco.Tests) groups Core and Search tests by mapping,
+indexing, search, dashboard, tracking and compatibility, independently of the sample.
+The [DemoStorefront test project](src/Integrations.Umbraco.DemoStorefront.Tests) covers sample mapping,
+shopping/search rules and Razor encoding. Run it separately with:
+
+```sh
+dotnet test src/Integrations.Umbraco.DemoStorefront.Tests/Integrations.Umbraco.DemoStorefront.Tests.csproj
+```
+
+Both projects run with the default solution command above. These tests need no running
 Umbraco site or Relewise API. They do not replace installed-package and live integration checks.
 
 ## Mapping regression coverage
@@ -47,7 +54,7 @@ Cover these cases when changing mapping or converters:
 
 Inspect exported IDs, metadata, languages, field types and values in a dedicated test Dataset.
 Verify installation, delta/full exports, search and tracking against the built package.
-Use the maintained [DemoStorefront](samples/Relewise.DemoStorefront/README.md) for UI examples
+Use the maintained [DemoStorefront](samples/Integrations.Umbraco.DemoStorefront/README.md) for UI examples
 and browser checks; do not add a separate frontend test suite.
 
 ## Code style and documentation

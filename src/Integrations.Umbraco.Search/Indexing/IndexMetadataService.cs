@@ -15,7 +15,12 @@ using Relewise.Client.Requests.Queries;
 using Relewise.Client.Requests.Shared;
 using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.Mapping;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Indexing;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Models.Indexing;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Search.Indexing;
 

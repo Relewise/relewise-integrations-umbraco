@@ -4,8 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Relewise.Client.Extensions;
 using Relewise.Client.Extensions.DependencyInjection;
-using Relewise.DemoStorefront.Integration.Converters;
-using Relewise.DemoStorefront.Integration.Mapping;
 using Relewise.Integrations.Umbraco.Controllers;
 using Relewise.Integrations.Umbraco.Controllers.Messages;
 using Relewise.Integrations.Umbraco.Mapping;
@@ -27,7 +25,7 @@ public class DashboardConfigurationTests
                 {
                     mapping.Map(entity => entity.DisplayName, "heading");
                     mapping.MapData("body", data => data.DataKey = "searchText");
-                    mapping.UseMapper<EditorialMapper>();
+                    mapping.UseMapper<DashboardContentMapper>();
                 });
             options.MapProduct(
                 "product",
@@ -37,7 +35,7 @@ public class DashboardConfigurationTests
                     mapping.Map(
                         entity => entity.ListPrice,
                         "prices",
-                        property => property.UseConverter<PriceConverter>());
+                        property => property.UseConverter<DashboardPriceConverter>());
                     mapping.AdministrativeActions = AdministrativeActionPolicy.None();
                     mapping.BrandFrom("brandPicker");
                     mapping.VariantsFromChildren("variant", variant => variant.IdFromProperty("variantSku"));
@@ -68,7 +66,7 @@ public class DashboardConfigurationTests
             Assert.Single(snapshot.Mappings, mapping => mapping.DocumentTypeAlias == "article");
 
         Assert.Equal("Node key", article.IdSource);
-        Assert.Equal(nameof(EditorialMapper), article.CustomMapperTypeName);
+        Assert.Equal(nameof(DashboardContentMapper), article.CustomMapperTypeName);
 
         DashboardFieldMappingViewModel heading =
             Assert.Single(article.Fields, field => field.SourcePropertyAlias == "heading");
@@ -93,7 +91,7 @@ public class DashboardConfigurationTests
             Assert.Single(product.Fields, field => field.SourcePropertyAlias == "prices");
 
         Assert.Equal("ListPrice", price.Destination);
-        Assert.Equal(nameof(PriceConverter), price.Conversion);
+        Assert.Equal(nameof(DashboardPriceConverter), price.Conversion);
         Assert.Contains(
             product.Relationships,
             relationship => relationship.Contains("brandPicker") && relationship.Contains("configured ID"));
@@ -400,7 +398,7 @@ public class DashboardConfigurationTests
             options.MapContent("automatic", mapping => mapping.AutoMap());
             options.MapContent(
                 "explicit",
-                mapping => mapping.MapData("blocks", data => data.UseConverter<EditorialBlocksConverter>()));
+                mapping => mapping.MapData("blocks", data => data.UseConverter<DashboardDataConverter>()));
             options.MapBrand("brand");
 #pragma warning disable CS0618 // Verify the retained legacy mapper is described accurately.
             options.AddContentType(
@@ -428,7 +426,7 @@ public class DashboardConfigurationTests
         DashboardMappingViewModel explicitMapping =
             Assert.Single(snapshot.Mappings, mapping => mapping.DocumentTypeAlias == "explicit");
 
-        Assert.Equal(nameof(EditorialBlocksConverter), Assert.Single(explicitMapping.Fields).Conversion);
+        Assert.Equal(nameof(DashboardDataConverter), Assert.Single(explicitMapping.Fields).Conversion);
 
         DashboardMappingViewModel brand = Assert.Single(snapshot.Mappings, mapping => mapping.EntityType == "Brand");
 

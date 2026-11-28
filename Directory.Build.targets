@@ -2,7 +2,7 @@
   <Target Name="ValidateUmbracoBuildProfile" BeforeTargets="PrepareForBuild;Pack">
     <Error Condition="'$(UmbracoMajorVersion)' != '17' and '$(UmbracoMajorVersion)' != '18' and '$(UmbracoMajorVersion)' != '19'"
            Text="UmbracoMajorVersion must be 17, 18 or 19." />
-    <Error Condition="'$(UmbracoMajorVersion)' != '19' and ('$(MSBuildProjectName)' == 'Integrations.Umbraco.Search' or '$(MSBuildProjectName)' == 'Relewise.DemoStorefront')"
-           Text="The Search package and DemoStorefront currently require the Umbraco 19 build profile." />
+    <Error Condition="'$(UmbracoMajorVersion)' != '19' and ('$(MSBuildProjectName)' == 'Integrations.Umbraco.DemoStorefront' or '$(MSBuildProjectName)' == 'Integrations.Umbraco.DemoStorefront.Tests')"
+           Text="DemoStorefront currently requires the Umbraco 19 build profile." />
   </Target>
 </Project>

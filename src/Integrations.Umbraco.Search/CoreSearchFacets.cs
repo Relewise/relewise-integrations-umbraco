@@ -5,13 +5,34 @@ using Relewise.Client.DataTypes;
 using Relewise.Client.DataTypes.Search.Facets.Enums;
 using Relewise.Client.DataTypes.Search.Facets.Queries;
 using Relewise.Client.DataTypes.Search.Facets.Result;
+#if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Querying.Faceting;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using Umbraco.Cms.Search.Core.Models.Searching.Faceting;
+using Umbraco.Cms.Search.Core.Models.Searching.Filtering;
+#endif
 using RFacet = Relewise.Client.DataTypes.Search.Facets.Queries.Facet;
 using RFacetResult = Relewise.Client.DataTypes.Search.Facets.Result.FacetResult;
+#if !UMBRACO_SEARCH_ADDON
 using UFacet = Umbraco.Cms.Core.Search.Querying.Faceting.Facet;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using UFacet = Umbraco.Cms.Search.Core.Models.Searching.Faceting.Facet;
+#endif
+#if !UMBRACO_SEARCH_ADDON
 using UFacetResult = Umbraco.Cms.Core.Search.Querying.Faceting.FacetResult;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using UFacetResult = Umbraco.Cms.Search.Core.Models.Searching.Faceting.FacetResult;
+#endif
+#if !UMBRACO_SEARCH_ADDON
 using UFilter = Umbraco.Cms.Core.Search.Querying.Filtering.Filter;
+#endif
+#if UMBRACO_SEARCH_ADDON
+using UFilter = Umbraco.Cms.Search.Core.Models.Searching.Filtering.Filter;
+#endif
 
 namespace Relewise.Integrations.Umbraco.Search;
 
