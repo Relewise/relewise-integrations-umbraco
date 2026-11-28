@@ -480,6 +480,34 @@ public class EntityIndexingQueueTests
         await fixture.DrainAsync();
     }
 
+    [Fact]
+    public async Task FrameworkBatchesAreBoundedAndDoNotScheduleAnotherWorker()
+    {
+        var fixture = new Fixture();
+        ExportChange[] changes = [.. Enumerable.Range(0, 205).Select(_ => Refresh(Guid.NewGuid()))];
+        await fixture.Writer.ApplyChangesAsync(changes, CancellationToken.None);
+        Assert.Equal(new[] { 100, 100, 5 }, fixture.Batches.Select(batch => batch.Length));
+        Assert.Equal(changes, fixture.Batches.SelectMany(batch => batch));
+        Assert.Empty(fixture.Scheduled);
+    }
+
+    [Fact]
+    public async Task FrameworkFailureStopsLaterBatchesAndAllowsRecovery()
+    {
+        var fixture = new Fixture();
+        fixture.Operations.SetupSequence(value => value.ApplyChangesAsync(
+                It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Failed batch"))
+            .Returns(Task.CompletedTask);
+        ExportChange[] changes = [.. Enumerable.Range(0, 205).Select(_ => Refresh(Guid.NewGuid()))];
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.Writer.ApplyChangesAsync(changes, CancellationToken.None));
+        fixture.Operations.Verify(value => value.ApplyChangesAsync(
+            It.IsAny<ExportChange[]>(), It.IsAny<CancellationToken>()), Times.Once);
+        await fixture.Writer.ApplyChangesAsync([Refresh(Guid.NewGuid())], CancellationToken.None);
+        Assert.Empty(fixture.Scheduled);
+    }
+
     private static ExportChange Refresh(Guid key)
     {
         return new ExportChange(key, ExportChangeImpact.Refresh, true);

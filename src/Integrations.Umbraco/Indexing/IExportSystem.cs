@@ -19,6 +19,7 @@ internal interface IExportSystem
         CancellationToken token);
 
     Task RebuildAsync(bool permanentlyDelete, CancellationToken token);
+    Task ApplyChangesAsync(IEnumerable<ExportChange> changes, CancellationToken token);
     void EnqueueChanges(IEnumerable<ExportChange> changes);
     void EnqueueDeletion(DeletedEntity[] entities, Guid[] parents);
 }

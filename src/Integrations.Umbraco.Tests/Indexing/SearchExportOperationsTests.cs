@@ -464,6 +464,77 @@ public class SearchExportOperationsTests
             It.Is<IEnumerable<ContentChange>>(changes => changes.Single().Id == productKey),
             It.IsAny<CancellationToken>()), Times.Once);
     }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RebuildStreamsUpdatesAndReconcilesOnlyAfterCompleteDiscovery(bool fail)
+    {
+        var cache = new Mock<IPublishedContentCache>();
+        Guid[] keys = [.. Enumerable.Range(0, 205).Select(_ => Guid.NewGuid())];
+        foreach (Guid key in keys)
+        {
+            var type = new Mock<IPublishedContentType>();
+            type.SetupGet(value => value.Alias).Returns("article");
+            type.SetupGet(value => value.Variations).Returns(ContentVariation.Culture);
+            var node = new Mock<IPublishedContent>();
+            node.SetupGet(value => value.Key).Returns(key);
+            node.SetupGet(value => value.ContentType).Returns(type.Object);
+            cache.Setup(value => value.GetById(key)).Returns(node.Object);
+        }
+
+        var context = new Mock<IUmbracoContext>();
+        context.SetupGet(value => value.Content).Returns(cache.Object);
+        var contexts = new Mock<IUmbracoContextFactory>();
+        contexts.Setup(value => value.EnsureUmbracoContext()).Returns(() =>
+            new UmbracoContextReference(context.Object, isRoot: false, Mock.Of<IUmbracoContextAccessor>()));
+        await using var fixture = new Fixture(
+            configure: options =>
+            {
+                options.UseContentKeysAsIds = true;
+                options.MapContent("article", mapping =>
+                    mapping.AdministrativeActions = AdministrativeActionPolicy.None());
+            },
+            configureServices: services =>
+            {
+                services.AddSingleton(contexts.Object);
+                services.AddSingleton(Mock.Of<IPublishedContentStatusFilteringService>());
+            });
+        fixture.Strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
+            .Returns(async (ContentIndexInfo index, CancellationToken token) =>
+            {
+                for (var i = 0; i < keys.Length; i++)
+                {
+                    await index.Indexer.AddOrUpdateAsync(
+                        index.IndexAlias,
+                        keys[i],
+                        UmbracoObjectTypes.Document,
+                        [new Variation("en-US", null)],
+                        [],
+                        protection: null);
+                    if (i == 100)
+                    {
+                        Assert.True(fixture.Tracked.Count > 0);
+                        if (fail)
+                            throw new InvalidOperationException("Discovery failed after a delivered batch");
+                    }
+                }
+            });
+
+        if (fail)
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Writer.RebuildAsync());
+            fixture.Reader.VerifyNoOtherCalls();
+            fail = false;
+        }
+
+        int preceding = fixture.Tracked.Count;
+        await fixture.Writer.RebuildAsync();
+        Assert.Equal(new[] { 100, 100, 5 }, fixture.Tracked.Skip(preceding).Select(batch => batch.Length));
+        Assert.All(fixture.Tracked.SelectMany(batch => batch), update => Assert.IsType<ContentUpdate>(update));
+        fixture.Reader.Verify(value => value.QueryAsync(
+            It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     private sealed class Fixture : IAsyncDisposable
     {
         public ServiceProvider Services { get; }

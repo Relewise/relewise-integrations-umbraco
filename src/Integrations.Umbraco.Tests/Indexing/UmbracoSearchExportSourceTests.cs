@@ -48,7 +48,7 @@ public class UmbracoSearchExportSourceTests
         var source = new UmbracoSearchExportSource(strategy.Object, navigation.Object);
 
         ExportSourceBatch batch = rebuild
-            ? await source.CollectAllAsync(CancellationToken.None)
+            ? await CollectRebuildAsync(source, CancellationToken.None)
             : await source.CollectAsync(
                 [new ExportChange(parent, ExportChangeImpact.Remove, Published: true)],
                 CancellationToken.None);
@@ -160,7 +160,7 @@ public class UmbracoSearchExportSourceTests
 
         var source = new UmbracoSearchExportSource(strategy.Object, Mock.Of<IDocumentNavigationQueryService>());
         ExportSourceBatch batch = rebuild
-            ? await source.CollectAllAsync(CancellationToken.None)
+            ? await CollectRebuildAsync(source, CancellationToken.None)
             : await source.CollectAsync(
                 [new ExportChange(key, ExportChangeImpact.Refresh, true)],
                 CancellationToken.None);
@@ -184,7 +184,7 @@ public class UmbracoSearchExportSourceTests
         var token = new CancellationToken(true);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rebuild
-            ? source.CollectAllAsync(token)
+            ? CollectRebuildAsync(source, token)
             : source.CollectAsync([], token));
         strategy.VerifyNoOtherCalls();
     }
@@ -207,9 +207,28 @@ public class UmbracoSearchExportSourceTests
             });
         var source = new UmbracoSearchExportSource(strategy.Object, Mock.Of<IDocumentNavigationQueryService>());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => source.CollectAllAsync(CancellationToken.None));
-        ExportSourceBatch batch = await source.CollectAllAsync(CancellationToken.None);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => CollectRebuildAsync(source, CancellationToken.None));
+        ExportSourceBatch batch = await CollectRebuildAsync(source, CancellationToken.None);
         Assert.Empty(batch.Keys);
         Assert.Empty(batch.Documents);
     }
+    private static async Task<ExportSourceBatch> CollectRebuildAsync(
+        UmbracoSearchExportSource source,
+        CancellationToken token)
+    {
+        var batch = new ExportSourceBatch();
+        Guid[] removed = await source.RebuildAsync((next, _) =>
+        {
+            batch.Include(next);
+            return Task.CompletedTask;
+        }, token);
+        batch.Keys.UnionWith(removed);
+        foreach (Guid key in removed)
+        {
+            batch.Documents.Remove(key);
+        }
+
+        return batch;
+    }
+
 }

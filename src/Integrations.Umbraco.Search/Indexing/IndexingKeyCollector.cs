@@ -28,9 +28,18 @@ internal sealed class IndexingKeyCollector(
         IEnumerable<IndexField> fields,
         ContentProtection? protection)
     {
-        Variation[] snapshot = [.. variations];
         batch.Keys.Add(id);
-        batch.Documents[id] = new ExportSourceDocument(
+        batch.Documents[id] = CreateDocument(variations, protection);
+
+        return Task.CompletedTask;
+    }
+
+    public static ExportSourceDocument CreateDocument(
+        IEnumerable<Variation> variations,
+        ContentProtection? protection)
+    {
+        Variation[] snapshot = [.. variations];
+        return new ExportSourceDocument(
             [.. snapshot.Select(variation => variation.Culture)],
             [
                 .. snapshot.Where(variation => variation.Segment == null)
@@ -38,8 +47,6 @@ internal sealed class IndexingKeyCollector(
                     .Distinct()
             ],
             protection == null ? null : [.. protection.AccessIds]);
-
-        return Task.CompletedTask;
     }
 
     public Task DeleteAsync(string indexAlias, IEnumerable<Guid> ids)

@@ -26,7 +26,6 @@ internal static class EntityExportMapping
     {
         var mapper = new EntityMapper(configuration);
         var desired = new List<MappedEntity>();
-        var claims = new HashSet<string>(StringComparer.Ordinal);
         var unmapped = new HashSet<Guid>();
 
         foreach (KeyValuePair<Guid, ExportSourceDocument> entry in documents)
@@ -72,14 +71,7 @@ internal static class EntityExportMapping
                 version,
                 contentUpdateKind: contentUpdateKind,
                 publishedCultures: cultures);
-            string claim = mapping.EntityType.Name + ":" +
-                           (mapping.EntityType == typeof(Brand) ? mapped.Id.ToLowerInvariant() : mapped.Id);
-
-            if (!claims.Add(claim))
-            {
-                throw new InvalidOperationException(
-                    $"Multiple documents export the same {mapping.EntityType.Name} ID '{mapped.Id}'.");
-            }
+            operation.ClaimIdentity(mapping.EntityType, mapped.Id, mapped.NodeKey);
 
             if (mapped.Entity is Content or Product)
             {
