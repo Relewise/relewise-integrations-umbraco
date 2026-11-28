@@ -128,6 +128,10 @@ even when no named query providers are configured. These two mechanisms do not
 export the same change twice. Explicit exports and dashboard rebuild actions use
 the configured indexing flow too. Call `ConfigureSearch` only once across all
 registration callbacks; repeated calls are rejected.
+Umbraco determines which documents and published variations enter the indexing flow.
+The integration's entity mappings and converters determine the exported Relewise values;
+custom Umbraco index fields do not replace those mappings.
+
 Named query providers do not add indexing pipelines or create additional Relewise
 indexes. Every provider uses the Dataset's default Relewise index.
 
@@ -305,12 +309,14 @@ retains mapping restrictions.
 
 ## Behavior and limitations
 
-- Background changes combine into batches on Umbraco's existing queue. Terminal
-  deletions, explicit exports and rebuilds preserve their accepted order. Explicit
-  operations await delivery; background failures are logged and may require a rebuild.
+- Umbraco schedules background indexing, and bulk changes are processed in bounded batches.
+  Deletions, explicit exports and rebuilds preserve their accepted order. Indexing callbacks
+  and explicit operations await delivery; background failures are logged and may require a rebuild.
 - Rebuild and explicit export share the same writer as background indexing. A rebuild
   reconciles source metadata in Relewise after successful ingestion; it does not clear
-  the Dataset or an independent search index.
+  the Dataset or an independent search index. Rebuilds send completed batches progressively;
+  if a rebuild fails or is cancelled, already delivered updates remain, but missing-entity
+  cleanup does not run. Repeat the full export to complete reconciliation.
 - Relewise ingestion is asynchronous. Publication changes may take time to appear
   in searches. Repeated exports update canonical entities rather than adding a
   separate set of search entities.

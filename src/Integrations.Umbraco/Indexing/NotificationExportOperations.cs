@@ -20,7 +20,6 @@ using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
 using static Relewise.Integrations.Umbraco.Indexing.EntityExportDelivery;
 using Content = Relewise.Client.DataTypes.Content;
 using PublicAccess = Umbraco.Cms.Core.Constants.Conventions.PublicAccess;
@@ -223,6 +222,7 @@ internal sealed class NotificationExportOperations(
         var batch = new ExportSourceBatch();
         var variants = new HashSet<Guid>();
         var contentService = services.GetRequiredService<IContentService>();
+        var navigation = services.GetRequiredService<IDocumentNavigationQueryService>();
         if (rebuild)
         {
             foreach (IContent root in contentService.GetRootContent())
@@ -250,7 +250,11 @@ internal sealed class NotificationExportOperations(
                              && mapping.EntityType == typeof(ProductVariant))
             {
                 variants.Add(key);
-                IPublishedContent? parent = node.Parent();
+                // Resolve by key: culture-sensitive Parent() can hide a published Product in background work.
+                IPublishedContent? parent = navigation.TryGetParentKey(node.Key, out Guid? parentKey) &&
+                                            parentKey.HasValue
+                    ? context.Content?.GetById(preview: false, parentKey.Value)
+                    : null;
                 if (parent != null)
                 {
                     keys.Add(parent.Key);
@@ -286,7 +290,7 @@ internal sealed class NotificationExportOperations(
             {
                 if (rule.RuleValue == null || rule.RuleType == null)
                     continue;
-                var identity = (rule.RuleType, rule.RuleValue);
+                (string, string) identity = (rule.RuleType, rule.RuleValue);
                 if (!identities.TryGetValue(identity, out Guid? id))
                 {
                     id = rule.RuleType switch
@@ -321,7 +325,7 @@ internal sealed class NotificationExportOperations(
         CancellationToken token)
     {
         const int pageSize = 1000;
-        int page = 0;
+        var page = 0;
         long total;
         do
         {

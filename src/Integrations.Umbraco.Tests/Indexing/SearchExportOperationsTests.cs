@@ -15,15 +15,17 @@ using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Relewise.Integrations.Umbraco.Search.Indexing;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.HostedServices;
 using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Notifications;
+using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Scoping;
 #if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Indexing;
 #endif
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
@@ -422,6 +424,115 @@ public class SearchExportOperationsTests
 
         Assert.Equal(ContentAdministrativeAction.UpdateKind.Delete, action.Kind);
         Assert.Contains(key.ToString("D"), JsonConvert.SerializeObject(action.Filters));
+    }
+
+    [Fact]
+    public async Task PublishedVariantRefreshesItsParentWithoutAnActiveCulture()
+    {
+        var variantKey = Guid.NewGuid();
+        var productKey = Guid.NewGuid();
+        Guid? parentKey = productKey;
+        var navigation = new Mock<IDocumentNavigationQueryService>();
+        navigation.Setup(value => value.TryGetParentKey(variantKey, out parentKey)).Returns(true);
+        var variant = new Mock<IPublishedContent>();
+        variant.SetupGet(value => value.Key).Returns(variantKey);
+        variant.SetupGet(value => value.ContentType.Alias).Returns("variant");
+        var product = new Mock<IPublishedContent>();
+        product.SetupGet(value => value.Key).Returns(productKey);
+        var cache = new Mock<IPublishedContentCache>();
+        cache.Setup(value => value.GetById(variantKey)).Returns(variant.Object);
+        cache.Setup(value => value.GetById(preview: false, variantKey)).Returns(variant.Object);
+        cache.Setup(value => value.GetById(preview: false, productKey)).Returns(product.Object);
+        var context = new Mock<IUmbracoContext>();
+        context.SetupGet(value => value.Content).Returns(cache.Object);
+        var contexts = new Mock<IUmbracoContextFactory>();
+        contexts.Setup(value => value.EnsureUmbracoContext()).Returns(() =>
+            new UmbracoContextReference(context.Object, isRoot: false, Mock.Of<IUmbracoContextAccessor>()));
+
+        await using var fixture = new Fixture(
+            options => options.MapProduct("product", mapping => mapping.VariantsFromChildren("variant")),
+            configureServices: services =>
+            {
+                services.AddSingleton(navigation.Object);
+                services.AddSingleton(contexts.Object);
+            });
+
+        await fixture.Writer.ExportAsync([variantKey]);
+
+        fixture.Strategy.Verify(value => value.HandleAsync(
+            It.IsAny<IEnumerable<ContentIndexInfo>>(),
+            It.Is<IEnumerable<ContentChange>>(changes => changes.Single().Id == productKey),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RebuildStreamsUpdatesAndReconcilesOnlyAfterCompleteDiscovery(bool fail)
+    {
+        var cache = new Mock<IPublishedContentCache>();
+        Guid[] keys = [.. Enumerable.Range(0, 205).Select(_ => Guid.NewGuid())];
+        foreach (Guid key in keys)
+        {
+            var type = new Mock<IPublishedContentType>();
+            type.SetupGet(value => value.Alias).Returns("article");
+            type.SetupGet(value => value.Variations).Returns(ContentVariation.Culture);
+            var node = new Mock<IPublishedContent>();
+            node.SetupGet(value => value.Key).Returns(key);
+            node.SetupGet(value => value.ContentType).Returns(type.Object);
+            cache.Setup(value => value.GetById(key)).Returns(node.Object);
+        }
+
+        var context = new Mock<IUmbracoContext>();
+        context.SetupGet(value => value.Content).Returns(cache.Object);
+        var contexts = new Mock<IUmbracoContextFactory>();
+        contexts.Setup(value => value.EnsureUmbracoContext()).Returns(() =>
+            new UmbracoContextReference(context.Object, isRoot: false, Mock.Of<IUmbracoContextAccessor>()));
+        await using var fixture = new Fixture(
+            configure: options =>
+            {
+                options.UseContentKeysAsIds = true;
+                options.MapContent("article", mapping =>
+                    mapping.AdministrativeActions = AdministrativeActionPolicy.None());
+            },
+            configureServices: services =>
+            {
+                services.AddSingleton(contexts.Object);
+                services.AddSingleton(Mock.Of<IPublishedContentStatusFilteringService>());
+            });
+        fixture.Strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
+            .Returns(async (ContentIndexInfo index, CancellationToken token) =>
+            {
+                for (var i = 0; i < keys.Length; i++)
+                {
+                    await index.Indexer.AddOrUpdateAsync(
+                        index.IndexAlias,
+                        keys[i],
+                        UmbracoObjectTypes.Document,
+                        [new Variation("en-US", null)],
+                        [],
+                        protection: null);
+                    if (i == 100)
+                    {
+                        Assert.True(fixture.Tracked.Count > 0);
+                        if (fail)
+                            throw new InvalidOperationException("Discovery failed after a delivered batch");
+                    }
+                }
+            });
+
+        if (fail)
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Writer.RebuildAsync());
+            fixture.Reader.VerifyNoOtherCalls();
+            fail = false;
+        }
+
+        int preceding = fixture.Tracked.Count;
+        await fixture.Writer.RebuildAsync();
+        Assert.Equal(new[] { 100, 100, 5 }, fixture.Tracked.Skip(preceding).Select(batch => batch.Length));
+        Assert.All(fixture.Tracked.SelectMany(batch => batch), update => Assert.IsType<ContentUpdate>(update));
+        fixture.Reader.Verify(value => value.QueryAsync(
+            It.IsAny<ContentQuery>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private sealed class Fixture : IAsyncDisposable

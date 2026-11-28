@@ -27,14 +27,15 @@ internal sealed class MappedEntityChangeStrategy(IExportSystem indexing) : ICont
         HashSet<UmbracoObjectTypes>
             objectTypes = [.. indexInfos.SelectMany(index => index.ContainedObjectTypes)];
 
-        indexing.EnqueueChanges(
-            changes.Where(change => change.ObjectType == UmbracoObjectTypes.Document &&
+        ExportChange[] pending =
+        [
+            .. changes.Where(change => change.ObjectType == UmbracoObjectTypes.Document &&
                                     objectTypes.Contains(change.ObjectType) &&
                                     (change.ContentState == ContentState.Published ||
                                      change.ChangeImpact == ChangeImpact.Remove))
-                .Select(UmbracoSearchExportSource.FromChange));
-
-        return Task.CompletedTask;
+                .Select(UmbracoSearchExportSource.FromChange)
+        ];
+        return pending.Length == 0 ? Task.CompletedTask : indexing.ApplyChangesAsync(pending, token);
     }
 
     public Task RebuildAsync(ContentIndexInfo indexInfo, CancellationToken token)

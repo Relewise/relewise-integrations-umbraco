@@ -19,8 +19,8 @@ using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
 using static Relewise.Integrations.Umbraco.Indexing.EntityExportDelivery;
 using Content = Relewise.Client.DataTypes.Content;
 
@@ -138,19 +138,40 @@ internal sealed class SearchExportOperations(
             var tracker = clients.GetClient<ITracker>(Constants.ClientNames.Integration);
             var exportSource = services.GetRequiredService<UmbracoSearchExportSource>();
 
-            HashSet<Guid> requested = [.. keys];
-            ExportSourceBatch collected = rebuild
-                ? await exportSource.CollectAllAsync(token)
-                : await exportSource.CollectAsync(
-                    changes ??
-                    [
-                        .. requested.Select(key => new ExportChange(key, ExportChangeImpact.Refresh, Published: true))
-                    ],
+            await using var operation = new MappingOperation(services, token) { FullRebuild = rebuild };
+            long version = feedVersion ?? NextVersion();
+            _lastExportVersion = version;
+            string[] siteCultures = (await services.GetRequiredService<ILanguageService>().GetAllAsync())
+                .Select(language => language.IsoCode)
+                .ToArray();
+
+            if (rebuild)
+            {
+                mappedCount = await RebuildAsync(
+                    exportSource,
+                    clients,
+                    tracker,
+                    context.UmbracoContext,
+                    operation,
+                    siteCultures,
+                    version,
+                    permanentlyDelete,
                     token);
+                return;
+            }
+
+            HashSet<Guid> requested = [.. keys];
+            ExportSourceBatch collected = await exportSource.CollectAsync(
+                changes ??
+                [
+                    .. requested.Select(key => new ExportChange(key, ExportChangeImpact.Refresh, Published: true))
+                ],
+                token);
 
             requested.UnionWith(collected.Keys);
 
             var aggregateChildren = new HashSet<Guid>();
+            var navigation = services.GetRequiredService<IDocumentNavigationQueryService>();
 
             // A child Variant contributes to its parent Product, rather than creating an independent entity.
             foreach (Guid key in requested.ToArray())
@@ -181,7 +202,10 @@ internal sealed class SearchExportOperations(
                         continue;
                     }
 
-                    parent = node.Parent();
+                    // Resolve by key: background exports have no active frontend culture.
+                    parent = navigation.TryGetParentKey(node.Key, out Guid? parentKey) && parentKey.HasValue
+                        ? context.UmbracoContext.Content?.GetById(preview: false, parentKey.Value)
+                        : null;
                 }
 
                 aggregateChildren.Add(key);
@@ -194,15 +218,6 @@ internal sealed class SearchExportOperations(
                             token));
                 }
             }
-
-            await using var operation = new MappingOperation(services, token) { FullRebuild = rebuild };
-
-            long version = feedVersion ?? NextVersion();
-            _lastExportVersion = version;
-
-            string[] siteCultures = (await services.GetRequiredService<ILanguageService>().GetAllAsync())
-                .Select(language => language.IsoCode)
-                .ToArray();
 
             MappedExportBatch mappedBatch = await EntityExportMapping.MapAsync(
                 configuration,
@@ -234,20 +249,18 @@ internal sealed class SearchExportOperations(
                     .Except(aggregateChildren)
             ];
 
-            if (rebuild || unavailable.Length > 0)
+            if (unavailable.Length > 0)
             {
-                (Guid[] Keys, bool Delete)[] removals = rebuild
-                    ? [(Keys: unavailable, Delete: permanentlyDelete)]
-                    :
-                    [
-                        .. unavailable.GroupBy(key => services.GetRequiredService<IContentService>()
-                                .GetById(key) == null)
-                            .Select(group => (Keys: group.ToArray(), Delete: group.Key))
-                    ];
+                (Guid[] Keys, bool Delete)[] removals =
+                [
+                    .. unavailable.GroupBy(key => services.GetRequiredService<IContentService>()
+                            .GetById(key) == null)
+                        .Select(group => (Keys: group.ToArray(), Delete: group.Key))
+                ];
 
                 await EntityExportDelivery.ReconcileAsync(
                     clients,
-                    EntityExportRequests.Reconcile(configuration, removals, rebuild ? version : null),
+                    EntityExportRequests.Reconcile(configuration, removals, version: null),
                     token);
             }
         }
@@ -260,6 +273,58 @@ internal sealed class SearchExportOperations(
                 mappedCount,
                 Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
+    }
+
+    private async Task<int> RebuildAsync(
+        UmbracoSearchExportSource source,
+        IRelewiseClientFactory clients,
+        ITracker tracker,
+        IUmbracoContext context,
+        MappingOperation operation,
+        string[] siteCultures,
+        long version,
+        bool permanentlyDelete,
+        CancellationToken token)
+    {
+        var mappedCount = 0;
+
+        async Task WriteAsync(ExportSourceBatch batch, CancellationToken token)
+        {
+            MappedExportBatch mapped = await EntityExportMapping.MapAsync(
+                configuration,
+                context,
+                operation,
+                batch.Documents,
+                siteCultures,
+                version,
+                contentUpdateKind: null,
+                token);
+            List<Trackable> updates = EntityExportRequests.Updates(mapped.Entities);
+            if (updates.Count > 0)
+            {
+                await tracker.TrackAsync(updates, token);
+            }
+
+            mappedCount += mapped.Entities.Length;
+        }
+
+        Guid[] removed = await source.RebuildAsync(WriteAsync, token);
+        token.ThrowIfCancellationRequested();
+
+        // Reconcile only after every batch succeeds. A later callback can withdraw an earlier written document.
+        if (removed.Length > 0)
+        {
+            await EntityExportDelivery.ReconcileAsync(
+                clients,
+                EntityExportRequests.Reconcile(configuration, [(removed, permanentlyDelete)], version: null),
+                token);
+        }
+
+        await EntityExportDelivery.ReconcileAsync(
+            clients,
+            EntityExportRequests.Reconcile(configuration, [([], permanentlyDelete)], version),
+            token);
+        return mappedCount;
     }
 
     private long NextVersion()

@@ -25,6 +25,23 @@ internal sealed class EntityIndexingQueue(
     private readonly AsyncLocal<Execution?> _execution = new();
     private bool _flushQueued;
 
+    public Task ApplyChangesAsync(IEnumerable<ExportChange> changes, CancellationToken token)
+    {
+        ExportChange[][] batches = [.. changes.Chunk(BatchSize)];
+
+        // Umbraco already scheduled this work; use the same writer without another background handoff.
+        return ExecuteAsync(cancellation => ApplyBatchesAsync(batches, cancellation), token);
+    }
+
+    private async Task ApplyBatchesAsync(ExportChange[][] batches, CancellationToken token)
+    {
+        foreach (ExportChange[] batch in batches)
+        {
+            token.ThrowIfCancellationRequested();
+            await indexing.ApplyChangesAsync(batch, token);
+        }
+    }
+
     public void EnqueueChanges(IEnumerable<ExportChange> changes)
     {
         ExportChange[][] batches = [.. changes.Chunk(BatchSize)];

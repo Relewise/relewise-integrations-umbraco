@@ -48,7 +48,7 @@ public class UmbracoSearchExportSourceTests
         var source = new UmbracoSearchExportSource(strategy.Object, navigation.Object);
 
         ExportSourceBatch batch = rebuild
-            ? await source.CollectAllAsync(CancellationToken.None)
+            ? await CollectRebuildAsync(source, CancellationToken.None)
             : await source.CollectAsync(
                 [new ExportChange(parent, ExportChangeImpact.Remove, Published: true)],
                 CancellationToken.None);
@@ -70,7 +70,7 @@ public class UmbracoSearchExportSourceTests
     public async Task DiscoveryPreservesImpactStateAndCancellation(ChangeImpact impact, ContentState state)
     {
         var key = Guid.NewGuid();
-        var native = ContentChange.Document(key, impact, state);
+        ContentChange native = ContentChange.Document(key, impact, state);
         using var cancellation = new CancellationTokenSource();
         CancellationToken expectedToken = cancellation.Token;
         var strategy = new Mock<IPublishedContentChangeStrategy>(MockBehavior.Strict);
@@ -160,7 +160,7 @@ public class UmbracoSearchExportSourceTests
 
         var source = new UmbracoSearchExportSource(strategy.Object, Mock.Of<IDocumentNavigationQueryService>());
         ExportSourceBatch batch = rebuild
-            ? await source.CollectAllAsync(CancellationToken.None)
+            ? await CollectRebuildAsync(source, CancellationToken.None)
             : await source.CollectAsync(
                 [new ExportChange(key, ExportChangeImpact.Refresh, true)],
                 CancellationToken.None);
@@ -184,7 +184,7 @@ public class UmbracoSearchExportSourceTests
         var token = new CancellationToken(true);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rebuild
-            ? source.CollectAllAsync(token)
+            ? CollectRebuildAsync(source, token)
             : source.CollectAsync([], token));
         strategy.VerifyNoOtherCalls();
     }
@@ -193,7 +193,7 @@ public class UmbracoSearchExportSourceTests
     public async Task FailedCollectionIsNotReusedByTheNextOperation()
     {
         var key = Guid.NewGuid();
-        int attempt = 0;
+        var attempt = 0;
         var strategy = new Mock<IPublishedContentChangeStrategy>();
         strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
             .Returns(async (ContentIndexInfo index, CancellationToken token) =>
@@ -207,9 +207,28 @@ public class UmbracoSearchExportSourceTests
             });
         var source = new UmbracoSearchExportSource(strategy.Object, Mock.Of<IDocumentNavigationQueryService>());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => source.CollectAllAsync(CancellationToken.None));
-        ExportSourceBatch batch = await source.CollectAllAsync(CancellationToken.None);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => CollectRebuildAsync(source, CancellationToken.None));
+        ExportSourceBatch batch = await CollectRebuildAsync(source, CancellationToken.None);
         Assert.Empty(batch.Keys);
         Assert.Empty(batch.Documents);
     }
+    private static async Task<ExportSourceBatch> CollectRebuildAsync(
+        UmbracoSearchExportSource source,
+        CancellationToken token)
+    {
+        var batch = new ExportSourceBatch();
+        Guid[] removed = await source.RebuildAsync((next, _) =>
+        {
+            batch.Include(next);
+            return Task.CompletedTask;
+        }, token);
+        batch.Keys.UnionWith(removed);
+        foreach (Guid key in removed)
+        {
+            batch.Documents.Remove(key);
+        }
+
+        return batch;
+    }
+
 }

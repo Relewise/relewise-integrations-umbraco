@@ -35,6 +35,9 @@ internal sealed class UmbracoSearchExportSystem : IExportSystem
     public Task RebuildAsync(bool permanentlyDelete, CancellationToken token) =>
         _queue.RebuildAsync(permanentlyDelete, token);
 
+    public Task ApplyChangesAsync(IEnumerable<ExportChange> changes, CancellationToken token) =>
+        _queue.ApplyChangesAsync(changes, token);
+
     public void EnqueueChanges(IEnumerable<ExportChange> changes) => _queue.EnqueueChanges(changes);
 
     public void EnqueueDeletion(DeletedEntity[] entities, Guid[] parents) => _queue.EnqueueDeletion(entities, parents);

@@ -38,7 +38,7 @@ public class SearchFieldCatalogTests
         });
         registrations.AddSingleton<RelewiseUmbracoConfiguration>();
         using ServiceProvider services = registrations.BuildServiceProvider();
-        RelewiseUmbracoConfiguration configuration = services.GetRequiredService<RelewiseUmbracoConfiguration>();
+        var configuration = services.GetRequiredService<RelewiseUmbracoConfiguration>();
         SearchProviderDefinition provider = configuration.GetSearchOptions().Providers["native"];
 
         SearchFieldDefinition Resolve(string name) =>
@@ -86,7 +86,7 @@ public class SearchFieldCatalogTests
         });
         registrations.AddSingleton<RelewiseUmbracoConfiguration>();
         using ServiceProvider services = registrations.BuildServiceProvider();
-        RelewiseUmbracoConfiguration configuration = services.GetRequiredService<RelewiseUmbracoConfiguration>();
+        var configuration = services.GetRequiredService<RelewiseUmbracoConfiguration>();
         Assert.Throws<NotSupportedException>(() => SearchFieldCatalog.Resolve(
             "score",
             configuration,
@@ -125,7 +125,7 @@ public class SearchFieldCatalogTests
         });
         registrations.AddSingleton<RelewiseUmbracoConfiguration>();
         using ServiceProvider services = registrations.BuildServiceProvider();
-        RelewiseUmbracoConfiguration configuration = services.GetRequiredService<RelewiseUmbracoConfiguration>();
+        var configuration = services.GetRequiredService<RelewiseUmbracoConfiguration>();
         Assert.Throws<InvalidOperationException>(() => SearchFieldCatalog.Resolve(
             "stock",
             configuration,

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Relewise.Client.DataTypes;
 using Umbraco.Cms.Core.Services;
 
 namespace Relewise.Integrations.Umbraco.Mapping;
@@ -13,9 +14,24 @@ internal sealed class MappingOperation(
     CancellationToken token) : IAsyncDisposable
 {
     private readonly Dictionary<Type, object> _instances = new();
+    private readonly Dictionary<string, Guid> _claims = new(StringComparer.Ordinal);
     public IServiceProvider Services { get; } = services;
     public CancellationToken CancellationToken { get; } = token;
     public bool FullRebuild { get; init; }
+
+    public void ClaimIdentity(Type entityType, string id, Guid nodeKey)
+    {
+        string claim = entityType.Name + ":" +
+                       (entityType == typeof(Brand) ? id.ToLowerInvariant() : id);
+        if (_claims.TryGetValue(claim, out Guid node) && node != nodeKey)
+        {
+            throw new InvalidOperationException(
+                $"Multiple documents export the same {entityType.Name} ID '{id}'.");
+        }
+
+        // Retain identities across streamed batches without retaining mapped entities or tracking payloads.
+        _claims[claim] = nodeKey;
+    }
 
     public object Resolve(Type type)
     {

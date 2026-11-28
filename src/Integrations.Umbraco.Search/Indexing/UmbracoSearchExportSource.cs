@@ -39,18 +39,21 @@ internal sealed class UmbracoSearchExportSource(
         return batch;
     }
 
-    public async Task<ExportSourceBatch> CollectAllAsync(CancellationToken token)
+    public async Task<Guid[]> RebuildAsync(
+        Func<ExportSourceBatch, CancellationToken, Task> write,
+        CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-
-        var batch = new ExportSourceBatch();
-        var collector = new IndexingKeyCollector(batch, navigation);
+        var indexer = new RebuildBatchIndexer(navigation, write, token);
 
         await strategy.RebuildAsync(
-            new ContentIndexInfo(SearchExportOperations.IndexAlias, [UmbracoObjectTypes.Document], collector),
+            new ContentIndexInfo(SearchExportOperations.IndexAlias, [UmbracoObjectTypes.Document], indexer),
             token);
 
-        return batch;
+        // Some framework strategies return on cancellation rather than throwing. Never reconcile that rebuild.
+        token.ThrowIfCancellationRequested();
+        await indexer.FlushAsync();
+        return indexer.Removed.ToArray();
     }
 
     public static ExportChange FromChange(ContentChange change)
