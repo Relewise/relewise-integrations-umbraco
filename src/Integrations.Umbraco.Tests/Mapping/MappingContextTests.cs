@@ -13,19 +13,15 @@ namespace Relewise.Integrations.Umbraco.Tests.Mapping;
 
 public class MappingContextTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task NestedCustomAggregateReceivesTheExplicitConversionToken(bool blockList)
+    [Fact]
+    public async Task BlockListCustomAggregateReceivesTheExplicitConversionToken()
     {
         var owner = Mock.Of<IPublishedContent>();
         var element = Mock.Of<IPublishedElement>();
-        object value = blockList
-            ? new BlockListModel([new BlockListItem(Guid.NewGuid(), element, null, null)])
-            : new[] { element };
+        var value = new BlockListModel([new BlockListItem(Guid.NewGuid(), element, null, null)]);
         IPublishedProperty property = Property(
             "blocks",
-            blockList ? "Umbraco.BlockList" : "Umbraco.NestedContent",
+            "Umbraco.BlockList",
             value);
 
         using var cancellation = new CancellationTokenSource();
@@ -54,9 +50,7 @@ public class MappingContextTests
             owner,
             provider,
             CancellationToken.None);
-        IAsyncRelewisePropertyValueConverter converter = blockList
-            ? new BlockListPropertyValueConverter(provider)
-            : new NestedContentPropertyValueConverter(provider);
+        var converter = new BlockListPropertyValueConverter(provider);
 
         await converter.ConvertAsync(context, cancellation.Token);
 

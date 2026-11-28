@@ -71,7 +71,6 @@ public static class UmbracoBuilderExtensions
             .AddValueConverter<IntegerPropertyValueConverter>()
             .AddValueConverter<DecimalPropertyValueConverter>()
             .AddValueConverter<TagsPropertyValueConverter>()
-            .AddValueConverter<NestedContentPropertyValueConverter>()
             .AddValueConverter<BlockListPropertyValueConverter>();
 
         builder.AddNotificationHandler<ContentDeletedNotification, DeletedEntityIndexingHandler>();

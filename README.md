@@ -191,7 +191,7 @@ For implementation details, start with the [documentation overview](docs/README.
 or go directly to:
 
 - [Entity mapping](docs/entity-mapping.md): fields, IDs, Products, Variants, Brands, Categories and converters.
-- [Block List, Block Grid and nested content](docs/block-editors.md): text extraction, visibility and cultures.
+- [Block List, Block Grid and nested blocks](docs/block-editors.md): text extraction, visibility and cultures.
 - [Umbraco search](docs/search.md): providers, queries, filtering, facets and access control.
 - [Validation and troubleshooting](docs/validation-and-troubleshooting.md): checking exports and diagnosing missing or stale data.
 - [Legacy Content mapping](docs/custom-content-mapping.md): existing `IContentTypeMapping` and converter implementations.
