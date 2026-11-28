@@ -24,6 +24,11 @@ These profiles compile against the matching CMS APIs and isolate their outputs. 
 `UmbracoMajorVersion` property when packing the Core and Search projects.
 DemoStorefront requires the default v19 profile.
 
+Compile profiles use the minimum supported CMS dependencies. For installed-package smoke tests,
+use the latest stable release in each supported major, or the latest prerelease for an unreleased
+major, and verify the CMS version loaded by the host. Record upstream CMS failures separately
+from integration regressions.
+
 The [package test project](src/Integrations.Umbraco.Tests) groups Core and Search tests by mapping,
 indexing, search, dashboard, tracking and compatibility, independently of the sample.
 The [DemoStorefront test project](src/Integrations.Umbraco.DemoStorefront.Tests) covers sample mapping,
