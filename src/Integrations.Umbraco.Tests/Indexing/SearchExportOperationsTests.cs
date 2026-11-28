@@ -15,15 +15,17 @@ using Relewise.Integrations.Umbraco.Indexing;
 using Relewise.Integrations.Umbraco.Mapping;
 using Relewise.Integrations.Umbraco.NotificationHandlers;
 using Relewise.Integrations.Umbraco.Search.Indexing;
+using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Events;
 using Umbraco.Cms.Core.HostedServices;
 using Umbraco.Cms.Core.Models;
+using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Notifications;
+using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Scoping;
 #if !UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Core.Search.Indexing;
 #endif
-using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
@@ -424,6 +426,44 @@ public class SearchExportOperationsTests
         Assert.Contains(key.ToString("D"), JsonConvert.SerializeObject(action.Filters));
     }
 
+    [Fact]
+    public async Task PublishedVariantRefreshesItsParentWithoutAnActiveCulture()
+    {
+        var variantKey = Guid.NewGuid();
+        var productKey = Guid.NewGuid();
+        Guid? parentKey = productKey;
+        var navigation = new Mock<IDocumentNavigationQueryService>();
+        navigation.Setup(value => value.TryGetParentKey(variantKey, out parentKey)).Returns(true);
+        var variant = new Mock<IPublishedContent>();
+        variant.SetupGet(value => value.Key).Returns(variantKey);
+        variant.SetupGet(value => value.ContentType.Alias).Returns("variant");
+        var product = new Mock<IPublishedContent>();
+        product.SetupGet(value => value.Key).Returns(productKey);
+        var cache = new Mock<IPublishedContentCache>();
+        cache.Setup(value => value.GetById(variantKey)).Returns(variant.Object);
+        cache.Setup(value => value.GetById(preview: false, variantKey)).Returns(variant.Object);
+        cache.Setup(value => value.GetById(preview: false, productKey)).Returns(product.Object);
+        var context = new Mock<IUmbracoContext>();
+        context.SetupGet(value => value.Content).Returns(cache.Object);
+        var contexts = new Mock<IUmbracoContextFactory>();
+        contexts.Setup(value => value.EnsureUmbracoContext()).Returns(() =>
+            new UmbracoContextReference(context.Object, isRoot: false, Mock.Of<IUmbracoContextAccessor>()));
+
+        await using var fixture = new Fixture(
+            options => options.MapProduct("product", mapping => mapping.VariantsFromChildren("variant")),
+            configureServices: services =>
+            {
+                services.AddSingleton(navigation.Object);
+                services.AddSingleton(contexts.Object);
+            });
+
+        await fixture.Writer.ExportAsync([variantKey]);
+
+        fixture.Strategy.Verify(value => value.HandleAsync(
+            It.IsAny<IEnumerable<ContentIndexInfo>>(),
+            It.Is<IEnumerable<ContentChange>>(changes => changes.Single().Id == productKey),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
     private sealed class Fixture : IAsyncDisposable
     {
         public ServiceProvider Services { get; }

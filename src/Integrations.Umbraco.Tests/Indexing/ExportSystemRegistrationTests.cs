@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -68,7 +69,7 @@ public class ExportSystemRegistrationTests
         SearchComposer.ConfigureIntegration(new TestBuilder(services));
         using ServiceProvider provider = services.BuildServiceProvider();
         IndexOptions result = provider.GetRequiredService<IOptions<IndexOptions>>().Value;
-        IndexRegistration published = Assert.IsAssignableFrom<IndexRegistration>(
+        var published = Assert.IsAssignableFrom<IndexRegistration>(
             result.GetIndexRegistration(SearchConstants.IndexAliases.PublishedContent));
 
         Assert.Equal(typeof(MappedEntitySearcher), published.Searcher);
@@ -76,7 +77,7 @@ public class ExportSystemRegistrationTests
             index => index.IndexAlias == SearchExportOperations.IndexAlias);
         if (existingIndex)
         {
-            ContentIndexRegistration content = Assert.IsType<ContentIndexRegistration>(published);
+            var content = Assert.IsType<ContentIndexRegistration>(published);
             Assert.Equal(typeof(IndexingKeyCollector), content.Indexer);
             Assert.Equal(typeof(IPublishedContentChangeStrategy), content.ContentChangeStrategy);
             Assert.False(content.SameOriginOnly);
@@ -105,7 +106,7 @@ public class ExportSystemRegistrationTests
         var builder = new TestBuilder(services);
         if (mode >= 0)
             SearchComposer.ConfigureIntegration(builder);
-        int calls = 0;
+        var calls = 0;
         builder.AddRelewise(options =>
         {
             calls++;
@@ -159,7 +160,7 @@ public class ExportSystemRegistrationTests
             options.ConfigureSearch();
         });
         using ServiceProvider provider = services.BuildServiceProvider();
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+        var error = Assert.Throws<InvalidOperationException>(() =>
             provider.GetRequiredService<IExportSystem>());
         Assert.Contains("AddComposers()", error.Message);
     }
@@ -187,7 +188,7 @@ public class ExportSystemRegistrationTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
-        int calls = 0;
+        var calls = 0;
         new TestBuilder(services).AddRelewise((options, provider) =>
         {
             calls++;
@@ -208,8 +209,8 @@ public class ExportSystemRegistrationTests
     [Fact]
     public void SearchImplementationLivesInADependentAssembly()
     {
-        var core = typeof(RelewiseUmbracoConfiguration).Assembly;
-        var search = typeof(SearchConfigurationExtensions).Assembly;
+        Assembly core = typeof(RelewiseUmbracoConfiguration).Assembly;
+        Assembly search = typeof(SearchConfigurationExtensions).Assembly;
         Assert.NotEqual(core, search);
         Assert.DoesNotContain(core.GetReferencedAssemblies(), name => name.Name == search.GetName().Name);
         Assert.Contains(search.GetReferencedAssemblies(), name => name.Name == core.GetName().Name);
@@ -242,7 +243,7 @@ public class ExportSystemRegistrationTests
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) => options.ConfigureSearch());
         services.AddSingleton<RelewiseUmbracoConfiguration.Configure>((options, _) => options.ConfigureSearch());
         using ServiceProvider provider = services.BuildServiceProvider();
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() =>
+        var error = Assert.Throws<InvalidOperationException>(() =>
             new RelewiseUmbracoConfiguration(provider));
         Assert.Contains("ConfigureSearch", error.Message);
     }

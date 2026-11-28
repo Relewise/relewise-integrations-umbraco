@@ -19,8 +19,8 @@ using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.Services;
+using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
-using Umbraco.Extensions;
 using static Relewise.Integrations.Umbraco.Indexing.EntityExportDelivery;
 using Content = Relewise.Client.DataTypes.Content;
 
@@ -151,6 +151,7 @@ internal sealed class SearchExportOperations(
             requested.UnionWith(collected.Keys);
 
             var aggregateChildren = new HashSet<Guid>();
+            var navigation = services.GetRequiredService<IDocumentNavigationQueryService>();
 
             // A child Variant contributes to its parent Product, rather than creating an independent entity.
             foreach (Guid key in requested.ToArray())
@@ -181,7 +182,10 @@ internal sealed class SearchExportOperations(
                         continue;
                     }
 
-                    parent = node.Parent();
+                    // Resolve by key: background exports have no active frontend culture.
+                    parent = navigation.TryGetParentKey(node.Key, out Guid? parentKey) && parentKey.HasValue
+                        ? context.UmbracoContext.Content?.GetById(preview: false, parentKey.Value)
+                        : null;
                 }
 
                 aggregateChildren.Add(key);

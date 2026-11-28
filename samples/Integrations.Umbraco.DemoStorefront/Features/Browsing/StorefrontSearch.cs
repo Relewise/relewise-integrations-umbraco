@@ -4,6 +4,7 @@ using Relewise.Integrations.Umbraco.DemoStorefront.Integration;
 using Relewise.Integrations.Umbraco.DemoStorefront.Site;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Search.Querying;
 using Umbraco.Cms.Core.Search.Querying.Faceting;
 using Umbraco.Cms.Core.Search.Querying.Filtering;
@@ -23,7 +24,8 @@ internal sealed class StorefrontSearch(
     private string[] ResolveIds(IEnumerable<string> keys)
     {
         IServiceProvider services = request.HttpContext.RequestServices;
-        var content = services.GetRequiredService<IUmbracoContextAccessor>().GetRequiredUmbracoContext().Content;
+        IPublishedContentCache content = services.GetRequiredService<IUmbracoContextAccessor>()
+            .GetRequiredUmbracoContext().Content;
 
         return
         [

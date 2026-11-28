@@ -8,6 +8,7 @@ using Umbraco.Cms.Core.Search.Querying.Filtering;
 #if UMBRACO_SEARCH_ADDON
 using Umbraco.Cms.Search.Core.Models.Searching.Filtering;
 #endif
+using RelewiseFilter = Relewise.Client.Requests.Filters.Filter;
 
 namespace Relewise.Integrations.Umbraco.Tests.Search;
 
@@ -40,7 +41,7 @@ public class CoreSearchTranslationTests
         foreach (bool collection in new[] { false, true })
         {
             var field = new SearchFieldDefinition(SearchFieldKind.Data, "tags", typeof(string), collection);
-            var result = CoreSearchTranslation.MapFilter(
+            RelewiseFilter result = CoreSearchTranslation.MapFilter(
                 new KeywordFilter("tags", ["camp"], false),
                 field,
                 false,

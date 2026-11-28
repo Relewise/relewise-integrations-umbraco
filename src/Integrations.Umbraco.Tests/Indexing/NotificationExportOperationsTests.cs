@@ -145,7 +145,7 @@ public class NotificationExportOperationsTests
             return content.Object;
         }));
 
-        for (int attempt = 0; attempt < 2; attempt++)
+        for (var attempt = 0; attempt < 2; attempt++)
         {
             if (fail)
             {
@@ -241,7 +241,7 @@ public class NotificationExportOperationsTests
             });
             Cache.Setup(value => value.GetById(node.Object.Key)).Returns(node.Object);
 
-            IContent editable = Mock.Of<IContent>(value => value.Key == node.Object.Key && value.Id == 42);
+            var editable = Mock.Of<IContent>(value => value.Key == node.Object.Key && value.Id == 42);
             Content.Setup(value => value.GetById(node.Object.Key)).Returns(editable);
             Content.Setup(value => value.GetRootContent()).Returns([editable]);
             Content.Setup(value => value.GetPagedDescendants(

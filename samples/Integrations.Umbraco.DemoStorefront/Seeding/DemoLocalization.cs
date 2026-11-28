@@ -141,6 +141,27 @@ internal static class DemoLocalization
             }
         }
 
+        // Domains must be available when the translated tree is published.
+        string baseUrl = services.GetRequiredService<IConfiguration>()["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!
+            .TrimEnd('/');
+        Attempt<DomainUpdateResult, DomainOperationStatus> resultDomains = await domains.UpdateDomainsAsync(
+            home.Key,
+            new DomainsUpdateModel
+            {
+                DefaultIsoCode = "en-US",
+                Domains =
+                [
+                    new DomainModel { DomainName = baseUrl + "/en", IsoCode = "en-US" },
+                    new DomainModel { DomainName = baseUrl + "/da", IsoCode = "da-DK" }
+                ]
+            }
+        );
+
+        if (!resultDomains.Success)
+        {
+            throw new InvalidOperationException($"Failed configuring the bilingual site: {resultDomains.Status}.");
+        }
+
         using (IScope scope = services.GetRequiredService<IScopeProvider>().CreateScope())
         {
             scope.EagerWriteLock(Constants.Locks.ContentTree);
@@ -231,26 +252,6 @@ internal static class DemoLocalization
             }
 
             scope.Complete();
-        }
-
-        string baseUrl = services.GetRequiredService<IConfiguration>()["Umbraco:CMS:WebRouting:UmbracoApplicationUrl"]!
-            .TrimEnd('/');
-        Attempt<DomainUpdateResult, DomainOperationStatus> resultDomains = await domains.UpdateDomainsAsync(
-            home.Key,
-            new DomainsUpdateModel
-            {
-                DefaultIsoCode = "en-US",
-                Domains =
-                [
-                    new DomainModel { DomainName = baseUrl + "/en", IsoCode = "en-US" },
-                    new DomainModel { DomainName = baseUrl + "/da", IsoCode = "da-DK" }
-                ]
-            }
-        );
-
-        if (!resultDomains.Success)
-        {
-            throw new InvalidOperationException($"Failed configuring the bilingual site: {resultDomains.Status}.");
         }
 
         await DemoDictionary.EnsureAsync(services);

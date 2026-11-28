@@ -12,6 +12,7 @@ using Relewise.Integrations.Umbraco.Services;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PublishedCache;
+using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Cms.Core.Web;
 using Umbraco.Extensions;
 
@@ -63,7 +64,8 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                     source,
                     typeof(ContentCategory),
                     cultures,
-                    !HasMapping(typeof(ContentCategory)));
+                    operation,
+                    legacy: !HasMapping(typeof(ContentCategory)));
             }
 
             var update = new ContentUpdate(
@@ -175,7 +177,8 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                 source,
                 categoryType,
                 cultures,
-                entity is Content && !HasMapping(categoryType));
+                operation,
+                legacy: entity is Content && !HasMapping(categoryType));
 
             if (entity is Product && definition.CategoryPropertyAlias != null)
             {
@@ -188,7 +191,13 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
                     RequireMapping(category, typeof(ProductCategory));
 
                     List<CategoryPath> pickedPath =
-                        CategoryPaths(category, typeof(ProductCategory), cultures, legacy: false, includeSelf: true);
+                        CategoryPaths(
+                            category,
+                            typeof(ProductCategory),
+                            cultures,
+                            operation,
+                            legacy: false,
+                            includeSelf: true);
 
                     foreach (CategoryPath path in pickedPath)
                     {
@@ -236,8 +245,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
 
         if (entity is Product && definition.Variant is { Export: true } variantMapping)
         {
-            // Background exports must include published Variants in every language, independent of a request culture.
-            foreach (IPublishedContent child in source.Children("*"))
+            foreach (IPublishedContent child in PublishedChildren(source.Key, operation))
             {
                 if (!child.ContentType.Alias.Equals(
                         variantMapping.DocumentTypeAlias,
@@ -298,7 +306,36 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         return result;
     }
 
-    public static IPublishedProperty RequiredProperty(
+    private static IPublishedContent[] PublishedChildren(Guid parent, MappingOperation operation)
+    {
+        var navigation = operation.Services.GetRequiredService<IDocumentNavigationQueryService>();
+        if (!navigation.TryGetChildrenKeys(parent, out IEnumerable<Guid> keys))
+        {
+            return [];
+        }
+
+        using UmbracoContextReference context = operation.Services
+            .GetRequiredService<IUmbracoContextFactory>()
+            .EnsureUmbracoContext();
+
+        // Discover children independently of the ambient culture. Filter publication status before cache reads
+        // to avoid database cache misses for unpublished children.
+#if UMBRACO_SEARCH_ADDON
+        var status = operation.Services.GetRequiredService<IPublishStatusQueryService>();
+        keys = keys.Where(status.IsDocumentPublishedInAnyCulture);
+#else
+        var status = operation.Services.GetRequiredService<IDocumentPublishStatusQueryService>();
+        keys = keys.Where(status.IsPublishedInAnyCulture);
+#endif
+
+        return keys.Where(status.HasPublishedAncestorPath)
+            .Select(key => context.UmbracoContext.Content.GetById(preview: false, key))
+            .OfType<IPublishedContent>()
+            .OrderBy(child => child.SortOrder)
+            .ToArray();
+    }
+
+    private static IPublishedProperty RequiredProperty(
         IPublishedElement source,
         string alias)
     {
@@ -326,12 +363,16 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         IPublishedContent source,
         Type categoryType,
         string[] cultures,
+        MappingOperation operation,
         bool legacy,
         bool includeSelf = false)
     {
         var entries = new List<CategoryNameAndId>();
 
-        foreach (IPublishedContent ancestor in source.Breadcrumbs(includeSelf))
+        var navigation = operation.Services.GetRequiredService<IDocumentNavigationQueryService>();
+        var published = operation.Services.GetRequiredService<IPublishedContentStatusFilteringService>();
+
+        foreach (IPublishedContent ancestor in source.Breadcrumbs(navigation, published, includeSelf))
         {
             if (!legacy && (!configuration.Mappings.TryGetMapping(
                     ancestor.ContentType.Alias,
@@ -409,7 +450,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         throw new InvalidOperationException($"Reference property '{alias}' must return published document(s).");
     }
 
-    public static string[] Cultures(
+    private static string[] Cultures(
         IPublishedContent source,
         MappingOperation operation)
     {
@@ -462,7 +503,7 @@ internal sealed class EntityMapper(RelewiseUmbracoConfiguration configuration)
         return entity;
     }
 
-    public static string Identity(object entity)
+    private static string Identity(object entity)
     {
         return (string)entity.GetType().GetProperty("Id")!.GetValue(entity)!;
     }

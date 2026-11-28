@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <CompressionEnabled>false</CompressionEnabled>
+    <!-- Umbraco's template service needs the physical bootstrap view during unattended setup. -->
+    <CopyRazorGenerateFilesToPublishDirectory>true</CopyRazorGenerateFilesToPublishDirectory>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Umbraco.Cms" Version="19.0.0-rc1" />
@@ -22,6 +24,7 @@
   <ItemGroup>
     <StorefrontClientInputs Include="Client/**" Exclude="Client/node_modules/**" />
     <Content Remove="Client/**;wwwroot/storefront/**" />
+    <Content Update="local.settings.json" CopyToPublishDirectory="Never" />
     <None Remove="Client/node_modules/**" />
   </ItemGroup>
   <Target Name="RestoreStorefrontClient" Inputs="Client/package.json;Client/package-lock.json" Outputs="Client/node_modules/.package-lock.json">

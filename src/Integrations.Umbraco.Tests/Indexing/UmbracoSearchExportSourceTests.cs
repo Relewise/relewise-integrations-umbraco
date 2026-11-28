@@ -70,7 +70,7 @@ public class UmbracoSearchExportSourceTests
     public async Task DiscoveryPreservesImpactStateAndCancellation(ChangeImpact impact, ContentState state)
     {
         var key = Guid.NewGuid();
-        var native = ContentChange.Document(key, impact, state);
+        ContentChange native = ContentChange.Document(key, impact, state);
         using var cancellation = new CancellationTokenSource();
         CancellationToken expectedToken = cancellation.Token;
         var strategy = new Mock<IPublishedContentChangeStrategy>(MockBehavior.Strict);
@@ -193,7 +193,7 @@ public class UmbracoSearchExportSourceTests
     public async Task FailedCollectionIsNotReusedByTheNextOperation()
     {
         var key = Guid.NewGuid();
-        int attempt = 0;
+        var attempt = 0;
         var strategy = new Mock<IPublishedContentChangeStrategy>();
         strategy.Setup(value => value.RebuildAsync(It.IsAny<ContentIndexInfo>(), It.IsAny<CancellationToken>()))
             .Returns(async (ContentIndexInfo index, CancellationToken token) =>

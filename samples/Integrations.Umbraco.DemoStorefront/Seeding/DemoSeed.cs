@@ -7,6 +7,7 @@ using Umbraco.Cms.Core.Serialization;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Services.OperationStatus;
 using Umbraco.Cms.Core.Strings;
+using Umbraco.Cms.Core.Web;
 using Umbraco.Cms.Infrastructure.Scoping;
 using static Relewise.Integrations.Umbraco.DemoStorefront.DemoConstants;
 
@@ -18,6 +19,11 @@ internal static class DemoSeed
     {
         await using AsyncServiceScope scope = root.CreateAsyncScope();
         IServiceProvider services = scope.ServiceProvider;
+
+        // Seeding publishes before requests start, so URL and redirect handling need an explicit context.
+        using UmbracoContextReference context = services.GetRequiredService<IUmbracoContextFactory>()
+            .EnsureUmbracoContext();
+
         var contentTypes = services.GetRequiredService<IContentTypeService>();
 
         if (contentTypes.Get(DocumentTypeAliases.Product) != null)
@@ -311,7 +317,7 @@ internal static class DemoSeed
             return node;
         }
 
-        Node("Fieldwork storefront", -1, DocumentTypeAliases.Home);
+        IContent home = Node("Fieldwork storefront", -1, DocumentTypeAliases.Home);
         Node(
             "Fieldwork",
             -1,
@@ -482,51 +488,10 @@ internal static class DemoSeed
                 [PropertyAliases.BodyText] = "A practical packing checklist from the Fieldwork team."
             }
         );
-        IContent localizedRoot;
-        using (IScope scope = scopes.CreateScope())
-        {
-            scope.EagerWriteLock(Constants.Locks.ContentTree);
 
-            IContent localized;
-            if (DemoLocalization.FindSeededArticle(content.GetRootContent()) is { } existing)
-            {
-                localized = existing;
-            }
-            else
-            {
-                localized = content.Create(
-                    "Across the seasons",
-                    -1,
-                    DocumentTypeAliases.LocalizedArticle
-                );
-                localized.Key = ContentKeys.LocalizedArticle;
-            }
-
-            localizedRoot = localized;
-
-            localized.TemplateId = templateId;
-            localized.SetCultureName("Across the seasons", "en-US");
-            localized.SetCultureName("Gennem årstiderne", "da-DK");
-            localized.SetValue(PropertyAliases.Heading, "Across the seasons", "en-US");
-            localized.SetValue(PropertyAliases.Heading, "Gennem årstiderne", "da-DK");
-            localized.SetValue(PropertyAliases.BodyText, "Find your seasonal adventure.", "en-US");
-            localized.SetValue(PropertyAliases.BodyText, "Find dit næste eventyr.", "da-DK");
-            localized.SetValue(PropertyAliases.Score, 10, "en-US");
-            localized.SetValue(PropertyAliases.Score, 20, "da-DK");
-            localized.SetValue(PropertyAliases.ContentRows, DemoBlockValues.EditorialList(types, true));
-            localized.SetValue(PropertyAliases.PageGrid, DemoBlockValues.Grid(types));
-            content.Save(localized);
-
-            if (!content.Publish(localized, ["en-US", "da-DK"]).Success)
-            {
-                throw new InvalidOperationException("Failed publishing both cultures.");
-            }
-
-            scope.Complete();
-        }
-
+        // Configure the site root before publishing the bilingual article.
         Attempt<DomainUpdateResult, DomainOperationStatus> domainResult = await domains.UpdateDomainsAsync(
-            localizedRoot.Key,
+            home.Key,
             new DomainsUpdateModel
             {
                 DefaultIsoCode = "en-US",
@@ -552,6 +517,47 @@ internal static class DemoSeed
         {
             throw new InvalidOperationException(
                 $"Failed configuring localized storefront routes: {domainResult.Status}.");
+        }
+
+        using (IScope scope = scopes.CreateScope())
+        {
+            scope.EagerWriteLock(Constants.Locks.ContentTree);
+
+            IContent localized;
+            if ((content.GetById(ContentKeys.LocalizedArticle) ??
+                 DemoLocalization.FindSeededArticle(content.GetRootContent())) is { } existing)
+            {
+                localized = existing;
+            }
+            else
+            {
+                localized = content.Create(
+                    "Across the seasons",
+                    home.Id,
+                    DocumentTypeAliases.LocalizedArticle
+                );
+                localized.Key = ContentKeys.LocalizedArticle;
+            }
+
+            localized.TemplateId = templateId;
+            localized.SetCultureName("Across the seasons", "en-US");
+            localized.SetCultureName("Gennem årstiderne", "da-DK");
+            localized.SetValue(PropertyAliases.Heading, "Across the seasons", "en-US");
+            localized.SetValue(PropertyAliases.Heading, "Gennem årstiderne", "da-DK");
+            localized.SetValue(PropertyAliases.BodyText, "Find your seasonal adventure.", "en-US");
+            localized.SetValue(PropertyAliases.BodyText, "Find dit næste eventyr.", "da-DK");
+            localized.SetValue(PropertyAliases.Score, 10, "en-US");
+            localized.SetValue(PropertyAliases.Score, 20, "da-DK");
+            localized.SetValue(PropertyAliases.ContentRows, DemoBlockValues.EditorialList(types, true));
+            localized.SetValue(PropertyAliases.PageGrid, DemoBlockValues.Grid(types));
+            content.Save(localized);
+
+            if (!content.Publish(localized, ["en-US", "da-DK"]).Success)
+            {
+                throw new InvalidOperationException("Failed publishing both cultures.");
+            }
+
+            scope.Complete();
         }
     }
 }
