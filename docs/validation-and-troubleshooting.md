@@ -12,7 +12,7 @@ An export can complete successfully even when the mapping does not produce the v
 3. **Check the user experience.** Search for a distinctive mapped value and verify the request language, currency and filters. For view tracking, confirm that the tracked entity ID matches the exported entity and that search and tracking use the same visitor identity. See [search and identity](search.md#identity-access-and-tracking).
 
 Include multiple published cultures, empty values, removed fields and publish/unpublish changes
-in your checks. If you use custom block extraction, verify nested content and your visibility
+in your checks. If you use custom block extraction, verify nested blocks and your visibility
 rules using the [block-editor guide](block-editors.md).
 
 The [DemoStorefront](../samples/Integrations.Umbraco.DemoStorefront/README.md) provides a seeded CMS preview

@@ -27,7 +27,6 @@ The current `AddRelewise` registration includes converters for:
 | `Umbraco.Integer` | Integer |
 | `Umbraco.Decimal` | Number |
 | `Umbraco.Tags` | String list |
-| `Umbraco.NestedContent` | Convert element properties, then collect string representations |
 | `Umbraco.BlockList` | Convert block content properties, then collect string representations |
 
 Source: [default registrations](../src/Integrations.Umbraco/UmbracoBuilderExtensions.cs).
